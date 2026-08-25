@@ -1,0 +1,76 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Desktop 1440" },
+    { "id": "page-2", "name": "Tablet + Mobile" },
+    { "id": "page-3", "name": "System + Sitemap" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",        "page": "page-1", "title": "Home — 22 sections",     "x": 0,     "y": 0, "w": 1440, "h": 12600 },
+    { "file": "Product.dc.html",     "page": "page-1", "title": "Product — desktop",      "x": 1580,  "y": 0, "w": 1440, "h": 3400, "is_interactive": true },
+    { "file": "Cart.dc.html",        "page": "page-1", "title": "Cart — desktop",         "x": 3160,  "y": 0, "w": 1440, "h": 1320 },
+    { "file": "Checkout.dc.html",    "page": "page-1", "title": "Checkout — desktop",     "x": 4740,  "y": 0, "w": 1440, "h": 1760 },
+    { "file": "ThankYou.dc.html",    "page": "page-1", "title": "Thank you — desktop",    "x": 6320,  "y": 0, "w": 1440, "h": 2300 },
+    { "file": "About.dc.html",       "page": "page-1", "title": "About us — desktop",     "x": 7900,  "y": 0, "w": 1440, "h": 3000 },
+    { "file": "Contact.dc.html",     "page": "page-1", "title": "Contact us — desktop",   "x": 9480,  "y": 0, "w": 1440, "h": 1860 },
+    { "file": "ReferEarn.dc.html",   "page": "page-1", "title": "Refer & earn — desktop", "x": 11060, "y": 0, "w": 1440, "h": 2960 },
+    { "file": "Privacy.dc.html",     "page": "page-1", "title": "Privacy policy",         "x": 12640, "y": 0, "w": 1440, "h": 4400 },
+    { "file": "Terms.dc.html",       "page": "page-1", "title": "Terms of service",       "x": 14220, "y": 0, "w": 1440, "h": 4700 },
+
+    { "file": "HomeTablet.dc.html",    "page": "page-2", "title": "Home — tablet 834",    "x": 0,    "y": 0,    "w": 834, "h": 4850 },
+    { "file": "ProductTablet.dc.html", "page": "page-2", "title": "Product — tablet 834", "x": 974,  "y": 0,    "w": 834, "h": 2760, "is_interactive": true },
+
+    { "file": "HomeMobile.dc.html",     "page": "page-2", "title": "Home — mobile 390",     "x": 0,    "y": 5000, "w": 390, "h": 6150 },
+    { "file": "ProductMobile.dc.html",  "page": "page-2", "title": "Product — mobile 390",  "x": 500,  "y": 5000, "w": 390, "h": 3200, "is_interactive": true },
+    { "file": "CartMobile.dc.html",     "page": "page-2", "title": "Cart — mobile 390",     "x": 1000, "y": 5000, "w": 390, "h": 1440 },
+    { "file": "CheckoutMobile.dc.html", "page": "page-2", "title": "Checkout — mobile 390", "x": 1500, "y": 5000, "w": 390, "h": 1600 },
+    { "file": "ThankYouMobile.dc.html", "page": "page-2", "title": "Thank you — mobile 390","x": 2000, "y": 5000, "w": 390, "h": 2320 },
+    { "file": "ReferMobile.dc.html",    "page": "page-2", "title": "Refer & earn — mobile", "x": 2500, "y": 5000, "w": 390, "h": 2800 },
+    { "file": "HomeMobile320.dc.html",  "page": "page-2", "title": "Home — 320 floor",      "x": 3000, "y": 5000, "w": 320, "h": 2100 },
+
+    { "file": "DesignSystem.dc.html", "page": "page-3", "title": "Design system", "x": 0,    "y": 0, "w": 1440, "h": 3400 },
+    { "file": "Sitemap.dc.html",      "page": "page-3", "title": "Sitemap",       "x": 1580, "y": 0, "w": 1440, "h": 2100 }
+  ],
+  "annotations": [
+    {
+      "id": "note-imagery",
+      "page": "page-1",
+      "x": 0,
+      "y": -340,
+      "w": 620,
+      "text": "IMAGERY — all new.\n\nEvery photograph on the canvas was generated at 4K from your own product shots, with the skull's silhouette, flame relief and bracket held to the reference. Nothing here is your original phone photo any more.\n\n4K masters: public/product/gen/ · web-ready 2000px JPEGs: public/product/ · the compressed copies used on this canvas: design/"
+    },
+    {
+      "id": "note-sample-data",
+      "page": "page-1",
+      "x": 660,
+      "y": -340,
+      "w": 620,
+      "text": "SAMPLE CONTENT — read before sharing.\n\nPrices (₹1,499 / ₹1,999), the 4.9 rating, the 312 review count, the reviewer names and the referral amounts are placeholder values chosen so the layouts read realistically. Swap them for real figures before launch.\n\nAnything genuinely unknown is bracketed in the design — [X kg], [H × W × D mm], [CITY], [LEGAL ENTITY], [GATEWAY]. Fill those in rather than shipping the brackets."
+    },
+    {
+      "id": "note-legal",
+      "page": "page-1",
+      "x": 1320,
+      "y": -340,
+      "w": 620,
+      "text": "LEGAL PAGES — structure, not legal advice.\n\nPrivacy Policy and Terms of Service are laid out with the sections an Indian D2C store needs (DPDP Act 2023, Consumer Protection E-Commerce Rules 2020, including the grievance-officer block both require).\n\nThe wording is a working draft to hand your lawyer, and each page carries a visible banner saying so. Shipping, Returns and Referral terms reuse the same template."
+    },
+    {
+      "id": "note-responsive",
+      "page": "page-2",
+      "x": 0,
+      "y": -300,
+      "w": 640,
+      "text": "Top row is tablet (834). Bottom row is phone (390), ending with a 320-wide artboard — the narrowest width the design holds.\n\nAt 320 the hero headline drops one step, the colourway cards narrow to 216, and the bento stays 2-up. Nothing is pinned to a fixed width above the 1440 container cap, so every size in between is fluid rather than a separate layout.\n\nEvery tap target on the phone artboards is at least 44px."
+    },
+    {
+      "id": "note-system",
+      "page": "page-3",
+      "x": 0,
+      "y": -300,
+      "w": 620,
+      "text": "Palette v2 adds electric violet (#7B5CFF) and hot magenta (#FF3D9A) to the blaze/acid pair — violet carries secondary actions and the drop list, magenta the alerts and the referral gradient.\n\nThe sheet also carries the type ramp, component states, the motion spec (durations, easing, reduced-motion) and the breakpoint rules. The sitemap mirrors docs/sitemap.md in the repo."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

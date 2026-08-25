@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #FF8A00; text-decoration: none; }
+    a:hover { color: #FFC24D; }
+    input, textarea { font-family: 'Space Grotesk',Arial,sans-serif; }
+    input::placeholder, textarea::placeholder { color: #63606F; }
+    .grain::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .16; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-14px) rotate(2deg); } }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #07060A; padding-bottom: 80px;">
+
+  <!-- NAV -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 76px; padding: 0 56px; border-bottom: 1px solid rgba(255,255,255,.07);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
+        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
+      </svg>
+      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 23px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 34px; font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #A3A0B0;">
+      <span>Shop</span><span>The Build</span><span>Riders</span><span>Refer &amp; Earn</span><span style="color: #F7F4ED;">Contact</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #F7F4ED;">
+      CART <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #FF5A1F; color: #07060A; font-weight: 700; font-size: 11px;">0</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="grain" style="position: relative; overflow: hidden; padding: 74px 56px 56px; background: radial-gradient(660px 400px at 78% 50%, rgba(255,90,31,.15), transparent 70%), #07060A;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 48px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: #FF8A00; margin-bottom: 18px;">CONTACT</div>
+        <h1 style="margin: 0 0 20px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 88px; line-height: .88; color: #F7F4ED; text-transform: uppercase;">Talk to a<br>human</h1>
+        <p style="margin: 0; max-width: 520px; font-size: 17.5px; line-height: 1.6; color: #A3A0B0; text-wrap: pretty;">No ticket queue, no bot that loops you back to the FAQ. One of us reads every message and replies within a working day.</p>
+      </div>
+      <img src="product-front.jpg" alt="SKELMET mount" style="width: 190px; height: auto; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 20px 40px rgba(0,0,0,.7)) drop-shadow(0 0 48px rgba(255,90,31,.4)); flex-shrink: 0;">
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 40px; padding: 24px 56px 0;">
+
+    <!-- FORM -->
+    <div style="padding: 40px; border: 1px solid rgba(255,255,255,.1); border-radius: 22px; background: #0E0D13;">
+      <h2 style="margin: 0 0 30px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; color: #F7F4ED; text-transform: uppercase;">Send us a message</h2>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">YOUR NAME</label>
+            <input placeholder="Rohan Mehta" style="height: 54px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">EMAIL</label>
+            <input placeholder="you@example.com" style="height: 54px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">PHONE <span style="color: #46434F;">(OPTIONAL)</span></label>
+            <input placeholder="+91" style="height: 54px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">ORDER NUMBER <span style="color: #46434F;">(OPTIONAL)</span></label>
+            <input placeholder="SKM-2026-XXXX" style="height: 54px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 14px; outline: none;">
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">WHAT'S THIS ABOUT</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid #FF5A1F; background: rgba(255,90,31,.12); color: #F7F4ED; font-size: 13.5px; font-weight: 500;">My order</span>
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #A3A0B0; font-size: 13.5px;">Fitting help</span>
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #A3A0B0; font-size: 13.5px;">Return or refund</span>
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #A3A0B0; font-size: 13.5px;">Bulk / club order</span>
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #A3A0B0; font-size: 13.5px;">Custom colour</span>
+            <span style="padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #A3A0B0; font-size: 13.5px;">Something else</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">MESSAGE</label>
+          <textarea placeholder="Tell us what's going on…" style="height: 150px; padding: 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; line-height: 1.55; outline: none; resize: none;"></textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 4px;">
+          <span style="font-size: 13px; line-height: 1.5; color: #63606F; max-width: 300px;">By sending this you agree we can email you back. That's all we use it for.</span>
+          <div style="display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 32px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 15px; letter-spacing: .05em; text-transform: uppercase; box-shadow: 0 12px 32px rgba(255,90,31,.3); white-space: nowrap;">
+            Send it
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHANNELS -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="padding: 26px 28px; border: 1px solid rgba(212,255,61,.28); border-radius: 18px; background: linear-gradient(160deg, rgba(212,255,61,.07), transparent 56%), #0E0D13;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 21l2.2-5.5A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 22px; color: #F7F4ED; text-transform: uppercase;">WhatsApp</span>
+        </div>
+        <p style="margin: 0 0 16px; font-size: 14.5px; line-height: 1.56; color: #A3A0B0;">Fastest route for anything order-related. Usually answered within a couple of hours.</p>
+        <div style="font-family: 'JetBrains Mono',monospace; font-size: 15px; letter-spacing: .06em; color: #D4FF3D;">[+91 XXXXX XXXXX]</div>
+      </div>
+
+      <div style="padding: 26px 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #0E0D13;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 22px; color: #F7F4ED; text-transform: uppercase;">Email</span>
+        </div>
+        <p style="margin: 0 0 16px; font-size: 14.5px; line-height: 1.56; color: #A3A0B0;">For returns, invoices and anything that needs a paper trail.</p>
+        <div style="font-family: 'JetBrains Mono',monospace; font-size: 15px; letter-spacing: .04em; color: #FF8A00;">[hello@skelmet.in]</div>
+      </div>
+
+      <div style="padding: 26px 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #0E0D13;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 22px; color: #F7F4ED; text-transform: uppercase;">The workshop</span>
+        </div>
+        <p style="margin: 0 0 12px; font-size: 14.5px; line-height: 1.56; color: #A3A0B0;">Not a shopfront — but if you're local and want to see one in person, message first and we'll sort it.</p>
+        <div style="font-size: 14.5px; line-height: 1.6; color: #FF8A00;">[STREET ADDRESS]<br>[CITY, STATE — PIN]</div>
+      </div>
+
+      <div style="padding: 26px 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #0E0D13;">
+        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">WE REPLY</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Mon – Fri</span><span style="color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 13px;">10:00 – 19:00</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Saturday</span><span style="color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 13px;">11:00 – 16:00</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Sunday</span><span style="color: #63606F; font-family: 'JetBrains Mono',monospace; font-size: 13px;">RIDING</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ DEFLECT -->
+  <div style="padding: 60px 56px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 34px 40px; border: 1px dashed rgba(255,255,255,.16); border-radius: 20px; background: #0E0D13;">
+      <div>
+        <h3 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; color: #F7F4ED; text-transform: uppercase;">Might already be answered</h3>
+        <p style="margin: 0; font-size: 15px; color: #A3A0B0;">Fitment, drilling, shipping times and returns are all covered in the FAQ.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 26px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); color: #F7F4ED; font-weight: 600; font-size: 13.5px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;">
+        Read the FAQ
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

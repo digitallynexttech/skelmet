@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #FF8A00; text-decoration: none; }
+    a:hover { color: #FFC24D; }
+    input { font-family: 'Space Grotesk',Arial,sans-serif; }
+    input::placeholder { color: #63606F; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #07060A;">
+
+  <!-- TOP BAR -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,.07);">
+    <div style="width: 44px; height: 44px; display: flex; align-items: center;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+    </div>
+    <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 19px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
+    <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: flex-end;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    </div>
+  </div>
+
+  <!-- COLLAPSED SUMMARY -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #0E0D13; border-bottom: 1px solid rgba(255,255,255,.07);">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span style="font-size: 13.5px; color: #F7F4ED;">Order summary (3)</span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 22px; color: #F7F4ED;">₹4,198</span>
+  </div>
+
+  <!-- HEAD -->
+  <div style="padding: 26px 20px 20px;">
+    <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">STEP 02 OF 03</div>
+    <h1 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 44px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">Where's it<br>going?</h1>
+  </div>
+
+  <!-- STEPS -->
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 20px 30px;">
+
+    <!-- 1 done -->
+    <div style="padding: 18px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          <span style="width: 26px; height: 26px; border-radius: 50%; background: #D4FF3D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+          </span>
+          <div style="min-width: 0;">
+            <div style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .16em; color: #63606F; margin-bottom: 4px;">CONTACT</div>
+            <div style="font-size: 13.5px; color: #F7F4ED; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">rohan.m@example.com</div>
+          </div>
+        </div>
+        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .1em; color: #FF8A00; flex-shrink: 0;">EDIT</span>
+      </div>
+    </div>
+
+    <!-- 2 open -->
+    <div style="padding: 22px 18px; border: 1px solid rgba(255,90,31,.34); border-radius: 14px; background: linear-gradient(160deg, rgba(255,90,31,.06), transparent 46%), #0E0D13;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px;">
+        <span style="width: 26px; height: 26px; border-radius: 50%; background: #FF5A1F; color: #07060A; font-family: 'JetBrains Mono',monospace; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</span>
+        <h2 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #F7F4ED; text-transform: uppercase;">Delivery address</h2>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">FIRST NAME</label>
+            <input value="Rohan" style="height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px; outline: none;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">LAST NAME</label>
+            <input value="Mehta" style="height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px; outline: none;">
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">ADDRESS LINE 1</label>
+          <input value="Flat 402, Sunrise Residency" style="height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">ADDRESS LINE 2 <span style="color: #46434F;">(OPTIONAL)</span></label>
+          <input placeholder="Landmark, area" style="height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px; outline: none;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">PINCODE</label>
+            <div style="position: relative;">
+              <input value="411045" style="width: 100%; height: 50px; padding: 0 40px 0 14px; border: 1px solid rgba(212,255,61,.42); border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 14.5px; letter-spacing: .08em; outline: none;">
+              <span style="position: absolute; right: 13px; top: 50%; transform: translateY(-50%);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+              </span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">CITY</label>
+            <input value="Pune" style="height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px; outline: none;">
+          </div>
+        </div>
+        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #D4FF3D; margin-top: -6px;">DELIVERS IN 3–4 DAYS</span>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #63606F;">STATE</label>
+          <div style="display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 14.5px;">
+            Maharashtra
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 11px; margin-top: 4px;">
+          <span style="width: 20px; height: 20px; border-radius: 5px; background: #FF5A1F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+          </span>
+          <span style="font-size: 13.5px; color: #A3A0B0;">Save this address for next time</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 locked -->
+    <div style="padding: 18px; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; background: rgba(14,13,19,.5);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <span style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); color: #63606F; font-family: 'JetBrains Mono',monospace; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</span>
+        <h2 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #46434F; text-transform: uppercase;">Payment</h2>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-left: 38px;">
+        <span style="display: flex; align-items: center; height: 36px; padding: 0 13px; border: 1px solid rgba(255,255,255,.09); border-radius: 8px; font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .08em; color: #63606F;">UPI</span>
+        <span style="display: flex; align-items: center; height: 36px; padding: 0 13px; border: 1px solid rgba(255,255,255,.09); border-radius: 8px; font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .08em; color: #63606F;">CARD</span>
+        <span style="display: flex; align-items: center; height: 36px; padding: 0 13px; border: 1px solid rgba(255,255,255,.09); border-radius: 8px; font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .08em; color: #63606F;">NETBANKING</span>
+        <span style="display: flex; align-items: center; height: 36px; padding: 0 13px; border: 1px solid rgba(255,255,255,.09); border-radius: 8px; font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .08em; color: #63606F;">COD +₹49</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: #0E0D13; margin-top: 4px;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="1" y="6" width="14" height="12" rx="2"/><path d="M15 10h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        <span style="font-size: 13px; color: #A3A0B0;">Dispatched within 48 hours</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+        <span style="font-size: 13px; color: #A3A0B0;">7-day returns, pickup on us</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M20 6 9 17l-5-5"/></svg>
+        <span style="font-size: 13px; color: #A3A0B0;">No account needed to order</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY CTA -->
+  <div style="position: sticky; bottom: 0; z-index: 70; padding: 12px 16px 16px; background: rgba(7,6,10,.92); backdrop-filter: blur(16px); border-top: 1px solid rgba(255,255,255,.1);">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 10px 28px rgba(255,90,31,.3);">
+      Continue to payment
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

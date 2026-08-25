@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #FF8A00; text-decoration: none; }
+    a:hover { color: #FFC24D; }
+    .grain::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .13; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .h3 { margin: 0 0 14px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 30px; line-height: 1; color: #F7F4ED; text-transform: uppercase; }
+    .p  { margin: 0 0 16px; font-size: 15.5px; line-height: 1.72; color: #A3A0B0; max-width: 720px; }
+    .li { display: flex; gap: 12px; margin-bottom: 11px; font-size: 15px; line-height: 1.66; color: #A3A0B0; max-width: 720px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #FF5A1F; flex-shrink: 0; margin-top: 8px; }
+    .sec { padding: 38px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .num { font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .18em; color: #FF8A00; margin-bottom: 12px; }
+    .toc { display: block; padding: 9px 0; font-size: 13.5px; color: #A3A0B0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #07060A;">
+
+  <!-- NAV -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 74px; padding: 0 56px; border-bottom: 1px solid rgba(255,255,255,.07);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
+        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
+      </svg>
+      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 23px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 32px; font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #A3A0B0;">
+      <span>Shop</span><span>The Build</span><span>Riders</span><span>Refer &amp; Earn</span><span>About</span><span>Contact</span>
+    </div>
+    <div style="display: flex; align-items: center; height: 40px; padding: 0 20px; border-radius: 999px; background: #D4FF3D; color: #07060A; font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase;">Buy now</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="grain" style="position: relative; overflow: hidden; padding: 66px 56px 54px; background: radial-gradient(760px 380px at 78% 40%, rgba(123,92,255,.16), transparent 70%), #07060A; border-bottom: 1px solid rgba(255,255,255,.07);">
+    <div style="position: absolute; top: 40px; right: -30px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 190px; line-height: .8; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.05); white-space: nowrap; user-select: none;">LEGAL</div>
+    <div style="position: relative; z-index: 2;">
+      <div style="display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .14em; color: #63606F; margin-bottom: 22px;">
+        <span>HOME</span><span>/</span><span>LEGAL</span><span>/</span><span style="color: #F7F4ED;">PRIVACY POLICY</span>
+      </div>
+      <h1 style="margin: 0 0 20px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 84px; line-height: .88; color: #F7F4ED; text-transform: uppercase;">Privacy policy</h1>
+      <p style="margin: 0 0 26px; max-width: 640px; font-size: 17px; line-height: 1.64; color: #A3A0B0;">What we collect, why we collect it, and how to make us delete it. Written to be read, not to be survived.</p>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #D4FF3D; border: 1px solid rgba(212,255,61,.3); padding: 8px 13px; border-radius: 5px;">LAST UPDATED [DD MMM 2026]</span>
+        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #A3A0B0; border: 1px solid rgba(255,255,255,.14); padding: 8px 13px; border-radius: 5px;">VERSION [1.0]</span>
+        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #A3A0B0; border: 1px solid rgba(255,255,255,.14); padding: 8px 13px; border-radius: 5px;">~8 MIN READ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAWYER BANNER -->
+  <div style="display: flex; align-items: flex-start; gap: 14px; margin: 28px 56px 0; padding: 20px 24px; border: 1px dashed rgba(255,61,154,.45); border-radius: 14px; background: rgba(255,61,154,.05);">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF3D9A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+    <p style="margin: 0; font-size: 13.5px; line-height: 1.62; color: #C9C6D4;"><span style="color: #FF3D9A; font-weight: 700;">DRAFT STRUCTURE — NOT LEGAL ADVICE.</span> This page shows the layout and the sections an Indian D2C store needs (DPDP Act 2023, Consumer Protection E-Commerce Rules 2020). Every bracketed value and the final wording must be set by your lawyer before launch.</p>
+  </div>
+
+  <!-- BODY -->
+  <div style="display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; padding: 44px 56px 88px;">
+
+    <!-- TOC -->
+    <div>
+      <div style="position: sticky; top: 40px;">
+        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">ON THIS PAGE</div>
+        <span class="toc" style="color: #FF8A00; border-left: 2px solid #FF5A1F; padding-left: 12px;">01 · Who we are</span>
+        <span class="toc">02 · What we collect</span>
+        <span class="toc">03 · How we collect it</span>
+        <span class="toc">04 · Why we use it</span>
+        <span class="toc">05 · Payment information</span>
+        <span class="toc">06 · Cookies &amp; tracking</span>
+        <span class="toc">07 · Who we share with</span>
+        <span class="toc">08 · Processors we use</span>
+        <span class="toc">09 · How long we keep it</span>
+        <span class="toc">10 · Your rights</span>
+        <span class="toc">11 · Marketing &amp; opt-out</span>
+        <span class="toc">12 · Referral programme data</span>
+        <span class="toc">13 · Children</span>
+        <span class="toc">14 · Security</span>
+        <span class="toc">15 · Transfers outside India</span>
+        <span class="toc">16 · Changes to this policy</span>
+        <span class="toc" style="border-bottom: none;">17 · Grievance officer</span>
+
+        <div style="margin-top: 26px; padding: 20px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 10px;">SHORT VERSION</div>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #A3A0B0;">We collect what we need to ship you a skull and nothing else. We don't sell your data. Email us and we'll delete it.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIONS -->
+    <div>
+      <div class="sec" style="padding-top: 0;">
+        <div class="num">01</div>
+        <h3 class="h3">Who we are</h3>
+        <p class="p">SKELMET is operated by <span style="color: #F7F4ED;">[LEGAL ENTITY NAME]</span>, registered at <span style="color: #F7F4ED;">[REGISTERED ADDRESS]</span>, GSTIN <span style="color: #F7F4ED;">[GSTIN]</span>. In this policy "we", "us" and "our" mean that company; "you" means anyone who visits skelmet.in or buys from us.</p>
+        <p class="p">We are the data fiduciary for the personal data described below, in the sense the Digital Personal Data Protection Act 2023 uses that term.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">02</div>
+        <h3 class="h3">What we collect</h3>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Identity and contact</span> — name, email address, phone number.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Delivery</span> — shipping address, pincode, any delivery note you add.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Order</span> — what you bought, colourway, quantity, price paid, discount or referral code used.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Payment</span> — the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Account</span> — a hashed password, saved addresses, your referral code and balance, if you create an account.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Technical</span> — IP address, browser and device type, pages viewed, referring site.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Content you send us</span> — support messages, review text, and any photo you submit to the rider wall.</span></div>
+      </div>
+
+      <div class="sec">
+        <div class="num">03</div>
+        <h3 class="h3">How we collect it</h3>
+        <p class="p">Most of it you give us directly — at checkout, when you create an account, when you write to us or post a review. Technical data is collected automatically by our servers and by the cookies described in section 06. We do not buy personal data from third parties or scrape it.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">04</div>
+        <h3 class="h3">Why we use it</h3>
+        <div class="li"><span class="dot"></span><span>To take payment, pack your order and get it delivered.</span></div>
+        <div class="li"><span class="dot"></span><span>To email or message you about that order — confirmation, dispatch, tracking, delivery.</span></div>
+        <div class="li"><span class="dot"></span><span>To handle returns, replacements and refunds.</span></div>
+        <div class="li"><span class="dot"></span><span>To answer your support messages.</span></div>
+        <div class="li"><span class="dot"></span><span>To run the referral programme and pay out what you have earned.</span></div>
+        <div class="li"><span class="dot"></span><span>To detect fraud and abuse of discount codes.</span></div>
+        <div class="li"><span class="dot"></span><span>To meet tax, accounting and consumer-law obligations.</span></div>
+        <div class="li"><span class="dot"></span><span>With your consent only, to send marketing about new drops.</span></div>
+      </div>
+
+      <div class="sec">
+        <div class="num">05</div>
+        <h3 class="h3">Payment information</h3>
+        <p class="p">Payments are processed by <span style="color: #F7F4ED;">[PAYMENT GATEWAY]</span>. Your card, netbanking or UPI credentials go directly to them over an encrypted connection and never touch our servers. We receive only a transaction id, the amount, the method and whether it succeeded — enough to reconcile your order and issue a refund.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">06</div>
+        <h3 class="h3">Cookies &amp; tracking</h3>
+        <p class="p">We use three kinds, and you can refuse all but the first:</p>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Strictly necessary</span> — keeping you signed in and remembering your cart. The site does not work without these.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Analytics</span> — anonymous, aggregated page and conversion statistics.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Marketing</span> — used to measure ad performance and show you a reminder if you abandon a cart.</span></div>
+        <p class="p" style="margin-top: 16px;">You can change your choice at any time from the cookie settings link in the footer, or block cookies in your browser.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">07</div>
+        <h3 class="h3">Who we share with</h3>
+        <p class="p">We do not sell your personal data. We share the minimum necessary with the processors in section 08, and we disclose data where the law requires it — a court order, a tax authority, or a genuine law-enforcement request we are satisfied is valid.</p>
+        <p class="p">If the business is ever sold or merged, your data may transfer to the buyer under the same commitments; we will tell you before that happens.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">08</div>
+        <h3 class="h3">Processors we use</h3>
+        <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden; max-width: 720px; margin-top: 4px;">
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 14px 18px; background: #0E0D13; border-bottom: 1px solid rgba(255,255,255,.07); font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F;">
+            <span>PROCESSOR</span><span>PURPOSE</span><span>DATA SEEN</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13.5px; color: #A3A0B0;">
+            <span style="color: #F7F4ED;">[GATEWAY]</span><span>Taking payment</span><span>Name, email, amount</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13.5px; color: #A3A0B0;">
+            <span style="color: #F7F4ED;">[COURIER]</span><span>Delivering the parcel</span><span>Name, address, phone</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13.5px; color: #A3A0B0;">
+            <span style="color: #F7F4ED;">[EMAIL PROVIDER]</span><span>Order and support email</span><span>Name, email</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13.5px; color: #A3A0B0;">
+            <span style="color: #F7F4ED;">[HOSTING]</span><span>Running the site</span><span>Technical data</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1fr; padding: 15px 18px; font-size: 13.5px; color: #A3A0B0;">
+            <span style="color: #F7F4ED;">[ANALYTICS]</span><span>Aggregate statistics</span><span>Anonymised usage</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="num">09</div>
+        <h3 class="h3">How long we keep it</h3>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Order and invoice records</span> — [8] years, because tax law says so.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Account data</span> — until you delete the account, then [30] days in backups.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Support messages</span> — [24] months.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Abandoned carts</span> — [90] days.</span></div>
+        <div class="li"><span class="dot"></span><span><span style="color: #F7F4ED;">Marketing consent records</span> — for as long as you are subscribed, plus [24] months as proof of consent.</span></div>
+      </div>
+
+      <div class="sec">
+        <div class="num">10</div>
+        <h3 class="h3">Your rights</h3>
+        <p class="p">Under the DPDP Act 2023 you can ask us to:</p>
+        <div class="li"><span class="dot"></span><span>Tell you what data we hold about you and who we have shared it with.</span></div>
+        <div class="li"><span class="dot"></span><span>Correct anything that is wrong or out of date.</span></div>
+        <div class="li"><span class="dot"></span><span>Erase data we no longer need for a legal purpose.</span></div>
+        <div class="li"><span class="dot"></span><span>Withdraw a consent you previously gave.</span></div>
+        <div class="li"><span class="dot"></span><span>Nominate someone to exercise these rights if you die or become incapacitated.</span></div>
+        <p class="p" style="margin-top: 16px;">Write to the grievance officer in section 17. We will respond within <span style="color: #F7F4ED;">[30] days</span>. If you are not satisfied you may complain to the Data Protection Board of India.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">11</div>
+        <h3 class="h3">Marketing &amp; opt-out</h3>
+        <p class="p">We only email you about new drops if you asked us to. Every one of those emails has a one-click unsubscribe, and unsubscribing does not affect the transactional emails about an order you have placed. We do not send marketing over WhatsApp unless you have separately opted in.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">12</div>
+        <h3 class="h3">Referral programme data</h3>
+        <p class="p">If you refer someone, we record their email in a masked form (for example <span style="font-family: 'JetBrains Mono',monospace; color: #F7F4ED;">a****k@gmail.com</span>) so you can see the status of your invite without us exposing their full address to you. The person you referred is told which code they used but not who owns it, unless you tell them yourself.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">13</div>
+        <h3 class="h3">Children</h3>
+        <p class="p">SKELMET is not sold to anyone under 18. We do not knowingly collect data from children, and we do not do behavioural advertising or tracking directed at them. If you believe a child has given us data, write to the grievance officer and we will delete it.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">14</div>
+        <h3 class="h3">Security</h3>
+        <p class="p">The site runs over TLS. Passwords are stored hashed, never in plain text. Access to customer data inside the company is limited to the people who need it and is logged. Payment credentials never reach us at all.</p>
+        <p class="p">No system is perfect. If a breach affects your data we will notify you and the Data Protection Board as the DPDP Act requires.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">15</div>
+        <h3 class="h3">Transfers outside India</h3>
+        <p class="p">Some processors in section 08 store data outside India. Where they do, we rely on contractual protections with that provider and only use providers in countries not restricted by the Central Government. The current list of hosting regions is <span style="color: #F7F4ED;">[REGIONS]</span>.</p>
+      </div>
+
+      <div class="sec">
+        <div class="num">16</div>
+        <h3 class="h3">Changes to this policy</h3>
+        <p class="p">If we change anything that materially affects you, we will update the date at the top and email anyone with an account at least <span style="color: #F7F4ED;">[14] days</span> before the change takes effect. Older versions are kept and can be requested.</p>
+      </div>
+
+      <div class="sec" style="border-bottom: none;">
+        <div class="num">17</div>
+        <h3 class="h3">Grievance officer</h3>
+        <p class="p">As required by the DPDP Act 2023 and the Consumer Protection (E-Commerce) Rules 2020:</p>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin-top: 6px;">
+          <div style="padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+            <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 12px;">GRIEVANCE OFFICER</div>
+            <div style="font-size: 16px; font-weight: 700; color: #F7F4ED; margin-bottom: 6px;">[FULL NAME]</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #A3A0B0;">[grievance@skelmet.in]<br>[+91 XXXXX XXXXX]</div>
+          </div>
+          <div style="padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+            <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 12px;">POSTAL ADDRESS</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #A3A0B0;">[LEGAL ENTITY NAME]<br>[STREET ADDRESS]<br>[CITY, STATE — PIN]</div>
+          </div>
+        </div>
+        <p class="p" style="margin-top: 18px;">Response time: acknowledgement within <span style="color: #F7F4ED;">[48] hours</span>, resolution within <span style="color: #F7F4ED;">[30] days</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATED -->
+  <div style="padding: 0 56px 72px;">
+    <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .18em; color: #63606F; margin-bottom: 18px;">RELATED POLICIES</div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Terms of service</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Shipping policy</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Returns &amp; refunds</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
+        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Referral terms</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; border-top: 1px solid rgba(255,255,255,.07);">
+    <div style="display: flex; flex-direction: column; justify-content: center; padding: 66px 56px; background: #0E0D13;">
+      <h2 style="margin: 0 0 14px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 46px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Still got a question?</h2>
+      <p style="margin: 0 0 26px; max-width: 420px; font-size: 15.5px; line-height: 1.6; color: #A3A0B0;">A human reads every message. Privacy questions go straight to the grievance officer.</p>
+      <div style="display: flex; align-items: center; gap: 12px; align-self: flex-start; height: 54px; padding: 0 28px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;">
+        Contact us
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </div>
+    </div>
+    <div style="position: relative; min-height: 300px; overflow: hidden;">
+      <img src="product-profile.jpg" alt="SKELMET mount side profile" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 26px 56px; background: #07060A; border-top: 1px solid rgba(255,255,255,.07); font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">
+    <span>© 2026 SKELMET · [LEGAL ENTITY] · GSTIN [NUMBER]</span>
+    <span>PRINTED &amp; PACKED IN INDIA</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

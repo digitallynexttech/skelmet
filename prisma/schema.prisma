@@ -1,0 +1,447 @@
+// SKELMET — Postgres via Prisma 7 with the pg adapter.
+// Migrations are hand-written SQL applied with `prisma migrate deploy` (§6);
+// `migrate dev` needs shadow-DB rights most hosted Postgres refuses.
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserKind {
+  STAFF
+  CUSTOMER
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  ONLINE
+  COD
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum CouponKind {
+  PERCENT
+  FLAT
+}
+
+enum ReferralStatus {
+  SENT
+  OPENED
+  ORDERED
+  SHIPPING
+  PAID
+  VOID
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+enum InquiryStatus {
+  NEW
+  OPEN
+  RESOLVED
+}
+
+model User {
+  id               String     @id @default(uuid()) @db.Uuid
+  kind             UserKind   @default(CUSTOMER)
+  email            String     @unique
+  passwordHash     String?    @map("password_hash")
+  name             String?
+  phone            String?
+  referralCode     String?    @unique @map("referral_code")
+  referralBalance  Decimal    @default(0) @map("referral_balance") @db.Decimal(12, 2)
+  marketingOptIn   Boolean    @default(false) @map("marketing_opt_in")
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  roles         UserRole[]
+  addresses     Address[]
+  orders        Order[]
+  carts         Cart[]
+  reviews       Review[]
+  referralsMade Referral[] @relation("Referrer")
+  auditLogs     AuditLog[]
+
+  @@index([kind])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String           @id @default(uuid()) @db.Uuid
+  scope     String           @unique
+  module    String
+  label     String
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  roles RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @map("user_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  slug        String        @unique
+  name        String
+  strapline   String?
+  description String?
+  basePrice   Decimal       @map("base_price") @db.Decimal(12, 2)
+  status      ProductStatus @default(DRAFT)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  variants Variant[]
+  media    MediaAsset[]
+  reviews  Review[]
+
+  @@index([status])
+  @@map("products")
+}
+
+model Variant {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  colourway   String
+  sku         String   @unique
+  price       Decimal  @db.Decimal(12, 2)
+  stock       Int      @default(0)
+  weightGrams Int?     @map("weight_grams")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media      MediaAsset[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([productId, colourway])
+  @@index([productId])
+  @@map("variants")
+}
+
+model MediaAsset {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String?  @map("product_id") @db.Uuid
+  variantId String?  @map("variant_id") @db.Uuid
+  /// The object key — never a signed URL, which expires while the row lives (§7).
+  key       String
+  alt       String
+  sort      Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant Variant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sort])
+  @@index([variantId])
+  @@map("media_assets")
+}
+
+model Cart {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  anonymousId String?  @map("anonymous_id")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items CartItem[]
+
+  @@index([userId])
+  @@index([anonymousId])
+  @@index([expiresAt])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  cartId    String   @map("cart_id") @db.Uuid
+  variantId String   @map("variant_id") @db.Uuid
+  qty       Int      @default(1)
+  unitPrice Decimal  @map("unit_price") @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, variantId])
+  @@index([variantId])
+  @@map("cart_items")
+}
+
+model Address {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  phone     String
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  number          String      @unique
+  userId          String?     @map("user_id") @db.Uuid
+  status          OrderStatus @default(PENDING)
+  /// COD orders are packed while still unpaid, so fulfilment has to know which.
+  paymentMethod   PaymentMethod @default(ONLINE) @map("payment_method")
+  email           String
+  phone           String
+  shippingAddress Json        @map("shipping_address")
+  subtotal        Decimal     @db.Decimal(12, 2)
+  discount        Decimal     @default(0) @db.Decimal(12, 2)
+  shipping        Decimal     @default(0) @db.Decimal(12, 2)
+  tax             Decimal     @default(0) @db.Decimal(12, 2)
+  total           Decimal     @db.Decimal(12, 2)
+  couponId        String?     @map("coupon_id") @db.Uuid
+  referralId      String?     @map("referral_id") @db.Uuid
+  placedAt        DateTime?   @map("placed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  user     User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  coupon   Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  referral Referral?   @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payments Payment[]
+  shipment Shipment?
+
+  @@index([userId])
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([couponId])
+  @@index([referralId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  orderId       String   @map("order_id") @db.Uuid
+  variantId     String   @map("variant_id") @db.Uuid
+  qty           Int
+  unitPrice     Decimal  @map("unit_price") @db.Decimal(12, 2)
+  nameSnapshot  String   @map("name_snapshot")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  orderId          String        @map("order_id") @db.Uuid
+  gateway          String
+  gatewayOrderId   String        @map("gateway_order_id")
+  gatewayPaymentId String?       @map("gateway_payment_id")
+  status           PaymentStatus @default(CREATED)
+  amount           Decimal       @db.Decimal(12, 2)
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([gateway, gatewayOrderId])
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Shipment {
+  id          String    @id @default(uuid()) @db.Uuid
+  orderId     String    @unique @map("order_id") @db.Uuid
+  courier     String
+  awb         String?
+  status      String
+  shippedAt   DateTime? @map("shipped_at")
+  deliveredAt DateTime? @map("delivered_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([awb])
+  @@map("shipments")
+}
+
+model Coupon {
+  id          String     @id @default(uuid()) @db.Uuid
+  code        String     @unique
+  kind        CouponKind
+  value       Decimal    @db.Decimal(12, 2)
+  minSubtotal Decimal    @default(0) @map("min_subtotal") @db.Decimal(12, 2)
+  maxUses     Int?       @map("max_uses")
+  usedCount   Int        @default(0) @map("used_count")
+  expiresAt   DateTime?  @map("expires_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@index([expiresAt])
+  @@map("coupons")
+}
+
+model Referral {
+  id           String         @id @default(uuid()) @db.Uuid
+  referrerId   String         @map("referrer_id") @db.Uuid
+  refereeEmail String         @map("referee_email")
+  status       ReferralStatus @default(SENT)
+  rewardAmount Decimal        @default(0) @map("reward_amount") @db.Decimal(12, 2)
+  creditedAt   DateTime?      @map("credited_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  referrer User    @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  orders   Order[]
+
+  @@index([referrerId, status])
+  @@index([refereeEmail])
+  @@map("referrals")
+}
+
+model Review {
+  id        String       @id @default(uuid()) @db.Uuid
+  productId String       @map("product_id") @db.Uuid
+  userId    String?      @map("user_id") @db.Uuid
+  authorName String      @map("author_name")
+  city      String?
+  rating    Int
+  title     String
+  body      String
+  status    ReviewStatus @default(PENDING)
+  mediaKey  String?      @map("media_key")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId, status])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model Inquiry {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  phone     String?
+  topic     String
+  orderNumber String?     @map("order_number")
+  message   String
+  status    InquiryStatus @default(NEW)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@map("inquiries")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  module    String
+  entityId  String?  @map("entity_id")
+  meta      Json?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([module, createdAt])
+  @@index([entityId])
+  @@map("audit_logs")
+}
