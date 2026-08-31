@@ -7,6 +7,7 @@ import { Section, SectionHeading } from "@/components/marketing/section"
 import { SplitFeature } from "@/components/marketing/split-feature"
 import { Texture } from "@/components/marketing/texture"
 import { TrustStrip } from "@/components/marketing/trust-strip"
+import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
@@ -49,12 +50,7 @@ export default function AboutPage() {
   return (
     <>
       <div className="grain relative overflow-hidden border-b border-white/[0.07] px-5 pt-14 pb-14 sm:px-8 xl:px-14">
-        <div
-          aria-hidden
-          className="absolute top-24 -right-14 font-display text-[120px] leading-[0.8] whitespace-nowrap text-transparent select-none [-webkit-text-stroke:1px_rgb(255_255_255_/_0.05)] sm:text-[250px]"
-        >
-          SINCE 2024
-        </div>
+        <HeroWatermark>About</HeroWatermark>
         <div className="relative z-10 max-w-[900px]">
           <SectionLabel className="mb-5">About us</SectionLabel>
           <h1 className="mb-7 font-display text-[52px] leading-[1.0] text-bone uppercase sm:text-[76px] xl:text-[104px]">

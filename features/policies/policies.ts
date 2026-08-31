@@ -46,7 +46,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "SKELMET is operated by [LEGAL ENTITY NAME], registered at [REGISTERED ADDRESS], GSTIN [GSTIN]. In this policy “we”, “us” and “our” mean that company; “you” means anyone who visits skelmet.in or buys from us.",
+          text: "SKELMET is operated by Gee Star Spinning Solutions, registered at B-121, B Block, Udyog Marg, Sector 6, Noida, Gautam Buddha Nagar, Uttar Pradesh 201301, GSTIN 09AOIPJ0692M1ZG. In this policy “we”, “us” and “our” mean that company; “you” means anyone who visits skelmet.in or buys from us.",
         },
         {
           type: "p",
@@ -107,7 +107,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Payments are processed by [PAYMENT GATEWAY]. Your card, netbanking or UPI credentials go directly to them over an encrypted connection and never touch our servers. We receive only a transaction id, the amount, the method and whether it succeeded, enough to reconcile your order and issue a refund.",
+          text: "Payments are processed by Razorpay. Your card, netbanking or UPI credentials go directly to them over an encrypted connection and never touch our servers. We receive only a transaction id, the amount, the method and whether it succeeded, enough to reconcile your order and issue a refund.",
         },
       ],
     },
@@ -152,7 +152,7 @@ const PRIVACY: Policy = {
           type: "table",
           head: ["Processor", "Purpose", "Data seen"],
           rows: [
-            ["[GATEWAY]", "Taking payment", "Name, email, amount"],
+            ["Razorpay", "Taking payment", "Name, email, amount"],
             ["[COURIER]", "Delivering the parcel", "Name, address, phone"],
             ["[EMAIL PROVIDER]", "Order and support email", "Name, email"],
             ["[HOSTING]", "Running the site", "Technical data"],
@@ -291,7 +291,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "By using skelmet.in or placing an order you accept these terms. They form a contract between you and [LEGAL ENTITY NAME], registered at [REGISTERED ADDRESS]. If you do not accept them, do not order.",
+          text: "By using skelmet.in or placing an order you accept these terms. They form a contract between you and Gee Star Spinning Solutions, registered at B-121, B Block, Udyog Marg, Sector 6, Noida, Gautam Buddha Nagar, Uttar Pradesh 201301. If you do not accept them, do not order.",
         },
         {
           type: "p",
@@ -363,7 +363,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "We accept UPI, cards, netbanking and cash on delivery. Payments are handled by [PAYMENT GATEWAY]; we never see your card or UPI credentials. For COD, the parcel is only handed over on full payment.",
+          text: "We accept UPI, cards, netbanking and cash on delivery. Payments are handled by Razorpay; we never see your card or UPI credentials. For COD, the parcel is only handed over on full payment.",
         },
       ],
     },
@@ -510,7 +510,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "These terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts at [CITY]. Before going to court, please raise it with the grievance officer, most things get sorted there.",
+          text: "These terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts at Gautam Buddha Nagar, Uttar Pradesh. Before going to court, please raise it with the grievance officer, most things get sorted there.",
         },
       ],
     },

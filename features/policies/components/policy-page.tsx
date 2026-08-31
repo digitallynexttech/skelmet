@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
+import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { siteConfig } from "@/config/site"
 import { POLICIES, type Policy, type PolicyBlock } from "@/features/policies/policies"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,7 @@ const ACCENT_DOT = {
   acid: "bg-acid",
   magenta: "bg-magenta",
 } as const
+
 
 function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"] }) {
   if (block.type === "p") {
@@ -85,7 +87,6 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
         <div className="mb-3 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
           Grievance officer
         </div>
-        <div className="mb-1.5 text-base font-bold text-bone">[FULL NAME]</div>
         <div className="text-[14px] leading-[1.6] text-ash">
           {siteConfig.grievanceEmail}
           <br />
@@ -113,12 +114,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
     <>
       {/* Hero */}
       <div className="grain relative overflow-hidden border-b border-white/[0.07] px-5 pt-12 pb-12 sm:px-8 xl:px-14">
-        <div
-          aria-hidden
-          className="absolute top-8 -right-8 font-display text-[110px] leading-[0.8] whitespace-nowrap text-transparent select-none [-webkit-text-stroke:1px_rgb(255_255_255_/_0.05)] sm:text-[190px]"
-        >
-          LEGAL
-        </div>
+        <HeroWatermark accent={policy.accent}>Legal</HeroWatermark>
 
         <div className="relative z-10">
           <nav

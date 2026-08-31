@@ -12,7 +12,6 @@ export const primaryNav: NavItem[] = [
   { label: "Shop", href: "/shop" },
   { label: "The Build", href: "/product/flame-skull-mount#build" },
   { label: "Riders", href: "/riders" },
-  { label: "Refer & Earn", href: "/refer" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ]
@@ -44,7 +43,6 @@ export const footerNav: Array<{ title: string; items: NavItem[] }> = [
       { label: "Privacy policy", href: "/policies/privacy" },
       { label: "Terms of service", href: "/policies/terms" },
       { label: "Refund policy", href: "/policies/returns" },
-      { label: "Referral terms", href: "/policies/referral" },
       { label: "About us", href: "/about" },
     ],
   },

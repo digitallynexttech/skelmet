@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "Refer & earn",
   description: `Send your code, they save ₹${REFERRAL_REWARD}, you earn ₹${REFERRAL_REWARD} when their order ships. No cap, no expiry.`,
   alternates: { canonical: "/refer" },
+  // Hidden for now: unlinked from nav and sitemap, and kept out of the index
+  // while the programme is on hold. Drop this block to bring it back.
+  robots: { index: false, follow: false },
 }
 
 const STEPS = [
