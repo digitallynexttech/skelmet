@@ -12,7 +12,6 @@ import { Gifting } from "@/components/marketing/gifting"
 import { Hero } from "@/components/marketing/hero"
 import { InstallSteps } from "@/components/marketing/install-steps"
 import { ReelStrip } from "@/components/marketing/reel-strip"
-import { ReferBand } from "@/components/marketing/refer-band"
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Texture } from "@/components/marketing/texture"
@@ -53,7 +52,6 @@ export default function HomePage() {
       <Reviews />
       <AnyWall />
       <Gifting />
-      <ReferBand />
       <FaqSection />
       <DropList />
     </>

@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Mail, MapPin } from "lucide-react"
 
 import { FaqSection } from "@/components/marketing/faq-section"
 import { Section } from "@/components/marketing/section"
+import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 import { WhatsappIcon } from "@/components/shared/social-icons"
 import { siteConfig } from "@/config/site"
@@ -27,28 +27,19 @@ export default function ContactPage() {
   return (
     <>
       <div className="grain relative overflow-hidden border-b border-white/[0.07] px-5 pt-14 pb-12 sm:px-8 xl:px-14">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <SectionLabel className="mb-4">Contact</SectionLabel>
-            <h1 className="mb-5 font-display text-[52px] leading-[1.0] text-bone uppercase sm:text-[72px] xl:text-[88px]">
-              Talk to a
-              <br />
-              human
-            </h1>
-            <p className="max-w-[520px] text-[16px] leading-[1.6] text-ash text-pretty sm:text-[17.5px]">
-              No ticket queue, no bot that loops you back to the FAQ. One of us reads every message
-              and replies within a working day.
-            </p>
-          </div>
-          <div className="relative aspect-square w-full max-w-[280px] shrink-0 self-center">
-            <Image
-              src="/product/hero-skull.jpg"
-              alt=""
-              fill
-              sizes="280px"
-              className="screen animate-drift object-cover"
-            />
-          </div>
+        <HeroWatermark accent="acid">Contact</HeroWatermark>
+
+        <div className="relative z-10">
+          <SectionLabel className="mb-4">Contact</SectionLabel>
+          <h1 className="mb-5 font-display text-[52px] leading-[1.0] text-bone uppercase sm:text-[72px] xl:text-[88px]">
+            Talk to a
+            <br />
+            human
+          </h1>
+          <p className="max-w-[520px] text-[16px] leading-[1.6] text-ash text-pretty sm:text-[17.5px]">
+            No ticket queue, no bot that loops you back to the FAQ. One of us reads every message
+            and replies within a working day.
+          </p>
         </div>
       </div>
 

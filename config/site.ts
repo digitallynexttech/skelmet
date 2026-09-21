@@ -6,23 +6,23 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
 
   // [TO CONFIRM]: real values before launch
-  legalEntity: "[LEGAL ENTITY NAME]",
-  gstin: "[GSTIN]",
-  city: "[CITY]",
-  email: "[hello@skelmet.in]",
-  supportEmail: "[support@skelmet.in]",
-  grievanceEmail: "[grievance@skelmet.in]",
-  phone: "[+91 XXXXX XXXXX]",
+  legalEntity: "Gee Star Spinning Solutions",
+  gstin: "09AOIPJ0692M1ZG",
+  city: "Noida",
+  email: "skelmetindia@gmail.com",
+  supportEmail: "skelmetindia@gmail.com",
+  grievanceEmail: "skelmetindia@gmail.com",
+  phone: "+91 98187 45945",
   address: {
-    line1: "[STREET ADDRESS]",
-    city: "[CITY, STATE]",
-    pin: "[PIN]",
+    line1: "B-121, B Block, Udyog Marg, Sector 6",
+    city: "Noida, Gautam Buddha Nagar, Uttar Pradesh",
+    pin: "201301",
   },
 
   social: {
     instagram: "https://instagram.com/skelmet",
     youtube: "https://youtube.com/@skelmet",
-    whatsapp: "https://wa.me/91XXXXXXXXXX",
+    whatsapp: "https://wa.me/919818745945",
   },
 
   promise: {

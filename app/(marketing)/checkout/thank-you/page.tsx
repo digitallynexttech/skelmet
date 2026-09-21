@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import { Check, Home, MapPin, Package, Truck } from "lucide-react"
 
-import { ReferBand } from "@/components/marketing/refer-band"
 import { Section } from "@/components/marketing/section"
 import { ButtonLink } from "@/components/ui/button"
 
@@ -167,7 +166,6 @@ export default function ThankYouPage() {
         </div>
       </Section>
 
-      <ReferBand />
     </>
   )
 }
