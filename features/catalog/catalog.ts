@@ -75,7 +75,7 @@ export const COLOURWAYS: Colourway[] = [
 export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
-  strapline: "Your lid has been living on the floor. Give it a throne.",
+  strapline: "It earned every scratch. Give it a wall, not the floor.",
   price: "1499",
   compareAtPrice: "1999",
   rating: 4.9,

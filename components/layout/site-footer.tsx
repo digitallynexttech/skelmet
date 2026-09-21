@@ -25,7 +25,7 @@ export function SiteFooter() {
             <span className="font-display leading-[1.12] text-[21px] tracking-[0.14em] text-bone">SKELMET</span>
           </Link>
           <p className="mb-6 max-w-[300px] text-[14.5px] leading-[1.6] text-ash">
-            Helmet furniture for people who don&apos;t own furniture. Printed, finished and shipped
+            Helmet furniture for people who don&apos;t own furniture. Designed, made and shipped
             from {siteConfig.city}.
           </p>
           <div className="flex gap-2.5">
@@ -66,7 +66,7 @@ export function SiteFooter() {
         <span>
           © {new Date().getFullYear()} SKELMET · {siteConfig.legalEntity} · GSTIN {siteConfig.gstin}
         </span>
-        <span>PRINTED &amp; PACKED IN INDIA</span>
+        <span>MADE &amp; PACKED IN INDIA</span>
       </div>
 
       {/* Oversized outline wordmark sitting on the footer edge.

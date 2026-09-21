@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "SKELMET",
   tagline: "Park the menace",
   description:
-    "A 3D-printed flame-skull wall mount for your helmet. Holds the lid, hooks the gloves, and looks considerably better than the floor.",
+    "A flame-skull wall mount for riders who sweat the details. Holds the helmet, hooks the gloves, and looks considerably better than the floor. Made in India.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
 
   // [TO CONFIRM]: real values before launch

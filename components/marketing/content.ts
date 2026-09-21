@@ -1,7 +1,7 @@
 /** Homepage copy in one place, so the page component stays composition only. */
 
 export const TICKER_ITEMS = [
-  "3D PRINTED IN INDIA",
+  "MADE IN INDIA",
   "FREE SHIPPING PAN-INDIA",
   "HOLDS HELMET + GLOVES",
   "3 COLOURWAYS",

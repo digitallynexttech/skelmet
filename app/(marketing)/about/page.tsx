@@ -119,7 +119,7 @@ export default function AboutPage() {
           The making
         </SectionLabel>
         <h2 className="mb-5 font-display text-[36px] leading-[1.04] text-bone uppercase sm:text-[46px] xl:text-[52px]">
-          Printed here,
+          Made here,
           <br />
           not imported
         </h2>
