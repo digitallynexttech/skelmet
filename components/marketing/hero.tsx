@@ -38,20 +38,25 @@ export function Hero() {
   const product = FLAME_SKULL_MOUNT
 
   return (
-    <section className="grain relative overflow-hidden bg-void lg:min-h-[calc(100svh-74px)]">
+    <section className="grain relative overflow-hidden bg-void lg:flex lg:min-h-[calc(100svh-74px)] lg:flex-col">
       {/* Warm bloom behind the whole composition. */}
       <div
         aria-hidden
         className="pointer-events-none absolute top-[-8%] left-1/2 h-[620px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgb(255_90_31_/_0.16),transparent_62%)] blur-[60px]"
       />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-col items-center px-5 pt-12 pb-12 text-center sm:px-8 lg:justify-center lg:py-4 xl:py-2">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-col items-center px-5 pt-12 pb-12 text-center sm:px-8 lg:grow lg:justify-center lg:py-4 xl:py-2">
         <div
           className={cn(
             "relative flex w-full flex-col items-center",
             "[--hw:14.4vw] [--stage:512px] sm:[--stage:600px]",
             "lg:[--hw:14vw] lg:[--stage:min(660px,calc(100svh_-_397px))]",
             "xl:[--hw:18.8vw] xl:[--stage:min(720px,calc(100svh_-_180px))]",
+            // Tail: the flanks anchor to this wrapper, which otherwise stops at
+            // the chin and strands them mid-section. It reaches into the slack
+            // the section min-height leaves below, so bottom-0 lands where the
+            // hero actually ends.
+            "xl:[--tail:70px] xl:pb-[var(--tail)]",
           )}
         >
           {/* The headline is measured against the canvas, not the outer
@@ -97,7 +102,7 @@ export function Hero() {
 
           {/* Sits in the canvas's transparent margin below the chin at xl, so
               the affordance costs nothing from the height budget. */}
-          <span className="mt-1 flex items-center gap-3 font-mono text-[10px] tracking-[0.2em] text-dim uppercase xl:absolute xl:bottom-0 xl:left-1/2 xl:mt-0 xl:-translate-x-1/2">
+          <span className="mt-1 flex items-center gap-3 font-mono text-[10px] tracking-[0.2em] text-dim uppercase xl:absolute xl:bottom-[var(--tail)] xl:left-1/2 xl:mt-0 xl:-translate-x-1/2">
             <span aria-hidden className="hidden h-px w-7 bg-current opacity-50 sm:block" />
             Drag to spin
             <span aria-hidden className="hidden h-px w-7 bg-current opacity-50 sm:block" />
@@ -107,7 +112,7 @@ export function Hero() {
               container edges and clear the *visible* skull, not the canvas —
               the canvas is mostly transparent, so overlapping it is free. They
               outrank it on z so the buttons stay clickable. */}
-          <div className="mt-6 flex flex-col items-center xl:absolute xl:bottom-[2%] xl:left-0 xl:z-30 xl:mt-0 xl:items-start">
+          <div className="mt-6 flex flex-col items-center xl:absolute xl:bottom-0 xl:left-0 xl:z-30 xl:mt-0 xl:items-start">
             <p className="max-w-[540px] text-[15.5px] leading-[1.62] text-ash text-pretty sm:text-[17.5px] xl:max-w-[430px] xl:text-left">
               Your helmet has earned every scratch on it, then spends the week on the floor. Bolt a
               flaming skull to the wall, hook the gloves under its jaw, and give your gear the same
@@ -121,7 +126,7 @@ export function Hero() {
           </div>
 
           {/* Buy + spec chips: bottom right of the model. */}
-          <div className="mt-7 flex w-full flex-col items-center gap-4 sm:w-auto xl:absolute xl:right-0 xl:bottom-[9%] xl:z-30 xl:mt-0 xl:items-end">
+          <div className="mt-7 flex w-full flex-col items-center gap-4 sm:w-auto xl:absolute xl:right-0 xl:bottom-0 xl:z-30 xl:mt-0 xl:items-end">
             <ButtonLink
               href={`/product/${product.slug}`}
               variant="primary"
