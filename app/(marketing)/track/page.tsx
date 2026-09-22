@@ -26,10 +26,10 @@ export default function TrackPage() {
 
           <div className="relative z-10">
             <SectionLabel className="mb-4">Track order</SectionLabel>
-            <h1 className="mb-5 font-display text-[48px] leading-[1.0] text-bone uppercase sm:text-[68px] xl:text-[80px]">
+            <h1 className="font-display text-bone mb-5 text-[48px] leading-[1.0] uppercase sm:text-[68px] xl:text-[80px]">
               Where is it?
             </h1>
-            <p className="max-w-[520px] text-[16px] leading-[1.62] text-ash sm:text-[17.5px]">
+            <p className="text-ash max-w-[520px] text-[16px] leading-[1.62] sm:text-[17.5px]">
               Order number and the email you used. No account, no password, no hunting through your
               inbox for a link.
             </p>
@@ -37,10 +37,10 @@ export default function TrackPage() {
         </div>
 
         <div className="mt-10">
-          <form className="max-w-[520px] rounded-card border border-white/10 bg-carbon p-6 sm:p-8">
+          <form className="rounded-card bg-carbon max-w-[520px] border border-white/10 p-6 sm:p-8">
             <div className="mb-5 flex items-center gap-3">
-              <PackageSearch className="size-5 text-ember" strokeWidth={1.8} />
-              <span className="font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase">
+              <PackageSearch className="text-ember size-5" strokeWidth={1.8} />
+              <span className="text-dim font-mono text-[10.5px] tracking-[0.18em] uppercase">
                 Order lookup
               </span>
             </div>

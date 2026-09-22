@@ -26,6 +26,11 @@ const config = [
       "no-console": ["warn", { allow: ["error", "warn"] }],
     },
   },
+  {
+    // Build scripts are CLIs — stdout is their output, not a stray debug line.
+    files: ["scripts/**"],
+    rules: { "no-console": "off" },
+  },
   // prettier stays last so it can switch off stylistic rules
   prettier,
 ]

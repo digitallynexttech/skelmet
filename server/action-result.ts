@@ -9,8 +9,7 @@ import { AppError } from "@/lib/errors"
  * rather than throwing, Next redacts thrown messages in production (§7).
  */
 export type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string; status: number; details?: unknown }
+  { ok: true; data: T } | { ok: false; error: string; status: number; details?: unknown }
 
 export function ok<T>(data: T): ActionResult<T> {
   return { ok: true, data }

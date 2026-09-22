@@ -12,7 +12,7 @@ const SHOTS = [
 
 export function RiderWall() {
   return (
-    <Section className="border-t border-white/[0.07] bg-carbon">
+    <Section className="bg-carbon border-t border-white/[0.07]">
       <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <SectionLabel index="10" tone="magenta" className="mb-3.5">
@@ -20,7 +20,7 @@ export function RiderWall() {
           </SectionLabel>
           <SectionHeading>Mounted &amp; posted</SectionHeading>
         </div>
-        <span className="inline-flex h-11 items-center rounded-full border border-magenta/40 px-5 text-[13px] font-semibold tracking-[0.05em] text-magenta uppercase">
+        <span className="border-magenta/40 text-magenta inline-flex h-11 items-center rounded-full border px-5 text-[13px] font-semibold tracking-[0.05em] uppercase">
           Tag @skelmet to feature
         </span>
       </div>
@@ -29,7 +29,7 @@ export function RiderWall() {
         {SHOTS.map((shot) => (
           <div
             key={shot.src}
-            className="relative aspect-square overflow-hidden rounded-tile border border-white/[0.08]"
+            className="rounded-tile relative aspect-square overflow-hidden border border-white/[0.08]"
           >
             <Image
               src={shot.src}

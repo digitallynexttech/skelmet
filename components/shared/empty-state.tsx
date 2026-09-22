@@ -14,13 +14,15 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center rounded-card border border-dashed border-white/[0.12] bg-carbon/50 px-6 py-16 text-center",
+        "rounded-card bg-carbon/50 flex flex-col items-center border border-dashed border-white/[0.12] px-6 py-16 text-center",
         className,
       )}
     >
-      <h2 className="mb-2.5 font-display text-[24px] leading-[1.08] text-bone uppercase">{title}</h2>
+      <h2 className="font-display text-bone mb-2.5 text-[24px] leading-[1.08] uppercase">
+        {title}
+      </h2>
       {description ? (
-        <p className="mb-6 max-w-[380px] text-[14.5px] leading-[1.6] text-ash">{description}</p>
+        <p className="text-ash mb-6 max-w-[380px] text-[14.5px] leading-[1.6]">{description}</p>
       ) : null}
       {action}
     </div>

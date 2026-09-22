@@ -10,7 +10,10 @@ export type Pagination = {
 }
 
 export type ApiSuccess<T> = { success: true; data: T }
-export type ApiFailure = { success: false; error: { code: string; message: string; details?: unknown } }
+export type ApiFailure = {
+  success: false
+  error: { code: string; message: string; details?: unknown }
+}
 export type ApiEnvelope<T> = ApiSuccess<T> | ApiFailure
 
 const CODE_BY_STATUS: Record<number, string> = {
@@ -31,9 +34,12 @@ const CODE_BY_STATUS: Record<number, string> = {
  */
 export function respond<T>(result: ActionResult<T>, successStatus = 200) {
   if (result.ok) {
-    return NextResponse.json<ApiSuccess<T>>({ success: true, data: result.data }, {
-      status: successStatus,
-    })
+    return NextResponse.json<ApiSuccess<T>>(
+      { success: true, data: result.data },
+      {
+        status: successStatus,
+      },
+    )
   }
 
   return NextResponse.json<ApiFailure>(

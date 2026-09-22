@@ -5,10 +5,10 @@ export default function Loading() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex flex-col gap-3.5">
           {[0, 1].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-card bg-white/5" />
+            <div key={i} className="rounded-card h-40 animate-pulse bg-white/5" />
           ))}
         </div>
-        <div className="h-96 animate-pulse rounded-card bg-white/5" />
+        <div className="rounded-card h-96 animate-pulse bg-white/5" />
       </div>
     </div>
   )

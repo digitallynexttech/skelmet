@@ -5,30 +5,201 @@
     { "id": "page-3", "name": "System + Sitemap" }
   ],
   "artboards": [
-    { "file": "Main.dc.html",        "page": "page-1", "title": "Home — 22 sections",     "x": 0,     "y": 0, "w": 1440, "h": 12600 },
-    { "file": "Product.dc.html",     "page": "page-1", "title": "Product — desktop",      "x": 1580,  "y": 0, "w": 1440, "h": 3400, "is_interactive": true },
-    { "file": "Cart.dc.html",        "page": "page-1", "title": "Cart — desktop",         "x": 3160,  "y": 0, "w": 1440, "h": 1320 },
-    { "file": "Checkout.dc.html",    "page": "page-1", "title": "Checkout — desktop",     "x": 4740,  "y": 0, "w": 1440, "h": 1760 },
-    { "file": "ThankYou.dc.html",    "page": "page-1", "title": "Thank you — desktop",    "x": 6320,  "y": 0, "w": 1440, "h": 2300 },
-    { "file": "About.dc.html",       "page": "page-1", "title": "About us — desktop",     "x": 7900,  "y": 0, "w": 1440, "h": 3000 },
-    { "file": "Contact.dc.html",     "page": "page-1", "title": "Contact us — desktop",   "x": 9480,  "y": 0, "w": 1440, "h": 1860 },
-    { "file": "ReferEarn.dc.html",   "page": "page-1", "title": "Refer & earn — desktop", "x": 11060, "y": 0, "w": 1440, "h": 2960 },
-    { "file": "Privacy.dc.html",     "page": "page-1", "title": "Privacy policy",         "x": 12640, "y": 0, "w": 1440, "h": 4400 },
-    { "file": "Terms.dc.html",       "page": "page-1", "title": "Terms of service",       "x": 14220, "y": 0, "w": 1440, "h": 4700 },
+    {
+      "file": "Main.dc.html",
+      "page": "page-1",
+      "title": "Home — 22 sections",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 12600
+    },
+    {
+      "file": "Product.dc.html",
+      "page": "page-1",
+      "title": "Product — desktop",
+      "x": 1580,
+      "y": 0,
+      "w": 1440,
+      "h": 3400,
+      "is_interactive": true
+    },
+    {
+      "file": "Cart.dc.html",
+      "page": "page-1",
+      "title": "Cart — desktop",
+      "x": 3160,
+      "y": 0,
+      "w": 1440,
+      "h": 1320
+    },
+    {
+      "file": "Checkout.dc.html",
+      "page": "page-1",
+      "title": "Checkout — desktop",
+      "x": 4740,
+      "y": 0,
+      "w": 1440,
+      "h": 1760
+    },
+    {
+      "file": "ThankYou.dc.html",
+      "page": "page-1",
+      "title": "Thank you — desktop",
+      "x": 6320,
+      "y": 0,
+      "w": 1440,
+      "h": 2300
+    },
+    {
+      "file": "About.dc.html",
+      "page": "page-1",
+      "title": "About us — desktop",
+      "x": 7900,
+      "y": 0,
+      "w": 1440,
+      "h": 3000
+    },
+    {
+      "file": "Contact.dc.html",
+      "page": "page-1",
+      "title": "Contact us — desktop",
+      "x": 9480,
+      "y": 0,
+      "w": 1440,
+      "h": 1860
+    },
+    {
+      "file": "ReferEarn.dc.html",
+      "page": "page-1",
+      "title": "Refer & earn — desktop",
+      "x": 11060,
+      "y": 0,
+      "w": 1440,
+      "h": 2960
+    },
+    {
+      "file": "Privacy.dc.html",
+      "page": "page-1",
+      "title": "Privacy policy",
+      "x": 12640,
+      "y": 0,
+      "w": 1440,
+      "h": 4400
+    },
+    {
+      "file": "Terms.dc.html",
+      "page": "page-1",
+      "title": "Terms of service",
+      "x": 14220,
+      "y": 0,
+      "w": 1440,
+      "h": 4700
+    },
 
-    { "file": "HomeTablet.dc.html",    "page": "page-2", "title": "Home — tablet 834",    "x": 0,    "y": 0,    "w": 834, "h": 4850 },
-    { "file": "ProductTablet.dc.html", "page": "page-2", "title": "Product — tablet 834", "x": 974,  "y": 0,    "w": 834, "h": 2760, "is_interactive": true },
+    {
+      "file": "HomeTablet.dc.html",
+      "page": "page-2",
+      "title": "Home — tablet 834",
+      "x": 0,
+      "y": 0,
+      "w": 834,
+      "h": 4850
+    },
+    {
+      "file": "ProductTablet.dc.html",
+      "page": "page-2",
+      "title": "Product — tablet 834",
+      "x": 974,
+      "y": 0,
+      "w": 834,
+      "h": 2760,
+      "is_interactive": true
+    },
 
-    { "file": "HomeMobile.dc.html",     "page": "page-2", "title": "Home — mobile 390",     "x": 0,    "y": 5000, "w": 390, "h": 6150 },
-    { "file": "ProductMobile.dc.html",  "page": "page-2", "title": "Product — mobile 390",  "x": 500,  "y": 5000, "w": 390, "h": 3200, "is_interactive": true },
-    { "file": "CartMobile.dc.html",     "page": "page-2", "title": "Cart — mobile 390",     "x": 1000, "y": 5000, "w": 390, "h": 1440 },
-    { "file": "CheckoutMobile.dc.html", "page": "page-2", "title": "Checkout — mobile 390", "x": 1500, "y": 5000, "w": 390, "h": 1600 },
-    { "file": "ThankYouMobile.dc.html", "page": "page-2", "title": "Thank you — mobile 390","x": 2000, "y": 5000, "w": 390, "h": 2320 },
-    { "file": "ReferMobile.dc.html",    "page": "page-2", "title": "Refer & earn — mobile", "x": 2500, "y": 5000, "w": 390, "h": 2800 },
-    { "file": "HomeMobile320.dc.html",  "page": "page-2", "title": "Home — 320 floor",      "x": 3000, "y": 5000, "w": 320, "h": 2100 },
+    {
+      "file": "HomeMobile.dc.html",
+      "page": "page-2",
+      "title": "Home — mobile 390",
+      "x": 0,
+      "y": 5000,
+      "w": 390,
+      "h": 6150
+    },
+    {
+      "file": "ProductMobile.dc.html",
+      "page": "page-2",
+      "title": "Product — mobile 390",
+      "x": 500,
+      "y": 5000,
+      "w": 390,
+      "h": 3200,
+      "is_interactive": true
+    },
+    {
+      "file": "CartMobile.dc.html",
+      "page": "page-2",
+      "title": "Cart — mobile 390",
+      "x": 1000,
+      "y": 5000,
+      "w": 390,
+      "h": 1440
+    },
+    {
+      "file": "CheckoutMobile.dc.html",
+      "page": "page-2",
+      "title": "Checkout — mobile 390",
+      "x": 1500,
+      "y": 5000,
+      "w": 390,
+      "h": 1600
+    },
+    {
+      "file": "ThankYouMobile.dc.html",
+      "page": "page-2",
+      "title": "Thank you — mobile 390",
+      "x": 2000,
+      "y": 5000,
+      "w": 390,
+      "h": 2320
+    },
+    {
+      "file": "ReferMobile.dc.html",
+      "page": "page-2",
+      "title": "Refer & earn — mobile",
+      "x": 2500,
+      "y": 5000,
+      "w": 390,
+      "h": 2800
+    },
+    {
+      "file": "HomeMobile320.dc.html",
+      "page": "page-2",
+      "title": "Home — 320 floor",
+      "x": 3000,
+      "y": 5000,
+      "w": 320,
+      "h": 2100
+    },
 
-    { "file": "DesignSystem.dc.html", "page": "page-3", "title": "Design system", "x": 0,    "y": 0, "w": 1440, "h": 3400 },
-    { "file": "Sitemap.dc.html",      "page": "page-3", "title": "Sitemap",       "x": 1580, "y": 0, "w": 1440, "h": 2100 }
+    {
+      "file": "DesignSystem.dc.html",
+      "page": "page-3",
+      "title": "Design system",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 3400
+    },
+    {
+      "file": "Sitemap.dc.html",
+      "page": "page-3",
+      "title": "Sitemap",
+      "x": 1580,
+      "y": 0,
+      "w": 1440,
+      "h": 2100
+    }
   ],
   "annotations": [
     {

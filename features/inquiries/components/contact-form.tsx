@@ -56,14 +56,14 @@ export function ContactForm() {
 
   if (sent) {
     return (
-      <div className="flex flex-col items-center rounded-card border border-acid/30 bg-[linear-gradient(160deg,rgb(212_255_61_/_0.07),transparent_56%)] bg-carbon p-10 text-center sm:p-14">
-        <span className="mb-6 flex size-14 items-center justify-center rounded-full bg-acid">
-          <Check className="size-7 text-void" strokeWidth={3} />
+      <div className="rounded-card border-acid/30 bg-carbon flex flex-col items-center border bg-[linear-gradient(160deg,rgb(212_255_61_/_0.07),transparent_56%)] p-10 text-center sm:p-14">
+        <span className="bg-acid mb-6 flex size-14 items-center justify-center rounded-full">
+          <Check className="text-void size-7" strokeWidth={3} />
         </span>
-        <h2 className="mb-3 font-display leading-[1.04] text-[30px] text-bone uppercase sm:text-[36px]">
+        <h2 className="font-display text-bone mb-3 text-[30px] leading-[1.04] uppercase sm:text-[36px]">
           Message sent
         </h2>
-        <p className="max-w-[380px] text-[15px] leading-[1.6] text-ash">
+        <p className="text-ash max-w-[380px] text-[15px] leading-[1.6]">
           A human will read it and reply within a working day. If it&apos;s about an order in
           transit, WhatsApp is faster.
         </p>
@@ -74,9 +74,9 @@ export function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative rounded-card border border-white/10 bg-carbon p-6 sm:p-8 xl:p-10"
+      className="rounded-card bg-carbon relative border border-white/10 p-6 sm:p-8 xl:p-10"
     >
-      <h2 className="mb-7 font-display leading-[1.04] text-[28px] text-bone uppercase sm:text-[34px]">
+      <h2 className="font-display text-bone mb-7 text-[28px] leading-[1.04] uppercase sm:text-[34px]">
         Send us a message
       </h2>
 
@@ -106,7 +106,7 @@ export function ContactForm() {
         </div>
 
         <fieldset className="flex flex-col gap-2.5">
-          <legend className="mb-1 font-mono text-[10.5px] tracking-[0.16em] text-dim uppercase">
+          <legend className="text-dim mb-1 font-mono text-[10.5px] tracking-[0.16em] uppercase">
             What&apos;s this about
           </legend>
           <div className="flex flex-wrap gap-2.5">
@@ -121,8 +121,8 @@ export function ContactForm() {
                   className={cn(
                     "min-h-11 rounded-full border px-4.5 text-[13.5px] transition-colors",
                     selected
-                      ? "border-blaze bg-blaze/12 font-medium text-bone"
-                      : "border-white/[0.14] text-ash hover:border-white/30",
+                      ? "border-blaze bg-blaze/12 text-bone font-medium"
+                      : "text-ash border-white/[0.14] hover:border-white/30",
                   )}
                 >
                   {t}
@@ -151,13 +151,13 @@ export function ContactForm() {
         </Field>
 
         {error ? (
-          <p role="alert" className="text-[13.5px] text-magenta">
+          <p role="alert" className="text-magenta text-[13.5px]">
             {error}
           </p>
         ) : null}
 
         <div className="flex flex-col gap-5 pt-1 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-[300px] text-[13px] leading-[1.5] text-dim">
+          <p className="text-dim max-w-[300px] text-[13px] leading-[1.5]">
             By sending this you agree we can email you back. That&apos;s all we use it for.
           </p>
           <Button type="submit" variant="primary" size="md" disabled={pending}>

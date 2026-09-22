@@ -39,7 +39,7 @@ export function SplitFeature({
       </div>
       <div
         className={cn(
-          "flex flex-col justify-center bg-carbon px-5 py-14 sm:px-8 sm:py-16 xl:px-14 xl:py-20",
+          "bg-carbon flex flex-col justify-center px-5 py-14 sm:px-8 sm:py-16 xl:px-14 xl:py-20",
           reverse ? "lg:order-2" : "lg:order-1",
         )}
       >

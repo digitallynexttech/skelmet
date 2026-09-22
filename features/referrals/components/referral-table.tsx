@@ -68,8 +68,8 @@ export function ReferralTable() {
               }}
               className={
                 status === f.value
-                  ? "rounded-full bg-blaze px-4 py-2 text-[12.5px] font-semibold text-void"
-                  : "rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] text-ash transition-colors hover:border-white/30 hover:text-bone"
+                  ? "bg-blaze text-void rounded-full px-4 py-2 text-[12.5px] font-semibold"
+                  : "text-ash hover:text-bone rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30"
               }
             >
               {f.label}
@@ -90,7 +90,7 @@ export function ReferralTable() {
       </div>
 
       {isLoading ? (
-        <div className="h-80 animate-pulse rounded-card bg-white/5" />
+        <div className="rounded-card h-80 animate-pulse bg-white/5" />
       ) : isError ? (
         <EmptyState
           title="Could not load referrals"
@@ -99,10 +99,10 @@ export function ReferralTable() {
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing here" description="No referrals match that filter." />
       ) : (
-        <div className="overflow-x-auto rounded-card border border-white/[0.09] bg-carbon">
+        <div className="rounded-card bg-carbon overflow-x-auto border border-white/[0.09]">
           <table className="w-full min-w-[820px]">
             <thead>
-              <tr className="border-b border-white/[0.07] text-left font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+              <tr className="text-dim border-b border-white/[0.07] text-left font-mono text-[10px] tracking-[0.16em] uppercase">
                 <th className="px-6 py-4 font-normal">Referrer</th>
                 <th className="px-6 py-4 font-normal">Invited</th>
                 <th className="px-6 py-4 font-normal">Status</th>
@@ -115,24 +115,26 @@ export function ReferralTable() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="px-6 py-4">
-                    <span className="block text-[14px] text-bone">{r.referrer.name ?? "Rider"}</span>
-                    <span className="block font-mono text-[11.5px] text-dim">
+                    <span className="text-bone block text-[14px]">
+                      {r.referrer.name ?? "Rider"}
+                    </span>
+                    <span className="text-dim block font-mono text-[11.5px]">
                       {r.referrer.email}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono text-[12.5px] text-ash">{r.refereeEmail}</td>
+                  <td className="text-ash px-6 py-4 font-mono text-[12.5px]">{r.refereeEmail}</td>
                   <td className="px-6 py-4">
                     <Badge variant={TONE[r.status]}>{r.status}</Badge>
                   </td>
                   <td className="px-6 py-4">
-                    <Money value={r.rewardAmount} className="font-mono text-[14px] text-bone" />
+                    <Money value={r.rewardAmount} className="text-bone font-mono text-[14px]" />
                   </td>
                   <td className="px-6 py-4">
-                    <Money value={r.referrer.balance} className="font-mono text-[13px] text-ash" />
+                    <Money value={r.referrer.balance} className="text-ash font-mono text-[13px]" />
                   </td>
                   <td className="px-6 py-4">
                     {r.status === "PAID" || r.status === "VOID" ? (
-                      <span className="font-mono text-[11.5px] text-dim">
+                      <span className="text-dim font-mono text-[11.5px]">
                         {r.creditedAt
                           ? new Date(r.creditedAt).toLocaleDateString("en-IN")
                           : "closed"}
@@ -171,10 +173,15 @@ export function ReferralTable() {
 
       {pages > 1 ? (
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
             Previous
           </Button>
-          <span className="font-mono text-[12px] text-dim">
+          <span className="text-dim font-mono text-[12px]">
             Page {page} of {pages}
           </span>
           <Button

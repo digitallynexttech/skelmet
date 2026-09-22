@@ -20,7 +20,7 @@ export function ReelStrip() {
           </SectionLabel>
           <SectionHeading>See it move</SectionHeading>
         </div>
-        <span className="font-mono text-[11.5px] tracking-[0.16em] text-dim uppercase">
+        <span className="text-dim font-mono text-[11.5px] tracking-[0.16em] uppercase">
           Tap to play · 3 clips
         </span>
       </div>
@@ -30,7 +30,7 @@ export function ReelStrip() {
           <button
             key={clip.title}
             type="button"
-            className="group relative aspect-4/5 overflow-hidden rounded-card border border-white/[0.09] text-left lg:aspect-3/4"
+            className="group rounded-card relative aspect-4/5 overflow-hidden border border-white/[0.09] text-left lg:aspect-3/4"
           >
             <Image
               src={clip.src}
@@ -41,13 +41,13 @@ export function ReelStrip() {
             />
             <span className="absolute inset-0 bg-[linear-gradient(0deg,rgb(7_6_10_/_0.9)_6%,transparent_55%)]" />
             <span className="absolute inset-0 flex items-center justify-center">
-              <span className="flex size-15 items-center justify-center rounded-full bg-bone/95 transition-transform duration-300 group-hover:scale-110">
-                <Play className="size-5 fill-void text-void" strokeWidth={0} />
+              <span className="bg-bone/95 flex size-15 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
+                <Play className="fill-void text-void size-5" strokeWidth={0} />
               </span>
             </span>
             <span className="absolute bottom-5 left-5">
-              <span className="mb-1 block text-base font-bold text-bone">{clip.title}</span>
-              <span className="block font-mono text-[10.5px] tracking-[0.12em] text-ash">
+              <span className="text-bone mb-1 block text-base font-bold">{clip.title}</span>
+              <span className="text-ash block font-mono text-[10.5px] tracking-[0.12em]">
                 {clip.length}
               </span>
             </span>

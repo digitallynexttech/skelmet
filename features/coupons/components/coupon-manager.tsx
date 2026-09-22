@@ -35,7 +35,9 @@ function CreateForm({ onDone }: { onDone: () => void }) {
 
     try {
       await create.mutateAsync({
-        code: String(form.get("code") ?? "").trim().toUpperCase(),
+        code: String(form.get("code") ?? "")
+          .trim()
+          .toUpperCase(),
         kind,
         value: Number(form.get("value")),
         minSubtotal: Number(form.get("minSubtotal") || 0),
@@ -51,17 +53,22 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-card border border-blaze/30 bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] bg-carbon p-6"
+      className="rounded-card border-blaze/30 bg-carbon border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
     >
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-[22px] text-bone uppercase">New discount code</h2>
-        <button type="button" onClick={onDone} aria-label="Close" className="text-dim hover:text-bone">
+        <h2 className="font-display text-bone text-[22px] uppercase">New discount code</h2>
+        <button
+          type="button"
+          onClick={onDone}
+          aria-label="Close"
+          className="text-dim hover:text-bone"
+        >
           <X className="size-5" strokeWidth={2} />
         </button>
       </div>
 
       <div className="mb-4 flex flex-col gap-2.5">
-        <span className="font-mono text-[10.5px] tracking-[0.16em] text-dim uppercase">Type</span>
+        <span className="text-dim font-mono text-[10.5px] tracking-[0.16em] uppercase">Type</span>
         <div className="flex gap-2.5">
           {(["FLAT", "PERCENT"] as const).map((k) => (
             <button
@@ -71,8 +78,8 @@ function CreateForm({ onDone }: { onDone: () => void }) {
               className={cn(
                 "flex min-h-11 items-center gap-2 rounded-full border px-5 text-[13.5px] transition-colors",
                 kind === k
-                  ? "border-blaze bg-blaze/12 font-semibold text-bone"
-                  : "border-white/[0.14] text-ash hover:border-white/30",
+                  ? "border-blaze bg-blaze/12 text-bone font-semibold"
+                  : "text-ash border-white/[0.14] hover:border-white/30",
               )}
             >
               {k === "FLAT" ? <Ticket className="size-4" /> : <Percent className="size-4" />}
@@ -87,7 +94,14 @@ function CreateForm({ onDone }: { onDone: () => void }) {
           <Input name="code" required placeholder="SKULL250" className="font-mono uppercase" />
         </Field>
         <Field label={kind === "FLAT" ? "Amount off (₹)" : "Percent off"}>
-          <Input name="value" type="number" min="1" step="1" required placeholder={kind === "FLAT" ? "250" : "10"} />
+          <Input
+            name="value"
+            type="number"
+            min="1"
+            step="1"
+            required
+            placeholder={kind === "FLAT" ? "250" : "10"}
+          />
         </Field>
         <Field label="Minimum subtotal (₹)">
           <Input name="minSubtotal" type="number" min="0" step="1" defaultValue="0" />
@@ -100,7 +114,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
         </Field>
       </div>
 
-      {error ? <p className="mt-4 text-[13.5px] text-magenta">{error}</p> : null}
+      {error ? <p className="text-magenta mt-4 text-[13.5px]">{error}</p> : null}
 
       <div className="mt-6 flex gap-2.5">
         <Button type="submit" variant="primary" size="md" disabled={create.isPending}>
@@ -148,7 +162,7 @@ export function CouponManager() {
 
       <div className="relative max-w-[380px]">
         <Search
-          className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-dim"
+          className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
           strokeWidth={1.9}
         />
         <Input
@@ -187,26 +201,38 @@ export function CouponManager() {
           {data.data.map((c) => (
             <div
               key={c.id}
-              className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card border border-white/[0.09] bg-carbon p-5"
+              className="rounded-card bg-carbon flex flex-wrap items-center gap-x-6 gap-y-3 border border-white/[0.09] p-5"
             >
-              <span className="font-display text-[24px] tracking-[0.08em] text-bone">{c.code}</span>
+              <span className="font-display text-bone text-[24px] tracking-[0.08em]">{c.code}</span>
               <Badge variant={STATE_TONE[c.state]}>{c.state}</Badge>
 
-              <span className="text-[14px] text-bone">
-                {c.kind === "PERCENT" ? `${Number(c.value)}% off` : <><Money value={c.value} /> off</>}
+              <span className="text-bone text-[14px]">
+                {c.kind === "PERCENT" ? (
+                  `${Number(c.value)}% off`
+                ) : (
+                  <>
+                    <Money value={c.value} /> off
+                  </>
+                )}
               </span>
 
-              <span className="text-[13px] text-ash">
-                {Number(c.minSubtotal) > 0 ? <>min <Money value={c.minSubtotal} /></> : "no minimum"}
+              <span className="text-ash text-[13px]">
+                {Number(c.minSubtotal) > 0 ? (
+                  <>
+                    min <Money value={c.minSubtotal} />
+                  </>
+                ) : (
+                  "no minimum"
+                )}
               </span>
 
-              <span className="font-mono text-[12px] text-dim">
+              <span className="text-dim font-mono text-[12px]">
                 used {c.usedCount}
                 {c.maxUses !== null ? ` / ${c.maxUses}` : ""}
               </span>
 
               {c.expiresAt ? (
-                <span className="font-mono text-[12px] text-dim">
+                <span className="text-dim font-mono text-[12px]">
                   {c.state === "EXPIRED" ? "expired" : "expires"}{" "}
                   {new Date(c.expiresAt).toLocaleDateString("en-IN")}
                 </span>

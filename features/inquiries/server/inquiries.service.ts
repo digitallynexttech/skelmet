@@ -107,7 +107,10 @@ export async function listInquiries(params: {
   })
 }
 
-export async function setInquiryStatus(id: string, raw: unknown): Promise<ActionResult<InquiryRow>> {
+export async function setInquiryStatus(
+  id: string,
+  raw: unknown,
+): Promise<ActionResult<InquiryRow>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.INQUIRY_WRITE)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)

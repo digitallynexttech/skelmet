@@ -224,9 +224,7 @@ export async function validateCoupon(
       code: coupon.code,
       discount,
       label:
-        coupon.kind === "PERCENT"
-          ? `${Number(coupon.value)}% off`
-          : `₹${Number(coupon.value)} off`,
+        coupon.kind === "PERCENT" ? `${Number(coupon.value)}% off` : `₹${Number(coupon.value)} off`,
     })
   })
 }

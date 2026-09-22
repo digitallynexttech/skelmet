@@ -28,8 +28,8 @@ function Steps({ current }: { current: 1 | 2 | 3 }) {
               <span
                 className={
                   active
-                    ? "flex size-6.5 items-center justify-center rounded-full bg-blaze font-mono text-xs font-bold text-void"
-                    : "flex size-6.5 items-center justify-center rounded-full border border-white/20 font-mono text-xs text-dim"
+                    ? "bg-blaze text-void flex size-6.5 items-center justify-center rounded-full font-mono text-xs font-bold"
+                    : "text-dim flex size-6.5 items-center justify-center rounded-full border border-white/20 font-mono text-xs"
                 }
               >
                 {n}
@@ -37,8 +37,8 @@ function Steps({ current }: { current: 1 | 2 | 3 }) {
               <span
                 className={
                   active
-                    ? "hidden text-[13.5px] font-semibold tracking-[0.04em] text-bone uppercase sm:inline"
-                    : "hidden text-[13.5px] tracking-[0.04em] text-dim uppercase sm:inline"
+                    ? "text-bone hidden text-[13.5px] font-semibold tracking-[0.04em] uppercase sm:inline"
+                    : "text-dim hidden text-[13.5px] tracking-[0.04em] uppercase sm:inline"
                 }
               >
                 {label}
@@ -55,12 +55,18 @@ function EmptyCart() {
   return (
     <div className="flex flex-col items-center px-5 py-24 text-center">
       <div className="relative mb-8 size-40 opacity-70">
-        <Image src="/product/hero-skull.jpg" alt="" fill sizes="160px" className="screen object-cover" />
+        <Image
+          src="/product/hero-skull.jpg"
+          alt=""
+          fill
+          sizes="160px"
+          className="screen object-cover"
+        />
       </div>
-      <h1 className="mb-4 font-display text-[44px] leading-[1.0] text-bone uppercase sm:text-[60px]">
+      <h1 className="font-display text-bone mb-4 text-[44px] leading-[1.0] uppercase sm:text-[60px]">
         Nothing in here
       </h1>
-      <p className="mb-8 max-w-[400px] text-[15.5px] leading-[1.6] text-ash">
+      <p className="text-ash mb-8 max-w-[400px] text-[15.5px] leading-[1.6]">
         Your cart is as empty as the wall above your desk. Let&apos;s fix one of those.
       </p>
       <ButtonLink href={`/product/${FLAME_SKULL_MOUNT.slug}`} variant="primary" size="lg">
@@ -94,10 +100,10 @@ export function CartView() {
     <div className="px-5 pb-24 sm:px-8 xl:px-14">
       <div className="flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="mb-3.5 font-mono text-[11.5px] tracking-[0.22em] text-ember uppercase">
+          <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
             Step 01 of 03
           </div>
-          <h1 className="font-display text-[48px] leading-[1.0] text-bone uppercase sm:text-[64px] xl:text-[76px]">
+          <h1 className="font-display text-bone text-[48px] leading-[1.0] uppercase sm:text-[64px] xl:text-[76px]">
             Your stash
           </h1>
         </div>
@@ -110,9 +116,9 @@ export function CartView() {
           {items.map((line) => (
             <article
               key={line.id}
-              className="flex gap-4 rounded-card border border-white/[0.09] bg-carbon p-4 sm:gap-6 sm:p-6"
+              className="rounded-card bg-carbon flex gap-4 border border-white/[0.09] p-4 sm:gap-6 sm:p-6"
             >
-              <div className="relative size-22 shrink-0 overflow-hidden rounded-xl bg-void sm:size-32">
+              <div className="bg-void relative size-22 shrink-0 overflow-hidden rounded-xl sm:size-32">
                 <Image
                   src={line.image}
                   alt={`${line.colourwayName} mount`}
@@ -124,20 +130,20 @@ export function CartView() {
 
               <div className="flex min-w-0 flex-1 flex-col">
                 <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-[15px] leading-tight font-bold text-bone sm:text-[19px]">
+                  <h2 className="text-bone text-[15px] leading-tight font-bold sm:text-[19px]">
                     {line.productName}
                   </h2>
                   <button
                     type="button"
                     onClick={() => remove(line.id)}
                     aria-label={`Remove ${line.colourwayName}`}
-                    className="-mt-1 -mr-1 flex size-9 shrink-0 items-center justify-center text-dim transition-colors hover:text-magenta"
+                    className="text-dim hover:text-magenta -mt-1 -mr-1 flex size-9 shrink-0 items-center justify-center transition-colors"
                   >
                     <Trash2 className="size-[17px]" strokeWidth={1.9} />
                   </button>
                 </div>
 
-                <div className="mt-1.5 mb-auto flex items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-dim sm:text-[11.5px]">
+                <div className="text-dim mt-1.5 mb-auto flex items-center gap-2 font-mono text-[10px] tracking-[0.1em] sm:text-[11.5px]">
                   <span
                     className="size-2.5 rounded-full"
                     style={{
@@ -154,18 +160,18 @@ export function CartView() {
                       type="button"
                       onClick={() => setQty(line.id, line.qty - 1)}
                       aria-label="Decrease quantity"
-                      className="flex size-8 items-center justify-center rounded-full text-bone"
+                      className="text-bone flex size-8 items-center justify-center rounded-full"
                     >
                       <Minus className="size-3.5" strokeWidth={2.2} />
                     </button>
-                    <span className="min-w-6 text-center font-mono text-sm font-bold text-bone">
+                    <span className="text-bone min-w-6 text-center font-mono text-sm font-bold">
                       {line.qty}
                     </span>
                     <button
                       type="button"
                       onClick={() => setQty(line.id, line.qty + 1)}
                       aria-label="Increase quantity"
-                      className="flex size-8 items-center justify-center rounded-full text-bone"
+                      className="text-bone flex size-8 items-center justify-center rounded-full"
                     >
                       <Plus className="size-3.5" strokeWidth={2.2} />
                     </button>
@@ -174,9 +180,9 @@ export function CartView() {
                   <div className="text-right">
                     <Money
                       value={Number(line.unitPrice) * line.qty}
-                      className="font-display leading-[1.08] text-[24px] text-bone sm:text-[30px]"
+                      className="font-display text-bone text-[24px] leading-[1.08] sm:text-[30px]"
                     />
-                    <div className="mt-0.5 font-mono text-[11px] text-dim">
+                    <div className="text-dim mt-0.5 font-mono text-[11px]">
                       <Money value={line.unitPrice} /> each
                     </div>
                   </div>
@@ -187,21 +193,15 @@ export function CartView() {
 
           {/* Upsell: only offers a colourway that isn't already in the cart */}
           {missing[0] ? (
-            <div className="flex items-center gap-4 rounded-card border border-dashed border-acid/35 bg-[linear-gradient(110deg,rgb(212_255_61_/_0.07),transparent_62%)] p-4 sm:p-6">
-              <div className="relative size-13 shrink-0 overflow-hidden rounded-xl bg-void sm:size-16">
-                <Image
-                  src={missing[0].image}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
+            <div className="rounded-card border-acid/35 flex items-center gap-4 border border-dashed bg-[linear-gradient(110deg,rgb(212_255_61_/_0.07),transparent_62%)] p-4 sm:p-6">
+              <div className="bg-void relative size-13 shrink-0 overflow-hidden rounded-xl sm:size-16">
+                <Image src={missing[0].image} alt="" fill sizes="64px" className="object-cover" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="mb-1 font-mono text-[9.5px] tracking-[0.16em] text-acid uppercase">
+                <div className="text-acid mb-1 font-mono text-[9.5px] tracking-[0.16em] uppercase">
                   Complete the set
                 </div>
-                <div className="text-[13.5px] leading-snug font-semibold text-bone sm:text-[15.5px]">
+                <div className="text-bone text-[13.5px] leading-snug font-semibold sm:text-[15.5px]">
                   Add {missing[0].name} and the third one is <Money value={1199} />
                 </div>
               </div>
@@ -216,8 +216,8 @@ export function CartView() {
           ) : null}
 
           <Link
-            href="/shop"
-            className="mt-2 inline-flex items-center gap-2.5 text-sm text-dim transition-colors hover:text-bone"
+            href="/product/flame-skull-mount"
+            className="text-dim hover:text-bone mt-2 inline-flex items-center gap-2.5 text-sm transition-colors"
           >
             <ArrowLeft className="size-4" strokeWidth={2} />
             Continue shopping
@@ -226,16 +226,16 @@ export function CartView() {
 
         {/* ── Summary ───────────────────────────────────────── */}
         <aside className="flex flex-col gap-4">
-          <div className="rounded-card border border-white/10 bg-carbon p-6 sm:p-7">
-            <h2 className="mb-6 font-display leading-[1.08] text-[24px] text-bone uppercase sm:text-[26px]">
+          <div className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7">
+            <h2 className="font-display text-bone mb-6 text-[24px] leading-[1.08] uppercase sm:text-[26px]">
               Order summary
             </h2>
 
             <form
-              className="mb-6 flex h-13 items-center gap-2.5 rounded-xl border border-white/[0.12] bg-void px-4"
+              className="bg-void mb-6 flex h-13 items-center gap-2.5 rounded-xl border border-white/[0.12] px-4"
               onSubmit={(e) => e.preventDefault()}
             >
-              <Tag className="size-4 shrink-0 text-ember" strokeWidth={1.8} />
+              <Tag className="text-ember size-4 shrink-0" strokeWidth={1.8} />
               <Input
                 placeholder="Discount code"
                 aria-label="Discount code"
@@ -243,7 +243,7 @@ export function CartView() {
               />
               <button
                 type="submit"
-                className="shrink-0 font-mono text-[11.5px] font-bold tracking-[0.12em] text-acid"
+                className="text-acid shrink-0 font-mono text-[11.5px] font-bold tracking-[0.12em]"
               >
                 APPLY
               </button>
@@ -252,27 +252,30 @@ export function CartView() {
             <dl className="flex flex-col gap-3.5 border-b border-white/10 pb-5">
               <div className="flex justify-between text-[14.5px]">
                 <dt className="text-ash">Subtotal ({totals.itemCount} items)</dt>
-                <dd className="font-mono text-bone">
+                <dd className="text-bone font-mono">
                   <Money value={totals.subtotal} />
                 </dd>
               </div>
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-[14.5px]">
                   <dt className="text-ash">Bundle discount</dt>
-                  <dd className="font-mono text-acid">
+                  <dd className="text-acid font-mono">
                     − <Money value={totals.discount} />
                   </dd>
                 </div>
               ) : null}
               <div className="flex justify-between text-[14.5px]">
                 <dt className="text-ash">Shipping</dt>
-                <dd className="font-mono text-acid">FREE</dd>
+                <dd className="text-acid font-mono">FREE</dd>
               </div>
             </dl>
 
             <div className="flex items-baseline justify-between py-5">
-              <span className="text-[15px] font-semibold text-bone">Total</span>
-              <Money value={totals.total} className="font-display leading-[1.04] text-[36px] text-bone sm:text-[40px]" />
+              <span className="text-bone text-[15px] font-semibold">Total</span>
+              <Money
+                value={totals.total}
+                className="font-display text-bone text-[36px] leading-[1.04] sm:text-[40px]"
+              />
             </div>
 
             <Button variant="primary" size="lg" full>
@@ -280,7 +283,7 @@ export function CartView() {
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </Button>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-4 font-mono text-[10.5px] tracking-[0.12em] text-dim">
+            <div className="text-dim flex flex-wrap items-center justify-center gap-3 pt-4 font-mono text-[10.5px] tracking-[0.12em]">
               <span>UPI</span>
               <span aria-hidden>·</span>
               <span>CARDS</span>
@@ -291,9 +294,9 @@ export function CartView() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-tile border border-white/[0.08] bg-carbon p-5">
-            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-acid" strokeWidth={1.7} />
-            <p className="text-[13.5px] leading-[1.5] text-ash">
+          <div className="rounded-tile bg-carbon flex items-start gap-3 border border-white/[0.08] p-5">
+            <ShieldCheck className="text-acid mt-0.5 size-5 shrink-0" strokeWidth={1.7} />
+            <p className="text-ash text-[13.5px] leading-[1.5]">
               Doesn&apos;t fit your wall? Send it back within 7 days, we pay the return pickup.
             </p>
           </div>

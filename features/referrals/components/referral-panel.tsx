@@ -27,68 +27,68 @@ export function ReferralPanel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="rounded-card border border-acid/30 bg-[linear-gradient(160deg,rgb(212_255_61_/_0.08),transparent_54%)] bg-carbon p-6 sm:p-7">
-        <div className="mb-3.5 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+      <div className="rounded-card border-acid/30 bg-carbon border bg-[linear-gradient(160deg,rgb(212_255_61_/_0.08),transparent_54%)] p-6 sm:p-7">
+        <div className="text-dim mb-3.5 font-mono text-[10px] tracking-[0.16em] uppercase">
           Your balance
         </div>
         <div className="mb-6 flex items-baseline gap-3">
-          <span className="font-display text-[52px] leading-none text-acid sm:text-[64px]">
+          <span className="font-display text-acid text-[52px] leading-none sm:text-[64px]">
             &#8377;1,250
           </span>
-          <span className="text-[14px] text-ash">from 5 referrals</span>
+          <span className="text-ash text-[14px]">from 5 referrals</span>
         </div>
         <Button variant="accent" size="md" full>
           Cash out to UPI
         </Button>
       </div>
 
-      <div className="rounded-card border border-white/10 bg-carbon p-6 sm:p-7">
-        <div className="mb-3.5 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+      <div className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7">
+        <div className="text-dim mb-3.5 font-mono text-[10px] tracking-[0.16em] uppercase">
           Your code
         </div>
         <button
           type="button"
           onClick={copy}
-          className="mb-4 flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-white/25 bg-void px-5 py-4 transition-colors hover:border-white/45"
+          className="bg-void mb-4 flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-white/25 px-5 py-4 transition-colors hover:border-white/45"
         >
-          <span className="font-display leading-[1.08] text-[24px] tracking-[0.1em] text-bone sm:text-[28px]">
+          <span className="font-display text-bone text-[24px] leading-[1.08] tracking-[0.1em] sm:text-[28px]">
             {CODE}
           </span>
           {copied ? (
-            <Check className="size-[18px] shrink-0 text-acid" strokeWidth={2.4} />
+            <Check className="text-acid size-[18px] shrink-0" strokeWidth={2.4} />
           ) : (
-            <Copy className="size-[18px] shrink-0 text-ash" strokeWidth={1.8} />
+            <Copy className="text-ash size-[18px] shrink-0" strokeWidth={1.8} />
           )}
         </button>
 
         <div className="grid grid-cols-3 gap-2.5">
           <button
             type="button"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] text-bone transition-colors hover:border-white/30"
+            className="text-bone flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] transition-colors hover:border-white/30"
           >
-            <WhatsappIcon className="size-3.5 text-acid" />
+            <WhatsappIcon className="text-acid size-3.5" />
             CHAT
           </button>
           <button
             type="button"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] text-bone transition-colors hover:border-white/30"
+            className="text-bone flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] transition-colors hover:border-white/30"
           >
-            <InstagramIcon className="size-3.5 text-acid" />
+            <InstagramIcon className="text-acid size-3.5" />
             STORY
           </button>
           <button
             type="button"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] text-bone transition-colors hover:border-white/30"
+            className="text-bone flex h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.14] font-mono text-[10px] tracking-[0.08em] transition-colors hover:border-white/30"
           >
-            <Mail className="size-3.5 text-acid" strokeWidth={1.9} />
+            <Mail className="text-acid size-3.5" strokeWidth={1.9} />
             EMAIL
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 rounded-tile border border-white/[0.08] bg-carbon p-5">
-        <Share2 className="size-5 shrink-0 text-violet" strokeWidth={1.8} />
-        <p className="text-[13.5px] leading-[1.5] text-ash">
+      <div className="rounded-tile bg-carbon flex items-center gap-3 border border-white/[0.08] p-5">
+        <Share2 className="text-violet size-5 shrink-0" strokeWidth={1.8} />
+        <p className="text-ash text-[13.5px] leading-[1.5]">
           Six mates and this order paid for itself. &#8377;{REFERRAL_REWARD} each way, no cap.
         </p>
       </div>

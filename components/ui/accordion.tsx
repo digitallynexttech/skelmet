@@ -33,13 +33,13 @@ export function Accordion({
               onClick={() => setOpen(isOpen ? null : i)}
               className="flex w-full items-center justify-between gap-5 py-6 text-left"
             >
-              <span className="text-[17px] font-semibold text-bone sm:text-[19px]">
+              <span className="text-bone text-[17px] font-semibold sm:text-[19px]">
                 {item.question}
               </span>
               {isOpen ? (
-                <Minus className="size-5 shrink-0 text-blaze" strokeWidth={2} />
+                <Minus className="text-blaze size-5 shrink-0" strokeWidth={2} />
               ) : (
-                <Plus className="size-5 shrink-0 text-dim" strokeWidth={2} />
+                <Plus className="text-dim size-5 shrink-0" strokeWidth={2} />
               )}
             </button>
             <div
@@ -49,7 +49,7 @@ export function Accordion({
               )}
             >
               <div className="overflow-hidden">
-                <p className="max-w-[640px] pb-6 text-[15px] leading-[1.62] text-ash sm:text-[15.5px]">
+                <p className="text-ash max-w-[640px] pb-6 text-[15px] leading-[1.62] sm:text-[15.5px]">
                   {item.answer}
                 </p>
               </div>

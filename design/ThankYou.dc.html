@@ -1,177 +1,875 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    .grain::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .16; mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    @keyframes float  { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
-    @keyframes spin   { to { transform: rotate(360deg); } }
-    @keyframes rise   { 0% { transform: translateY(0) scale(1); opacity: 0; } 14% { opacity: .95; } 100% { transform: translateY(-300px) scale(.3); opacity: 0; } }
-    @keyframes bloom  { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .95; transform: scale(1.1); } }
-    .ember { position: absolute; border-radius: 50%; background: #FF8A00; animation: rise 8s linear infinite; }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          .grain::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0) rotate(-2deg);
+            }
+            50% {
+              transform: translateY(-16px) rotate(2deg);
+            }
+          }
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+          @keyframes rise {
+            0% {
+              transform: translateY(0) scale(1);
+              opacity: 0;
+            }
+            14% {
+              opacity: 0.95;
+            }
+            100% {
+              transform: translateY(-300px) scale(0.3);
+              opacity: 0;
+            }
+          }
+          @keyframes bloom {
+            0%,
+            100% {
+              opacity: 0.55;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.95;
+              transform: scale(1.1);
+            }
+          }
+          .ember {
+            position: absolute;
+            border-radius: 50%;
+            background: #ff8a00;
+            animation: rise 8s linear infinite;
+          }
+        </style>
+      </helmet>
 
-<div style="width: 1440px; background: #07060A;">
-
-  <!-- SLIM NAV -->
-  <div style="display: flex; align-items: center; justify-content: center; height: 76px; border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
-        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
-      </svg>
-      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 23px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-    </div>
-  </div>
-
-  <!-- CELEBRATION -->
-  <div class="grain" style="position: relative; overflow: hidden; padding: 78px 56px 72px; text-align: center; background: radial-gradient(700px 420px at 50% 22%, rgba(255,90,31,.2), transparent 68%), #07060A;">
-
-    <div style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,90,31,.34), transparent 66%); filter: blur(30px); animation: bloom 5s ease-in-out infinite;"></div>
-    <div style="position: absolute; top: 76px; left: 50%; transform: translateX(-50%); width: 388px; height: 388px; border-radius: 50%; border: 1px dashed rgba(255,90,31,.3); animation: spin 40s linear infinite;"></div>
-
-    <div class="ember" style="left: 42%; top: 340px; width: 4px; height: 4px; animation-delay: .2s;"></div>
-    <div class="ember" style="left: 52%; top: 340px; width: 3px; height: 3px; animation-delay: 1.8s;"></div>
-    <div class="ember" style="left: 58%; top: 340px; width: 5px; height: 5px; animation-delay: 3.4s;"></div>
-    <div class="ember" style="left: 46%; top: 340px; width: 3px; height: 3px; animation-delay: 5.1s;"></div>
-
-    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center;">
-      <img src="product-front.jpg" alt="Your SKELMET mount is on the way" style="width: 210px; height: auto; animation: float 5.5s ease-in-out infinite; filter: drop-shadow(0 20px 40px rgba(0,0,0,.7)) drop-shadow(0 0 54px rgba(255,90,31,.46)); margin-bottom: 34px;">
-
-      <div style="display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: #D4FF3D; margin-bottom: 20px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-        PAYMENT CONFIRMED
-      </div>
-
-      <h1 style="margin: 0 0 20px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 96px; line-height: .86; color: #F7F4ED; text-transform: uppercase;">You're<br><span style="color: #FF5A1F; text-shadow: 0 0 44px rgba(255,90,31,.5);">mounted</span></h1>
-
-      <p style="margin: 0 0 34px; max-width: 520px; font-size: 17.5px; line-height: 1.6; color: #A3A0B0; text-wrap: pretty;">Order's in and the printers are already warm. We've sent the confirmation to <span style="color: #F7F4ED;">rohan.m@example.com</span> — check spam if it's shy.</p>
-
-      <div style="display: flex; align-items: center; gap: 26px; padding: 20px 30px; border: 1px dashed rgba(255,255,255,.2); border-radius: 14px; background: rgba(14,13,19,.7);">
-        <div style="text-align: left;">
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 6px;">ORDER NUMBER</div>
-          <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; letter-spacing: .08em; color: #F7F4ED;">SKM-2026-0412</div>
+      <div style="width: 1440px; background: #07060a">
+        <!-- SLIM NAV -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 76px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FF5A1F"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"
+              />
+              <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+              <circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+            </svg>
+            <span
+              style="
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 23px;
+                letter-spacing: 0.14em;
+                color: #f7f4ed;
+              "
+              >SKELMET</span
+            >
+          </div>
         </div>
-        <span style="width: 1px; height: 44px; background: rgba(255,255,255,.14);"></span>
-        <div style="text-align: left;">
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 6px;">ARRIVES BY</div>
-          <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; letter-spacing: .04em; color: #D4FF3D;">FRI, 3 SEP</div>
+
+        <!-- CELEBRATION -->
+        <div
+          class="grain"
+          style="
+            position: relative;
+            overflow: hidden;
+            padding: 78px 56px 72px;
+            text-align: center;
+            background:
+              radial-gradient(700px 420px at 50% 22%, rgba(255, 90, 31, 0.2), transparent 68%),
+              #07060a;
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: 60px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 420px;
+              height: 420px;
+              border-radius: 50%;
+              background: radial-gradient(circle, rgba(255, 90, 31, 0.34), transparent 66%);
+              filter: blur(30px);
+              animation: bloom 5s ease-in-out infinite;
+            "
+          ></div>
+          <div
+            style="
+              position: absolute;
+              top: 76px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 388px;
+              height: 388px;
+              border-radius: 50%;
+              border: 1px dashed rgba(255, 90, 31, 0.3);
+              animation: spin 40s linear infinite;
+            "
+          ></div>
+
+          <div
+            class="ember"
+            style="left: 42%; top: 340px; width: 4px; height: 4px; animation-delay: 0.2s"
+          ></div>
+          <div
+            class="ember"
+            style="left: 52%; top: 340px; width: 3px; height: 3px; animation-delay: 1.8s"
+          ></div>
+          <div
+            class="ember"
+            style="left: 58%; top: 340px; width: 5px; height: 5px; animation-delay: 3.4s"
+          ></div>
+          <div
+            class="ember"
+            style="left: 46%; top: 340px; width: 3px; height: 3px; animation-delay: 5.1s"
+          ></div>
+
+          <div
+            style="
+              position: relative;
+              z-index: 2;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            "
+          >
+            <img
+              src="product-front.jpg"
+              alt="Your SKELMET mount is on the way"
+              style="
+                width: 210px;
+                height: auto;
+                animation: float 5.5s ease-in-out infinite;
+                filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7))
+                  drop-shadow(0 0 54px rgba(255, 90, 31, 0.46));
+                margin-bottom: 34px;
+              "
+            />
+
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11.5px;
+                letter-spacing: 0.22em;
+                color: #d4ff3d;
+                margin-bottom: 20px;
+              "
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#D4FF3D"
+                stroke-width="2.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m5 13 4 4L19 7" />
+              </svg>
+              PAYMENT CONFIRMED
+            </div>
+
+            <h1
+              style="
+                margin: 0 0 20px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 96px;
+                line-height: 0.86;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              You're<br /><span style="color: #ff5a1f; text-shadow: 0 0 44px rgba(255, 90, 31, 0.5)"
+                >mounted</span
+              >
+            </h1>
+
+            <p
+              style="
+                margin: 0 0 34px;
+                max-width: 520px;
+                font-size: 17.5px;
+                line-height: 1.6;
+                color: #a3a0b0;
+                text-wrap: pretty;
+              "
+            >
+              Order's in and the printers are already warm. We've sent the confirmation to
+              <span style="color: #f7f4ed">rohan.m@example.com</span> — check spam if it's shy.
+            </p>
+
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 26px;
+                padding: 20px 30px;
+                border: 1px dashed rgba(255, 255, 255, 0.2);
+                border-radius: 14px;
+                background: rgba(14, 13, 19, 0.7);
+              "
+            >
+              <div style="text-align: left">
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10.5px;
+                    letter-spacing: 0.18em;
+                    color: #63606f;
+                    margin-bottom: 6px;
+                  "
+                >
+                  ORDER NUMBER
+                </div>
+                <div
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 28px;
+                    letter-spacing: 0.08em;
+                    color: #f7f4ed;
+                  "
+                >
+                  SKM-2026-0412
+                </div>
+              </div>
+              <span style="width: 1px; height: 44px; background: rgba(255, 255, 255, 0.14)"></span>
+              <div style="text-align: left">
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10.5px;
+                    letter-spacing: 0.18em;
+                    color: #63606f;
+                    margin-bottom: 6px;
+                  "
+                >
+                  ARRIVES BY
+                </div>
+                <div
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 28px;
+                    letter-spacing: 0.04em;
+                    color: #d4ff3d;
+                  "
+                >
+                  FRI, 3 SEP
+                </div>
+              </div>
+              <span style="width: 1px; height: 44px; background: rgba(255, 255, 255, 0.14)"></span>
+              <div style="text-align: left">
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10.5px;
+                    letter-spacing: 0.18em;
+                    color: #63606f;
+                    margin-bottom: 6px;
+                  "
+                >
+                  TOTAL PAID
+                </div>
+                <div
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 28px;
+                    color: #f7f4ed;
+                  "
+                >
+                  ₹4,198
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <span style="width: 1px; height: 44px; background: rgba(255,255,255,.14);"></span>
-        <div style="text-align: left;">
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 6px;">TOTAL PAID</div>
-          <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; color: #F7F4ED;">₹4,198</div>
+
+        <!-- TIMELINE -->
+        <div
+          style="
+            padding: 72px 56px;
+            background: #0e0d13;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          "
+        >
+          <h2
+            style="
+              margin: 0 0 40px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 44px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            What happens next
+          </h2>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+              gap: 0;
+              position: relative;
+            "
+          >
+            <div
+              style="
+                position: absolute;
+                top: 21px;
+                left: 12%;
+                right: 12%;
+                height: 2px;
+                background: linear-gradient(
+                  90deg,
+                  #ff5a1f 0%,
+                  #ff5a1f 16%,
+                  rgba(255, 255, 255, 0.12) 16%
+                );
+              "
+            ></div>
+
+            <div style="position: relative; padding-right: 28px">
+              <span
+                style="
+                  position: relative;
+                  z-index: 2;
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 50%;
+                  background: #ff5a1f;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 22px;
+                "
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#07060A"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="m5 13 4 4L19 7" />
+                </svg>
+              </span>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.16em;
+                  color: #d4ff3d;
+                  margin-bottom: 8px;
+                "
+              >
+                DONE · TODAY
+              </div>
+              <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #f7f4ed">
+                Order placed
+              </h3>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #a3a0b0">
+                Payment cleared and your batch slot is reserved.
+              </p>
+            </div>
+
+            <div style="position: relative; padding-right: 28px">
+              <span
+                style="
+                  position: relative;
+                  z-index: 2;
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 50%;
+                  background: #0e0d13;
+                  border: 2px solid rgba(255, 255, 255, 0.16);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 22px;
+                "
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#A3A0B0"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 2 3 7v10l9 5 9-5V7Z" />
+                  <path d="m3 7 9 5 9-5" />
+                </svg>
+              </span>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.16em;
+                  color: #63606f;
+                  margin-bottom: 8px;
+                "
+              >
+                NEXT 48 HRS
+              </div>
+              <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #f7f4ed">
+                Printed &amp; finished
+              </h3>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #a3a0b0">
+                Your skull goes on the bed, gets cleaned up and packed by hand.
+              </p>
+            </div>
+
+            <div style="position: relative; padding-right: 28px">
+              <span
+                style="
+                  position: relative;
+                  z-index: 2;
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 50%;
+                  background: #0e0d13;
+                  border: 2px solid rgba(255, 255, 255, 0.16);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 22px;
+                "
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#A3A0B0"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="1" y="6" width="14" height="12" rx="2" />
+                  <path d="M15 10h4l3 3v5h-7" />
+                  <circle cx="6" cy="18" r="2" />
+                  <circle cx="18" cy="18" r="2" />
+                </svg>
+              </span>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.16em;
+                  color: #63606f;
+                  margin-bottom: 8px;
+                "
+              >
+                DAY 3
+              </div>
+              <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #f7f4ed">
+                Out for delivery
+              </h3>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #a3a0b0">
+                Tracking link lands in your inbox and on WhatsApp.
+              </p>
+            </div>
+
+            <div style="position: relative">
+              <span
+                style="
+                  position: relative;
+                  z-index: 2;
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 50%;
+                  background: #0e0d13;
+                  border: 2px solid rgba(255, 255, 255, 0.16);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 22px;
+                "
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#A3A0B0"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 21h18" />
+                  <path d="M6 21V9l6-5 6 5v12" />
+                </svg>
+              </span>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.16em;
+                  color: #63606f;
+                  margin-bottom: 8px;
+                "
+              >
+                FRI, 3 SEP
+              </div>
+              <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #f7f4ed">
+                On your wall
+              </h3>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #a3a0b0">
+                Ten minutes with a drill and the floor is free again.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 14px; margin-top: 44px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                height: 54px;
+                padding: 0 28px;
+                border-radius: 999px;
+                background: #f7f4ed;
+                color: #07060a;
+                font-weight: 700;
+                font-size: 14px;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+              "
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#07060A"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              Track this order
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                height: 54px;
+                padding: 0 28px;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #f7f4ed;
+                font-weight: 600;
+                font-size: 14px;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+              "
+            >
+              Read the install guide
+            </div>
+          </div>
+        </div>
+
+        <!-- REFERRAL HOOK -->
+        <div
+          class="grain"
+          style="
+            position: relative;
+            overflow: hidden;
+            padding: 66px 56px;
+            background: linear-gradient(100deg, #ff5a1f, #ff8a00 62%, #ffc24d);
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: -40px;
+              right: 56px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 200px;
+              line-height: 1;
+              color: rgba(7, 6, 10, 0.11);
+              user-select: none;
+            "
+          >
+            ₹250
+          </div>
+          <div
+            style="
+              position: relative;
+              z-index: 2;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 48px;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11.5px;
+                  letter-spacing: 0.22em;
+                  color: rgba(7, 6, 10, 0.65);
+                  margin-bottom: 14px;
+                "
+              >
+                WHILE YOU WAIT
+              </div>
+              <h2
+                style="
+                  margin: 0 0 14px;
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 54px;
+                  line-height: 0.92;
+                  color: #07060a;
+                  text-transform: uppercase;
+                "
+              >
+                Make your money back
+              </h2>
+              <p
+                style="
+                  margin: 0;
+                  max-width: 520px;
+                  font-size: 16.5px;
+                  line-height: 1.58;
+                  color: rgba(7, 6, 10, 0.78);
+                "
+              >
+                Six mates from your riding group and this order paid for itself. They save ₹250, you
+                get ₹250 back per order that ships.
+              </p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; flex-shrink: 0">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 14px;
+                  padding: 16px 20px;
+                  border-radius: 12px;
+                  background: rgba(7, 6, 10, 0.9);
+                  border: 1px dashed rgba(247, 244, 237, 0.34);
+                "
+              >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    letter-spacing: 0.16em;
+                    color: #63606f;
+                  "
+                  >YOUR CODE</span
+                >
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 26px;
+                    letter-spacing: 0.12em;
+                    color: #d4ff3d;
+                  "
+                  >ROHAN-8F2K</span
+                >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#A3A0B0"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="9" y="9" width="12" height="12" rx="2" />
+                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                </svg>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 10px;
+                  height: 54px;
+                  padding: 0 30px;
+                  border-radius: 999px;
+                  background: #07060a;
+                  color: #f7f4ed;
+                  font-weight: 700;
+                  font-size: 14px;
+                  letter-spacing: 0.05em;
+                  text-transform: uppercase;
+                "
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#F7F4ED"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <path d="m8.6 13.5 6.8 4" />
+                  <path d="m15.4 6.5-6.8 4" />
+                </svg>
+                Share on WhatsApp
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UGC NUDGE -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            padding: 48px 56px;
+            background: #07060a;
+          "
+        >
+          <div>
+            <h3
+              style="
+                margin: 0 0 8px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 30px;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              Post it when it lands
+            </h3>
+            <p style="margin: 0; font-size: 15px; color: #a3a0b0">
+              Tag <span style="color: #d4ff3d">@skelmet</span> and we'll put you on the rider wall —
+              best shot each month gets a free mount.
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px">
+            <div
+              style="
+                width: 76px;
+                height: 76px;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+              "
+            >
+              <img
+                src="lifestyle-room.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 100%; object-fit: cover"
+              />
+            </div>
+            <div
+              style="
+                width: 76px;
+                height: 76px;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+              "
+            >
+              <img
+                src="lifestyle-garage.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 100%; object-fit: cover"
+              />
+            </div>
+            <div
+              style="
+                width: 76px;
+                height: 76px;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+              "
+            >
+              <img
+                src="lifestyle-concrete.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 100%; object-fit: cover"
+              />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- TIMELINE -->
-  <div style="padding: 72px 56px; background: #0E0D13; border-top: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06);">
-    <h2 style="margin: 0 0 40px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 44px; color: #F7F4ED; text-transform: uppercase;">What happens next</h2>
-
-    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative;">
-      <div style="position: absolute; top: 21px; left: 12%; right: 12%; height: 2px; background: linear-gradient(90deg, #FF5A1F 0%, #FF5A1F 16%, rgba(255,255,255,.12) 16%);"></div>
-
-      <div style="position: relative; padding-right: 28px;">
-        <span style="position: relative; z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: #FF5A1F; display: flex; align-items: center; justify-content: center; margin-bottom: 22px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-        </span>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #D4FF3D; margin-bottom: 8px;">DONE · TODAY</div>
-        <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #F7F4ED;">Order placed</h3>
-        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #A3A0B0;">Payment cleared and your batch slot is reserved.</p>
-      </div>
-
-      <div style="position: relative; padding-right: 28px;">
-        <span style="position: relative; z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: #0E0D13; border: 2px solid rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; margin-bottom: 22px;">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A3A0B0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7Z"/><path d="m3 7 9 5 9-5"/></svg>
-        </span>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F; margin-bottom: 8px;">NEXT 48 HRS</div>
-        <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #F7F4ED;">Printed &amp; finished</h3>
-        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #A3A0B0;">Your skull goes on the bed, gets cleaned up and packed by hand.</p>
-      </div>
-
-      <div style="position: relative; padding-right: 28px;">
-        <span style="position: relative; z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: #0E0D13; border: 2px solid rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; margin-bottom: 22px;">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A3A0B0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="12" rx="2"/><path d="M15 10h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-        </span>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F; margin-bottom: 8px;">DAY 3</div>
-        <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #F7F4ED;">Out for delivery</h3>
-        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #A3A0B0;">Tracking link lands in your inbox and on WhatsApp.</p>
-      </div>
-
-      <div style="position: relative;">
-        <span style="position: relative; z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: #0E0D13; border: 2px solid rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; margin-bottom: 22px;">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A3A0B0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V9l6-5 6 5v12"/></svg>
-        </span>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F; margin-bottom: 8px;">FRI, 3 SEP</div>
-        <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #F7F4ED;">On your wall</h3>
-        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #A3A0B0;">Ten minutes with a drill and the floor is free again.</p>
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 14px; margin-top: 44px;">
-      <div style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 28px; border-radius: 999px; background: #F7F4ED; color: #07060A; font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        Track this order
-      </div>
-      <div style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); color: #F7F4ED; font-weight: 600; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;">
-        Read the install guide
-      </div>
-    </div>
-  </div>
-
-  <!-- REFERRAL HOOK -->
-  <div class="grain" style="position: relative; overflow: hidden; padding: 66px 56px; background: linear-gradient(100deg, #FF5A1F, #FF8A00 62%, #FFC24D);">
-    <div style="position: absolute; top: -40px; right: 56px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 200px; line-height: 1; color: rgba(7,6,10,.11); user-select: none;">₹250</div>
-    <div style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 48px;">
-      <div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: rgba(7,6,10,.65); margin-bottom: 14px;">WHILE YOU WAIT</div>
-        <h2 style="margin: 0 0 14px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 54px; line-height: .92; color: #07060A; text-transform: uppercase;">Make your money back</h2>
-        <p style="margin: 0; max-width: 520px; font-size: 16.5px; line-height: 1.58; color: rgba(7,6,10,.78);">Six mates from your riding group and this order paid for itself. They save ₹250, you get ₹250 back per order that ships.</p>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 12px; flex-shrink: 0;">
-        <div style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 12px; background: rgba(7,6,10,.9); border: 1px dashed rgba(247,244,237,.34);">
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .16em; color: #63606F;">YOUR CODE</span>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 26px; letter-spacing: .12em; color: #D4FF3D;">ROHAN-8F2K</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3A0B0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 30px; border-radius: 999px; background: #07060A; color: #F7F4ED; font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
-          Share on WhatsApp
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- UGC NUDGE -->
-  <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 48px 56px; background: #07060A;">
-    <div>
-      <h3 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 30px; color: #F7F4ED; text-transform: uppercase;">Post it when it lands</h3>
-      <p style="margin: 0; font-size: 15px; color: #A3A0B0;">Tag <span style="color: #D4FF3D;">@skelmet</span> and we'll put you on the rider wall — best shot each month gets a free mount.</p>
-    </div>
-    <div style="display: flex; gap: 12px;">
-      <div style="width: 76px; height: 76px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.1);"><img src="lifestyle-room.jpg" alt="Rider photo" style="width: 100%; height: 100%; object-fit: cover;"></div>
-      <div style="width: 76px; height: 76px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.1);"><img src="lifestyle-garage.jpg" alt="Rider photo" style="width: 100%; height: 100%; object-fit: cover;"></div>
-      <div style="width: 76px; height: 76px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.1);"><img src="lifestyle-concrete.jpg" alt="Rider photo" style="width: 100%; height: 100%; object-fit: cover;"></div>
-    </div>
-  </div>
-
-</div>
-</x-dc>
-</body>
+    </x-dc>
+  </body>
 </html>

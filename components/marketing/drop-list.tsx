@@ -16,16 +16,16 @@ export function DropList() {
           className="object-cover"
         />
       </div>
-      <div className="flex flex-col justify-center bg-carbon px-5 py-14 sm:px-8 sm:py-16 xl:px-14">
+      <div className="bg-carbon flex flex-col justify-center px-5 py-14 sm:px-8 sm:py-16 xl:px-14">
         <SectionLabel index="16" tone="violet" className="mb-4">
           Next drop
         </SectionLabel>
-        <h2 className="mb-4 font-display text-[34px] leading-[1.04] text-bone uppercase sm:text-[44px] xl:text-[50px]">
+        <h2 className="font-display text-bone mb-4 text-[34px] leading-[1.04] uppercase sm:text-[44px] xl:text-[50px]">
           Get first dibs
           <br />
           on batch 05
         </h2>
-        <p className="mb-7 max-w-[420px] text-[15px] leading-[1.6] text-ash sm:text-[15.5px]">
+        <p className="text-ash mb-7 max-w-[420px] text-[15px] leading-[1.6] sm:text-[15.5px]">
           New colourways drop roughly every six weeks and the small ones sell out. One email per
           drop, nothing else, ever.
         </p>

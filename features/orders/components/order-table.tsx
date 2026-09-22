@@ -59,7 +59,7 @@ export function OrderTable() {
       <div className="flex flex-col gap-4">
         <div className="relative max-w-[420px]">
           <Search
-            className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-dim"
+            className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
             strokeWidth={1.9}
           />
           <Input
@@ -80,8 +80,8 @@ export function OrderTable() {
               className={cn(
                 "min-h-9 shrink-0 rounded-full border px-4 text-[12.5px] transition-colors",
                 status === f.value
-                  ? "border-blaze bg-blaze/12 font-semibold text-bone"
-                  : "border-white/[0.12] text-ash hover:border-white/25",
+                  ? "border-blaze bg-blaze/12 text-bone font-semibold"
+                  : "text-ash border-white/[0.12] hover:border-white/25",
               )}
             >
               {f.label}
@@ -109,8 +109,8 @@ export function OrderTable() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-card border border-white/[0.09] lg:block">
-            <div className="grid grid-cols-[150px_130px_minmax(0,1fr)_120px_110px_150px] gap-4 border-b border-white/[0.07] bg-carbon px-5 py-3.5 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+          <div className="rounded-card hidden overflow-hidden border border-white/[0.09] lg:block">
+            <div className="bg-carbon text-dim grid grid-cols-[150px_130px_minmax(0,1fr)_120px_110px_150px] gap-4 border-b border-white/[0.07] px-5 py-3.5 font-mono text-[10px] tracking-[0.16em] uppercase">
               <span>Order</span>
               <span>Status</span>
               <span>Customer</span>
@@ -124,21 +124,21 @@ export function OrderTable() {
                 href={`/admin/orders/${order.id}`}
                 className="grid grid-cols-[150px_130px_minmax(0,1fr)_120px_110px_150px] items-center gap-4 border-b border-white/[0.06] px-5 py-4 transition-colors last:border-b-0 hover:bg-white/[0.03]"
               >
-                <span className="font-mono text-[13px] text-bone">{order.number}</span>
+                <span className="text-bone font-mono text-[13px]">{order.number}</span>
                 <StatusBadge status={order.status} />
                 <span className="min-w-0">
-                  <span className="block truncate text-[14px] text-bone">{order.customer}</span>
-                  <span className="block truncate font-mono text-[11px] text-dim">
+                  <span className="text-bone block truncate text-[14px]">{order.customer}</span>
+                  <span className="text-dim block truncate font-mono text-[11px]">
                     {order.email}
                   </span>
                 </span>
-                <span className="text-[13.5px] text-ash">
+                <span className="text-ash text-[13.5px]">
                   {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
                 </span>
-                <span className="text-right font-mono text-[13.5px] text-bone">
+                <span className="text-bone text-right font-mono text-[13.5px]">
                   <Money value={order.total} />
                 </span>
-                <span className="text-right font-mono text-[11.5px] text-dim">
+                <span className="text-dim text-right font-mono text-[11.5px]">
                   {fmtDate(order.placedAt ?? order.createdAt)}
                 </span>
               </Link>
@@ -151,19 +151,19 @@ export function OrderTable() {
               <Link
                 key={order.id}
                 href={`/admin/orders/${order.id}`}
-                className="rounded-card border border-white/[0.09] bg-carbon p-5"
+                className="rounded-card bg-carbon border border-white/[0.09] p-5"
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="font-mono text-[13px] text-bone">{order.number}</span>
+                  <span className="text-bone font-mono text-[13px]">{order.number}</span>
                   <StatusBadge status={order.status} />
                 </div>
-                <div className="mb-1 truncate text-[14.5px] text-bone">{order.customer}</div>
-                <div className="mb-3 truncate font-mono text-[11px] text-dim">{order.email}</div>
+                <div className="text-bone mb-1 truncate text-[14.5px]">{order.customer}</div>
+                <div className="text-dim mb-3 truncate font-mono text-[11px]">{order.email}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-ash">
+                  <span className="text-ash text-[13px]">
                     {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
                   </span>
-                  <Money value={order.total} className="font-display text-[22px] text-bone" />
+                  <Money value={order.total} className="font-display text-bone text-[22px]" />
                 </div>
               </Link>
             ))}
@@ -171,7 +171,7 @@ export function OrderTable() {
 
           {pagination && pagination.totalPages > 1 ? (
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[11.5px] text-dim">
+              <span className="text-dim font-mono text-[11.5px]">
                 Page {pagination.page} of {pagination.totalPages} · {pagination.total} orders
               </span>
               <div className="flex gap-2">
@@ -179,7 +179,7 @@ export function OrderTable() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setState({ page: String(page - 1) })}
-                  className="flex size-10 items-center justify-center rounded-xl border border-white/[0.12] text-bone disabled:opacity-35"
+                  className="text-bone flex size-10 items-center justify-center rounded-xl border border-white/[0.12] disabled:opacity-35"
                   aria-label="Previous page"
                 >
                   <ChevronLeft className="size-4" strokeWidth={2} />
@@ -188,7 +188,7 @@ export function OrderTable() {
                   type="button"
                   disabled={page >= pagination.totalPages}
                   onClick={() => setState({ page: String(page + 1) })}
-                  className="flex size-10 items-center justify-center rounded-xl border border-white/[0.12] text-bone disabled:opacity-35"
+                  className="text-bone flex size-10 items-center justify-center rounded-xl border border-white/[0.12] disabled:opacity-35"
                   aria-label="Next page"
                 >
                   <ChevronRight className="size-4" strokeWidth={2} />

@@ -2,7 +2,16 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Check, CreditCard, Minus, Package, Plus, RotateCcw, ShieldCheck, Truck } from "lucide-react"
+import {
+  Check,
+  CreditCard,
+  Minus,
+  Package,
+  Plus,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+} from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
@@ -33,7 +42,10 @@ export function ProductDetail({ product }: { product: Product }) {
   // The first gallery slot always shows the selected colourway; the rest are
   // shared context shots.
   const gallery = React.useMemo(
-    () => [{ src: colourway.image, alt: `${colourway.name} SKELMET mount` }, ...product.gallery.slice(1)],
+    () => [
+      { src: colourway.image, alt: `${colourway.name} SKELMET mount` },
+      ...product.gallery.slice(1),
+    ],
     [colourway, product.gallery],
   )
   const active = gallery[Math.min(shot, gallery.length - 1)]!
@@ -41,14 +53,14 @@ export function ProductDetail({ product }: { product: Product }) {
   const lineTotal = Number(product.price) * qty
 
   return (
-    <div className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_480px] lg:gap-14 lg:py-10 xl:px-14 xl:grid-cols-[minmax(0,1fr)_520px]">
+    <div className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_480px] lg:gap-14 lg:py-10 xl:grid-cols-[minmax(0,1fr)_520px] xl:px-14">
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
         {/* Square, and capped to the viewport so the whole buy panel is on one
             screen. The colourway shots are 1:1, so a square box shows them
             uncropped; a 4:5 box was scaling them up 25% and cutting the sides.
             max-w is tied to the same value as max-h to keep it square. */}
-        <div className="grain relative mx-auto aspect-square w-full overflow-hidden rounded-card border border-white/[0.08] bg-carbon lg:max-h-[calc(100dvh-18rem)] lg:max-w-[calc(100dvh-18rem)]">
+        <div className="grain rounded-card bg-carbon relative mx-auto aspect-square w-full overflow-hidden border border-white/[0.08] lg:max-h-[calc(100dvh-18rem)] lg:max-w-[calc(100dvh-18rem)]">
           <Image
             key={active.src}
             src={active.src}
@@ -88,14 +100,14 @@ export function ProductDetail({ product }: { product: Product }) {
       {/* ── Buy panel ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-5">
         <div>
-          <div className="mb-3.5 flex items-center gap-2.5 font-mono text-[10px] tracking-[0.18em] text-acid uppercase">
-            <span className="size-1.5 animate-blink rounded-full bg-acid" />
+          <div className="text-acid mb-3.5 flex items-center gap-2.5 font-mono text-[10px] tracking-[0.18em] uppercase">
+            <span className="animate-blink bg-acid size-1.5 rounded-full" />
             {product.unitsLeft} left in this batch
           </div>
-          <h1 className="mb-3 font-display text-[38px] leading-[1.04] text-bone uppercase sm:text-[46px] xl:text-[54px]">
+          <h1 className="font-display text-bone mb-3 text-[38px] leading-[1.04] uppercase sm:text-[46px] xl:text-[54px]">
             {product.name}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-mono text-[11px] tracking-[0.08em] text-dim sm:text-xs">
+          <div className="text-dim flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-mono text-[11px] tracking-[0.08em] sm:text-xs">
             <Stars rating={product.rating} />
             <span className="text-bone">{product.rating}</span>
             <span>{product.reviewCount} REVIEWS</span>
@@ -106,11 +118,14 @@ export function ProductDetail({ product }: { product: Product }) {
 
         <div>
           <div className="flex flex-wrap items-baseline gap-3">
-            <Money value={product.price} className="font-display leading-[1.04] text-[38px] text-bone sm:text-[46px]" />
+            <Money
+              value={product.price}
+              className="font-display text-bone text-[38px] leading-[1.04] sm:text-[46px]"
+            />
             <Money value={product.compareAtPrice} strike className="text-[17px]" />
             <Badge variant="solid">Save 25%</Badge>
           </div>
-          <p className="mt-1.5 text-[12.5px] text-dim">
+          <p className="text-dim mt-1.5 text-[12.5px]">
             Inclusive of all taxes · Free shipping pan-India
           </p>
         </div>
@@ -118,10 +133,10 @@ export function ProductDetail({ product }: { product: Product }) {
         {/* colourway */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <span className="font-mono text-[10px] tracking-[0.18em] text-dim uppercase">
+            <span className="text-dim font-mono text-[10px] tracking-[0.18em] uppercase">
               Colourway
             </span>
-            <span className="text-[13.5px] font-semibold text-bone">{colourway.name}</span>
+            <span className="text-bone text-[13.5px] font-semibold">{colourway.name}</span>
           </div>
           <div className="flex gap-3">
             {product.colourways.map((c) => {
@@ -140,12 +155,11 @@ export function ProductDetail({ product }: { product: Product }) {
                     "rounded-full border p-1 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105",
                     selected ? "border-[1.5px]" : "border-white/15",
                   )}
-                  style={selected ? { borderColor: c.hex, boxShadow: `0 0 16px ${c.hex}55` } : undefined}
+                  style={
+                    selected ? { borderColor: c.hex, boxShadow: `0 0 16px ${c.hex}55` } : undefined
+                  }
                 >
-                  <span
-                    className="block size-8 rounded-full"
-                    style={{ backgroundColor: c.hex }}
-                  />
+                  <span className="block size-8 rounded-full" style={{ backgroundColor: c.hex }} />
                 </button>
               )
             })}
@@ -160,17 +174,19 @@ export function ProductDetail({ product }: { product: Product }) {
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="Decrease quantity"
               disabled={qty <= 1}
-              className="flex size-11 items-center justify-center rounded-full text-bone disabled:opacity-35"
+              className="text-bone flex size-11 items-center justify-center rounded-full disabled:opacity-35"
             >
               <Minus className="size-4" strokeWidth={2.2} />
             </button>
-            <span className="min-w-7 text-center font-mono text-base font-bold text-bone">{qty}</span>
+            <span className="text-bone min-w-7 text-center font-mono text-base font-bold">
+              {qty}
+            </span>
             <button
               type="button"
               onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
               aria-label="Increase quantity"
               disabled={qty >= MAX_QTY}
-              className="flex size-11 items-center justify-center rounded-full text-bone disabled:opacity-35"
+              className="text-bone flex size-11 items-center justify-center rounded-full disabled:opacity-35"
             >
               <Plus className="size-4" strokeWidth={2.2} />
             </button>
@@ -193,8 +209,8 @@ export function ProductDetail({ product }: { product: Product }) {
         </ButtonLink>
 
         {/* pincode */}
-        <div className="flex h-[54px] items-center gap-2.5 rounded-field border border-white/10 bg-carbon px-4">
-          <RotateCcw className="size-[17px] shrink-0 text-ember" strokeWidth={1.7} />
+        <div className="rounded-field bg-carbon flex h-[54px] items-center gap-2.5 border border-white/10 px-4">
+          <RotateCcw className="text-ember size-[17px] shrink-0" strokeWidth={1.7} />
           <Input
             placeholder="Enter pincode"
             inputMode="numeric"
@@ -203,7 +219,7 @@ export function ProductDetail({ product }: { product: Product }) {
           />
           <button
             type="button"
-            className="shrink-0 font-mono text-[11px] font-bold tracking-[0.1em] text-acid"
+            className="text-acid shrink-0 font-mono text-[11px] font-bold tracking-[0.1em]"
           >
             CHECK
           </button>
@@ -214,23 +230,23 @@ export function ProductDetail({ product }: { product: Product }) {
           {TRUST.map(({ Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-carbon p-3.5"
+              className="bg-carbon flex items-center gap-2.5 rounded-xl border border-white/[0.08] p-3.5"
             >
-              <Icon className="size-4 shrink-0 text-acid" strokeWidth={1.7} />
-              <span className="text-[12.5px] text-bone">{label}</span>
+              <Icon className="text-acid size-4 shrink-0" strokeWidth={1.7} />
+              <span className="text-bone text-[12.5px]">{label}</span>
             </div>
           ))}
         </div>
 
         {/* in the box */}
-        <div className="rounded-tile border border-white/[0.09] bg-carbon p-5">
-          <div className="mb-3.5 font-mono text-[10px] tracking-[0.18em] text-dim uppercase">
+        <div className="rounded-tile bg-carbon border border-white/[0.09] p-5">
+          <div className="text-dim mb-3.5 font-mono text-[10px] tracking-[0.18em] uppercase">
             In the box
           </div>
           <ul className="flex flex-col gap-2.5">
             {product.inTheBox.map((item) => (
-              <li key={item} className="flex items-center gap-2.5 text-[14px] text-ash">
-                <Check className="size-4 shrink-0 text-acid" strokeWidth={2.4} />
+              <li key={item} className="text-ash flex items-center gap-2.5 text-[14px]">
+                <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
                 {item}
               </li>
             ))}

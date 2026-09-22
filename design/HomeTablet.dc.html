@@ -1,361 +1,1827 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    .grain::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .16; mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    .scan::before {
-      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .35;
-      background: repeating-linear-gradient(to bottom, rgba(255,255,255,.028) 0 1px, transparent 1px 4px);
-    }
-    @keyframes float   { 0%,100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-16px) rotate(1.2deg); } }
-    @keyframes spin    { to { transform: rotate(360deg); } }
-    @keyframes spinrev { to { transform: rotate(-360deg); } }
-    @keyframes bloom   { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.08); } }
-    @keyframes marquee { to { transform: translateX(-50%); } }
-    @keyframes blink   { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
-    @keyframes rise    { 0% { transform: translateY(0) scale(1); opacity: 0; } 12% { opacity: .9; } 100% { transform: translateY(-220px) scale(.35); opacity: 0; } }
-    .ember { position: absolute; border-radius: 50%; background: #FF8A00; animation: rise 9s linear infinite; }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          .grain::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+          }
+          .scan::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background: repeating-linear-gradient(
+              to bottom,
+              rgba(255, 255, 255, 0.028) 0 1px,
+              transparent 1px 4px
+            );
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0) rotate(-1.2deg);
+            }
+            50% {
+              transform: translateY(-16px) rotate(1.2deg);
+            }
+          }
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+          @keyframes spinrev {
+            to {
+              transform: rotate(-360deg);
+            }
+          }
+          @keyframes bloom {
+            0%,
+            100% {
+              opacity: 0.55;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.9;
+              transform: scale(1.08);
+            }
+          }
+          @keyframes marquee {
+            to {
+              transform: translateX(-50%);
+            }
+          }
+          @keyframes blink {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.25;
+            }
+          }
+          @keyframes rise {
+            0% {
+              transform: translateY(0) scale(1);
+              opacity: 0;
+            }
+            12% {
+              opacity: 0.9;
+            }
+            100% {
+              transform: translateY(-220px) scale(0.35);
+              opacity: 0;
+            }
+          }
+          .ember {
+            position: absolute;
+            border-radius: 50%;
+            background: #ff8a00;
+            animation: rise 9s linear infinite;
+          }
+        </style>
+      </helmet>
 
-<div style="width: 834px; background: #07060A;">
-
-  <!-- NAV -->
-  <div style="display: flex; align-items: center; justify-content: space-between; height: 68px; padding: 0 32px; background: rgba(7,6,10,.82); border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
-        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
-      </svg>
-      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 21px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 24px; font-size: 12.5px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: #A3A0B0;">
-      <span style="color: #F7F4ED;">Shop</span><span>The Build</span><span>Riders</span><span>Refer</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="display: flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #F7F4ED;">
-        CART <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px; background: #FF5A1F; color: #07060A; font-weight: 700; font-size: 10.5px;">2</span>
-      </div>
-      <div style="display: flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #D4FF3D; color: #07060A; font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;">Buy now</div>
-    </div>
-  </div>
-
-  <!-- HERO -->
-  <div class="grain scan" style="position: relative; height: 620px; overflow: hidden; background: radial-gradient(520px 460px at 72% 46%, rgba(255,90,31,.2), transparent 70%), #07060A;">
-    <div style="position: absolute; top: 130px; left: 50%; transform: translateX(-48%); font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 198px; line-height: .8; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.055); white-space: nowrap; user-select: none;">SKELMET</div>
-    <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 230px; background-image: linear-gradient(rgba(255,90,31,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,90,31,.1) 1px, transparent 1px); background-size: 54px 54px; transform: perspective(360px) rotateX(66deg); transform-origin: bottom; opacity: .5; mask-image: linear-gradient(to top, #000 5%, transparent 82%);"></div>
-
-    <div style="position: relative; z-index: 10; display: grid; grid-template-columns: 396px minmax(0, 1fr); align-items: center; height: 100%; padding: 0 32px;">
-
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div style="display: flex; align-items: center; gap: 9px; font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #D4FF3D;">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background: #D4FF3D; animation: blink 1.6s ease-in-out infinite;"></span>
-          3D-PRINTED IN INDIA · BATCH 04
-        </div>
-
-        <h1 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 76px; line-height: .84; color: #F7F4ED; text-transform: uppercase;">
-          Park<br>the <span style="color: #FF5A1F; text-shadow: 0 0 38px rgba(255,90,31,.55);">menace</span>
-        </h1>
-
-        <p style="margin: 0; max-width: 370px; font-size: 16px; line-height: 1.6; color: #A3A0B0; text-wrap: pretty;">Your lid has been living on the floor, the bed, the bike seat. Bolt a flaming skull to the wall and give it a throne.</p>
-
-        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 340px;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 12px 34px rgba(255,90,31,.34);">
-            Grab yours — ₹1,499
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      <div style="width: 834px; background: #07060a">
+        <!-- NAV -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 68px;
+            padding: 0 32px;
+            background: rgba(7, 6, 10, 0.82);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 10px">
+            <svg
+              width="23"
+              height="23"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FF5A1F"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"
+              />
+              <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+              <circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+            </svg>
+            <span
+              style="
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 21px;
+                letter-spacing: 0.14em;
+                color: #f7f4ed;
+              "
+              >SKELMET</span
+            >
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); color: #F7F4ED; font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#F7F4ED" stroke="none"><path d="M7 4v16l13-8Z"/></svg>
-            See the build
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 24px;
+              font-size: 12.5px;
+              font-weight: 500;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+              color: #a3a0b0;
+            "
+          >
+            <span style="color: #f7f4ed">Shop</span><span>The Build</span><span>Riders</span
+            ><span>Refer</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                height: 40px;
+                padding: 0 14px;
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                border-radius: 999px;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11.5px;
+                color: #f7f4ed;
+              "
+            >
+              CART
+              <span
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  min-width: 17px;
+                  height: 17px;
+                  padding: 0 5px;
+                  border-radius: 999px;
+                  background: #ff5a1f;
+                  color: #07060a;
+                  font-weight: 700;
+                  font-size: 10.5px;
+                "
+                >2</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                height: 40px;
+                padding: 0 18px;
+                border-radius: 999px;
+                background: #d4ff3d;
+                color: #07060a;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+              "
+            >
+              Buy now
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 14px; font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #63606F;">
-          <span style="color: #F7F4ED;"><span style="color: #FF8A00;">★★★★★</span> 4.9 · 312</span>
-          <span style="width: 1px; height: 11px; background: rgba(255,255,255,.16);"></span>
-          <span>FREE SHIPPING</span>
-          <span style="width: 1px; height: 11px; background: rgba(255,255,255,.16);"></span>
-          <span>7-DAY RETURNS</span>
-        </div>
-      </div>
-
-      <div style="position: relative; height: 100%; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(255,90,31,.42), rgba(255,90,31,.06) 58%, transparent 72%); filter: blur(24px); animation: bloom 5.5s ease-in-out infinite;"></div>
-        <div style="position: absolute; width: 420px; height: 420px; border-radius: 50%; border: 1px dashed rgba(255,90,31,.26); animation: spinrev 46s linear infinite;"></div>
-        <div style="position: absolute; width: 350px; height: 350px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(255,90,31,.85) 44deg, rgba(212,255,61,.5) 92deg, transparent 150deg, transparent 360deg); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); animation: spin 14s linear infinite;"></div>
-        <div class="ember" style="left: 34%; bottom: 22%; width: 4px; height: 4px; animation-delay: 0s;"></div>
-        <div class="ember" style="left: 52%; bottom: 18%; width: 3px; height: 3px; animation-delay: 2.4s;"></div>
-        <div class="ember" style="left: 64%; bottom: 26%; width: 4px; height: 4px; animation-delay: 5.2s;"></div>
-        <div style="position: absolute; bottom: 116px; width: 190px; height: 20px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.85), transparent 70%); filter: blur(8px);"></div>
-        <img src="product-front.jpg" alt="SKELMET flame skull helmet mount" style="position: relative; width: 252px; height: auto; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 22px 40px rgba(0,0,0,.72)) drop-shadow(0 0 54px rgba(255,90,31,.42));">
-
-        <span style="position: absolute; top: 118px; left: -6px; font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #F7F4ED; padding: 6px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 4px; background: rgba(14,13,19,.75); white-space: nowrap;">MATTE PLA</span>
-        <span style="position: absolute; top: 258px; right: 2px; font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .14em; color: #D4FF3D; padding: 6px 10px; border: 1px solid rgba(212,255,61,.28); border-radius: 4px; background: rgba(14,13,19,.75); white-space: nowrap;">GLOVE HOOK</span>
-
-        <div style="position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 11px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; background: rgba(14,13,19,.7);">
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 9px; letter-spacing: .16em; color: #63606F;">COLOURWAY</span>
-          <span style="width: 20px; height: 20px; border-radius: 50%; background: #FF5A1F; box-shadow: 0 0 0 2px #07060A, 0 0 0 3.5px #FF5A1F;"></span>
-          <span style="width: 20px; height: 20px; border-radius: 50%; background: #8A9A5B;"></span>
-          <span style="width: 20px; height: 20px; border-radius: 50%; background: #C8CED6;"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TICKER -->
-  <div style="position: relative; height: 54px; overflow: hidden; background: #FF5A1F;">
-    <div style="display: flex; width: 200%; height: 100%; align-items: center; animation: marquee 24s linear infinite;">
-      <div style="display: flex; align-items: center; gap: 26px; width: 50%; flex-shrink: 0; font-family: 'JetBrains Mono',monospace; font-weight: 700; font-size: 12px; letter-spacing: .16em; color: #07060A; white-space: nowrap;">
-        <span>3D PRINTED IN INDIA</span><span>✦</span><span>FREE SHIPPING PAN-INDIA</span><span>✦</span><span>HELMET + GLOVES</span><span>✦</span><span>3 COLOURWAYS</span><span>✦</span><span>7-DAY RETURNS</span><span>✦</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 26px; width: 50%; flex-shrink: 0; font-family: 'JetBrains Mono',monospace; font-weight: 700; font-size: 12px; letter-spacing: .16em; color: #07060A; white-space: nowrap;">
-        <span>3D PRINTED IN INDIA</span><span>✦</span><span>FREE SHIPPING PAN-INDIA</span><span>✦</span><span>HELMET + GLOVES</span><span>✦</span><span>3 COLOURWAYS</span><span>✦</span><span>7-DAY RETURNS</span><span>✦</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- COLOURWAYS -->
-  <div style="padding: 64px 32px 60px;">
-    <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">01 — THE LINEUP</div>
-    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 30px;">
-      <h2 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 50px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Pick your poison</h2>
-      <p style="margin: 0 0 6px; max-width: 300px; font-size: 14px; line-height: 1.56; color: #A3A0B0; text-align: right;">Same skull, same bracket. Three finishes that read completely differently on a wall.</p>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-      <div style="position: relative; border: 1px solid rgba(255,90,31,.34); border-radius: 18px; overflow: hidden; background: linear-gradient(180deg, rgba(255,90,31,.1), transparent 46%), #0E0D13;">
-        <div style="position: relative; height: 240px;">
-          <img src="product-front.jpg" alt="Blaze Orange mount" style="width: 100%; height: 240px; object-fit: cover;">
-          <span style="position: absolute; top: 14px; left: 14px; font-family: 'JetBrains Mono',monospace; font-size: 9.5px; font-weight: 700; letter-spacing: .14em; color: #07060A; background: #D4FF3D; padding: 5px 9px; border-radius: 4px;">BEST SELLER</span>
-        </div>
-        <div style="padding: 22px; border-top: 1px solid rgba(255,255,255,.07);">
-          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;">
-            <span style="width: 14px; height: 14px; border-radius: 50%; background: #FF5A1F;"></span>
-            <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; letter-spacing: .04em; color: #F7F4ED; text-transform: uppercase;">Blaze Orange</span>
+        <!-- HERO -->
+        <div
+          class="grain scan"
+          style="
+            position: relative;
+            height: 620px;
+            overflow: hidden;
+            background:
+              radial-gradient(520px 460px at 72% 46%, rgba(255, 90, 31, 0.2), transparent 70%),
+              #07060a;
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: 130px;
+              left: 50%;
+              transform: translateX(-48%);
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 198px;
+              line-height: 0.8;
+              color: transparent;
+              -webkit-text-stroke: 1px rgba(255, 255, 255, 0.055);
+              white-space: nowrap;
+              user-select: none;
+            "
+          >
+            SKELMET
           </div>
-          <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.54; color: #A3A0B0;">Hi-vis, unmissable, glows under a warm bulb. The one everybody photographs.</p>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 17px; font-weight: 700; color: #F7F4ED;">₹1,499</span>
-            <span style="display: flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: #FF5A1F; color: #07060A; font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase;">Add to cart</span>
+          <div
+            style="
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              height: 230px;
+              background-image:
+                linear-gradient(rgba(255, 90, 31, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 90, 31, 0.1) 1px, transparent 1px);
+              background-size: 54px 54px;
+              transform: perspective(360px) rotateX(66deg);
+              transform-origin: bottom;
+              opacity: 0.5;
+              mask-image: linear-gradient(to top, #000 5%, transparent 82%);
+            "
+          ></div>
+
+          <div
+            style="
+              position: relative;
+              z-index: 10;
+              display: grid;
+              grid-template-columns: 396px minmax(0, 1fr);
+              align-items: center;
+              height: 100%;
+              padding: 0 32px;
+            "
+          >
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 9px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.2em;
+                  color: #d4ff3d;
+                "
+              >
+                <span
+                  style="
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: #d4ff3d;
+                    animation: blink 1.6s ease-in-out infinite;
+                  "
+                ></span>
+                3D-PRINTED IN INDIA · BATCH 04
+              </div>
+
+              <h1
+                style="
+                  margin: 0;
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 76px;
+                  line-height: 0.84;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+              >
+                Park<br />the
+                <span style="color: #ff5a1f; text-shadow: 0 0 38px rgba(255, 90, 31, 0.55)"
+                  >menace</span
+                >
+              </h1>
+
+              <p
+                style="
+                  margin: 0;
+                  max-width: 370px;
+                  font-size: 16px;
+                  line-height: 1.6;
+                  color: #a3a0b0;
+                  text-wrap: pretty;
+                "
+              >
+                Your lid has been living on the floor, the bed, the bike seat. Bolt a flaming skull
+                to the wall and give it a throne.
+              </p>
+
+              <div style="display: flex; flex-direction: column; gap: 10px; max-width: 340px">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    height: 54px;
+                    border-radius: 999px;
+                    background: linear-gradient(96deg, #ff5a1f, #ff8a00);
+                    color: #07060a;
+                    font-weight: 700;
+                    font-size: 14px;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                    box-shadow: 0 12px 34px rgba(255, 90, 31, 0.34);
+                  "
+                >
+                  Grab yours — ₹1,499
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#07060A"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 9px;
+                    height: 50px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                    color: #f7f4ed;
+                    font-weight: 600;
+                    font-size: 13px;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                  "
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#F7F4ED" stroke="none">
+                    <path d="M7 4v16l13-8Z" />
+                  </svg>
+                  See the build
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 14px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.1em;
+                  color: #63606f;
+                "
+              >
+                <span style="color: #f7f4ed"
+                  ><span style="color: #ff8a00">★★★★★</span> 4.9 · 312</span
+                >
+                <span
+                  style="width: 1px; height: 11px; background: rgba(255, 255, 255, 0.16)"
+                ></span>
+                <span>FREE SHIPPING</span>
+                <span
+                  style="width: 1px; height: 11px; background: rgba(255, 255, 255, 0.16)"
+                ></span>
+                <span>7-DAY RETURNS</span>
+              </div>
+            </div>
+
+            <div
+              style="
+                position: relative;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <div
+                style="
+                  position: absolute;
+                  width: 340px;
+                  height: 340px;
+                  border-radius: 50%;
+                  background: radial-gradient(
+                    circle,
+                    rgba(255, 90, 31, 0.42),
+                    rgba(255, 90, 31, 0.06) 58%,
+                    transparent 72%
+                  );
+                  filter: blur(24px);
+                  animation: bloom 5.5s ease-in-out infinite;
+                "
+              ></div>
+              <div
+                style="
+                  position: absolute;
+                  width: 420px;
+                  height: 420px;
+                  border-radius: 50%;
+                  border: 1px dashed rgba(255, 90, 31, 0.26);
+                  animation: spinrev 46s linear infinite;
+                "
+              ></div>
+              <div
+                style="
+                  position: absolute;
+                  width: 350px;
+                  height: 350px;
+                  border-radius: 50%;
+                  background: conic-gradient(
+                    from 0deg,
+                    transparent 0deg,
+                    rgba(255, 90, 31, 0.85) 44deg,
+                    rgba(212, 255, 61, 0.5) 92deg,
+                    transparent 150deg,
+                    transparent 360deg
+                  );
+                  mask: radial-gradient(
+                    farthest-side,
+                    transparent calc(100% - 2px),
+                    #000 calc(100% - 2px)
+                  );
+                  -webkit-mask: radial-gradient(
+                    farthest-side,
+                    transparent calc(100% - 2px),
+                    #000 calc(100% - 2px)
+                  );
+                  animation: spin 14s linear infinite;
+                "
+              ></div>
+              <div
+                class="ember"
+                style="left: 34%; bottom: 22%; width: 4px; height: 4px; animation-delay: 0s"
+              ></div>
+              <div
+                class="ember"
+                style="left: 52%; bottom: 18%; width: 3px; height: 3px; animation-delay: 2.4s"
+              ></div>
+              <div
+                class="ember"
+                style="left: 64%; bottom: 26%; width: 4px; height: 4px; animation-delay: 5.2s"
+              ></div>
+              <div
+                style="
+                  position: absolute;
+                  bottom: 116px;
+                  width: 190px;
+                  height: 20px;
+                  border-radius: 50%;
+                  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.85), transparent 70%);
+                  filter: blur(8px);
+                "
+              ></div>
+              <img
+                src="product-front.jpg"
+                alt="SKELMET flame skull helmet mount"
+                style="
+                  position: relative;
+                  width: 252px;
+                  height: auto;
+                  animation: float 6s ease-in-out infinite;
+                  filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.72))
+                    drop-shadow(0 0 54px rgba(255, 90, 31, 0.42));
+                "
+              />
+
+              <span
+                style="
+                  position: absolute;
+                  top: 118px;
+                  left: -6px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 9.5px;
+                  letter-spacing: 0.14em;
+                  color: #f7f4ed;
+                  padding: 6px 10px;
+                  border: 1px solid rgba(255, 255, 255, 0.14);
+                  border-radius: 4px;
+                  background: rgba(14, 13, 19, 0.75);
+                  white-space: nowrap;
+                "
+                >MATTE PLA</span
+              >
+              <span
+                style="
+                  position: absolute;
+                  top: 258px;
+                  right: 2px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 9.5px;
+                  letter-spacing: 0.14em;
+                  color: #d4ff3d;
+                  padding: 6px 10px;
+                  border: 1px solid rgba(212, 255, 61, 0.28);
+                  border-radius: 4px;
+                  background: rgba(14, 13, 19, 0.75);
+                  white-space: nowrap;
+                "
+                >GLOVE HOOK</span
+              >
+
+              <div
+                style="
+                  position: absolute;
+                  bottom: 44px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  display: flex;
+                  align-items: center;
+                  gap: 11px;
+                  padding: 9px 14px;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  border-radius: 999px;
+                  background: rgba(14, 13, 19, 0.7);
+                "
+              >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 9px;
+                    letter-spacing: 0.16em;
+                    color: #63606f;
+                  "
+                  >COLOURWAY</span
+                >
+                <span
+                  style="
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: #ff5a1f;
+                    box-shadow:
+                      0 0 0 2px #07060a,
+                      0 0 0 3.5px #ff5a1f;
+                  "
+                ></span>
+                <span
+                  style="width: 20px; height: 20px; border-radius: 50%; background: #8a9a5b"
+                ></span>
+                <span
+                  style="width: 20px; height: 20px; border-radius: 50%; background: #c8ced6"
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TICKER -->
+        <div style="position: relative; height: 54px; overflow: hidden; background: #ff5a1f">
+          <div
+            style="
+              display: flex;
+              width: 200%;
+              height: 100%;
+              align-items: center;
+              animation: marquee 24s linear infinite;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 26px;
+                width: 50%;
+                flex-shrink: 0;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.16em;
+                color: #07060a;
+                white-space: nowrap;
+              "
+            >
+              <span>3D PRINTED IN INDIA</span><span>✦</span><span>FREE SHIPPING PAN-INDIA</span
+              ><span>✦</span><span>HELMET + GLOVES</span><span>✦</span><span>3 COLOURWAYS</span
+              ><span>✦</span><span>7-DAY RETURNS</span><span>✦</span>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 26px;
+                width: 50%;
+                flex-shrink: 0;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.16em;
+                color: #07060a;
+                white-space: nowrap;
+              "
+            >
+              <span>3D PRINTED IN INDIA</span><span>✦</span><span>FREE SHIPPING PAN-INDIA</span
+              ><span>✦</span><span>HELMET + GLOVES</span><span>✦</span><span>3 COLOURWAYS</span
+              ><span>✦</span><span>7-DAY RETURNS</span><span>✦</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLOURWAYS -->
+        <div style="padding: 64px 32px 60px">
+          <div
+            style="
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 10.5px;
+              letter-spacing: 0.2em;
+              color: #ff8a00;
+              margin-bottom: 12px;
+            "
+          >
+            01 — THE LINEUP
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: flex-end;
+              justify-content: space-between;
+              gap: 32px;
+              margin-bottom: 30px;
+            "
+          >
+            <h2
+              style="
+                margin: 0;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 50px;
+                line-height: 0.94;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              Pick your poison
+            </h2>
+            <p
+              style="
+                margin: 0 0 6px;
+                max-width: 300px;
+                font-size: 14px;
+                line-height: 1.56;
+                color: #a3a0b0;
+                text-align: right;
+              "
+            >
+              Same skull, same bracket. Three finishes that read completely differently on a wall.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+            <div
+              style="
+                position: relative;
+                border: 1px solid rgba(255, 90, 31, 0.34);
+                border-radius: 18px;
+                overflow: hidden;
+                background:
+                  linear-gradient(180deg, rgba(255, 90, 31, 0.1), transparent 46%), #0e0d13;
+              "
+            >
+              <div style="position: relative; height: 240px">
+                <img
+                  src="product-front.jpg"
+                  alt="Blaze Orange mount"
+                  style="width: 100%; height: 240px; object-fit: cover"
+                />
+                <span
+                  style="
+                    position: absolute;
+                    top: 14px;
+                    left: 14px;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 9.5px;
+                    font-weight: 700;
+                    letter-spacing: 0.14em;
+                    color: #07060a;
+                    background: #d4ff3d;
+                    padding: 5px 9px;
+                    border-radius: 4px;
+                  "
+                  >BEST SELLER</span
+                >
+              </div>
+              <div style="padding: 22px; border-top: 1px solid rgba(255, 255, 255, 0.07)">
+                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px">
+                  <span
+                    style="width: 14px; height: 14px; border-radius: 50%; background: #ff5a1f"
+                  ></span>
+                  <span
+                    style="
+                      font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                      font-size: 24px;
+                      letter-spacing: 0.04em;
+                      color: #f7f4ed;
+                      text-transform: uppercase;
+                    "
+                    >Blaze Orange</span
+                  >
+                </div>
+                <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.54; color: #a3a0b0">
+                  Hi-vis, unmissable, glows under a warm bulb. The one everybody photographs.
+                </p>
+                <div style="display: flex; align-items: center; justify-content: space-between">
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 17px;
+                      font-weight: 700;
+                      color: #f7f4ed;
+                    "
+                    >₹1,499</span
+                  >
+                  <span
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 44px;
+                      padding: 0 20px;
+                      border-radius: 999px;
+                      background: #ff5a1f;
+                      color: #07060a;
+                      font-weight: 700;
+                      font-size: 12px;
+                      letter-spacing: 0.05em;
+                      text-transform: uppercase;
+                    "
+                    >Add to cart</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                overflow: hidden;
+                background: #0e0d13;
+              "
+            >
+              <img
+                src="colourway-lineup.jpg"
+                alt="Militia Olive mount"
+                style="width: 100%; height: 240px; object-fit: cover; object-position: 22% 50%"
+              />
+              <div style="padding: 22px; border-top: 1px solid rgba(255, 255, 255, 0.07)">
+                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px">
+                  <span
+                    style="width: 14px; height: 14px; border-radius: 50%; background: #8a9a5b"
+                  ></span>
+                  <span
+                    style="
+                      font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                      font-size: 24px;
+                      letter-spacing: 0.04em;
+                      color: #f7f4ed;
+                      text-transform: uppercase;
+                    "
+                    >Militia Olive</span
+                  >
+                </div>
+                <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.54; color: #a3a0b0">
+                  Muted, tactical, disappears into a dark wall until you look twice.
+                </p>
+                <div style="display: flex; align-items: center; justify-content: space-between">
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 17px;
+                      font-weight: 700;
+                      color: #f7f4ed;
+                    "
+                    >₹1,499</span
+                  >
+                  <span
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 44px;
+                      padding: 0 20px;
+                      border-radius: 999px;
+                      border: 1px solid rgba(255, 255, 255, 0.2);
+                      color: #f7f4ed;
+                      font-weight: 700;
+                      font-size: 12px;
+                      letter-spacing: 0.05em;
+                      text-transform: uppercase;
+                    "
+                    >Add to cart</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                grid-column: span 2;
+                display: flex;
+                align-items: center;
+                gap: 26px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                overflow: hidden;
+                background: #0e0d13;
+              "
+            >
+              <img
+                src="colourway-lineup.jpg"
+                alt="Ghost Grey mount"
+                style="
+                  width: 280px;
+                  height: 176px;
+                  object-fit: cover;
+                  object-position: 78% 50%;
+                  flex-shrink: 0;
+                "
+              />
+              <div style="flex-grow: 1; padding: 22px 24px 22px 0">
+                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px">
+                  <span
+                    style="width: 14px; height: 14px; border-radius: 50%; background: #c8ced6"
+                  ></span>
+                  <span
+                    style="
+                      font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                      font-size: 24px;
+                      letter-spacing: 0.04em;
+                      color: #f7f4ed;
+                      text-transform: uppercase;
+                    "
+                    >Ghost Grey</span
+                  >
+                </div>
+                <p
+                  style="
+                    margin: 0 0 18px;
+                    max-width: 380px;
+                    font-size: 14px;
+                    line-height: 1.54;
+                    color: #a3a0b0;
+                  "
+                >
+                  Concrete-toned and clean. The one that survives a flatmate veto.
+                </p>
+                <div style="display: flex; align-items: center; gap: 20px">
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 17px;
+                      font-weight: 700;
+                      color: #f7f4ed;
+                    "
+                    >₹1,499</span
+                  >
+                  <span
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 44px;
+                      padding: 0 20px;
+                      border-radius: 999px;
+                      border: 1px solid rgba(255, 255, 255, 0.2);
+                      color: #f7f4ed;
+                      font-weight: 700;
+                      font-size: 12px;
+                      letter-spacing: 0.05em;
+                      text-transform: uppercase;
+                    "
+                    >Add to cart</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANATOMY -->
+        <div
+          class="grain"
+          style="
+            position: relative;
+            padding: 60px 32px;
+            background: #0e0d13;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          "
+        >
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 36px;
+              align-items: center;
+            "
+          >
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 18px;
+                overflow: hidden;
+              "
+            >
+              <img
+                src="product-profile.jpg"
+                alt="Side profile of the mounted bracket"
+                style="width: 100%; height: 380px; object-fit: cover"
+              />
+            </div>
+            <div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.2em;
+                  color: #ff8a00;
+                  margin-bottom: 12px;
+                "
+              >
+                02 — THE BUILD
+              </div>
+              <h2
+                style="
+                  margin: 0 0 18px;
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 46px;
+                  line-height: 0.94;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+              >
+                Two parts.<br />Zero wobble.
+              </h2>
+              <p
+                style="
+                  margin: 0 0 24px;
+                  font-size: 15px;
+                  line-height: 1.6;
+                  color: #a3a0b0;
+                  text-wrap: pretty;
+                "
+              >
+                A cantilever arm takes the load into the wall, the skull cradles the shell from
+                inside, and the notch under the jaw takes your gloves. Four screws, ten minutes.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  border-top: 1px solid rgba(255, 255, 255, 0.09);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 12px;
+                  "
+                >
+                  <span style="color: #63606f; letter-spacing: 0.08em">MATERIAL</span
+                  ><span style="color: #f7f4ed">PLA+ · matte</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 12px;
+                  "
+                >
+                  <span style="color: #63606f; letter-spacing: 0.08em">DIMENSIONS</span
+                  ><span style="color: #ff8a00">[H × W × D mm]</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 12px;
+                  "
+                >
+                  <span style="color: #63606f; letter-spacing: 0.08em">LOAD RATING</span
+                  ><span style="color: #ff8a00">[X kg]</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 12px;
+                  "
+                >
+                  <span style="color: #63606f; letter-spacing: 0.08em">IN THE BOX</span
+                  ><span style="color: #f7f4ed">Skull · bracket · screws</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIFESTYLE -->
+        <div style="position: relative; height: 460px; overflow: hidden">
+          <img
+            src="lifestyle-concrete.jpg"
+            alt="A helmet resting on a SKELMET mount"
+            style="
+              position: absolute;
+              inset: 0;
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              object-position: 50% 42%;
+            "
+          />
+          <div
+            style="
+              position: absolute;
+              inset: 0;
+              background: linear-gradient(
+                90deg,
+                rgba(7, 6, 10, 0.95) 0%,
+                rgba(7, 6, 10, 0.66) 50%,
+                rgba(7, 6, 10, 0.12) 100%
+              );
+            "
+          ></div>
+          <div
+            style="
+              position: relative;
+              z-index: 2;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              height: 100%;
+              padding: 0 32px;
+              max-width: 500px;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 10.5px;
+                letter-spacing: 0.2em;
+                color: #d4ff3d;
+                margin-bottom: 14px;
+              "
+            >
+              03 — THE POINT
+            </div>
+            <h2
+              style="
+                margin: 0 0 16px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 56px;
+                line-height: 0.9;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              You spent 20k<br />on that lid.
+            </h2>
+            <p
+              style="
+                margin: 0 0 24px;
+                max-width: 400px;
+                font-size: 15.5px;
+                line-height: 1.58;
+                color: #c8ced6;
+              "
+            >
+              Then you put it on the floor next to the shoe rack. Scratched visor, damp liner,
+              gym-bag smell by Thursday.
+            </p>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                align-self: flex-start;
+                height: 50px;
+                padding: 0 26px;
+                border-radius: 999px;
+                background: #f7f4ed;
+                color: #07060a;
+                font-weight: 700;
+                font-size: 13.5px;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+              "
+            >
+              Fix that — ₹1,499
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#07060A"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- BENTO -->
+        <div style="padding: 60px 32px; background: #07060a">
+          <div
+            style="
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 10.5px;
+              letter-spacing: 0.2em;
+              color: #ff8a00;
+              margin-bottom: 12px;
+            "
+          >
+            04 — WHY IT SLAPS
+          </div>
+          <h2
+            style="
+              margin: 0 0 30px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 50px;
+              line-height: 0.94;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Six reasons, no fluff
+          </h2>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              grid-auto-rows: 186px;
+              gap: 14px;
+            "
+          >
+            <div
+              style="
+                grid-column: span 2;
+                grid-row: span 2;
+                padding: 28px;
+                border: 1px solid rgba(255, 90, 31, 0.3);
+                border-radius: 18px;
+                background:
+                  linear-gradient(155deg, rgba(255, 90, 31, 0.18), transparent 62%), #0e0d13;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              "
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF5A1F"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2 3 7v10l9 5 9-5V7Z" />
+                <path d="m3 7 9 5 9-5" />
+                <path d="M12 12v10" />
+              </svg>
+              <div>
+                <h3
+                  style="
+                    margin: 0 0 10px;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 34px;
+                    line-height: 0.96;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  Printed to order,<br />not stockpiled
+                </h3>
+                <p
+                  style="
+                    margin: 0;
+                    max-width: 340px;
+                    font-size: 14px;
+                    line-height: 1.54;
+                    color: #a3a0b0;
+                  "
+                >
+                  Every skull comes off our own printers in small batches. Nothing sits in a
+                  warehouse for eight months waiting for you.
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                padding: 22px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                background: #0e0d13;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              "
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#D4FF3D"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 4v16" />
+                <path d="M4 8h11l-2.5 3.5L15 15H4" />
+              </svg>
+              <div>
+                <h3
+                  style="
+                    margin: 0 0 6px;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 20px;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  Glove hook
+                </h3>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #a3a0b0">
+                  Notch under the jaw takes gloves or keys.
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                padding: 22px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                background: #0e0d13;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              "
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#D4FF3D"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              <div>
+                <h3
+                  style="
+                    margin: 0 0 6px;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 20px;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  10-min fit
+                </h3>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #a3a0b0">
+                  Paper drill template in the box.
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                grid-column: span 2;
+                padding: 22px 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                background: #0e0d13;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+              "
+            >
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF8A00"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                style="flex-shrink: 0"
+              >
+                <path d="M12 3a9 9 0 1 0 9 9" />
+                <path d="M12 3v9l6.5 6.5" />
+              </svg>
+              <div>
+                <h3
+                  style="
+                    margin: 0 0 6px;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 20px;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  Dries the liner out
+                </h3>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #a3a0b0">
+                  Off the floor and open to the air, so the padding isn't damp when you leave in the
+                  morning.
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                padding: 22px;
+                border: 1px solid rgba(212, 255, 61, 0.28);
+                border-radius: 18px;
+                background:
+                  linear-gradient(160deg, rgba(212, 255, 61, 0.1), transparent 62%), #0e0d13;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              "
+            >
+              <div style="display: flex; gap: 5px">
+                <span
+                  style="width: 13px; height: 13px; border-radius: 50%; background: #ff5a1f"
+                ></span>
+                <span
+                  style="width: 13px; height: 13px; border-radius: 50%; background: #8a9a5b"
+                ></span>
+                <span
+                  style="width: 13px; height: 13px; border-radius: 50%; background: #c8ced6"
+                ></span>
+              </div>
+              <div>
+                <h3
+                  style="
+                    margin: 0 0 6px;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 20px;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  3 colourways
+                </h3>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #a3a0b0">
+                  Custom colour on five or more.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIDER WALL -->
+        <div
+          style="
+            padding: 60px 32px;
+            background: #0e0d13;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+          "
+        >
+          <div
+            style="
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 10.5px;
+              letter-spacing: 0.2em;
+              color: #ff8a00;
+              margin-bottom: 12px;
+            "
+          >
+            05 — RIDER WALL
+          </div>
+          <h2
+            style="
+              margin: 0 0 26px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 50px;
+              line-height: 0.94;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Mounted &amp; posted
+          </h2>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+              gap: 12px;
+              margin-bottom: 14px;
+            "
+          >
+            <div style="border-radius: 14px; overflow: hidden">
+              <img
+                src="lifestyle-room.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 168px; object-fit: cover"
+              />
+            </div>
+            <div style="border-radius: 14px; overflow: hidden">
+              <img
+                src="lifestyle-garage.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 168px; object-fit: cover"
+              />
+            </div>
+            <div style="border-radius: 14px; overflow: hidden">
+              <img
+                src="lifestyle-concrete.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 168px; object-fit: cover"
+              />
+            </div>
+            <div style="border-radius: 14px; overflow: hidden">
+              <img
+                src="product-profile.jpg"
+                alt="Rider photo"
+                style="width: 100%; height: 168px; object-fit: cover"
+              />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+            <div
+              style="
+                padding: 22px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #07060a;
+              "
+            >
+              <div
+                style="color: #ff8a00; font-size: 13px; letter-spacing: 0.1em; margin-bottom: 10px"
+              >
+                ★★★★★
+              </div>
+              <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.56; color: #f7f4ed">
+                "Was ready for cheap flimsy plastic. It's heavy, the flames are properly sharp, and
+                it hasn't budged in four months."
+              </p>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.1em;
+                  color: #63606f;
+                "
+              >
+                ROHAN M. · PUNE
+              </div>
+            </div>
+            <div
+              style="
+                padding: 22px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #07060a;
+              "
+            >
+              <div
+                style="color: #ff8a00; font-size: 13px; letter-spacing: 0.1em; margin-bottom: 10px"
+              >
+                ★★★★★
+              </div>
+              <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.56; color: #f7f4ed">
+                "Bought it as a joke gift for my brother. He's now bought two more for his friends.
+                Rip me."
+              </p>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.1em;
+                  color: #63606f;
+                "
+              >
+                AISHA K. · BENGALURU
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REFER -->
+        <div
+          class="grain"
+          style="
+            position: relative;
+            overflow: hidden;
+            padding: 54px 32px;
+            background: linear-gradient(100deg, #ff5a1f, #ff8a00 62%, #ffc24d);
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: -30px;
+              right: 24px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 160px;
+              line-height: 1;
+              color: rgba(7, 6, 10, 0.11);
+              user-select: none;
+            "
+          >
+            ₹250
+          </div>
+          <div
+            style="
+              position: relative;
+              z-index: 2;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 32px;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.2em;
+                  color: rgba(7, 6, 10, 0.65);
+                  margin-bottom: 12px;
+                "
+              >
+                06 — REFER &amp; EARN
+              </div>
+              <h2
+                style="
+                  margin: 0 0 12px;
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 46px;
+                  line-height: 0.94;
+                  color: #07060a;
+                  text-transform: uppercase;
+                "
+              >
+                ₹250 for them.<br />₹250 for you.
+              </h2>
+              <p
+                style="
+                  margin: 0;
+                  max-width: 380px;
+                  font-size: 15px;
+                  line-height: 1.56;
+                  color: rgba(7, 6, 10, 0.78);
+                "
+              >
+                Send your code to the group chat. They save ₹250, you get ₹250 back the moment it
+                ships.
+              </p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  padding: 14px 18px;
+                  border-radius: 12px;
+                  background: rgba(7, 6, 10, 0.9);
+                  border: 1px dashed rgba(247, 244, 237, 0.34);
+                "
+              >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.14em;
+                    color: #63606f;
+                  "
+                  >YOUR CODE</span
+                >
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 22px;
+                    letter-spacing: 0.1em;
+                    color: #d4ff3d;
+                  "
+                  >SKULL-8F2K</span
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 9px;
+                  height: 50px;
+                  padding: 0 26px;
+                  border-radius: 999px;
+                  background: #07060a;
+                  color: #f7f4ed;
+                  font-weight: 700;
+                  font-size: 13.5px;
+                  letter-spacing: 0.04em;
+                  text-transform: uppercase;
+                "
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#F7F4ED"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <path d="m8.6 13.5 6.8 4" />
+                  <path d="m15.4 6.5-6.8 4" />
+                </svg>
+                Share &amp; earn
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div
+          style="position: relative; overflow: hidden; padding: 52px 32px 0; background: #0e0d13"
+        >
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1.4fr 1fr 1fr 1fr;
+              gap: 28px;
+              padding-bottom: 40px;
+            "
+          >
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px">
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#FF5A1F"
+                  stroke-width="1.7"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"
+                  />
+                  <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+                  <circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+                </svg>
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 19px;
+                    letter-spacing: 0.14em;
+                    color: #f7f4ed;
+                  "
+                  >SKELMET</span
+                >
+              </div>
+              <p
+                style="
+                  margin: 0;
+                  max-width: 240px;
+                  font-size: 13.5px;
+                  line-height: 1.56;
+                  color: #a3a0b0;
+                "
+              >
+                Helmet furniture for people who don't own furniture. Printed and shipped from
+                [CITY].
+              </p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 11px">
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 2px;
+                "
+              >
+                SHOP
+              </div>
+              <span style="font-size: 13.5px; color: #a3a0b0">All mounts</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Bulk &amp; clubs</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Gift cards</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 11px">
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 2px;
+                "
+              >
+                HELP
+              </div>
+              <span style="font-size: 13.5px; color: #a3a0b0">Track order</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Returns</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Contact</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 11px">
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 2px;
+                "
+              >
+                COMPANY
+              </div>
+              <span style="font-size: 13.5px; color: #a3a0b0">About</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Refer &amp; earn</span>
+              <span style="font-size: 13.5px; color: #a3a0b0">Privacy</span>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 18px 0 20px;
+              border-top: 1px solid rgba(255, 255, 255, 0.07);
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 10.5px;
+              letter-spacing: 0.08em;
+              color: #63606f;
+            "
+          >
+            <span>© 2026 SKELMET · [LEGAL ENTITY]</span>
+            <span>PRINTED &amp; PACKED IN INDIA</span>
+          </div>
+          <div
+            style="
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 128px;
+              line-height: 0.76;
+              letter-spacing: 0.02em;
+              text-align: center;
+              color: transparent;
+              -webkit-text-stroke: 1px rgba(255, 90, 31, 0.28);
+              user-select: none;
+              margin-bottom: -20px;
+            "
+          >
+            SKELMET
           </div>
         </div>
       </div>
-
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 18px; overflow: hidden; background: #0E0D13;">
-        <img src="colourway-lineup.jpg" alt="Militia Olive mount" style="width: 100%; height: 240px; object-fit: cover; object-position: 22% 50%;">
-        <div style="padding: 22px; border-top: 1px solid rgba(255,255,255,.07);">
-          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;">
-            <span style="width: 14px; height: 14px; border-radius: 50%; background: #8A9A5B;"></span>
-            <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; letter-spacing: .04em; color: #F7F4ED; text-transform: uppercase;">Militia Olive</span>
-          </div>
-          <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.54; color: #A3A0B0;">Muted, tactical, disappears into a dark wall until you look twice.</p>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 17px; font-weight: 700; color: #F7F4ED;">₹1,499</span>
-            <span style="display: flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); color: #F7F4ED; font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase;">Add to cart</span>
-          </div>
-        </div>
-      </div>
-
-      <div style="grid-column: span 2; display: flex; align-items: center; gap: 26px; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; overflow: hidden; background: #0E0D13;">
-        <img src="colourway-lineup.jpg" alt="Ghost Grey mount" style="width: 280px; height: 176px; object-fit: cover; object-position: 78% 50%; flex-shrink: 0;">
-        <div style="flex-grow: 1; padding: 22px 24px 22px 0;">
-          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;">
-            <span style="width: 14px; height: 14px; border-radius: 50%; background: #C8CED6;"></span>
-            <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; letter-spacing: .04em; color: #F7F4ED; text-transform: uppercase;">Ghost Grey</span>
-          </div>
-          <p style="margin: 0 0 18px; max-width: 380px; font-size: 14px; line-height: 1.54; color: #A3A0B0;">Concrete-toned and clean. The one that survives a flatmate veto.</p>
-          <div style="display: flex; align-items: center; gap: 20px;">
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 17px; font-weight: 700; color: #F7F4ED;">₹1,499</span>
-            <span style="display: flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); color: #F7F4ED; font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase;">Add to cart</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ANATOMY -->
-  <div class="grain" style="position: relative; padding: 60px 32px; background: #0E0D13; border-top: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06);">
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; align-items: center;">
-      <div style="border: 1px solid rgba(255,255,255,.08); border-radius: 18px; overflow: hidden;">
-        <img src="product-profile.jpg" alt="Side profile of the mounted bracket" style="width: 100%; height: 380px; object-fit: cover;">
-      </div>
-      <div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">02 — THE BUILD</div>
-        <h2 style="margin: 0 0 18px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 46px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Two parts.<br>Zero wobble.</h2>
-        <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #A3A0B0; text-wrap: pretty;">A cantilever arm takes the load into the wall, the skull cradles the shell from inside, and the notch under the jaw takes your gloves. Four screws, ten minutes.</p>
-        <div style="display: flex; flex-direction: column; border-top: 1px solid rgba(255,255,255,.09);">
-          <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.09); font-family: 'JetBrains Mono',monospace; font-size: 12px;"><span style="color: #63606F; letter-spacing: .08em;">MATERIAL</span><span style="color: #F7F4ED;">PLA+ · matte</span></div>
-          <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.09); font-family: 'JetBrains Mono',monospace; font-size: 12px;"><span style="color: #63606F; letter-spacing: .08em;">DIMENSIONS</span><span style="color: #FF8A00;">[H × W × D mm]</span></div>
-          <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.09); font-family: 'JetBrains Mono',monospace; font-size: 12px;"><span style="color: #63606F; letter-spacing: .08em;">LOAD RATING</span><span style="color: #FF8A00;">[X kg]</span></div>
-          <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.09); font-family: 'JetBrains Mono',monospace; font-size: 12px;"><span style="color: #63606F; letter-spacing: .08em;">IN THE BOX</span><span style="color: #F7F4ED;">Skull · bracket · screws</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- LIFESTYLE -->
-  <div style="position: relative; height: 460px; overflow: hidden;">
-    <img src="lifestyle-concrete.jpg" alt="A helmet resting on a SKELMET mount" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%;">
-    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,6,10,.95) 0%, rgba(7,6,10,.66) 50%, rgba(7,6,10,.12) 100%);"></div>
-    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0 32px; max-width: 500px;">
-      <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #D4FF3D; margin-bottom: 14px;">03 — THE POINT</div>
-      <h2 style="margin: 0 0 16px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 56px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">You spent 20k<br>on that lid.</h2>
-      <p style="margin: 0 0 24px; max-width: 400px; font-size: 15.5px; line-height: 1.58; color: #C8CED6;">Then you put it on the floor next to the shoe rack. Scratched visor, damp liner, gym-bag smell by Thursday.</p>
-      <div style="display: flex; align-items: center; gap: 10px; align-self: flex-start; height: 50px; padding: 0 26px; border-radius: 999px; background: #F7F4ED; color: #07060A; font-weight: 700; font-size: 13.5px; letter-spacing: .04em; text-transform: uppercase;">
-        Fix that — ₹1,499
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- BENTO -->
-  <div style="padding: 60px 32px; background: #07060A;">
-    <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">04 — WHY IT SLAPS</div>
-    <h2 style="margin: 0 0 30px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 50px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Six reasons, no fluff</h2>
-
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 186px; gap: 14px;">
-      <div style="grid-column: span 2; grid-row: span 2; padding: 28px; border: 1px solid rgba(255,90,31,.3); border-radius: 18px; background: linear-gradient(155deg, rgba(255,90,31,.18), transparent 62%), #0E0D13; display: flex; flex-direction: column; justify-content: space-between;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7Z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg>
-        <div>
-          <h3 style="margin: 0 0 10px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: .96; color: #F7F4ED; text-transform: uppercase;">Printed to order,<br>not stockpiled</h3>
-          <p style="margin: 0; max-width: 340px; font-size: 14px; line-height: 1.54; color: #A3A0B0;">Every skull comes off our own printers in small batches. Nothing sits in a warehouse for eight months waiting for you.</p>
-        </div>
-      </div>
-      <div style="padding: 22px; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; background: #0E0D13; display: flex; flex-direction: column; justify-content: space-between;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16"/><path d="M4 8h11l-2.5 3.5L15 15H4"/></svg>
-        <div>
-          <h3 style="margin: 0 0 6px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 20px; color: #F7F4ED; text-transform: uppercase;">Glove hook</h3>
-          <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #A3A0B0;">Notch under the jaw takes gloves or keys.</p>
-        </div>
-      </div>
-      <div style="padding: 22px; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; background: #0E0D13; display: flex; flex-direction: column; justify-content: space-between;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        <div>
-          <h3 style="margin: 0 0 6px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 20px; color: #F7F4ED; text-transform: uppercase;">10-min fit</h3>
-          <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #A3A0B0;">Paper drill template in the box.</p>
-        </div>
-      </div>
-      <div style="grid-column: span 2; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; background: #0E0D13; display: flex; align-items: center; gap: 20px;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v9l6.5 6.5"/></svg>
-        <div>
-          <h3 style="margin: 0 0 6px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 20px; color: #F7F4ED; text-transform: uppercase;">Dries the liner out</h3>
-          <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #A3A0B0;">Off the floor and open to the air, so the padding isn't damp when you leave in the morning.</p>
-        </div>
-      </div>
-      <div style="padding: 22px; border: 1px solid rgba(212,255,61,.28); border-radius: 18px; background: linear-gradient(160deg, rgba(212,255,61,.1), transparent 62%), #0E0D13; display: flex; flex-direction: column; justify-content: space-between;">
-        <div style="display: flex; gap: 5px;">
-          <span style="width: 13px; height: 13px; border-radius: 50%; background: #FF5A1F;"></span>
-          <span style="width: 13px; height: 13px; border-radius: 50%; background: #8A9A5B;"></span>
-          <span style="width: 13px; height: 13px; border-radius: 50%; background: #C8CED6;"></span>
-        </div>
-        <div>
-          <h3 style="margin: 0 0 6px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 20px; color: #F7F4ED; text-transform: uppercase;">3 colourways</h3>
-          <p style="margin: 0; font-size: 12.5px; line-height: 1.48; color: #A3A0B0;">Custom colour on five or more.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIDER WALL -->
-  <div style="padding: 60px 32px; background: #0E0D13; border-top: 1px solid rgba(255,255,255,.06);">
-    <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">05 — RIDER WALL</div>
-    <h2 style="margin: 0 0 26px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 50px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Mounted &amp; posted</h2>
-    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px;">
-      <div style="border-radius: 14px; overflow: hidden;"><img src="lifestyle-room.jpg" alt="Rider photo" style="width: 100%; height: 168px; object-fit: cover;"></div>
-      <div style="border-radius: 14px; overflow: hidden;"><img src="lifestyle-garage.jpg" alt="Rider photo" style="width: 100%; height: 168px; object-fit: cover;"></div>
-      <div style="border-radius: 14px; overflow: hidden;"><img src="lifestyle-concrete.jpg" alt="Rider photo" style="width: 100%; height: 168px; object-fit: cover;"></div>
-      <div style="border-radius: 14px; overflow: hidden;"><img src="product-profile.jpg" alt="Rider photo" style="width: 100%; height: 168px; object-fit: cover;"></div>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
-      <div style="padding: 22px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #07060A;">
-        <div style="color: #FF8A00; font-size: 13px; letter-spacing: .1em; margin-bottom: 10px;">★★★★★</div>
-        <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.56; color: #F7F4ED;">"Was ready for cheap flimsy plastic. It's heavy, the flames are properly sharp, and it hasn't budged in four months."</p>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .1em; color: #63606F;">ROHAN M. · PUNE</div>
-      </div>
-      <div style="padding: 22px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #07060A;">
-        <div style="color: #FF8A00; font-size: 13px; letter-spacing: .1em; margin-bottom: 10px;">★★★★★</div>
-        <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.56; color: #F7F4ED;">"Bought it as a joke gift for my brother. He's now bought two more for his friends. Rip me."</p>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .1em; color: #63606F;">AISHA K. · BENGALURU</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- REFER -->
-  <div class="grain" style="position: relative; overflow: hidden; padding: 54px 32px; background: linear-gradient(100deg, #FF5A1F, #FF8A00 62%, #FFC24D);">
-    <div style="position: absolute; top: -30px; right: 24px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 160px; line-height: 1; color: rgba(7,6,10,.11); user-select: none;">₹250</div>
-    <div style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 32px;">
-      <div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: rgba(7,6,10,.65); margin-bottom: 12px;">06 — REFER &amp; EARN</div>
-        <h2 style="margin: 0 0 12px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 46px; line-height: .94; color: #07060A; text-transform: uppercase;">₹250 for them.<br>₹250 for you.</h2>
-        <p style="margin: 0; max-width: 380px; font-size: 15px; line-height: 1.56; color: rgba(7,6,10,.78);">Send your code to the group chat. They save ₹250, you get ₹250 back the moment it ships.</p>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
-        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; background: rgba(7,6,10,.9); border: 1px dashed rgba(247,244,237,.34);">
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F;">YOUR CODE</span>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 22px; letter-spacing: .1em; color: #D4FF3D;">SKULL-8F2K</span>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 9px; height: 50px; padding: 0 26px; border-radius: 999px; background: #07060A; color: #F7F4ED; font-weight: 700; font-size: 13.5px; letter-spacing: .04em; text-transform: uppercase;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
-          Share &amp; earn
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div style="position: relative; overflow: hidden; padding: 52px 32px 0; background: #0E0D13;">
-    <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 28px; padding-bottom: 40px;">
-      <div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.7" stroke-linejoin="round">
-            <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
-            <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
-          </svg>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 19px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-        </div>
-        <p style="margin: 0; max-width: 240px; font-size: 13.5px; line-height: 1.56; color: #A3A0B0;">Helmet furniture for people who don't own furniture. Printed and shipped from [CITY].</p>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 11px;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .18em; color: #63606F; margin-bottom: 2px;">SHOP</div>
-        <span style="font-size: 13.5px; color: #A3A0B0;">All mounts</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Bulk &amp; clubs</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Gift cards</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 11px;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .18em; color: #63606F; margin-bottom: 2px;">HELP</div>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Track order</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Returns</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Contact</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 11px;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .18em; color: #63606F; margin-bottom: 2px;">COMPANY</div>
-        <span style="font-size: 13.5px; color: #A3A0B0;">About</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Refer &amp; earn</span>
-        <span style="font-size: 13.5px; color: #A3A0B0;">Privacy</span>
-      </div>
-    </div>
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0 20px; border-top: 1px solid rgba(255,255,255,.07); font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .08em; color: #63606F;">
-      <span>© 2026 SKELMET · [LEGAL ENTITY]</span>
-      <span>PRINTED &amp; PACKED IN INDIA</span>
-    </div>
-    <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 128px; line-height: .76; letter-spacing: .02em; text-align: center; color: transparent; -webkit-text-stroke: 1px rgba(255,90,31,.28); user-select: none; margin-bottom: -20px;">SKELMET</div>
-  </div>
-
-</div>
-</x-dc>
-</body>
+    </x-dc>
+  </body>
 </html>

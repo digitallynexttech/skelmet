@@ -17,8 +17,7 @@ export function mutationWithToast<TArgs extends unknown[], TResult>(
       toast.success(messages.success, { id })
       return result
     } catch (err) {
-      const message =
-        err instanceof ApiFetchError ? err.message : "That didn't work. Try again."
+      const message = err instanceof ApiFetchError ? err.message : "That didn't work. Try again."
       toast.error(message, { id })
       throw err
     }

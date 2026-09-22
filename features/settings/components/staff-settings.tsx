@@ -37,9 +37,9 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
           { onSuccess: onDone },
         )
       }}
-      className="rounded-card border border-white/[0.09] bg-carbon p-6"
+      className="rounded-card bg-carbon border border-white/[0.09] p-6"
     >
-      <h2 className="mb-5 font-display text-[22px] leading-[1.08] text-bone uppercase">
+      <h2 className="font-display text-bone mb-5 text-[22px] leading-[1.08] uppercase">
         Add an employee
       </h2>
 
@@ -54,12 +54,18 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
           label="Temporary password"
           hint="They will be asked to change it the first time they sign in"
         >
-          <Input name="password" type="password" required minLength={10} autoComplete="new-password" />
+          <Input
+            name="password"
+            type="password"
+            required
+            minLength={10}
+            autoComplete="new-password"
+          />
         </Field>
       </div>
 
       <fieldset className="mb-5">
-        <legend className="mb-3 font-mono text-[10.5px] tracking-[0.16em] text-dim uppercase">
+        <legend className="text-dim mb-3 font-mono text-[10.5px] tracking-[0.16em] uppercase">
           Roles
         </legend>
         <div className="flex flex-wrap gap-2">
@@ -71,8 +77,8 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
               aria-pressed={roleIds.includes(r.id)}
               className={
                 roleIds.includes(r.id)
-                  ? "rounded-full bg-blaze px-4 py-2 text-[12.5px] font-semibold text-void"
-                  : "rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] text-ash transition-colors hover:border-white/30 hover:text-bone"
+                  ? "bg-blaze text-void rounded-full px-4 py-2 text-[12.5px] font-semibold"
+                  : "text-ash hover:text-bone rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30"
               }
             >
               {r.name}
@@ -85,7 +91,12 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
       </fieldset>
 
       <div className="flex gap-2.5">
-        <Button type="submit" variant="primary" size="sm" disabled={create.isPending || roleIds.length === 0}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          disabled={create.isPending || roleIds.length === 0}
+        >
           Add employee
         </Button>
         <Button type="button" variant="quiet" size="sm" onClick={onDone}>
@@ -104,11 +115,11 @@ function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
   const held = new Set(member.roles.map((r) => r.id))
 
   return (
-    <article className="rounded-card border border-white/[0.09] bg-carbon p-6">
+    <article className="rounded-card bg-carbon border border-white/[0.09] p-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-[16px] font-semibold text-bone">{member.name ?? "Unnamed"}</h3>
-          <p className="font-mono text-[12px] text-ash">{member.email}</p>
+          <h3 className="text-bone text-[16px] font-semibold">{member.name ?? "Unnamed"}</h3>
+          <p className="text-ash font-mono text-[12px]">{member.email}</p>
           {member.mustChangePassword ? (
             <Badge variant="ember" className="mt-2.5">
               Must change password
@@ -150,10 +161,16 @@ function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
               { onSuccess: () => setResetting(false) },
             )
           }}
-          className="mb-5 flex flex-wrap items-end gap-3 rounded-tile border border-white/[0.09] bg-void p-4"
+          className="rounded-tile bg-void mb-5 flex flex-wrap items-end gap-3 border border-white/[0.09] p-4"
         >
           <Field label="New temporary password" className="flex-1 sm:min-w-[260px]">
-            <Input name="password" type="password" required minLength={10} autoComplete="new-password" />
+            <Input
+              name="password"
+              type="password"
+              required
+              minLength={10}
+              autoComplete="new-password"
+            />
           </Field>
           <Button type="submit" variant="primary" size="sm" disabled={busy}>
             Set
@@ -176,8 +193,8 @@ function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
             }}
             className={
               held.has(r.id)
-                ? "rounded-full bg-violet px-4 py-2 text-[12.5px] font-semibold text-bone disabled:opacity-50"
-                : "rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] text-ash transition-colors hover:border-white/30 hover:text-bone disabled:opacity-50"
+                ? "bg-violet text-bone rounded-full px-4 py-2 text-[12.5px] font-semibold disabled:opacity-50"
+                : "text-ash hover:text-bone rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30 disabled:opacity-50"
             }
           >
             {r.name}
@@ -196,7 +213,7 @@ export function StaffSettings() {
     return (
       <div className="flex flex-col gap-5">
         <div className="h-14 w-64 animate-pulse rounded-xl bg-white/5" />
-        <div className="h-72 animate-pulse rounded-card bg-white/5" />
+        <div className="rounded-card h-72 animate-pulse bg-white/5" />
       </div>
     )
   }
@@ -237,27 +254,27 @@ export function StaffSettings() {
         ))}
       </div>
 
-      <section className="rounded-card border border-white/[0.09] bg-carbon p-6">
-        <h2 className="mb-4 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+      <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
+        <h2 className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
           What each role can do
         </h2>
         <div className="grid gap-5 sm:grid-cols-2">
           {roles.map((r) => (
             <div key={r.id}>
               <div className="mb-2 flex items-baseline gap-2.5">
-                <span className="text-[14.5px] font-semibold text-bone">{r.name}</span>
-                <span className="font-mono text-[11px] text-dim">
+                <span className="text-bone text-[14.5px] font-semibold">{r.name}</span>
+                <span className="text-dim font-mono text-[11px]">
                   {r.staffCount} {r.staffCount === 1 ? "person" : "people"}
                 </span>
               </div>
               {r.description ? (
-                <p className="mb-2.5 text-[13px] text-ash">{r.description}</p>
+                <p className="text-ash mb-2.5 text-[13px]">{r.description}</p>
               ) : null}
               <div className="flex flex-wrap gap-1.5">
                 {r.permissions.map((p) => (
                   <span
                     key={p}
-                    className="rounded-md bg-white/[0.05] px-2 py-1 font-mono text-[10.5px] text-ash"
+                    className="text-ash rounded-md bg-white/[0.05] px-2 py-1 font-mono text-[10.5px]"
                   >
                     {p}
                   </span>
@@ -266,9 +283,9 @@ export function StaffSettings() {
             </div>
           ))}
         </div>
-        <p className="mt-5 border-t border-white/[0.07] pt-4 text-[13px] text-dim">
+        <p className="text-dim mt-5 border-t border-white/[0.07] pt-4 text-[13px]">
           Roles and permissions themselves are defined in code and applied with{" "}
-          <span className="font-mono text-ash">pnpm db:sync-permissions</span>, so a wrong click
+          <span className="text-ash font-mono">pnpm db:sync-permissions</span>, so a wrong click
           here cannot silently widen what a role is allowed to do.
         </p>
       </section>

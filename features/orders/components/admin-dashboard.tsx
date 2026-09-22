@@ -24,13 +24,13 @@ function Tile({
   tone: string
 }) {
   return (
-    <div className="rounded-card border border-white/[0.09] bg-carbon p-6">
+    <div className="rounded-card bg-carbon border border-white/[0.09] p-6">
       <div className="mb-5 flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-[0.16em] text-dim uppercase">{label}</span>
+        <span className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">{label}</span>
         <Icon className={cn("size-[18px]", tone)} strokeWidth={1.8} />
       </div>
-      <div className="font-display text-[38px] leading-[1.04] text-bone">{value}</div>
-      {hint ? <div className="mt-1.5 text-[12.5px] text-dim">{hint}</div> : null}
+      <div className="font-display text-bone text-[38px] leading-[1.04]">{value}</div>
+      {hint ? <div className="text-dim mt-1.5 text-[12.5px]">{hint}</div> : null}
     </div>
   )
 }
@@ -84,19 +84,19 @@ export function AdminDashboard() {
       </div>
 
       {data && data.lowStock.length > 0 ? (
-        <div className="rounded-card border border-magenta/25 bg-magenta/[0.04] p-6">
+        <div className="rounded-card border-magenta/25 bg-magenta/[0.04] border p-6">
           <div className="mb-4 flex items-center gap-2.5">
-            <AlertTriangle className="size-[18px] text-magenta" strokeWidth={1.8} />
-            <h2 className="font-display text-[20px] text-bone uppercase">Running low</h2>
+            <AlertTriangle className="text-magenta size-[18px]" strokeWidth={1.8} />
+            <h2 className="font-display text-bone text-[20px] uppercase">Running low</h2>
           </div>
           <ul className="flex flex-wrap gap-2.5">
             {data.lowStock.map((v) => (
               <li
                 key={v.sku}
-                className="flex items-center gap-3 rounded-xl border border-white/[0.09] bg-void px-4 py-2.5"
+                className="bg-void flex items-center gap-3 rounded-xl border border-white/[0.09] px-4 py-2.5"
               >
-                <span className="font-mono text-[11px] tracking-[0.1em] text-dim">{v.sku}</span>
-                <span className="text-[13.5px] text-bone capitalize">{v.colourway}</span>
+                <span className="text-dim font-mono text-[11px] tracking-[0.1em]">{v.sku}</span>
+                <span className="text-bone text-[13.5px] capitalize">{v.colourway}</span>
                 <span
                   className={cn(
                     "font-mono text-[13px] font-bold",
@@ -111,12 +111,12 @@ export function AdminDashboard() {
         </div>
       ) : null}
 
-      <div className="rounded-card border border-white/[0.09] bg-carbon">
+      <div className="rounded-card bg-carbon border border-white/[0.09]">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
-          <h2 className="font-display text-[22px] text-bone uppercase">Latest orders</h2>
+          <h2 className="font-display text-bone text-[22px] uppercase">Latest orders</h2>
           <Link
             href="/admin/orders"
-            className="flex items-center gap-2 text-[13px] font-semibold text-ember hover:text-flare"
+            className="text-ember hover:text-flare flex items-center gap-2 text-[13px] font-semibold"
           >
             All orders
             <ArrowRight className="size-4" strokeWidth={2.2} />
@@ -137,12 +137,12 @@ export function AdminDashboard() {
                   href={`/admin/orders/${order.id}`}
                   className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4 transition-colors hover:bg-white/[0.03]"
                 >
-                  <span className="font-mono text-[13px] text-bone">{order.number}</span>
+                  <span className="text-bone font-mono text-[13px]">{order.number}</span>
                   <StatusBadge status={order.status} />
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] text-ash">
+                  <span className="text-ash min-w-0 flex-1 truncate text-[13.5px]">
                     {order.customer} · {order.city}
                   </span>
-                  <span className="font-mono text-[13.5px] text-bone">
+                  <span className="text-bone font-mono text-[13.5px]">
                     <Money value={order.total} />
                   </span>
                 </Link>

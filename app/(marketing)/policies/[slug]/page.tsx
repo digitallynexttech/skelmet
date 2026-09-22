@@ -10,11 +10,7 @@ export function generateStaticParams(): Params[] {
   return POLICIES.map((p) => ({ slug: p.slug }))
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<Params>
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params
   const policy = getPolicy(slug)
   if (!policy) return { title: "Not found" }

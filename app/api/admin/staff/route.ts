@@ -6,4 +6,6 @@ export const dynamic = "force-dynamic"
 
 export const GET = withErrorHandler(async () => respond(await listStaff()))
 
-export const POST = withErrorHandler(async (req) => respond(await createStaff(await req.json()), 201))
+export const POST = withErrorHandler(async (req) =>
+  respond(await createStaff(await req.json()), 201),
+)

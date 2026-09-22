@@ -104,7 +104,8 @@ async function moderate(
 
     const before = await db.review.findUnique({ where: { id }, select: { status: true } })
     if (!before) return fail("Review not found.", undefined, 404)
-    if (before.status === to) return fail(`That review is already ${to.toLowerCase()}.`, undefined, 409)
+    if (before.status === to)
+      return fail(`That review is already ${to.toLowerCase()}.`, undefined, 409)
 
     const row = await db.review.update({
       where: { id },

@@ -15,15 +15,15 @@ export function Texture() {
       <SectionLabel index="04" className="mb-4">
         The finish
       </SectionLabel>
-      <h2 className="mb-5 font-display text-[38px] leading-[1.04] text-bone uppercase sm:text-[48px] xl:text-[58px]">
+      <h2 className="font-display text-bone mb-5 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">
         Layer lines,
         <br />
         on purpose
       </h2>
-      <p className="mb-7 max-w-[440px] text-[16px] leading-[1.62] text-ash text-pretty sm:text-[16.5px]">
+      <p className="text-ash mb-7 max-w-[440px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
         We don&apos;t sand the print smooth and pretend it was moulded. The fine horizontal ridges
-        catch the light, the flame valleys go properly deep, and the whole thing reads as made rather
-        than manufactured.
+        catch the light, the flame valleys go properly deep, and the whole thing reads as made
+        rather than manufactured.
       </p>
       <div className="flex flex-wrap gap-2.5">
         {TAGS.map((tag) => (

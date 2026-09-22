@@ -26,11 +26,7 @@ export function generateStaticParams(): Params[] {
   return PRODUCTS.map((p) => ({ slug: p.slug }))
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<Params>
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params
   const product = getProduct(slug)
   if (!product) return { title: "Not found" }
@@ -56,14 +52,10 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
     <>
       <nav
         aria-label="Breadcrumb"
-        className="flex items-center gap-2.5 px-5 pt-6 font-mono text-[11px] tracking-[0.12em] text-dim uppercase sm:px-8 xl:px-14"
+        className="text-dim flex items-center gap-2.5 px-5 pt-6 font-mono text-[11px] tracking-[0.12em] uppercase sm:px-8 xl:px-14"
       >
         <Link href="/" className="hover:text-bone">
           Home
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href="/shop" className="hover:text-bone">
-          Shop
         </Link>
         <span aria-hidden>/</span>
         <span className="text-bone">{product.name}</span>
@@ -74,7 +66,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <TrustStrip />
 
       {/* Spec numbers */}
-      <Section className="border-b border-white/[0.07] bg-carbon">
+      <Section className="bg-carbon border-b border-white/[0.07]">
         <SectionLabel className="mb-3.5">The numbers</SectionLabel>
         <SectionHeading className="mb-9 text-[34px] sm:text-[44px] xl:text-[46px]">
           Specifications
@@ -83,14 +75,14 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           {product.specs.map((spec) => (
             <div
               key={spec.label}
-              className="rounded-tile border border-white/[0.08] bg-void p-5 sm:p-6"
+              className="rounded-tile bg-void border border-white/[0.08] p-5 sm:p-6"
             >
-              <dt className="mb-3 font-mono text-[9.5px] tracking-[0.16em] text-dim uppercase">
+              <dt className="text-dim mb-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
                 {spec.label}
               </dt>
               <dd
                 className={cn(
-                  "font-display leading-[1.08] text-[22px] sm:text-[26px]",
+                  "font-display text-[22px] leading-[1.08] sm:text-[26px]",
                   spec.pending ? "text-ember" : "text-bone",
                 )}
               >

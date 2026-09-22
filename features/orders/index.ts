@@ -1,5 +1,0 @@
-export { AdminDashboard } from "@/features/orders/components/admin-dashboard"
-export { OrderTable } from "@/features/orders/components/order-table"
-export { OrderDetailView } from "@/features/orders/components/order-detail"
-export { useDashboard, useOrder, useOrderAction, useOrders } from "@/features/orders/hooks/use-orders"
-export type { Dashboard, OrderDetail, OrderRow } from "@/features/orders/hooks/use-orders"

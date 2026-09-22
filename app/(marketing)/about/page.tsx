@@ -53,17 +53,18 @@ export default function AboutPage() {
         <HeroWatermark>About</HeroWatermark>
         <div className="relative z-10 max-w-[900px]">
           <SectionLabel className="mb-5">About us</SectionLabel>
-          <h1 className="mb-7 font-display text-[52px] leading-[1.0] text-bone uppercase sm:text-[76px] xl:text-[104px]">
+          <h1 className="font-display text-bone mb-7 text-[52px] leading-[1.0] uppercase sm:text-[76px] xl:text-[104px]">
             We started with
             <br />
             one annoyed
             <br />
             <span className="text-blaze">rider</span>
           </h1>
-          <p className="max-w-[640px] text-[16px] leading-[1.62] text-ash text-pretty sm:text-[19px]">
-            Every helmet hook on the market was either a bent steel hook that scratched the shell, or
-            a plastic blob that looked like it came free with a magazine. So we designed the thing we
-            actually wanted on our own wall, printed it, and people kept asking where to buy one.
+          <p className="text-ash max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[19px]">
+            Every helmet hook on the market was either a bent steel hook that scratched the shell,
+            or a plastic blob that looked like it came free with a magazine. So we designed the
+            thing we actually wanted on our own wall, printed it, and people kept asking where to
+            buy one.
           </p>
         </div>
       </div>
@@ -74,10 +75,10 @@ export default function AboutPage() {
             key={n.label}
             className="border-r border-b border-white/[0.07] px-6 py-9 last:border-r-0 sm:px-10 lg:border-b-0"
           >
-            <dd className="mb-2.5 font-display text-[42px] leading-none text-blaze sm:text-[58px]">
+            <dd className="font-display text-blaze mb-2.5 text-[42px] leading-none sm:text-[58px]">
               {n.value}
             </dd>
-            <dt className="font-mono text-[10.5px] tracking-[0.18em] text-ash uppercase sm:text-[11px]">
+            <dt className="text-ash font-mono text-[10.5px] tracking-[0.18em] uppercase sm:text-[11px]">
               {n.label}
             </dt>
           </div>
@@ -91,18 +92,18 @@ export default function AboutPage() {
         <SectionLabel index="01" className="mb-4">
           The design
         </SectionLabel>
-        <h2 className="mb-5 font-display text-[36px] leading-[1.04] text-bone uppercase sm:text-[46px] xl:text-[52px]">
+        <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
           Why a skull
         </h2>
-        <p className="mb-5 max-w-[480px] text-[16px] leading-[1.66] text-ash text-pretty sm:text-[16.5px]">
+        <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
           Because a helmet on a shelf is storage, and a helmet on a skull is a statement. The cradle
           shape happens to be the right shape too, a rounded dome supports the shell from inside so
           the padding never takes the weight and the liner gets air all night.
         </p>
-        <p className="max-w-[480px] text-[16px] leading-[1.66] text-ash text-pretty sm:text-[16.5px]">
-          The flames aren&apos;t decoration either. They&apos;re what gives the print its grip and its
-          texture, and they&apos;re why it reads properly from across a room instead of turning into
-          an orange lump.
+        <p className="text-ash max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
+          The flames aren&apos;t decoration either. They&apos;re what gives the print its grip and
+          its texture, and they&apos;re why it reads properly from across a room instead of turning
+          into an orange lump.
         </p>
       </SplitFeature>
 
@@ -114,17 +115,17 @@ export default function AboutPage() {
         <SectionLabel index="02" tone="acid" className="mb-4">
           The making
         </SectionLabel>
-        <h2 className="mb-5 font-display text-[36px] leading-[1.04] text-bone uppercase sm:text-[46px] xl:text-[52px]">
+        <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
           Made here,
           <br />
           not imported
         </h2>
-        <p className="mb-5 max-w-[480px] text-[16px] leading-[1.66] text-ash text-pretty sm:text-[16.5px]">
+        <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
           Every mount comes off our own printers in {siteConfig.city}. Small batches, hand-checked,
-          packed the same week. Nothing sits in a container for three months and nothing arrives with
-          a mould seam down the middle of its face.
+          packed the same week. Nothing sits in a container for three months and nothing arrives
+          with a mould seam down the middle of its face.
         </p>
-        <p className="mb-7 max-w-[480px] text-[16px] leading-[1.66] text-ash text-pretty sm:text-[16.5px]">
+        <p className="text-ash mb-7 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
           It also means we can change things fast. Three of the tweaks in the current version came
           straight out of customer emails.
         </p>
@@ -148,13 +149,13 @@ export default function AboutPage() {
           {WONT_DO.map(({ Icon, title, body }) => (
             <article
               key={title}
-              className="rounded-card border border-white/[0.09] bg-carbon p-7 sm:p-8"
+              className="rounded-card bg-carbon border border-white/[0.09] p-7 sm:p-8"
             >
-              <Icon className="mb-6 size-7 text-blaze" strokeWidth={1.6} />
-              <h3 className="mb-3 font-display leading-[1.08] text-[24px] text-bone uppercase sm:text-[26px]">
+              <Icon className="text-blaze mb-6 size-7" strokeWidth={1.6} />
+              <h3 className="font-display text-bone mb-3 text-[24px] leading-[1.08] uppercase sm:text-[26px]">
                 {title}
               </h3>
-              <p className="text-[15px] leading-[1.6] text-ash">{body}</p>
+              <p className="text-ash text-[15px] leading-[1.6]">{body}</p>
             </article>
           ))}
         </div>
@@ -165,10 +166,10 @@ export default function AboutPage() {
       <section className="grain relative overflow-hidden bg-[linear-gradient(100deg,var(--color-blaze),var(--color-ember)_66%,var(--color-flare))] px-5 py-14 sm:px-8 sm:py-18 xl:px-14">
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="mb-3 font-display text-[38px] leading-[1.0] text-void uppercase sm:text-[52px] xl:text-[60px]">
+            <h2 className="font-display text-void mb-3 text-[38px] leading-[1.0] uppercase sm:text-[52px] xl:text-[60px]">
               Enough about us
             </h2>
-            <p className="max-w-[480px] text-[16px] leading-[1.56] text-void/80 sm:text-[17px]">
+            <p className="text-void/80 max-w-[480px] text-[16px] leading-[1.56] sm:text-[17px]">
               Go look at the thing. It&apos;s better in person, and the return window means you can
               find that out risk-free.
             </p>
@@ -177,7 +178,7 @@ export default function AboutPage() {
             href={`/product/${FLAME_SKULL_MOUNT.slug}`}
             variant="light"
             size="lg"
-            className="shrink-0 bg-void text-bone hover:bg-graphite"
+            className="bg-void text-bone hover:bg-graphite shrink-0"
           >
             Shop the mount
             <ArrowRight className="size-4" strokeWidth={2.4} />

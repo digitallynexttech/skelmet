@@ -58,9 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const roles = user.roles.map((r) => r.role.name)
         const permissions = [
-          ...new Set(
-            user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.scope)),
-          ),
+          ...new Set(user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.scope))),
         ] as Permission[]
 
         return {

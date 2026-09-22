@@ -15,29 +15,29 @@ export function Reviews() {
           <SectionLabel index="11" className="mb-3.5">
             Reviews
           </SectionLabel>
-          <h2 className="mb-6 font-display text-[36px] leading-[1.04] text-bone uppercase sm:text-[46px] xl:text-[52px]">
+          <h2 className="font-display text-bone mb-6 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
             What riders say
           </h2>
 
           <div className="mb-2 flex items-baseline gap-3">
-            <span className="font-display text-[56px] leading-none text-blaze sm:text-[66px]">
+            <span className="font-display text-blaze text-[56px] leading-none sm:text-[66px]">
               {product.rating}
             </span>
-            <span className="text-[15px] text-ash">/ 5 · {product.reviewCount} reviews</span>
+            <span className="text-ash text-[15px]">/ 5 · {product.reviewCount} reviews</span>
           </div>
           <Stars rating={product.rating} className="mb-7 block text-[17px]" />
 
           <div className="flex flex-col gap-2.5">
             {RATING_BREAKDOWN.map((row) => (
               <div key={row.stars} className="flex items-center gap-3">
-                <span className="w-3.5 font-mono text-[11px] text-dim">{row.stars}</span>
+                <span className="text-dim w-3.5 font-mono text-[11px]">{row.stars}</span>
                 <span className="h-1.5 flex-1 overflow-hidden rounded-sm bg-white/[0.09]">
                   <span
-                    className="block h-full rounded-sm bg-blaze"
+                    className="bg-blaze block h-full rounded-sm"
                     style={{ width: `${row.percent}%` }}
                   />
                 </span>
-                <span className="w-9 text-right font-mono text-[11px] text-ash">
+                <span className="text-ash w-9 text-right font-mono text-[11px]">
                   {row.percent}%
                 </span>
               </div>
@@ -49,15 +49,15 @@ export function Reviews() {
           {REVIEWS.map((review) => (
             <article
               key={review.title}
-              className="rounded-tile border border-white/[0.09] bg-carbon p-6"
+              className="rounded-tile bg-carbon border border-white/[0.09] p-6"
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <Stars rating={review.rating} className="text-[13px]" />
                 <Badge variant="acid">Verified</Badge>
               </div>
-              <h3 className="mb-2 text-[15.5px] font-bold text-bone">{review.title}</h3>
-              <p className="mb-4 text-[14px] leading-[1.58] text-ash">{review.body}</p>
-              <div className="font-mono text-[11px] tracking-[0.1em] text-dim">{review.author}</div>
+              <h3 className="text-bone mb-2 text-[15.5px] font-bold">{review.title}</h3>
+              <p className="text-ash mb-4 text-[14px] leading-[1.58]">{review.body}</p>
+              <div className="text-dim font-mono text-[11px] tracking-[0.1em]">{review.author}</div>
             </article>
           ))}
         </div>

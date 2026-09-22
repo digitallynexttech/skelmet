@@ -36,7 +36,7 @@ export function SectionHeading({
   return (
     <h2
       className={cn(
-        "font-display text-[40px] leading-[1.0] text-bone uppercase sm:text-[52px] xl:text-[68px]",
+        "font-display text-bone text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[68px]",
         className,
       )}
     >

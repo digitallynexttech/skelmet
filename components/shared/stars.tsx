@@ -5,7 +5,7 @@ export function Stars({ rating, className }: { rating: number; className?: strin
   const filled = Math.round(rating)
   return (
     <span
-      className={cn("tracking-[0.1em] text-ember", className)}
+      className={cn("text-ember tracking-[0.1em]", className)}
       aria-label={`${rating} out of 5`}
     >
       {"★".repeat(Math.min(5, filled))}

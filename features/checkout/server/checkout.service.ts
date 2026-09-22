@@ -1,10 +1,7 @@
 import "server-only"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
-import {
-  placeOrderSchema,
-  verifyPaymentSchema,
-} from "@/features/checkout/schemas/checkout.schema"
+import { placeOrderSchema, verifyPaymentSchema } from "@/features/checkout/schemas/checkout.schema"
 import {
   createGatewayOrder,
   isGatewayConfigured,

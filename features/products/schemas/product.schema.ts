@@ -16,7 +16,10 @@ export const updateVariantSchema = z.object({
 })
 
 export const adjustStockSchema = z.object({
-  delta: z.coerce.number().int().refine((n) => n !== 0, "Enter an amount"),
+  delta: z.coerce
+    .number()
+    .int()
+    .refine((n) => n !== 0, "Enter an amount"),
   reason: z.string().trim().max(120).optional(),
 })
 

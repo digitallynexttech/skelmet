@@ -3,7 +3,7 @@
  *
  * SKELMET is a single-SKU store with three filament colourways, so the
  * catalogue is a typed registry rather than a database read. When a second
- * product lands, move this behind `catalog.service.ts` + `/api/products`, 
+ * product lands, move this behind `catalog.service.ts` + `/api/products`,
  * the components below already take their data as props.
  *
  * [TO CONFIRM] values are real business facts nobody should guess: fill them
@@ -76,8 +76,8 @@ export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
   strapline: "It earned every scratch. Give it a wall, not the floor.",
-  price: "1499",
-  compareAtPrice: "1999",
+  price: "3499",
+  compareAtPrice: "4999",
   rating: 4.9,
   reviewCount: 312,
   batch: "04",
@@ -98,7 +98,12 @@ export const FLAME_SKULL_MOUNT: Product = {
     { label: "Fixings", value: "[4 × screw spec]", pending: true },
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
-  inTheBox: ["Skull mount", "Black steel bracket", "4 × screws + wall anchors", "Paper drill template"],
+  inTheBox: [
+    "Skull mount",
+    "Black steel bracket",
+    "4 × screws + wall anchors",
+    "Paper drill template",
+  ],
 }
 
 export const PRODUCTS: Product[] = [FLAME_SKULL_MOUNT]

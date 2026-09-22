@@ -35,7 +35,7 @@ function Lines({ items }: { items: CartLine[] }) {
     <ul className="mb-5 flex flex-col gap-4">
       {items.map((line) => (
         <li key={line.id} className="flex items-center gap-3.5">
-          <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-void">
+          <div className="bg-void relative size-14 shrink-0 overflow-hidden rounded-lg">
             <Image src={line.image} alt="" fill sizes="56px" className="object-cover" />
             <Badge
               variant="blaze"
@@ -45,14 +45,14 @@ function Lines({ items }: { items: CartLine[] }) {
             </Badge>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-bone">{line.productName}</div>
-            <div className="mt-0.5 font-mono text-[11px] tracking-[0.1em] text-dim">
+            <div className="text-bone truncate text-sm font-semibold">{line.productName}</div>
+            <div className="text-dim mt-0.5 font-mono text-[11px] tracking-[0.1em]">
               {line.colourwayName.toUpperCase()}
             </div>
           </div>
           <Money
             value={Number(line.unitPrice) * line.qty}
-            className="shrink-0 font-mono text-sm text-bone"
+            className="text-bone shrink-0 font-mono text-sm"
           />
         </li>
       ))}
@@ -98,13 +98,13 @@ export function CheckoutView() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center px-5 py-24 text-center">
-        <h1 className="mb-4 font-display text-[40px] leading-[1.0] text-bone uppercase sm:text-[56px]">
+        <h1 className="font-display text-bone mb-4 text-[40px] leading-[1.0] uppercase sm:text-[56px]">
           Nothing to check out
         </h1>
-        <p className="mb-8 max-w-[380px] text-[15.5px] leading-[1.6] text-ash">
+        <p className="text-ash mb-8 max-w-[380px] text-[15.5px] leading-[1.6]">
           Add a mount to your cart first and this page will have something to do.
         </p>
-        <ButtonLink href="/shop" variant="primary" size="lg">
+        <ButtonLink href="/product/flame-skull-mount" variant="primary" size="lg">
           Shop the mount
           <ArrowRight className="size-4" strokeWidth={2.4} />
         </ButtonLink>
@@ -115,23 +115,23 @@ export function CheckoutView() {
   return (
     <form onSubmit={handleSubmit} className="pb-24">
       <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 sm:px-8 xl:px-14">
-        <Link href="/cart" className="text-sm text-ash transition-colors hover:text-bone">
+        <Link href="/cart" className="text-ash hover:text-bone text-sm transition-colors">
           &larr; Back to cart
         </Link>
-        <div className="flex items-center gap-2.5 font-mono text-[11px] tracking-[0.14em] text-acid uppercase">
+        <div className="text-acid flex items-center gap-2.5 font-mono text-[11px] tracking-[0.14em] uppercase">
           <Lock className="size-[15px]" strokeWidth={1.9} />
           <span className="hidden sm:inline">Secure checkout · 256-bit TLS</span>
           <span className="sm:hidden">Secure</span>
         </div>
       </div>
 
-      <details className="border-b border-white/[0.07] bg-carbon lg:hidden">
+      <details className="bg-carbon border-b border-white/[0.07] lg:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5">
-          <span className="flex items-center gap-2.5 text-[13.5px] text-bone">
+          <span className="text-bone flex items-center gap-2.5 text-[13.5px]">
             Order summary ({totals.itemCount})
-            <ChevronDown className="size-4 text-dim" strokeWidth={2} />
+            <ChevronDown className="text-dim size-4" strokeWidth={2} />
           </span>
-          <Money value={totals.total} className="font-display text-[22px] text-bone" />
+          <Money value={totals.total} className="font-display text-bone text-[22px]" />
         </summary>
         <div className="border-t border-white/[0.07] px-5 py-4">
           <Lines items={items} />
@@ -140,20 +140,20 @@ export function CheckoutView() {
 
       <div className="grid gap-10 px-5 pt-9 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-12 xl:px-14">
         <div>
-          <div className="mb-3.5 font-mono text-[11.5px] tracking-[0.22em] text-ember uppercase">
+          <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
             Step 02 of 03
           </div>
-          <h1 className="mb-9 font-display text-[42px] leading-[1.0] text-bone uppercase sm:text-[56px] xl:text-[66px]">
+          <h1 className="font-display text-bone mb-9 text-[42px] leading-[1.0] uppercase sm:text-[56px] xl:text-[66px]">
             Where&apos;s it going?
           </h1>
 
           {/* 1 · contact */}
-          <section className="mb-3.5 rounded-tile border border-white/[0.09] bg-carbon p-5 sm:p-6">
+          <section className="rounded-tile bg-carbon mb-3.5 border border-white/[0.09] p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3.5">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blaze font-mono text-xs font-bold text-void">
+              <span className="bg-blaze text-void flex size-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold">
                 1
               </span>
-              <h2 className="font-display text-[24px] leading-[1.08] text-bone uppercase sm:text-[26px]">
+              <h2 className="font-display text-bone text-[24px] leading-[1.08] uppercase sm:text-[26px]">
                 Contact
               </h2>
             </div>
@@ -174,12 +174,12 @@ export function CheckoutView() {
           </section>
 
           {/* 2 · delivery */}
-          <section className="mb-3.5 rounded-tile border border-blaze/35 bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_46%)] bg-carbon p-5 sm:p-7">
+          <section className="rounded-tile border-blaze/35 bg-carbon mb-3.5 border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_46%)] p-5 sm:p-7">
             <div className="mb-6 flex items-center gap-3.5">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blaze font-mono text-xs font-bold text-void">
+              <span className="bg-blaze text-void flex size-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold">
                 2
               </span>
-              <h2 className="font-display text-[24px] leading-[1.08] text-bone uppercase sm:text-[28px]">
+              <h2 className="font-display text-bone text-[24px] leading-[1.08] uppercase sm:text-[28px]">
                 Delivery address
               </h2>
             </div>
@@ -215,19 +215,23 @@ export function CheckoutView() {
               </Field>
             </div>
 
-            <label className="mt-5 flex cursor-pointer items-center gap-3 text-[14px] text-ash">
-              <input type="checkbox" name="giftNote" className="size-4 accent-[var(--color-blaze)]" />
+            <label className="text-ash mt-5 flex cursor-pointer items-center gap-3 text-[14px]">
+              <input
+                type="checkbox"
+                name="giftNote"
+                className="size-4 accent-[var(--color-blaze)]"
+              />
               This is a gift, leave the invoice out of the box
             </label>
           </section>
 
           {/* 3 · payment */}
-          <section className="rounded-tile border border-white/[0.09] bg-carbon p-5 sm:p-6">
+          <section className="rounded-tile bg-carbon border border-white/[0.09] p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3.5">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blaze font-mono text-xs font-bold text-void">
+              <span className="bg-blaze text-void flex size-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold">
                 3
               </span>
-              <h2 className="font-display text-[24px] leading-[1.08] text-bone uppercase sm:text-[28px]">
+              <h2 className="font-display text-bone text-[24px] leading-[1.08] uppercase sm:text-[28px]">
                 Payment
               </h2>
             </div>
@@ -252,8 +256,8 @@ export function CheckoutView() {
                   strokeWidth={1.8}
                 />
                 <span>
-                  <span className="block text-[14.5px] font-semibold text-bone">Pay now</span>
-                  <span className="mt-1 block text-[12.5px] leading-[1.45] text-ash">
+                  <span className="text-bone block text-[14.5px] font-semibold">Pay now</span>
+                  <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
                     UPI, cards and netbanking via Razorpay
                   </span>
                 </span>
@@ -278,10 +282,10 @@ export function CheckoutView() {
                   strokeWidth={1.8}
                 />
                 <span>
-                  <span className="block text-[14.5px] font-semibold text-bone">
+                  <span className="text-bone block text-[14.5px] font-semibold">
                     Cash on delivery
                   </span>
-                  <span className="mt-1 block text-[12.5px] leading-[1.45] text-ash">
+                  <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
                     Adds a <Money value={49} /> handling charge
                   </span>
                 </span>
@@ -290,13 +294,20 @@ export function CheckoutView() {
           </section>
 
           {error ? (
-            <div className="mt-5 flex items-start gap-3 rounded-xl border border-magenta/35 bg-magenta/[0.06] p-4">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-magenta" strokeWidth={1.9} />
-              <p className="text-[13.5px] leading-[1.5] text-bone">{error}</p>
+            <div className="border-magenta/35 bg-magenta/[0.06] mt-5 flex items-start gap-3 rounded-xl border p-4">
+              <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
+              <p className="text-bone text-[13.5px] leading-[1.5]">{error}</p>
             </div>
           ) : null}
 
-          <Button type="submit" variant="primary" size="lg" full className="mt-6" disabled={pending}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            full
+            className="mt-6"
+            disabled={pending}
+          >
             {pending ? (
               "Working…"
             ) : method === "COD" ? (
@@ -315,13 +326,13 @@ export function CheckoutView() {
 
         {/* Desktop summary rail */}
         <aside className="hidden flex-col gap-3.5 lg:flex">
-          <div className="rounded-card border border-white/10 bg-carbon p-6">
-            <h2 className="mb-5 font-display text-[24px] leading-[1.08] text-bone uppercase">
+          <div className="rounded-card bg-carbon border border-white/10 p-6">
+            <h2 className="font-display text-bone mb-5 text-[24px] leading-[1.08] uppercase">
               Your order
             </h2>
             <Lines items={items} />
 
-            <div className="mb-5 flex h-12 items-center rounded-xl border border-white/[0.12] bg-void px-4">
+            <div className="bg-void mb-5 flex h-12 items-center rounded-xl border border-white/[0.12] px-4">
               <Input
                 name="couponCode"
                 placeholder="Discount code"
@@ -333,26 +344,26 @@ export function CheckoutView() {
             <dl className="flex flex-col gap-3 border-y border-white/10 py-5">
               <div className="flex justify-between text-sm">
                 <dt className="text-ash">Subtotal</dt>
-                <dd className="font-mono text-bone">
+                <dd className="text-bone font-mono">
                   <Money value={totals.subtotal} />
                 </dd>
               </div>
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-sm">
                   <dt className="text-ash">Bundle discount</dt>
-                  <dd className="font-mono text-acid">
+                  <dd className="text-acid font-mono">
                     &minus; <Money value={totals.discount} />
                   </dd>
                 </div>
               ) : null}
               <div className="flex justify-between text-sm">
                 <dt className="text-ash">Shipping</dt>
-                <dd className="font-mono text-acid">FREE</dd>
+                <dd className="text-acid font-mono">FREE</dd>
               </div>
               {totals.codFee > 0 ? (
                 <div className="flex justify-between text-sm">
                   <dt className="text-ash">COD handling</dt>
-                  <dd className="font-mono text-bone">
+                  <dd className="text-bone font-mono">
                     <Money value={totals.codFee} />
                   </dd>
                 </div>
@@ -360,20 +371,20 @@ export function CheckoutView() {
             </dl>
 
             <div className="flex items-baseline justify-between pt-5">
-              <span className="text-[15px] font-semibold text-bone">Total</span>
-              <Money value={totals.total} className="font-display text-[38px] text-bone" />
+              <span className="text-bone text-[15px] font-semibold">Total</span>
+              <Money value={totals.total} className="font-display text-bone text-[38px]" />
             </div>
 
-            <p className="mt-3 text-[12px] leading-[1.5] text-dim">
+            <p className="text-dim mt-3 text-[12px] leading-[1.5]">
               Codes and prices are re-checked on the server when you pay.
             </p>
           </div>
 
-          <ul className="flex flex-col gap-3 rounded-tile border border-white/[0.08] bg-carbon p-5">
+          <ul className="rounded-tile bg-carbon flex flex-col gap-3 border border-white/[0.08] p-5">
             {PROMISES.map(({ Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
-                <Icon className="size-4 shrink-0 text-acid" strokeWidth={1.8} />
-                <span className="text-[13.5px] text-ash">{text}</span>
+                <Icon className="text-acid size-4 shrink-0" strokeWidth={1.8} />
+                <span className="text-ash text-[13.5px]">{text}</span>
               </li>
             ))}
           </ul>

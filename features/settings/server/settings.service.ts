@@ -69,9 +69,7 @@ function serializeStaff(row: {
   }
 }
 
-export async function listStaff(): Promise<
-  ActionResult<{ staff: StaffRow[]; roles: RoleRow[] }>
-> {
+export async function listStaff(): Promise<ActionResult<{ staff: StaffRow[]; roles: RoleRow[] }>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.SETTING_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
@@ -192,7 +190,10 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
   })
 }
 
-export async function resetStaffPassword(id: string, raw: unknown): Promise<ActionResult<StaffRow>> {
+export async function resetStaffPassword(
+  id: string,
+  raw: unknown,
+): Promise<ActionResult<StaffRow>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
@@ -268,7 +269,9 @@ async function guardLastOwner(
     where: {
       kind: "STAFF",
       roles: {
-        some: { role: { permissions: { some: { permission: { scope: PERMISSIONS.SETTING_WRITE } } } } },
+        some: {
+          role: { permissions: { some: { permission: { scope: PERMISSIONS.SETTING_WRITE } } } },
+        },
       },
     },
     select: { id: true },

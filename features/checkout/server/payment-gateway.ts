@@ -27,11 +27,7 @@ function credentials(): { keyId: string; keySecret: string } {
   const keyId = process.env.PAYMENT_KEY_ID
   const keySecret = process.env.PAYMENT_KEY_SECRET
   if (!keyId || !keySecret) {
-    throw new AppError(
-      "Payments are not configured yet.",
-      503,
-      "GATEWAY_UNCONFIGURED",
-    )
+    throw new AppError("Payments are not configured yet.", 503, "GATEWAY_UNCONFIGURED")
   }
   return { keyId, keySecret }
 }

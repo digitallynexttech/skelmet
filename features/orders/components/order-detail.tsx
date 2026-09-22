@@ -35,12 +35,18 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 text-[14px]">
       <span className="text-ash">{label}</span>
-      <span className="text-right font-mono text-bone">{value}</span>
+      <span className="text-bone text-right font-mono">{value}</span>
     </div>
   )
 }
 
-function ShipDialog({ onShip, pending }: { onShip: (v: { courier: string; awb: string }) => void; pending: boolean }) {
+function ShipDialog({
+  onShip,
+  pending,
+}: {
+  onShip: (v: { courier: string; awb: string }) => void
+  pending: boolean
+}) {
   const [courier, setCourier] = React.useState("")
   const [awb, setAwb] = React.useState("")
 
@@ -50,14 +56,19 @@ function ShipDialog({ onShip, pending }: { onShip: (v: { courier: string; awb: s
         e.preventDefault()
         if (courier.trim() && awb.trim()) onShip({ courier: courier.trim(), awb: awb.trim() })
       }}
-      className="rounded-tile border border-white/[0.09] bg-void p-5"
+      className="rounded-tile bg-void border border-white/[0.09] p-5"
     >
-      <div className="mb-4 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+      <div className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
         Mark shipped
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <Field label="Courier">
-          <Input value={courier} onChange={(e) => setCourier(e.target.value)} placeholder="Delhivery" required />
+          <Input
+            value={courier}
+            onChange={(e) => setCourier(e.target.value)}
+            placeholder="Delhivery"
+            required
+          />
         </Field>
         <Field label="AWB / tracking">
           <Input
@@ -85,7 +96,7 @@ export function OrderDetailView({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-4">
         <div className="h-14 w-64 animate-pulse rounded-xl bg-white/5" />
-        <div className="h-96 animate-pulse rounded-card bg-white/5" />
+        <div className="rounded-card h-96 animate-pulse bg-white/5" />
       </div>
     )
   }
@@ -96,7 +107,7 @@ export function OrderDetailView({ id }: { id: string }) {
         title="Order not found"
         description={error instanceof Error ? error.message : "It may have been removed."}
         action={
-          <Link href="/admin/orders" className="text-[13.5px] font-semibold text-ember">
+          <Link href="/admin/orders" className="text-ember text-[13.5px] font-semibold">
             Back to orders
           </Link>
         }
@@ -114,14 +125,14 @@ export function OrderDetailView({ id }: { id: string }) {
       <div>
         <Link
           href="/admin/orders"
-          className="mb-5 inline-flex items-center gap-2 text-[13.5px] text-ash transition-colors hover:text-bone"
+          className="text-ash hover:text-bone mb-5 inline-flex items-center gap-2 text-[13.5px] transition-colors"
         >
           <ArrowLeft className="size-4" strokeWidth={2} />
           All orders
         </Link>
 
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="font-display text-[34px] leading-[1.04] text-bone sm:text-[42px]">
+          <h1 className="font-display text-bone text-[34px] leading-[1.04] sm:text-[42px]">
             {order.number}
           </h1>
           <StatusBadge status={order.status} />
@@ -130,14 +141,14 @@ export function OrderDetailView({ id }: { id: string }) {
           </Badge>
           {order.coupon ? <Badge variant="acid">{order.coupon.code}</Badge> : null}
         </div>
-        <p className="mt-2 font-mono text-[12px] text-dim">
+        <p className="text-dim mt-2 font-mono text-[12px]">
           Placed {new Date(order.placedAt ?? order.createdAt).toLocaleString("en-IN")}
         </p>
       </div>
 
       {/* Fulfilment timeline */}
       {!dead ? (
-        <div className="rounded-card border border-white/[0.09] bg-carbon p-6">
+        <div className="rounded-card bg-carbon border border-white/[0.09] p-6">
           <ol className="grid gap-5 sm:grid-cols-4">
             {TIMELINE.map((step, i) => {
               const done = stage >= i && stage !== -1
@@ -146,16 +157,16 @@ export function OrderDetailView({ id }: { id: string }) {
                   <span
                     className={
                       done
-                        ? "flex size-9 shrink-0 items-center justify-center rounded-full bg-blaze"
+                        ? "bg-blaze flex size-9 shrink-0 items-center justify-center rounded-full"
                         : "flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-white/[0.14]"
                     }
                   >
                     <step.Icon
-                      className={done ? "size-4 text-void" : "size-4 text-dim"}
+                      className={done ? "text-void size-4" : "text-dim size-4"}
                       strokeWidth={2}
                     />
                   </span>
-                  <span className={done ? "text-[14px] text-bone" : "text-[14px] text-dim"}>
+                  <span className={done ? "text-bone text-[14px]" : "text-dim text-[14px]"}>
                     {step.label}
                   </span>
                 </li>
@@ -168,8 +179,14 @@ export function OrderDetailView({ id }: { id: string }) {
       {/* Actions */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2.5">
-          {order.status === "PAID" || (order.status === "PENDING" && order.paymentMethod === "COD") ? (
-            <Button variant="primary" size="sm" disabled={busy} onClick={() => actions.pack.mutate()}>
+          {order.status === "PAID" ||
+          (order.status === "PENDING" && order.paymentMethod === "COD") ? (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={busy}
+              onClick={() => actions.pack.mutate()}
+            >
               <PackageCheck className="size-4" strokeWidth={1.9} />
               Mark packed
             </Button>
@@ -186,13 +203,23 @@ export function OrderDetailView({ id }: { id: string }) {
             </Button>
           ) : null}
           {["PENDING", "PAID"].includes(order.status) ? (
-            <Button variant="ghost" size="sm" disabled={busy} onClick={() => actions.cancel.mutate()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => actions.cancel.mutate()}
+            >
               <Ban className="size-4" strokeWidth={1.9} />
               Cancel &amp; restock
             </Button>
           ) : null}
           {["PAID", "PACKED", "SHIPPED", "DELIVERED", "RETURNED"].includes(order.status) ? (
-            <Button variant="ghost" size="sm" disabled={busy} onClick={() => actions.refund.mutate()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => actions.refund.mutate()}
+            >
               <RotateCcw className="size-4" strokeWidth={1.9} />
               Refund
             </Button>
@@ -206,21 +233,26 @@ export function OrderDetailView({ id }: { id: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Items */}
-        <div className="rounded-card border border-white/[0.09] bg-carbon">
-          <div className="border-b border-white/[0.07] px-6 py-4 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+        <div className="rounded-card bg-carbon border border-white/[0.09]">
+          <div className="text-dim border-b border-white/[0.07] px-6 py-4 font-mono text-[10px] tracking-[0.16em] uppercase">
             Items
           </div>
           <ul className="divide-y divide-white/[0.06]">
             {order.items.map((item) => (
               <li key={item.id} className="flex items-center gap-4 px-6 py-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blaze/12 font-mono text-[13px] font-bold text-blaze">
+                <span className="bg-blaze/12 text-blaze flex size-9 shrink-0 items-center justify-center rounded-lg font-mono text-[13px] font-bold">
                   {item.qty}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] text-bone">{item.nameSnapshot}</span>
-                  <span className="block font-mono text-[11px] text-dim">{item.variant.sku}</span>
+                  <span className="text-bone block truncate text-[14.5px]">
+                    {item.nameSnapshot}
+                  </span>
+                  <span className="text-dim block font-mono text-[11px]">{item.variant.sku}</span>
                 </span>
-                <Money value={Number(item.unitPrice) * item.qty} className="font-mono text-[14px] text-bone" />
+                <Money
+                  value={Number(item.unitPrice) * item.qty}
+                  className="text-bone font-mono text-[14px]"
+                />
               </li>
             ))}
           </ul>
@@ -230,30 +262,40 @@ export function OrderDetailView({ id }: { id: string }) {
             {Number(order.discount) > 0 ? (
               <Row
                 label="Discount"
-                value={<span className="text-acid">− <Money value={order.discount} /></span>}
+                value={
+                  <span className="text-acid">
+                    − <Money value={order.discount} />
+                  </span>
+                }
               />
             ) : null}
             <Row
               label="Shipping"
-              value={Number(order.shipping) === 0 ? <span className="text-acid">FREE</span> : <Money value={order.shipping} />}
+              value={
+                Number(order.shipping) === 0 ? (
+                  <span className="text-acid">FREE</span>
+                ) : (
+                  <Money value={order.shipping} />
+                )
+              }
             />
             <div className="mt-2 flex items-baseline justify-between border-t border-white/[0.07] pt-4">
-              <span className="text-[15px] font-semibold text-bone">Total</span>
-              <Money value={order.total} className="font-display text-[28px] text-bone" />
+              <span className="text-bone text-[15px] font-semibold">Total</span>
+              <Money value={order.total} className="font-display text-bone text-[28px]" />
             </div>
           </div>
         </div>
 
         {/* Customer + payment + shipment */}
         <div className="flex flex-col gap-5">
-          <section className="rounded-card border border-white/[0.09] bg-carbon p-6">
+          <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
-              <MapPin className="size-4 text-ember" strokeWidth={1.9} />
-              <h2 className="font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+              <MapPin className="text-ember size-4" strokeWidth={1.9} />
+              <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
                 Ship to
               </h2>
             </div>
-            <address className="text-[14px] leading-[1.7] text-bone not-italic">
+            <address className="text-bone text-[14px] leading-[1.7] not-italic">
               {addr.firstName} {addr.lastName}
               <br />
               {addr.line1}
@@ -268,8 +310,8 @@ export function OrderDetailView({ id }: { id: string }) {
               <br />
               <span className="font-mono">{addr.pincode}</span>
             </address>
-            <div className="mt-4 flex flex-col gap-1.5 border-t border-white/[0.07] pt-4 font-mono text-[12.5px] text-ash">
-              <a href={`mailto:${order.email}`} className="truncate hover:text-bone">
+            <div className="text-ash mt-4 flex flex-col gap-1.5 border-t border-white/[0.07] pt-4 font-mono text-[12.5px]">
+              <a href={`mailto:${order.email}`} className="hover:text-bone truncate">
                 {order.email}
               </a>
               <a href={`tel:${order.phone}`} className="hover:text-bone">
@@ -283,25 +325,27 @@ export function OrderDetailView({ id }: { id: string }) {
             ) : null}
           </section>
 
-          <section className="rounded-card border border-white/[0.09] bg-carbon p-6">
+          <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
-              <CreditCard className="size-4 text-violet" strokeWidth={1.9} />
-              <h2 className="font-mono text-[10px] tracking-[0.16em] text-dim uppercase">Payment</h2>
+              <CreditCard className="text-violet size-4" strokeWidth={1.9} />
+              <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
+                Payment
+              </h2>
             </div>
             {order.payments.length === 0 ? (
-              <p className="text-[13.5px] text-ash">
+              <p className="text-ash text-[13.5px]">
                 Cash on delivery. Collect{" "}
-                <Money value={order.total} className="font-mono text-bone" /> at the door.
+                <Money value={order.total} className="text-bone font-mono" /> at the door.
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {order.payments.map((p) => (
                   <li key={p.gatewayOrderId} className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-[13.5px] text-bone capitalize">{p.gateway}</span>
+                      <span className="text-bone text-[13.5px] capitalize">{p.gateway}</span>
                       <Badge variant={p.status === "CAPTURED" ? "acid" : "muted"}>{p.status}</Badge>
                     </div>
-                    <span className="font-mono text-[11px] break-all text-dim">
+                    <span className="text-dim font-mono text-[11px] break-all">
                       {p.gatewayPaymentId ?? p.gatewayOrderId}
                     </span>
                   </li>
@@ -311,10 +355,10 @@ export function OrderDetailView({ id }: { id: string }) {
           </section>
 
           {order.shipment ? (
-            <section className="rounded-card border border-white/[0.09] bg-carbon p-6">
+            <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
               <div className="mb-4 flex items-center gap-2.5">
-                <Truck className="size-4 text-acid" strokeWidth={1.9} />
-                <h2 className="font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+                <Truck className="text-acid size-4" strokeWidth={1.9} />
+                <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
                   Shipment
                 </h2>
               </div>

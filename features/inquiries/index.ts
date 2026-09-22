@@ -1,6 +1,0 @@
-export { ContactForm } from "@/features/inquiries/components/contact-form"
-export { InquiryInbox } from "@/features/inquiries/components/inquiry-inbox"
-export { useInquiries, useInquiryActions } from "@/features/inquiries/hooks/use-inquiries"
-export type { InquiryRow, InquiryStatus } from "@/features/inquiries/hooks/use-inquiries"
-export { createInquirySchema } from "@/features/inquiries/schemas/inquiry.schema"
-export type { CreateInquiryInput } from "@/features/inquiries/schemas/inquiry.schema"

@@ -1,359 +1,1938 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    @keyframes float   { 0%,100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-14px) rotate(1.2deg); } }
-    @keyframes spin    { to { transform: rotate(360deg); } }
-    @keyframes marquee { to { transform: translateX(-50%); } }
-    @keyframes blink   { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
-    @keyframes rise    { 0% { transform: translateY(0) scale(1); opacity: 0; } 14% { opacity: .9; } 100% { transform: translateY(-90px) scale(.35); opacity: 0; } }
-    @keyframes bloom   { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.08); } }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0) rotate(-1.2deg);
+            }
+            50% {
+              transform: translateY(-14px) rotate(1.2deg);
+            }
+          }
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+          @keyframes marquee {
+            to {
+              transform: translateX(-50%);
+            }
+          }
+          @keyframes blink {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.25;
+            }
+          }
+          @keyframes rise {
+            0% {
+              transform: translateY(0) scale(1);
+              opacity: 0;
+            }
+            14% {
+              opacity: 0.9;
+            }
+            100% {
+              transform: translateY(-90px) scale(0.35);
+              opacity: 0;
+            }
+          }
+          @keyframes bloom {
+            0%,
+            100% {
+              opacity: 0.55;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.9;
+              transform: scale(1.08);
+            }
+          }
+        </style>
+      </helmet>
 
-<div style="width: 1440px; background: #07060A; padding: 56px;">
-
-  <!-- HEADER -->
-  <div style="display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 34px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 52px;">
-    <div>
-      <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: #FF8A00; margin-bottom: 14px;">SKELMET DESIGN SYSTEM · v1</div>
-      <h1 style="margin: 0 0 12px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 76px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">After Dark Garage</h1>
-      <p style="margin: 0; max-width: 620px; font-size: 16.5px; line-height: 1.6; color: #A3A0B0;">Void-black stage, product as the only real light source, brutalist condensed type, technical mono labels. Everything else gets out of the skull's way.</p>
-    </div>
-    <div style="display: flex; gap: 10px; padding-bottom: 8px;">
-      <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #D4FF3D; border: 1px solid rgba(212,255,61,.3); padding: 9px 14px; border-radius: 5px;">DARK ONLY</span>
-      <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #FF8A00; border: 1px solid rgba(255,138,0,.3); padding: 9px 14px; border-radius: 5px;">320 → ∞</span>
-    </div>
-  </div>
-
-  <!-- PALETTE -->
-  <div style="margin-bottom: 56px;">
-    <h2 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 40px; color: #F7F4ED; text-transform: uppercase;">Palette</h2>
-    <p style="margin: 0 0 26px; font-size: 15px; color: #A3A0B0;">Blaze is lifted straight off the product. Acid signals success, stock and money-back. Violet and magenta are the Gen-Z lift — violet for secondary actions and the drop list, magenta for alerts and the referral gradient. Olive and Ghost are filament colours, not UI colours.</p>
-
-    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px;">
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #07060A; border-bottom: 1px solid rgba(255,255,255,.09);"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Void</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#07060A</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #46434F; margin-top: 7px;">PAGE</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #0E0D13; border-bottom: 1px solid rgba(255,255,255,.09);"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Carbon</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#0E0D13</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #46434F; margin-top: 7px;">SURFACE</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #16151D; border-bottom: 1px solid rgba(255,255,255,.09);"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Graphite</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#16151D</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #46434F; margin-top: 7px;">RAISED</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,90,31,.4); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #FF5A1F;"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Blaze</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#FF5A1F</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #FF8A00; margin-top: 7px;">PRIMARY</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #FF8A00;"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Ember</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#FF8A00</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #46434F; margin-top: 7px;">GRADIENT · LINKS</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(212,255,61,.4); border-radius: 14px; overflow: hidden;">
-        <div style="height: 96px; background: #D4FF3D;"></div>
-        <div style="padding: 14px 16px;">
-          <div style="font-size: 14px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Acid</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; color: #63606F;">#D4FF3D</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #D4FF3D; margin-top: 7px;">SUCCESS · ACCENT</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px;">
-      <div style="border: 1px solid rgba(123,92,255,.45); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #7B5CFF;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Violet</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#7B5CFF</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .1em; color: #7B5CFF; margin-top: 6px;">SECONDARY CTA</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,61,154,.45); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #FF3D9A;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Magenta</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#FF3D9A</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .1em; color: #FF3D9A; margin-top: 6px;">ALERTS · SPARING</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #FFC24D;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Flare</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#FFC24D</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #F7F4ED;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Bone</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#F7F4ED</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #A3A0B0;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Ash</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#A3A0B0</div>
-        </div>
-      </div>
-      <div style="border: 1px solid rgba(255,255,255,.09); border-radius: 14px; overflow: hidden;">
-        <div style="height: 72px; background: #63606F;"></div>
-        <div style="padding: 13px 16px;">
-          <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; margin-bottom: 4px;">Dim</div>
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; color: #63606F;">#63606F</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TYPE -->
-  <div style="margin-bottom: 56px;">
-    <h2 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 40px; color: #F7F4ED; text-transform: uppercase;">Typography</h2>
-    <p style="margin: 0 0 26px; font-size: 15px; color: #A3A0B0;">Anton for anything shouted, Space Grotesk for anything read, JetBrains Mono for anything measured.</p>
-
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 26px;">
-      <div style="padding: 26px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">DISPLAY</div>
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 56px; line-height: .9; color: #F7F4ED; margin-bottom: 14px;">Aa</div>
-        <div style="font-size: 15px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Anton</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; line-height: 1.6; color: #63606F;">fallback: Arial Narrow, Impact<br>uppercase · line-height .84–.94</div>
-      </div>
-      <div style="padding: 26px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">BODY &amp; UI</div>
-        <div style="font-size: 52px; line-height: 1; font-weight: 600; color: #F7F4ED; margin-bottom: 18px;">Aa</div>
-        <div style="font-size: 15px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">Space Grotesk</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; line-height: 1.6; color: #63606F;">fallback: Helvetica Neue, Arial<br>400 / 500 / 600 / 700</div>
-      </div>
-      <div style="padding: 26px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">MICRO &amp; DATA</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 48px; line-height: 1; font-weight: 700; color: #F7F4ED; margin-bottom: 20px;">Aa</div>
-        <div style="font-size: 15px; font-weight: 600; color: #F7F4ED; margin-bottom: 5px;">JetBrains Mono</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; line-height: 1.6; color: #63606F;">fallback: Courier New<br>tracking .1em–.22em · uppercase</div>
-      </div>
-    </div>
-
-    <div style="padding: 32px 34px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-      <div style="display: flex; align-items: baseline; gap: 26px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.07);">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .12em; color: #63606F; width: 190px; flex-shrink: 0;">H1 · 104/88 · .84</span>
-        <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 56px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">Park the menace</span>
-      </div>
-      <div style="display: flex; align-items: baseline; gap: 26px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.07);">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .12em; color: #63606F; width: 190px; flex-shrink: 0;">H2 · 68/40 · .92</span>
-        <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 38px; color: #F7F4ED; text-transform: uppercase;">Pick your poison</span>
-      </div>
-      <div style="display: flex; align-items: baseline; gap: 26px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.07);">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .12em; color: #63606F; width: 190px; flex-shrink: 0;">H3 · 26/19 · 1.0</span>
-        <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #F7F4ED; text-transform: uppercase;">Glove hook built in</span>
-      </div>
-      <div style="display: flex; align-items: baseline; gap: 26px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.07);">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .12em; color: #63606F; width: 190px; flex-shrink: 0;">BODY · 17.5/15 · 1.62</span>
-        <span style="font-size: 16px; line-height: 1.6; color: #A3A0B0;">A cantilever arm takes the load into the wall, the skull cradles the shell from inside.</span>
-      </div>
-      <div style="display: flex; align-items: baseline; gap: 26px; padding-top: 18px;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .12em; color: #63606F; width: 190px; flex-shrink: 0;">LABEL · 11.5/10 · .22em</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: #FF8A00;">01 — THE LINEUP</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- COMPONENTS -->
-  <div style="margin-bottom: 56px;">
-    <h2 style="margin: 0 0 26px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 40px; color: #F7F4ED; text-transform: uppercase;">Components</h2>
-
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
-
-      <div style="padding: 28px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 20px;">BUTTONS · 58 / 54 / 46 px</div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase; box-shadow: 0 12px 30px rgba(255,90,31,.3);">
-            Primary
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      <div style="width: 1440px; background: #07060a; padding: 56px">
+        <!-- HEADER -->
+        <div
+          style="
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding-bottom: 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 52px;
+          "
+        >
+          <div>
+            <div
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11.5px;
+                letter-spacing: 0.22em;
+                color: #ff8a00;
+                margin-bottom: 14px;
+              "
+            >
+              SKELMET DESIGN SYSTEM · v1
+            </div>
+            <h1
+              style="
+                margin: 0 0 12px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 76px;
+                line-height: 0.9;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              After Dark Garage
+            </h1>
+            <p
+              style="
+                margin: 0;
+                max-width: 620px;
+                font-size: 16.5px;
+                line-height: 1.6;
+                color: #a3a0b0;
+              "
+            >
+              Void-black stage, product as the only real light source, brutalist condensed type,
+              technical mono labels. Everything else gets out of the skull's way.
+            </p>
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 999px; background: #D4FF3D; color: #07060A; font-weight: 700; font-size: 13.5px; letter-spacing: .05em; text-transform: uppercase;">Accent</div>
-          <div style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); color: #F7F4ED; font-weight: 600; font-size: 13.5px; letter-spacing: .05em; text-transform: uppercase;">Ghost</div>
-          <div style="display: flex; align-items: center; justify-content: center; height: 46px; border-radius: 999px; background: rgba(255,255,255,.05); color: #46434F; font-weight: 600; font-size: 13px; letter-spacing: .05em; text-transform: uppercase;">Disabled</div>
-        </div>
-      </div>
-
-      <div style="padding: 28px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 20px;">FIELDS · 52–54 px · r10</div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <input placeholder="Rest state" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'Space Grotesk',Arial,sans-serif; font-size: 15px; outline: none;">
-          <input value="Focused" style="height: 52px; padding: 0 16px; border: 1px solid #FF5A1F; border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'Space Grotesk',Arial,sans-serif; font-size: 15px; outline: none; box-shadow: 0 0 0 3px rgba(255,90,31,.16);">
-          <div style="position: relative;">
-            <input value="411045" style="width: 100%; height: 52px; padding: 0 42px 0 16px; border: 1px solid rgba(212,255,61,.42); border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 15px; outline: none;">
-            <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>
-          </div>
-          <input value="Invalid pincode" style="height: 52px; padding: 0 16px; border: 1px solid #FF5A1F; border-radius: 10px; background: rgba(255,90,31,.06); color: #FF8A00; font-family: 'Space Grotesk',Arial,sans-serif; font-size: 15px; outline: none;">
-        </div>
-      </div>
-
-      <div style="padding: 28px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 20px;">BADGES &amp; STATUS</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 22px;">
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #07060A; background: #D4FF3D; padding: 6px 11px; border-radius: 4px;">IN STOCK</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #07060A; background: #FF5A1F; padding: 6px 11px; border-radius: 4px;">BEST SELLER</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #F7F4ED; border: 1px solid rgba(255,255,255,.16); padding: 6px 11px; border-radius: 4px;">BATCH 04</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #D4FF3D; border: 1px solid rgba(212,255,61,.3); padding: 6px 11px; border-radius: 4px;">VERIFIED</span>
-        </div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 14px;">ORDER STATUS</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 9px;">
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #A3A0B0; border: 1px solid rgba(255,255,255,.16); padding: 5px 10px; border-radius: 4px;">PENDING</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #D4FF3D; border: 1px solid rgba(212,255,61,.3); padding: 5px 10px; border-radius: 4px;">PAID</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #FF8A00; border: 1px solid rgba(255,138,0,.34); padding: 5px 10px; border-radius: 4px;">SHIPPED</span>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #63606F; border: 1px solid rgba(255,255,255,.12); padding: 5px 10px; border-radius: 4px;">CANCELLED</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MOTION -->
-  <div style="margin-bottom: 56px;">
-    <h2 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 40px; color: #F7F4ED; text-transform: uppercase;">Motion</h2>
-    <p style="margin: 0 0 26px; font-size: 15px; color: #A3A0B0;">Everything ambient loops slowly and never demands attention. Everything reactive uses <span style="font-family: 'JetBrains Mono',monospace; font-size: 13.5px; color: #FF8A00;">cubic-bezier(.16, 1, .3, 1)</span>. All of it collapses to a static frame under <span style="font-family: 'JetBrains Mono',monospace; font-size: 13.5px; color: #FF8A00;">prefers-reduced-motion</span>.</p>
-
-    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px;">
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="height: 118px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px;">
-          <img src="hero-skull.jpg" alt="Float animation demo" style="width: 74px; height: auto; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 10px 20px rgba(0,0,0,.7));">
-        </div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #FF8A00; margin-bottom: 7px;">skull-float</div>
-        <div style="font-size: 13px; line-height: 1.5; color: #A3A0B0;">6s ease-in-out infinite. −18px Y, ±1.2° Z. The hero product only.</div>
-      </div>
-
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="position: relative; height: 118px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px;">
-          <div style="position: absolute; width: 96px; height: 96px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(255,90,31,.85) 44deg, rgba(212,255,61,.5) 92deg, transparent 150deg); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); animation: spin 14s linear infinite;"></div>
-          <div style="position: absolute; width: 118px; height: 118px; border-radius: 50%; border: 1px dashed rgba(255,90,31,.26);"></div>
-        </div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #FF8A00; margin-bottom: 7px;">orbit-ring</div>
-        <div style="font-size: 13px; line-height: 1.5; color: #A3A0B0;">Conic sweep 14s linear, dashed ring 46s reverse. Hero and PDP stage.</div>
-      </div>
-
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="position: relative; height: 118px; overflow: hidden; margin-bottom: 18px; border-radius: 10px; background: radial-gradient(circle at 50% 90%, rgba(255,90,31,.2), transparent 70%);">
-          <span style="position: absolute; left: 30%; bottom: 8px; width: 4px; height: 4px; border-radius: 50%; background: #FF8A00; animation: rise 4s linear infinite;"></span>
-          <span style="position: absolute; left: 50%; bottom: 8px; width: 3px; height: 3px; border-radius: 50%; background: #FF8A00; animation: rise 4s linear infinite 1.3s;"></span>
-          <span style="position: absolute; left: 68%; bottom: 8px; width: 5px; height: 5px; border-radius: 50%; background: #FF8A00; animation: rise 4s linear infinite 2.6s;"></span>
-        </div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #FF8A00; margin-bottom: 7px;">ember-rise</div>
-        <div style="font-size: 13px; line-height: 1.5; color: #A3A0B0;">8–9s linear, staggered delays, fades in at 12% and out at 100%.</div>
-      </div>
-
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="position: relative; height: 118px; display: flex; align-items: center; margin-bottom: 18px; overflow: hidden; border-radius: 10px; background: #FF5A1F;">
-          <div style="display: flex; width: 200%; align-items: center; animation: marquee 12s linear infinite;">
-            <div style="display: flex; gap: 14px; width: 50%; flex-shrink: 0; font-family: 'JetBrains Mono',monospace; font-weight: 700; font-size: 11px; letter-spacing: .14em; color: #07060A; white-space: nowrap;"><span>FREE SHIPPING</span><span>✦</span><span>48 HRS</span><span>✦</span></div>
-            <div style="display: flex; gap: 14px; width: 50%; flex-shrink: 0; font-family: 'JetBrains Mono',monospace; font-weight: 700; font-size: 11px; letter-spacing: .14em; color: #07060A; white-space: nowrap;"><span>FREE SHIPPING</span><span>✦</span><span>48 HRS</span><span>✦</span></div>
+          <div style="display: flex; gap: 10px; padding-bottom: 8px">
+            <span
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                letter-spacing: 0.12em;
+                color: #d4ff3d;
+                border: 1px solid rgba(212, 255, 61, 0.3);
+                padding: 9px 14px;
+                border-radius: 5px;
+              "
+              >DARK ONLY</span
+            >
+            <span
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                letter-spacing: 0.12em;
+                color: #ff8a00;
+                border: 1px solid rgba(255, 138, 0, 0.3);
+                padding: 9px 14px;
+                border-radius: 5px;
+              "
+              >320 → ∞</span
+            >
           </div>
         </div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #FF8A00; margin-bottom: 7px;">marquee</div>
-        <div style="font-size: 13px; line-height: 1.5; color: #A3A0B0;">Duplicated track, translateX(−50%), 20–28s linear. Pauses on hover.</div>
-      </div>
-    </div>
 
-    <div style="padding: 28px 32px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.1); font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">
-        <span>INTERACTION</span><span>DURATION</span><span>BEHAVIOUR</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.07); align-items: center;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #FF8A00;">reveal-up</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #A3A0B0;">700 ms</span>
-        <span style="font-size: 14px; color: #F7F4ED;">Section enters viewport: opacity 0→1, translateY 28px→0, 60 ms stagger per child</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.07); align-items: center;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #FF8A00;">pointer-tilt</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #A3A0B0;">continuous</span>
-        <span style="font-size: 14px; color: #F7F4ED;">Hero skull tracks the cursor: max ±9° rotateY, ±6° rotateX, spring-damped, pointer-fine only</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.07); align-items: center;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #FF8A00;">scroll-parallax</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #A3A0B0;">continuous</span>
-        <span style="font-size: 14px; color: #F7F4ED;">Ghost wordmark 0.3×, rings 0.6×, skull 1.0× — depth without a scroll-jack</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.07); align-items: center;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #FF8A00;">colourway-swap</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #A3A0B0;">320 ms</span>
-        <span style="font-size: 14px; color: #F7F4ED;">Filter + glow cross-fade on the product image, swatch ring scales 1→1.08</span>
-      </div>
-      <div style="display: grid; grid-template-columns: 220px 130px minmax(0, 1fr); gap: 20px; padding: 15px 0; align-items: center;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #FF8A00;">add-to-cart</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #A3A0B0;">460 ms</span>
-        <span style="font-size: 14px; color: #F7F4ED;">Thumbnail flies to the cart pill, badge count pops 1→1.3→1, ember burst behind it</span>
-      </div>
-    </div>
-  </div>
+        <!-- PALETTE -->
+        <div style="margin-bottom: 56px">
+          <h2
+            style="
+              margin: 0 0 8px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 40px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Palette
+          </h2>
+          <p style="margin: 0 0 26px; font-size: 15px; color: #a3a0b0">
+            Blaze is lifted straight off the product. Acid signals success, stock and money-back.
+            Violet and magenta are the Gen-Z lift — violet for secondary actions and the drop list,
+            magenta for alerts and the referral gradient. Olive and Ghost are filament colours, not
+            UI colours.
+          </p>
 
-  <!-- RESPONSIVE -->
-  <div>
-    <h2 style="margin: 0 0 8px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 40px; color: #F7F4ED; text-transform: uppercase;">Breakpoints</h2>
-    <p style="margin: 0 0 26px; font-size: 15px; color: #A3A0B0;">Fluid between the stops — nothing is pinned to a fixed pixel width except the 1440 max container. Below 360 the hero headline steps down one size; nothing else changes.</p>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(6, minmax(0, 1fr));
+              gap: 14px;
+              margin-bottom: 14px;
+            "
+          >
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div
+                style="
+                  height: 96px;
+                  background: #07060a;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                "
+              ></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Void
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #07060A
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #46434f;
+                    margin-top: 7px;
+                  "
+                >
+                  PAGE
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div
+                style="
+                  height: 96px;
+                  background: #0e0d13;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                "
+              ></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Carbon
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #0E0D13
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #46434f;
+                    margin-top: 7px;
+                  "
+                >
+                  SURFACE
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div
+                style="
+                  height: 96px;
+                  background: #16151d;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+                "
+              ></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Graphite
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #16151D
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #46434f;
+                    margin-top: 7px;
+                  "
+                >
+                  RAISED
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 90, 31, 0.4);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 96px; background: #ff5a1f"></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Blaze
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #FF5A1F
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #ff8a00;
+                    margin-top: 7px;
+                  "
+                >
+                  PRIMARY
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 96px; background: #ff8a00"></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Ember
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #FF8A00
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #46434f;
+                    margin-top: 7px;
+                  "
+                >
+                  GRADIENT · LINKS
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(212, 255, 61, 0.4);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 96px; background: #d4ff3d"></div>
+              <div style="padding: 14px 16px">
+                <div style="font-size: 14px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                  Acid
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    color: #63606f;
+                  "
+                >
+                  #D4FF3D
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #d4ff3d;
+                    margin-top: 7px;
+                  "
+                >
+                  SUCCESS · ACCENT
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px;">
-      <div style="padding: 24px; border: 1px solid rgba(212,255,61,.3); border-radius: 16px; background: linear-gradient(160deg, rgba(212,255,61,.07), transparent 56%), #0E0D13;">
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: 1; color: #D4FF3D; margin-bottom: 6px;">320</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F; margin-bottom: 16px;">FLOOR</div>
-        <div style="font-size: 13px; line-height: 1.55; color: #A3A0B0;">1 col · 16px gutter · H1 48px · cards 216px · sticky buy bar</div>
-      </div>
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: 1; color: #F7F4ED; margin-bottom: 6px;">390</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F; margin-bottom: 16px;">PHONE</div>
-        <div style="font-size: 13px; line-height: 1.55; color: #A3A0B0;">1 col · 20px gutter · H1 58px · bento 2-up · cards 258px</div>
-      </div>
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: 1; color: #F7F4ED; margin-bottom: 6px;">834</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F; margin-bottom: 16px;">TABLET</div>
-        <div style="font-size: 13px; line-height: 1.55; color: #A3A0B0;">2 col hero · 32px gutter · H1 76px · bento 3-up · nav collapses to 4 links</div>
-      </div>
-      <div style="padding: 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: 1; color: #F7F4ED; margin-bottom: 6px;">1024</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F; margin-bottom: 16px;">LAPTOP</div>
-        <div style="font-size: 13px; line-height: 1.55; color: #A3A0B0;">Full nav returns · colourways 3-up · PDP splits gallery / buy rail</div>
-      </div>
-      <div style="padding: 24px; border: 1px solid rgba(255,90,31,.3); border-radius: 16px; background: linear-gradient(160deg, rgba(255,90,31,.09), transparent 56%), #0E0D13;">
-        <div style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 34px; line-height: 1; color: #FF5A1F; margin-bottom: 6px;">1440+</div>
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .14em; color: #63606F; margin-bottom: 16px;">DESKTOP</div>
-        <div style="font-size: 13px; line-height: 1.55; color: #A3A0B0;">Content caps at 1440, page keeps bleeding · 56px gutter · bento 4-up</div>
-      </div>
-    </div>
-  </div>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px">
+            <div
+              style="
+                border: 1px solid rgba(123, 92, 255, 0.45);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #7b5cff"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Violet
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #7B5CFF
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 9.5px;
+                    letter-spacing: 0.1em;
+                    color: #7b5cff;
+                    margin-top: 6px;
+                  "
+                >
+                  SECONDARY CTA
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 61, 154, 0.45);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #ff3d9a"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Magenta
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #FF3D9A
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 9.5px;
+                    letter-spacing: 0.1em;
+                    color: #ff3d9a;
+                    margin-top: 6px;
+                  "
+                >
+                  ALERTS · SPARING
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #ffc24d"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Flare
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #FFC24D
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #f7f4ed"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Bone
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #F7F4ED
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #a3a0b0"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Ash
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #A3A0B0
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                overflow: hidden;
+              "
+            >
+              <div style="height: 72px; background: #63606f"></div>
+              <div style="padding: 13px 16px">
+                <div
+                  style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; margin-bottom: 4px"
+                >
+                  Dim
+                </div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11px;
+                    color: #63606f;
+                  "
+                >
+                  #63606F
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-</div>
-</x-dc>
-</body>
+        <!-- TYPE -->
+        <div style="margin-bottom: 56px">
+          <h2
+            style="
+              margin: 0 0 8px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 40px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Typography
+          </h2>
+          <p style="margin: 0 0 26px; font-size: 15px; color: #a3a0b0">
+            Anton for anything shouted, Space Grotesk for anything read, JetBrains Mono for anything
+            measured.
+          </p>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: 16px;
+              margin-bottom: 26px;
+            "
+          >
+            <div
+              style="
+                padding: 26px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                DISPLAY
+              </div>
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 56px;
+                  line-height: 0.9;
+                  color: #f7f4ed;
+                  margin-bottom: 14px;
+                "
+              >
+                Aa
+              </div>
+              <div style="font-size: 15px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                Anton
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11.5px;
+                  line-height: 1.6;
+                  color: #63606f;
+                "
+              >
+                fallback: Arial Narrow, Impact<br />uppercase · line-height .84–.94
+              </div>
+            </div>
+            <div
+              style="
+                padding: 26px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                BODY &amp; UI
+              </div>
+              <div
+                style="
+                  font-size: 52px;
+                  line-height: 1;
+                  font-weight: 600;
+                  color: #f7f4ed;
+                  margin-bottom: 18px;
+                "
+              >
+                Aa
+              </div>
+              <div style="font-size: 15px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                Space Grotesk
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11.5px;
+                  line-height: 1.6;
+                  color: #63606f;
+                "
+              >
+                fallback: Helvetica Neue, Arial<br />400 / 500 / 600 / 700
+              </div>
+            </div>
+            <div
+              style="
+                padding: 26px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                MICRO &amp; DATA
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 48px;
+                  line-height: 1;
+                  font-weight: 700;
+                  color: #f7f4ed;
+                  margin-bottom: 20px;
+                "
+              >
+                Aa
+              </div>
+              <div style="font-size: 15px; font-weight: 600; color: #f7f4ed; margin-bottom: 5px">
+                JetBrains Mono
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11.5px;
+                  line-height: 1.6;
+                  color: #63606f;
+                "
+              >
+                fallback: Courier New<br />tracking .1em–.22em · uppercase
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              padding: 32px 34px;
+              border: 1px solid rgba(255, 255, 255, 0.09);
+              border-radius: 16px;
+              background: #0e0d13;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                align-items: baseline;
+                gap: 26px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.12em;
+                  color: #63606f;
+                  width: 190px;
+                  flex-shrink: 0;
+                "
+                >H1 · 104/88 · .84</span
+              >
+              <span
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 56px;
+                  line-height: 0.9;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+                >Park the menace</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: baseline;
+                gap: 26px;
+                padding: 18px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.12em;
+                  color: #63606f;
+                  width: 190px;
+                  flex-shrink: 0;
+                "
+                >H2 · 68/40 · .92</span
+              >
+              <span
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 38px;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+                >Pick your poison</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: baseline;
+                gap: 26px;
+                padding: 18px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.12em;
+                  color: #63606f;
+                  width: 190px;
+                  flex-shrink: 0;
+                "
+                >H3 · 26/19 · 1.0</span
+              >
+              <span
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 24px;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+                >Glove hook built in</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: baseline;
+                gap: 26px;
+                padding: 18px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.12em;
+                  color: #63606f;
+                  width: 190px;
+                  flex-shrink: 0;
+                "
+                >BODY · 17.5/15 · 1.62</span
+              >
+              <span style="font-size: 16px; line-height: 1.6; color: #a3a0b0"
+                >A cantilever arm takes the load into the wall, the skull cradles the shell from
+                inside.</span
+              >
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 26px; padding-top: 18px">
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.12em;
+                  color: #63606f;
+                  width: 190px;
+                  flex-shrink: 0;
+                "
+                >LABEL · 11.5/10 · .22em</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11.5px;
+                  letter-spacing: 0.22em;
+                  color: #ff8a00;
+                "
+                >01 — THE LINEUP</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPONENTS -->
+        <div style="margin-bottom: 56px">
+          <h2
+            style="
+              margin: 0 0 26px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 40px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Components
+          </h2>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+            <div
+              style="
+                padding: 28px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 20px;
+                "
+              >
+                BUTTONS · 58 / 54 / 46 px
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    height: 54px;
+                    border-radius: 999px;
+                    background: linear-gradient(96deg, #ff5a1f, #ff8a00);
+                    color: #07060a;
+                    font-weight: 700;
+                    font-size: 14px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    box-shadow: 0 12px 30px rgba(255, 90, 31, 0.3);
+                  "
+                >
+                  Primary
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#07060A"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 50px;
+                    border-radius: 999px;
+                    background: #d4ff3d;
+                    color: #07060a;
+                    font-weight: 700;
+                    font-size: 13.5px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Accent
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 50px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: #f7f4ed;
+                    font-weight: 600;
+                    font-size: 13.5px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Ghost
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 46px;
+                    border-radius: 999px;
+                    background: rgba(255, 255, 255, 0.05);
+                    color: #46434f;
+                    font-weight: 600;
+                    font-size: 13px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Disabled
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                padding: 28px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 20px;
+                "
+              >
+                FIELDS · 52–54 px · r10
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <input
+                  placeholder="Rest state"
+                  style="
+                    height: 52px;
+                    padding: 0 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    border-radius: 10px;
+                    background: #07060a;
+                    color: #f7f4ed;
+                    font-family: &quot;Space Grotesk&quot;, Arial, sans-serif;
+                    font-size: 15px;
+                    outline: none;
+                  "
+                />
+                <input
+                  value="Focused"
+                  style="
+                    height: 52px;
+                    padding: 0 16px;
+                    border: 1px solid #ff5a1f;
+                    border-radius: 10px;
+                    background: #07060a;
+                    color: #f7f4ed;
+                    font-family: &quot;Space Grotesk&quot;, Arial, sans-serif;
+                    font-size: 15px;
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.16);
+                  "
+                />
+                <div style="position: relative">
+                  <input
+                    value="411045"
+                    style="
+                      width: 100%;
+                      height: 52px;
+                      padding: 0 42px 0 16px;
+                      border: 1px solid rgba(212, 255, 61, 0.42);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                  <span
+                    style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%)"
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#D4FF3D"
+                      stroke-width="2.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m5 13 4 4L19 7" /></svg
+                  ></span>
+                </div>
+                <input
+                  value="Invalid pincode"
+                  style="
+                    height: 52px;
+                    padding: 0 16px;
+                    border: 1px solid #ff5a1f;
+                    border-radius: 10px;
+                    background: rgba(255, 90, 31, 0.06);
+                    color: #ff8a00;
+                    font-family: &quot;Space Grotesk&quot;, Arial, sans-serif;
+                    font-size: 15px;
+                    outline: none;
+                  "
+                />
+              </div>
+            </div>
+
+            <div
+              style="
+                padding: 28px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 20px;
+                "
+              >
+                BADGES &amp; STATUS
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 22px">
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.14em;
+                    color: #07060a;
+                    background: #d4ff3d;
+                    padding: 6px 11px;
+                    border-radius: 4px;
+                  "
+                  >IN STOCK</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.14em;
+                    color: #07060a;
+                    background: #ff5a1f;
+                    padding: 6px 11px;
+                    border-radius: 4px;
+                  "
+                  >BEST SELLER</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.14em;
+                    color: #f7f4ed;
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    padding: 6px 11px;
+                    border-radius: 4px;
+                  "
+                  >BATCH 04</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.14em;
+                    color: #d4ff3d;
+                    border: 1px solid rgba(212, 255, 61, 0.3);
+                    padding: 6px 11px;
+                    border-radius: 4px;
+                  "
+                  >VERIFIED</span
+                >
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 14px;
+                "
+              >
+                ORDER STATUS
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 9px">
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #a3a0b0;
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                  "
+                  >PENDING</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #d4ff3d;
+                    border: 1px solid rgba(212, 255, 61, 0.3);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                  "
+                  >PAID</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #ff8a00;
+                    border: 1px solid rgba(255, 138, 0, 0.34);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                  "
+                  >SHIPPED</span
+                >
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                    color: #63606f;
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                  "
+                  >CANCELLED</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MOTION -->
+        <div style="margin-bottom: 56px">
+          <h2
+            style="
+              margin: 0 0 8px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 40px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Motion
+          </h2>
+          <p style="margin: 0 0 26px; font-size: 15px; color: #a3a0b0">
+            Everything ambient loops slowly and never demands attention. Everything reactive uses
+            <span
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 13.5px;
+                color: #ff8a00;
+              "
+              >cubic-bezier(.16, 1, .3, 1)</span
+            >. All of it collapses to a static frame under
+            <span
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 13.5px;
+                color: #ff8a00;
+              "
+              >prefers-reduced-motion</span
+            >.
+          </p>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+              gap: 16px;
+              margin-bottom: 16px;
+            "
+          >
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  height: 118px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 18px;
+                "
+              >
+                <img
+                  src="hero-skull.jpg"
+                  alt="Float animation demo"
+                  style="
+                    width: 74px;
+                    height: auto;
+                    animation: float 6s ease-in-out infinite;
+                    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.7));
+                  "
+                />
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #ff8a00;
+                  margin-bottom: 7px;
+                "
+              >
+                skull-float
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; color: #a3a0b0">
+                6s ease-in-out infinite. −18px Y, ±1.2° Z. The hero product only.
+              </div>
+            </div>
+
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  position: relative;
+                  height: 118px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin-bottom: 18px;
+                "
+              >
+                <div
+                  style="
+                    position: absolute;
+                    width: 96px;
+                    height: 96px;
+                    border-radius: 50%;
+                    background: conic-gradient(
+                      from 0deg,
+                      transparent 0deg,
+                      rgba(255, 90, 31, 0.85) 44deg,
+                      rgba(212, 255, 61, 0.5) 92deg,
+                      transparent 150deg
+                    );
+                    mask: radial-gradient(
+                      farthest-side,
+                      transparent calc(100% - 2px),
+                      #000 calc(100% - 2px)
+                    );
+                    -webkit-mask: radial-gradient(
+                      farthest-side,
+                      transparent calc(100% - 2px),
+                      #000 calc(100% - 2px)
+                    );
+                    animation: spin 14s linear infinite;
+                  "
+                ></div>
+                <div
+                  style="
+                    position: absolute;
+                    width: 118px;
+                    height: 118px;
+                    border-radius: 50%;
+                    border: 1px dashed rgba(255, 90, 31, 0.26);
+                  "
+                ></div>
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #ff8a00;
+                  margin-bottom: 7px;
+                "
+              >
+                orbit-ring
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; color: #a3a0b0">
+                Conic sweep 14s linear, dashed ring 46s reverse. Hero and PDP stage.
+              </div>
+            </div>
+
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  position: relative;
+                  height: 118px;
+                  overflow: hidden;
+                  margin-bottom: 18px;
+                  border-radius: 10px;
+                  background: radial-gradient(
+                    circle at 50% 90%,
+                    rgba(255, 90, 31, 0.2),
+                    transparent 70%
+                  );
+                "
+              >
+                <span
+                  style="
+                    position: absolute;
+                    left: 30%;
+                    bottom: 8px;
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                    background: #ff8a00;
+                    animation: rise 4s linear infinite;
+                  "
+                ></span>
+                <span
+                  style="
+                    position: absolute;
+                    left: 50%;
+                    bottom: 8px;
+                    width: 3px;
+                    height: 3px;
+                    border-radius: 50%;
+                    background: #ff8a00;
+                    animation: rise 4s linear infinite 1.3s;
+                  "
+                ></span>
+                <span
+                  style="
+                    position: absolute;
+                    left: 68%;
+                    bottom: 8px;
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    background: #ff8a00;
+                    animation: rise 4s linear infinite 2.6s;
+                  "
+                ></span>
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #ff8a00;
+                  margin-bottom: 7px;
+                "
+              >
+                ember-rise
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; color: #a3a0b0">
+                8–9s linear, staggered delays, fades in at 12% and out at 100%.
+              </div>
+            </div>
+
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  position: relative;
+                  height: 118px;
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 18px;
+                  overflow: hidden;
+                  border-radius: 10px;
+                  background: #ff5a1f;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    width: 200%;
+                    align-items: center;
+                    animation: marquee 12s linear infinite;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      gap: 14px;
+                      width: 50%;
+                      flex-shrink: 0;
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-weight: 700;
+                      font-size: 11px;
+                      letter-spacing: 0.14em;
+                      color: #07060a;
+                      white-space: nowrap;
+                    "
+                  >
+                    <span>FREE SHIPPING</span><span>✦</span><span>48 HRS</span><span>✦</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 14px;
+                      width: 50%;
+                      flex-shrink: 0;
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-weight: 700;
+                      font-size: 11px;
+                      letter-spacing: 0.14em;
+                      color: #07060a;
+                      white-space: nowrap;
+                    "
+                  >
+                    <span>FREE SHIPPING</span><span>✦</span><span>48 HRS</span><span>✦</span>
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #ff8a00;
+                  margin-bottom: 7px;
+                "
+              >
+                marquee
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; color: #a3a0b0">
+                Duplicated track, translateX(−50%), 20–28s linear. Pauses on hover.
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              padding: 28px 32px;
+              border: 1px solid rgba(255, 255, 255, 0.09);
+              border-radius: 16px;
+              background: #0e0d13;
+            "
+          >
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding-bottom: 14px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 10.5px;
+                letter-spacing: 0.16em;
+                color: #63606f;
+              "
+            >
+              <span>INTERACTION</span><span>DURATION</span><span>BEHAVIOUR</span>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding: 15px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+                align-items: center;
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #ff8a00;
+                "
+                >reveal-up</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #a3a0b0;
+                "
+                >700 ms</span
+              >
+              <span style="font-size: 14px; color: #f7f4ed"
+                >Section enters viewport: opacity 0→1, translateY 28px→0, 60 ms stagger per
+                child</span
+              >
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding: 15px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+                align-items: center;
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #ff8a00;
+                "
+                >pointer-tilt</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #a3a0b0;
+                "
+                >continuous</span
+              >
+              <span style="font-size: 14px; color: #f7f4ed"
+                >Hero skull tracks the cursor: max ±9° rotateY, ±6° rotateX, spring-damped,
+                pointer-fine only</span
+              >
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding: 15px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+                align-items: center;
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #ff8a00;
+                "
+                >scroll-parallax</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #a3a0b0;
+                "
+                >continuous</span
+              >
+              <span style="font-size: 14px; color: #f7f4ed"
+                >Ghost wordmark 0.3×, rings 0.6×, skull 1.0× — depth without a scroll-jack</span
+              >
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding: 15px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+                align-items: center;
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #ff8a00;
+                "
+                >colourway-swap</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #a3a0b0;
+                "
+                >320 ms</span
+              >
+              <span style="font-size: 14px; color: #f7f4ed"
+                >Filter + glow cross-fade on the product image, swatch ring scales 1→1.08</span
+              >
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 220px 130px minmax(0, 1fr);
+                gap: 20px;
+                padding: 15px 0;
+                align-items: center;
+              "
+            >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #ff8a00;
+                "
+                >add-to-cart</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 13px;
+                  color: #a3a0b0;
+                "
+                >460 ms</span
+              >
+              <span style="font-size: 14px; color: #f7f4ed"
+                >Thumbnail flies to the cart pill, badge count pops 1→1.3→1, ember burst behind
+                it</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- RESPONSIVE -->
+        <div>
+          <h2
+            style="
+              margin: 0 0 8px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 40px;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Breakpoints
+          </h2>
+          <p style="margin: 0 0 26px; font-size: 15px; color: #a3a0b0">
+            Fluid between the stops — nothing is pinned to a fixed pixel width except the 1440 max
+            container. Below 360 the hero headline steps down one size; nothing else changes.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(212, 255, 61, 0.3);
+                border-radius: 16px;
+                background:
+                  linear-gradient(160deg, rgba(212, 255, 61, 0.07), transparent 56%), #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 34px;
+                  line-height: 1;
+                  color: #d4ff3d;
+                  margin-bottom: 6px;
+                "
+              >
+                320
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.14em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                FLOOR
+              </div>
+              <div style="font-size: 13px; line-height: 1.55; color: #a3a0b0">
+                1 col · 16px gutter · H1 48px · cards 216px · sticky buy bar
+              </div>
+            </div>
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 34px;
+                  line-height: 1;
+                  color: #f7f4ed;
+                  margin-bottom: 6px;
+                "
+              >
+                390
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.14em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                PHONE
+              </div>
+              <div style="font-size: 13px; line-height: 1.55; color: #a3a0b0">
+                1 col · 20px gutter · H1 58px · bento 2-up · cards 258px
+              </div>
+            </div>
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 34px;
+                  line-height: 1;
+                  color: #f7f4ed;
+                  margin-bottom: 6px;
+                "
+              >
+                834
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.14em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                TABLET
+              </div>
+              <div style="font-size: 13px; line-height: 1.55; color: #a3a0b0">
+                2 col hero · 32px gutter · H1 76px · bento 3-up · nav collapses to 4 links
+              </div>
+            </div>
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 34px;
+                  line-height: 1;
+                  color: #f7f4ed;
+                  margin-bottom: 6px;
+                "
+              >
+                1024
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.14em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                LAPTOP
+              </div>
+              <div style="font-size: 13px; line-height: 1.55; color: #a3a0b0">
+                Full nav returns · colourways 3-up · PDP splits gallery / buy rail
+              </div>
+            </div>
+            <div
+              style="
+                padding: 24px;
+                border: 1px solid rgba(255, 90, 31, 0.3);
+                border-radius: 16px;
+                background:
+                  linear-gradient(160deg, rgba(255, 90, 31, 0.09), transparent 56%), #0e0d13;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 34px;
+                  line-height: 1;
+                  color: #ff5a1f;
+                  margin-bottom: 6px;
+                "
+              >
+                1440+
+              </div>
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.14em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                DESKTOP
+              </div>
+              <div style="font-size: 13px; line-height: 1.55; color: #a3a0b0">
+                Content caps at 1440, page keeps bleeding · 56px gutter · bento 4-up
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </x-dc>
+  </body>
 </html>

@@ -39,7 +39,12 @@ type RawReferral = {
   rewardAmount: { toString(): string }
   creditedAt: Date | null
   createdAt: Date
-  referrer: { id: string; name: string | null; email: string; referralBalance: { toString(): string } }
+  referrer: {
+    id: string
+    name: string | null
+    email: string
+    referralBalance: { toString(): string }
+  }
   _count: { orders: number }
 }
 

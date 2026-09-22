@@ -1,296 +1,974 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    .grain::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .13; mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    .h3 { margin: 0 0 14px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 30px; line-height: 1; color: #F7F4ED; text-transform: uppercase; }
-    .p  { margin: 0 0 16px; font-size: 15.5px; line-height: 1.72; color: #A3A0B0; max-width: 720px; }
-    .li { display: flex; gap: 12px; margin-bottom: 11px; font-size: 15px; line-height: 1.66; color: #A3A0B0; max-width: 720px; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #7B5CFF; flex-shrink: 0; margin-top: 8px; }
-    .sec { padding: 38px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .num { font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .18em; color: #7B5CFF; margin-bottom: 12px; }
-    .toc { display: block; padding: 9px 0; font-size: 13.5px; color: #A3A0B0; border-bottom: 1px solid rgba(255,255,255,.05); }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          .grain::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.13;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+          }
+          .h3 {
+            margin: 0 0 14px;
+            font-family: "Anton", "Arial Narrow", Impact, sans-serif;
+            font-size: 30px;
+            line-height: 1;
+            color: #f7f4ed;
+            text-transform: uppercase;
+          }
+          .p {
+            margin: 0 0 16px;
+            font-size: 15.5px;
+            line-height: 1.72;
+            color: #a3a0b0;
+            max-width: 720px;
+          }
+          .li {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 11px;
+            font-size: 15px;
+            line-height: 1.66;
+            color: #a3a0b0;
+            max-width: 720px;
+          }
+          .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #7b5cff;
+            flex-shrink: 0;
+            margin-top: 8px;
+          }
+          .sec {
+            padding: 38px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          }
+          .num {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            color: #7b5cff;
+            margin-bottom: 12px;
+          }
+          .toc {
+            display: block;
+            padding: 9px 0;
+            font-size: 13.5px;
+            color: #a3a0b0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          }
+        </style>
+      </helmet>
 
-<div style="width: 1440px; background: #07060A;">
-
-  <!-- NAV -->
-  <div style="display: flex; align-items: center; justify-content: space-between; height: 74px; padding: 0 56px; border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
-        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
-      </svg>
-      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 23px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 32px; font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #A3A0B0;">
-      <span>Shop</span><span>The Build</span><span>Riders</span><span>Refer &amp; Earn</span><span>About</span><span>Contact</span>
-    </div>
-    <div style="display: flex; align-items: center; height: 40px; padding: 0 20px; border-radius: 999px; background: #D4FF3D; color: #07060A; font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase;">Buy now</div>
-  </div>
-
-  <!-- HERO -->
-  <div class="grain" style="position: relative; overflow: hidden; padding: 66px 56px 54px; background: radial-gradient(760px 380px at 78% 40%, rgba(255,90,31,.14), transparent 70%), #07060A; border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="position: absolute; top: 40px; right: -30px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 190px; line-height: .8; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.05); white-space: nowrap; user-select: none;">TERMS</div>
-    <div style="position: relative; z-index: 2;">
-      <div style="display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .14em; color: #63606F; margin-bottom: 22px;">
-        <span>HOME</span><span>/</span><span>LEGAL</span><span>/</span><span style="color: #F7F4ED;">TERMS OF SERVICE</span>
-      </div>
-      <h1 style="margin: 0 0 20px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 84px; line-height: .88; color: #F7F4ED; text-transform: uppercase;">Terms of service</h1>
-      <p style="margin: 0 0 26px; max-width: 640px; font-size: 17px; line-height: 1.64; color: #A3A0B0;">The deal between you and us when you buy a skull. Short sentences, no traps.</p>
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #D4FF3D; border: 1px solid rgba(212,255,61,.3); padding: 8px 13px; border-radius: 5px;">LAST UPDATED [DD MMM 2026]</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #A3A0B0; border: 1px solid rgba(255,255,255,.14); padding: 8px 13px; border-radius: 5px;">VERSION [1.0]</span>
-        <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .12em; color: #A3A0B0; border: 1px solid rgba(255,255,255,.14); padding: 8px 13px; border-radius: 5px;">~9 MIN READ</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- LAWYER BANNER -->
-  <div style="display: flex; align-items: flex-start; gap: 14px; margin: 28px 56px 0; padding: 20px 24px; border: 1px dashed rgba(255,61,154,.45); border-radius: 14px; background: rgba(255,61,154,.05);">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF3D9A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-    <p style="margin: 0; font-size: 13.5px; line-height: 1.62; color: #C9C6D4;"><span style="color: #FF3D9A; font-weight: 700;">DRAFT STRUCTURE — NOT LEGAL ADVICE.</span> This page shows the layout and the clauses an Indian D2C store typically needs. Every bracketed value, and the enforceability of the final wording, must be confirmed by your lawyer before launch.</p>
-  </div>
-
-  <!-- BODY -->
-  <div style="display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; padding: 44px 56px 88px;">
-
-    <div>
-      <div style="position: sticky; top: 40px;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 16px;">ON THIS PAGE</div>
-        <span class="toc" style="color: #7B5CFF; border-left: 2px solid #7B5CFF; padding-left: 12px;">01 · Agreeing to these terms</span>
-        <span class="toc">02 · Who can buy</span>
-        <span class="toc">03 · Your account</span>
-        <span class="toc">04 · Products &amp; descriptions</span>
-        <span class="toc">05 · Prices &amp; taxes</span>
-        <span class="toc">06 · Placing an order</span>
-        <span class="toc">07 · Payment</span>
-        <span class="toc">08 · Shipping &amp; delivery</span>
-        <span class="toc">09 · Returns &amp; refunds</span>
-        <span class="toc">10 · Cancellations</span>
-        <span class="toc">11 · Warranty</span>
-        <span class="toc">12 · Safe use</span>
-        <span class="toc">13 · Discount codes</span>
-        <span class="toc">14 · Referral programme</span>
-        <span class="toc">15 · Reviews &amp; photos you post</span>
-        <span class="toc">16 · Our intellectual property</span>
-        <span class="toc">17 · Liability</span>
-        <span class="toc">18 · Governing law</span>
-        <span class="toc" style="border-bottom: none;">19 · Grievance officer</span>
-
-        <div style="margin-top: 26px; padding: 20px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-          <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 10px;">SHORT VERSION</div>
-          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #A3A0B0;">Buy it, we ship it. Don't like it, send it back within 7 days. Don't hang a person off it.</p>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="sec" style="padding-top: 0;">
-        <div class="num">01</div>
-        <h3 class="h3">Agreeing to these terms</h3>
-        <p class="p">By using skelmet.in or placing an order you accept these terms. They form a contract between you and <span style="color: #F7F4ED;">[LEGAL ENTITY NAME]</span>, registered at <span style="color: #F7F4ED;">[REGISTERED ADDRESS]</span>. If you do not accept them, do not order.</p>
-        <p class="p">We may change these terms. The version that applies to your order is the one published when you placed it, and we keep every past version on file.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">02</div>
-        <h3 class="h3">Who can buy</h3>
-        <p class="p">You must be 18 or older and able to enter a contract under the Indian Contract Act 1872. We currently ship only within India. Orders that look like resale or bulk arbitrage may be declined — for genuine bulk and club orders, talk to us first.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">03</div>
-        <h3 class="h3">Your account</h3>
-        <p class="p">You can check out as a guest. If you create an account, keep the password to yourself — anything done through your account is treated as done by you. Tell us immediately if you think someone else has access. We can suspend an account being used for fraud or abuse.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">04</div>
-        <h3 class="h3">Products &amp; descriptions</h3>
-        <p class="p">Every mount is 3D printed to order. That means small variations in layer texture and finish between units are normal and are not defects — it is the point of the product.</p>
-        <p class="p">Colours on your screen will not match the physical filament exactly. Dimensions and load figures published on the product page are <span style="color: #FF8A00;">[TO BE CONFIRMED AND FIXED BEFORE LAUNCH]</span> and are given as guidance.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">05</div>
-        <h3 class="h3">Prices &amp; taxes</h3>
-        <p class="p">Prices are in Indian Rupees and include GST. The price you see at checkout is the price you pay — no surprise fees at delivery, except the COD handling charge which is shown before you confirm.</p>
-        <p class="p">If a price is listed wrongly because of an obvious error, we may cancel the order and refund you in full rather than honour it. We will tell you before doing that.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">06</div>
-        <h3 class="h3">Placing an order</h3>
-        <p class="p">Your order is an offer to buy. The contract forms when we send the dispatch confirmation, not the order confirmation. Until then we may decline the order — because stock ran out mid-batch, the address is not serviceable, or payment failed verification.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">07</div>
-        <h3 class="h3">Payment</h3>
-        <p class="p">We accept UPI, cards, netbanking and cash on delivery. Payments are handled by <span style="color: #F7F4ED;">[PAYMENT GATEWAY]</span>; we never see your card or UPI credentials. For COD, the parcel is only handed over on full payment.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">08</div>
-        <h3 class="h3">Shipping &amp; delivery</h3>
-        <div class="li"><span class="dot"></span><span>We dispatch within <span style="color: #F7F4ED;">[48] hours</span> of payment clearing, on working days.</span></div>
-        <div class="li"><span class="dot"></span><span>Typical delivery is <span style="color: #F7F4ED;">[3–6] working days</span> depending on pincode.</span></div>
-        <div class="li"><span class="dot"></span><span>Shipping is free across India on all orders.</span></div>
-        <div class="li"><span class="dot"></span><span>Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within <span style="color: #F7F4ED;">[48] hours</span>.</span></div>
-        <div class="li"><span class="dot"></span><span>Three failed delivery attempts return the parcel to us; we will refund minus the actual return freight.</span></div>
-      </div>
-
-      <div class="sec">
-        <div class="num">09</div>
-        <h3 class="h3">Returns &amp; refunds</h3>
-        <p class="p">You have <span style="color: #F7F4ED;">7 days</span> from delivery to return a mount for any reason. It must be unused, undamaged and in its original packaging. We arrange and pay for the reverse pickup.</p>
-        <p class="p">Refunds are issued to the original payment method within <span style="color: #F7F4ED;">[7] working days</span> of the return reaching us and passing inspection. For COD orders we refund by UPI or bank transfer to details you provide.</p>
-        <p class="p">Custom-colour and engraved orders are made specifically for you and cannot be returned unless faulty.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">10</div>
-        <h3 class="h3">Cancellations</h3>
-        <p class="p">Cancel free of charge any time before dispatch, from your account or by messaging us. Once the parcel has left us, use the returns process in section 09 instead.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">11</div>
-        <h3 class="h3">Warranty</h3>
-        <p class="p">We warrant the mount against cracking, deformation or bracket failure in normal indoor domestic use for <span style="color: #F7F4ED;">[12] months</span> from delivery. If that happens, send us a photo and we will replace it.</p>
-        <p class="p">Not covered: colour fade from direct sunlight, damage from loads beyond the published rating, outdoor use, drops, modification, or fixings other than those supplied.</p>
-        <p class="p">This warranty is in addition to your rights under the Consumer Protection Act 2019, which it does not limit.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">12</div>
-        <h3 class="h3">Safe use</h3>
-        <p class="p">This is a decorative indoor wall mount for a helmet and light riding gear. It is not climbing equipment, not a handhold, not a step, and not rated to carry a person. Fix it only into a sound wall using the supplied anchors and follow the instructions. We are not liable for damage caused by incorrect installation or by using it for something it was never sold to do.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">13</div>
-        <h3 class="h3">Discount codes</h3>
-        <p class="p">One code per order unless we say otherwise. Codes have no cash value, cannot be applied after an order is placed, and can be withdrawn if we find them being scraped, resold or posted to coupon-aggregator sites.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">14</div>
-        <h3 class="h3">Referral programme</h3>
-        <div class="li"><span class="dot"></span><span>The person you refer must be a new customer using your code on their first order.</span></div>
-        <div class="li"><span class="dot"></span><span>Your reward credits once their order has shipped and cleared the 7-day return window.</span></div>
-        <div class="li"><span class="dot"></span><span>Rewards can be cashed out to UPI from <span style="color: #F7F4ED;">[₹500]</span>, or spent on the site at any balance.</span></div>
-        <div class="li"><span class="dot"></span><span>Self-referrals, duplicate accounts and fake orders void the reward and may close the account.</span></div>
-        <div class="li"><span class="dot"></span><span>We may change the reward amount for future referrals, but never for one already earned.</span></div>
-      </div>
-
-      <div class="sec">
-        <div class="num">15</div>
-        <h3 class="h3">Reviews &amp; photos you post</h3>
-        <p class="p">When you submit a review or a rider-wall photo, you keep ownership of it and give us a non-exclusive, royalty-free licence to show it on the site and our social accounts, with your first name and city.</p>
-        <p class="p">Don't post anything you don't own, anything defamatory, or anything containing another person who has not agreed. We may remove content that breaks this, and we do not edit reviews to make them more favourable.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">16</div>
-        <h3 class="h3">Our intellectual property</h3>
-        <p class="p">The SKELMET name, the skull design, the 3D model files, the photography and the site itself are ours. Buying a mount buys you the object, not the design. You may not copy, 3D-scan, reproduce or sell the design, and you may not list our photography on a marketplace as your own.</p>
-        <p class="p">Photographing your own mount and posting it is entirely fine, and encouraged.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">17</div>
-        <h3 class="h3">Liability</h3>
-        <p class="p">Our total liability for any order is limited to what you paid for it, except where the law does not allow that limit — in particular for death or personal injury caused by our negligence, or for fraud.</p>
-        <p class="p">We are not liable for indirect or consequential losses, such as damage to a helmet caused by installing the mount incorrectly.</p>
-      </div>
-
-      <div class="sec">
-        <div class="num">18</div>
-        <h3 class="h3">Governing law</h3>
-        <p class="p">These terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts at <span style="color: #F7F4ED;">[CITY]</span>. Before going to court, please raise it with the grievance officer — most things get sorted there.</p>
-      </div>
-
-      <div class="sec" style="border-bottom: none;">
-        <div class="num">19</div>
-        <h3 class="h3">Grievance officer</h3>
-        <p class="p">Appointed under the Consumer Protection (E-Commerce) Rules 2020:</p>
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin-top: 6px;">
-          <div style="padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-            <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 12px;">GRIEVANCE OFFICER</div>
-            <div style="font-size: 16px; font-weight: 700; color: #F7F4ED; margin-bottom: 6px;">[FULL NAME]</div>
-            <div style="font-size: 14px; line-height: 1.6; color: #A3A0B0;">[grievance@skelmet.in]<br>[+91 XXXXX XXXXX]</div>
+      <div style="width: 1440px; background: #07060a">
+        <!-- NAV -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 74px;
+            padding: 0 56px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FF5A1F"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"
+              />
+              <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+              <circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+            </svg>
+            <span
+              style="
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 23px;
+                letter-spacing: 0.14em;
+                color: #f7f4ed;
+              "
+              >SKELMET</span
+            >
           </div>
-          <div style="padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-            <div style="font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .16em; color: #63606F; margin-bottom: 12px;">RESPONSE TIMES</div>
-            <div style="font-size: 14px; line-height: 1.7; color: #A3A0B0;">Acknowledgement — [48] hours<br>Resolution — [30] days</div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 32px;
+              font-size: 13.5px;
+              font-weight: 500;
+              letter-spacing: 0.06em;
+              text-transform: uppercase;
+              color: #a3a0b0;
+            "
+          >
+            <span>Shop</span><span>The Build</span><span>Riders</span><span>Refer &amp; Earn</span
+            ><span>About</span><span>Contact</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              height: 40px;
+              padding: 0 20px;
+              border-radius: 999px;
+              background: #d4ff3d;
+              color: #07060a;
+              font-weight: 700;
+              font-size: 13px;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+            "
+          >
+            Buy now
           </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- RELATED -->
-  <div style="padding: 0 56px 72px;">
-    <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .18em; color: #63606F; margin-bottom: 18px;">RELATED POLICIES</div>
-    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Privacy policy</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-      </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Shipping policy</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-      </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Returns &amp; refunds</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-      </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: #0E0D13;">
-        <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Referral terms</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-      </div>
-    </div>
-  </div>
+        <!-- HERO -->
+        <div
+          class="grain"
+          style="
+            position: relative;
+            overflow: hidden;
+            padding: 66px 56px 54px;
+            background:
+              radial-gradient(760px 380px at 78% 40%, rgba(255, 90, 31, 0.14), transparent 70%),
+              #07060a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: 40px;
+              right: -30px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 190px;
+              line-height: 0.8;
+              color: transparent;
+              -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+              white-space: nowrap;
+              user-select: none;
+            "
+          >
+            TERMS
+          </div>
+          <div style="position: relative; z-index: 2">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                letter-spacing: 0.14em;
+                color: #63606f;
+                margin-bottom: 22px;
+              "
+            >
+              <span>HOME</span><span>/</span><span>LEGAL</span><span>/</span
+              ><span style="color: #f7f4ed">TERMS OF SERVICE</span>
+            </div>
+            <h1
+              style="
+                margin: 0 0 20px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 84px;
+                line-height: 0.88;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              Terms of service
+            </h1>
+            <p
+              style="
+                margin: 0 0 26px;
+                max-width: 640px;
+                font-size: 17px;
+                line-height: 1.64;
+                color: #a3a0b0;
+              "
+            >
+              The deal between you and us when you buy a skull. Short sentences, no traps.
+            </p>
+            <div style="display: flex; align-items: center; gap: 14px">
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #d4ff3d;
+                  border: 1px solid rgba(212, 255, 61, 0.3);
+                  padding: 8px 13px;
+                  border-radius: 5px;
+                "
+                >LAST UPDATED [DD MMM 2026]</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #a3a0b0;
+                  border: 1px solid rgba(255, 255, 255, 0.14);
+                  padding: 8px 13px;
+                  border-radius: 5px;
+                "
+                >VERSION [1.0]</span
+              >
+              <span
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  letter-spacing: 0.12em;
+                  color: #a3a0b0;
+                  border: 1px solid rgba(255, 255, 255, 0.14);
+                  padding: 8px 13px;
+                  border-radius: 5px;
+                "
+                >~9 MIN READ</span
+              >
+            </div>
+          </div>
+        </div>
 
-  <!-- CTA -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; border-top: 1px solid rgba(255,255,255,.07);">
-    <div style="position: relative; min-height: 300px; overflow: hidden;">
-      <img src="parts-flatlay.jpg" alt="SKELMET parts laid out" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
-    </div>
-    <div style="display: flex; flex-direction: column; justify-content: center; padding: 66px 56px; background: #0E0D13;">
-      <h2 style="margin: 0 0 14px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 46px; line-height: .94; color: #F7F4ED; text-transform: uppercase;">Something unclear?</h2>
-      <p style="margin: 0 0 26px; max-width: 420px; font-size: 15.5px; line-height: 1.6; color: #A3A0B0;">If a clause here reads badly, that's our fault, not yours. Tell us and we'll rewrite it.</p>
-      <div style="display: flex; align-items: center; gap: 12px; align-self: flex-start; height: 54px; padding: 0 28px; border-radius: 999px; background: #7B5CFF; color: #F7F4ED; font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;">
-        Contact us
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        <!-- LAWYER BANNER -->
+        <div
+          style="
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin: 28px 56px 0;
+            padding: 20px 24px;
+            border: 1px dashed rgba(255, 61, 154, 0.45);
+            border-radius: 14px;
+            background: rgba(255, 61, 154, 0.05);
+          "
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#FF3D9A"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="flex-shrink: 0; margin-top: 1px"
+          >
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+            <path
+              d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </svg>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.62; color: #c9c6d4">
+            <span style="color: #ff3d9a; font-weight: 700"
+              >DRAFT STRUCTURE — NOT LEGAL ADVICE.</span
+            >
+            This page shows the layout and the clauses an Indian D2C store typically needs. Every
+            bracketed value, and the enforceability of the final wording, must be confirmed by your
+            lawyer before launch.
+          </p>
+        </div>
+
+        <!-- BODY -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 64px;
+            padding: 44px 56px 88px;
+          "
+        >
+          <div>
+            <div style="position: sticky; top: 40px">
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.18em;
+                  color: #63606f;
+                  margin-bottom: 16px;
+                "
+              >
+                ON THIS PAGE
+              </div>
+              <span
+                class="toc"
+                style="color: #7b5cff; border-left: 2px solid #7b5cff; padding-left: 12px"
+                >01 · Agreeing to these terms</span
+              >
+              <span class="toc">02 · Who can buy</span>
+              <span class="toc">03 · Your account</span>
+              <span class="toc">04 · Products &amp; descriptions</span>
+              <span class="toc">05 · Prices &amp; taxes</span>
+              <span class="toc">06 · Placing an order</span>
+              <span class="toc">07 · Payment</span>
+              <span class="toc">08 · Shipping &amp; delivery</span>
+              <span class="toc">09 · Returns &amp; refunds</span>
+              <span class="toc">10 · Cancellations</span>
+              <span class="toc">11 · Warranty</span>
+              <span class="toc">12 · Safe use</span>
+              <span class="toc">13 · Discount codes</span>
+              <span class="toc">14 · Referral programme</span>
+              <span class="toc">15 · Reviews &amp; photos you post</span>
+              <span class="toc">16 · Our intellectual property</span>
+              <span class="toc">17 · Liability</span>
+              <span class="toc">18 · Governing law</span>
+              <span class="toc" style="border-bottom: none">19 · Grievance officer</span>
+
+              <div
+                style="
+                  margin-top: 26px;
+                  padding: 20px;
+                  border: 1px solid rgba(255, 255, 255, 0.09);
+                  border-radius: 14px;
+                  background: #0e0d13;
+                "
+              >
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.16em;
+                    color: #63606f;
+                    margin-bottom: 10px;
+                  "
+                >
+                  SHORT VERSION
+                </div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a3a0b0">
+                  Buy it, we ship it. Don't like it, send it back within 7 days. Don't hang a person
+                  off it.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sec" style="padding-top: 0">
+              <div class="num">01</div>
+              <h3 class="h3">Agreeing to these terms</h3>
+              <p class="p">
+                By using skelmet.in or placing an order you accept these terms. They form a contract
+                between you and <span style="color: #f7f4ed">[LEGAL ENTITY NAME]</span>, registered
+                at <span style="color: #f7f4ed">[REGISTERED ADDRESS]</span>. If you do not accept
+                them, do not order.
+              </p>
+              <p class="p">
+                We may change these terms. The version that applies to your order is the one
+                published when you placed it, and we keep every past version on file.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">02</div>
+              <h3 class="h3">Who can buy</h3>
+              <p class="p">
+                You must be 18 or older and able to enter a contract under the Indian Contract Act
+                1872. We currently ship only within India. Orders that look like resale or bulk
+                arbitrage may be declined — for genuine bulk and club orders, talk to us first.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">03</div>
+              <h3 class="h3">Your account</h3>
+              <p class="p">
+                You can check out as a guest. If you create an account, keep the password to
+                yourself — anything done through your account is treated as done by you. Tell us
+                immediately if you think someone else has access. We can suspend an account being
+                used for fraud or abuse.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">04</div>
+              <h3 class="h3">Products &amp; descriptions</h3>
+              <p class="p">
+                Every mount is 3D printed to order. That means small variations in layer texture and
+                finish between units are normal and are not defects — it is the point of the
+                product.
+              </p>
+              <p class="p">
+                Colours on your screen will not match the physical filament exactly. Dimensions and
+                load figures published on the product page are
+                <span style="color: #ff8a00">[TO BE CONFIRMED AND FIXED BEFORE LAUNCH]</span> and
+                are given as guidance.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">05</div>
+              <h3 class="h3">Prices &amp; taxes</h3>
+              <p class="p">
+                Prices are in Indian Rupees and include GST. The price you see at checkout is the
+                price you pay — no surprise fees at delivery, except the COD handling charge which
+                is shown before you confirm.
+              </p>
+              <p class="p">
+                If a price is listed wrongly because of an obvious error, we may cancel the order
+                and refund you in full rather than honour it. We will tell you before doing that.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">06</div>
+              <h3 class="h3">Placing an order</h3>
+              <p class="p">
+                Your order is an offer to buy. The contract forms when we send the dispatch
+                confirmation, not the order confirmation. Until then we may decline the order —
+                because stock ran out mid-batch, the address is not serviceable, or payment failed
+                verification.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">07</div>
+              <h3 class="h3">Payment</h3>
+              <p class="p">
+                We accept UPI, cards, netbanking and cash on delivery. Payments are handled by
+                <span style="color: #f7f4ed">[PAYMENT GATEWAY]</span>; we never see your card or UPI
+                credentials. For COD, the parcel is only handed over on full payment.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">08</div>
+              <h3 class="h3">Shipping &amp; delivery</h3>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >We dispatch within <span style="color: #f7f4ed">[48] hours</span> of payment
+                  clearing, on working days.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Typical delivery is
+                  <span style="color: #f7f4ed">[3–6] working days</span> depending on pincode.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span><span>Shipping is free across India on all orders.</span>
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it
+                  or photograph it before opening and tell us within
+                  <span style="color: #f7f4ed">[48] hours</span>.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Three failed delivery attempts return the parcel to us; we will refund minus the
+                  actual return freight.</span
+                >
+              </div>
+            </div>
+
+            <div class="sec">
+              <div class="num">09</div>
+              <h3 class="h3">Returns &amp; refunds</h3>
+              <p class="p">
+                You have <span style="color: #f7f4ed">7 days</span> from delivery to return a mount
+                for any reason. It must be unused, undamaged and in its original packaging. We
+                arrange and pay for the reverse pickup.
+              </p>
+              <p class="p">
+                Refunds are issued to the original payment method within
+                <span style="color: #f7f4ed">[7] working days</span> of the return reaching us and
+                passing inspection. For COD orders we refund by UPI or bank transfer to details you
+                provide.
+              </p>
+              <p class="p">
+                Custom-colour and engraved orders are made specifically for you and cannot be
+                returned unless faulty.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">10</div>
+              <h3 class="h3">Cancellations</h3>
+              <p class="p">
+                Cancel free of charge any time before dispatch, from your account or by messaging
+                us. Once the parcel has left us, use the returns process in section 09 instead.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">11</div>
+              <h3 class="h3">Warranty</h3>
+              <p class="p">
+                We warrant the mount against cracking, deformation or bracket failure in normal
+                indoor domestic use for <span style="color: #f7f4ed">[12] months</span> from
+                delivery. If that happens, send us a photo and we will replace it.
+              </p>
+              <p class="p">
+                Not covered: colour fade from direct sunlight, damage from loads beyond the
+                published rating, outdoor use, drops, modification, or fixings other than those
+                supplied.
+              </p>
+              <p class="p">
+                This warranty is in addition to your rights under the Consumer Protection Act 2019,
+                which it does not limit.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">12</div>
+              <h3 class="h3">Safe use</h3>
+              <p class="p">
+                This is a decorative indoor wall mount for a helmet and light riding gear. It is not
+                climbing equipment, not a handhold, not a step, and not rated to carry a person. Fix
+                it only into a sound wall using the supplied anchors and follow the instructions. We
+                are not liable for damage caused by incorrect installation or by using it for
+                something it was never sold to do.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">13</div>
+              <h3 class="h3">Discount codes</h3>
+              <p class="p">
+                One code per order unless we say otherwise. Codes have no cash value, cannot be
+                applied after an order is placed, and can be withdrawn if we find them being
+                scraped, resold or posted to coupon-aggregator sites.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">14</div>
+              <h3 class="h3">Referral programme</h3>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >The person you refer must be a new customer using your code on their first
+                  order.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Your reward credits once their order has shipped and cleared the 7-day return
+                  window.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Rewards can be cashed out to UPI from <span style="color: #f7f4ed">[₹500]</span>,
+                  or spent on the site at any balance.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >Self-referrals, duplicate accounts and fake orders void the reward and may close
+                  the account.</span
+                >
+              </div>
+              <div class="li">
+                <span class="dot"></span
+                ><span
+                  >We may change the reward amount for future referrals, but never for one already
+                  earned.</span
+                >
+              </div>
+            </div>
+
+            <div class="sec">
+              <div class="num">15</div>
+              <h3 class="h3">Reviews &amp; photos you post</h3>
+              <p class="p">
+                When you submit a review or a rider-wall photo, you keep ownership of it and give us
+                a non-exclusive, royalty-free licence to show it on the site and our social
+                accounts, with your first name and city.
+              </p>
+              <p class="p">
+                Don't post anything you don't own, anything defamatory, or anything containing
+                another person who has not agreed. We may remove content that breaks this, and we do
+                not edit reviews to make them more favourable.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">16</div>
+              <h3 class="h3">Our intellectual property</h3>
+              <p class="p">
+                The SKELMET name, the skull design, the 3D model files, the photography and the site
+                itself are ours. Buying a mount buys you the object, not the design. You may not
+                copy, 3D-scan, reproduce or sell the design, and you may not list our photography on
+                a marketplace as your own.
+              </p>
+              <p class="p">
+                Photographing your own mount and posting it is entirely fine, and encouraged.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">17</div>
+              <h3 class="h3">Liability</h3>
+              <p class="p">
+                Our total liability for any order is limited to what you paid for it, except where
+                the law does not allow that limit — in particular for death or personal injury
+                caused by our negligence, or for fraud.
+              </p>
+              <p class="p">
+                We are not liable for indirect or consequential losses, such as damage to a helmet
+                caused by installing the mount incorrectly.
+              </p>
+            </div>
+
+            <div class="sec">
+              <div class="num">18</div>
+              <h3 class="h3">Governing law</h3>
+              <p class="p">
+                These terms are governed by the laws of India. Disputes are subject to the exclusive
+                jurisdiction of the courts at <span style="color: #f7f4ed">[CITY]</span>. Before
+                going to court, please raise it with the grievance officer — most things get sorted
+                there.
+              </p>
+            </div>
+
+            <div class="sec" style="border-bottom: none">
+              <div class="num">19</div>
+              <h3 class="h3">Grievance officer</h3>
+              <p class="p">Appointed under the Consumer Protection (E-Commerce) Rules 2020:</p>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                  gap: 14px;
+                  max-width: 720px;
+                  margin-top: 6px;
+                "
+              >
+                <div
+                  style="
+                    padding: 22px 24px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 14px;
+                    background: #0e0d13;
+                  "
+                >
+                  <div
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                      margin-bottom: 12px;
+                    "
+                  >
+                    GRIEVANCE OFFICER
+                  </div>
+                  <div
+                    style="font-size: 16px; font-weight: 700; color: #f7f4ed; margin-bottom: 6px"
+                  >
+                    [FULL NAME]
+                  </div>
+                  <div style="font-size: 14px; line-height: 1.6; color: #a3a0b0">
+                    [grievance@skelmet.in]<br />[+91 XXXXX XXXXX]
+                  </div>
+                </div>
+                <div
+                  style="
+                    padding: 22px 24px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 14px;
+                    background: #0e0d13;
+                  "
+                >
+                  <div
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                      margin-bottom: 12px;
+                    "
+                  >
+                    RESPONSE TIMES
+                  </div>
+                  <div style="font-size: 14px; line-height: 1.7; color: #a3a0b0">
+                    Acknowledgement — [48] hours<br />Resolution — [30] days
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RELATED -->
+        <div style="padding: 0 56px 72px">
+          <div
+            style="
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 11px;
+              letter-spacing: 0.18em;
+              color: #63606f;
+              margin-bottom: 18px;
+            "
+          >
+            RELATED POLICIES
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #0e0d13;
+              "
+            >
+              <span style="font-size: 15px; font-weight: 600; color: #f7f4ed">Privacy policy</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF8A00"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #0e0d13;
+              "
+            >
+              <span style="font-size: 15px; font-weight: 600; color: #f7f4ed">Shipping policy</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF8A00"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #0e0d13;
+              "
+            >
+              <span style="font-size: 15px; font-weight: 600; color: #f7f4ed"
+                >Returns &amp; refunds</span
+              >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF8A00"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px 24px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 14px;
+                background: #0e0d13;
+              "
+            >
+              <span style="font-size: 15px; font-weight: 600; color: #f7f4ed">Referral terms</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF8A00"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="position: relative; min-height: 300px; overflow: hidden">
+            <img
+              src="parts-flatlay.jpg"
+              alt="SKELMET parts laid out"
+              style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover"
+            />
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              padding: 66px 56px;
+              background: #0e0d13;
+            "
+          >
+            <h2
+              style="
+                margin: 0 0 14px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 46px;
+                line-height: 0.94;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              Something unclear?
+            </h2>
+            <p
+              style="
+                margin: 0 0 26px;
+                max-width: 420px;
+                font-size: 15.5px;
+                line-height: 1.6;
+                color: #a3a0b0;
+              "
+            >
+              If a clause here reads badly, that's our fault, not yours. Tell us and we'll rewrite
+              it.
+            </p>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                align-self: flex-start;
+                height: 54px;
+                padding: 0 28px;
+                border-radius: 999px;
+                background: #7b5cff;
+                color: #f7f4ed;
+                font-weight: 700;
+                font-size: 14px;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+              "
+            >
+              Contact us
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#F7F4ED"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 26px 56px;
+            background: #07060a;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            font-family: &quot;JetBrains Mono&quot;, monospace;
+            font-size: 11.5px;
+            letter-spacing: 0.1em;
+            color: #63606f;
+          "
+        >
+          <span>© 2026 SKELMET · [LEGAL ENTITY] · GSTIN [NUMBER]</span>
+          <span>PRINTED &amp; PACKED IN INDIA</span>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 26px 56px; background: #07060A; border-top: 1px solid rgba(255,255,255,.07); font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">
-    <span>© 2026 SKELMET · [LEGAL ENTITY] · GSTIN [NUMBER]</span>
-    <span>PRINTED &amp; PACKED IN INDIA</span>
-  </div>
-
-</div>
-</x-dc>
-</body>
+    </x-dc>
+  </body>
 </html>

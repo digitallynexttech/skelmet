@@ -22,14 +22,14 @@ export default function RidersPage() {
           <SectionLabel tone="magenta" className="mb-4">
             Rider wall
           </SectionLabel>
-          <h1 className="mb-5 font-display text-[52px] leading-[1.0] text-bone uppercase sm:text-[72px] xl:text-[88px]">
+          <h1 className="font-display text-bone mb-5 text-[52px] leading-[1.0] uppercase sm:text-[72px] xl:text-[88px]">
             Mounted
             <br />
             &amp; posted
           </h1>
-          <p className="max-w-[540px] text-[16px] leading-[1.62] text-ash sm:text-[17.5px]">
-            Real walls, real helmets, no studio. Tag <span className="text-magenta">@skelmet</span> and
-            we&apos;ll put you up here, best shot each month gets a free mount.
+          <p className="text-ash max-w-[540px] text-[16px] leading-[1.62] sm:text-[17.5px]">
+            Real walls, real helmets, no studio. Tag <span className="text-magenta">@skelmet</span>{" "}
+            and we&apos;ll put you up here, best shot each month gets a free mount.
           </p>
         </div>
       </Section>

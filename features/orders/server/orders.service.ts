@@ -217,7 +217,11 @@ async function transition(
     })
 
     if (claimed.count === 0) {
-      return fail(`That order is not in a state that can be ${action.split(":")[1]}.`, undefined, 409)
+      return fail(
+        `That order is not in a state that can be ${action.split(":")[1]}.`,
+        undefined,
+        409,
+      )
     }
 
     if (extra) await extra()
@@ -263,44 +267,73 @@ export async function markShipped(
         status: "IN_TRANSIT",
         shippedAt: new Date(),
       },
-      update: { courier: input.courier, awb: input.awb, status: "IN_TRANSIT", shippedAt: new Date() },
+      update: {
+        courier: input.courier,
+        awb: input.awb,
+        status: "IN_TRANSIT",
+        shippedAt: new Date(),
+      },
     })
   })
 }
 
 export function markDelivered(id: string) {
-  return transition(id, ["SHIPPED"], "DELIVERED", PERMISSIONS.ORDER_FULFIL, "order:deliver", async () => {
-    await db.shipment.updateMany({
-      where: { orderId: id },
-      data: { status: "DELIVERED", deliveredAt: new Date() },
-    })
+  return transition(
+    id,
+    ["SHIPPED"],
+    "DELIVERED",
+    PERMISSIONS.ORDER_FULFIL,
+    "order:deliver",
+    async () => {
+      await db.shipment.updateMany({
+        where: { orderId: id },
+        data: { status: "DELIVERED", deliveredAt: new Date() },
+      })
 
-    // COD money changes hands on the doorstep, so this is when the order is
-    // genuinely paid and when it should start counting as revenue.
-    await db.order.updateMany({
-      where: { id, paymentMethod: "COD", placedAt: null },
-      data: { placedAt: new Date() },
-    })
-  })
+      // COD money changes hands on the doorstep, so this is when the order is
+      // genuinely paid and when it should start counting as revenue.
+      await db.order.updateMany({
+        where: { id, paymentMethod: "COD", placedAt: null },
+        data: { placedAt: new Date() },
+      })
+    },
+  )
 }
 
 export function cancelOrder(id: string) {
-  return transition(id, ["PENDING", "PAID"], "CANCELLED", PERMISSIONS.ORDER_WRITE, "order:cancel", async () => {
-    // Put the stock back.
-    const items = await db.orderItem.findMany({
-      where: { orderId: id },
-      select: { variantId: true, qty: true },
-    })
-    for (const item of items) {
-      await db.variant.update({
-        where: { id: item.variantId },
-        data: { stock: { increment: item.qty } },
+  return transition(
+    id,
+    ["PENDING", "PAID"],
+    "CANCELLED",
+    PERMISSIONS.ORDER_WRITE,
+    "order:cancel",
+    async () => {
+      // Put the stock back.
+      const items = await db.orderItem.findMany({
+        where: { orderId: id },
+        select: { variantId: true, qty: true },
       })
-    }
-  })
+      if (items.length === 0) return
+
+      // One batched transaction, not an update per line. Sequential awaits meant
+      // a round trip per item, and — worse — a partial restock: the order is
+      // already CANCELLED by the time this runs, so a failure halfway left stock
+      // permanently short with nothing to replay it from.
+      await db.$transaction(
+        items.map((item) =>
+          db.variant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.qty } },
+          }),
+        ),
+      )
+    },
+  )
 }
 
-export async function refundOrder(id: string): Promise<ActionResult<{ id: string; status: OrderStatus }>> {
+export async function refundOrder(
+  id: string,
+): Promise<ActionResult<{ id: string; status: OrderStatus }>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.ORDER_REFUND)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)

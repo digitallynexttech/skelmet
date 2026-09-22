@@ -9,7 +9,7 @@ export function Anatomy() {
   return (
     <Section id="build" className="grain">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
-        <div className="overflow-hidden rounded-card border border-white/[0.08] bg-carbon">
+        <div className="rounded-card bg-carbon overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-16/10">
             <Image
               src="/product/parts-flatlay.jpg"
@@ -25,12 +25,12 @@ export function Anatomy() {
           <SectionLabel index="03" className="mb-3.5">
             The build
           </SectionLabel>
-          <h2 className="mb-5 font-display text-[40px] leading-[1.0] text-bone uppercase sm:text-[52px] xl:text-[62px]">
+          <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[62px]">
             Two parts.
             <br />
             Zero wobble.
           </h2>
-          <p className="mb-8 max-w-[460px] text-[16px] leading-[1.62] text-ash text-pretty sm:text-[16.5px]">
+          <p className="text-ash mb-8 max-w-[460px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
             A cantilever arm takes the load into the wall, the skull cradles the shell from inside,
             and the notch under the jaw takes your gloves. Everything you need is in the box.
           </p>
@@ -41,7 +41,7 @@ export function Anatomy() {
                 key={spec.label}
                 className="flex items-center justify-between gap-4 border-b border-white/[0.09] py-3.5 font-mono text-[12.5px] sm:text-[13px]"
               >
-                <dt className="tracking-[0.1em] text-dim uppercase">{spec.label}</dt>
+                <dt className="text-dim tracking-[0.1em] uppercase">{spec.label}</dt>
                 <dd className={cn("text-right", spec.pending ? "text-ember" : "text-bone")}>
                   {spec.value}
                 </dd>

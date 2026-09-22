@@ -13,4 +13,6 @@ export const GET = withErrorHandler(async (req) =>
   ),
 )
 
-export const POST = withErrorHandler(async (req) => respond(await createCoupon(await req.json()), 201))
+export const POST = withErrorHandler(async (req) =>
+  respond(await createCoupon(await req.json()), 201),
+)

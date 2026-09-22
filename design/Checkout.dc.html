@@ -1,198 +1,927 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    input { font-family: 'Space Grotesk',Arial,sans-serif; }
-    input::placeholder { color: #63606F; }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          input {
+            font-family: "Space Grotesk", Arial, sans-serif;
+          }
+          input::placeholder {
+            color: #63606f;
+          }
+        </style>
+      </helmet>
 
-<div style="width: 1440px; background: #07060A; padding-bottom: 90px;">
+      <div style="width: 1440px; background: #07060a; padding-bottom: 90px">
+        <!-- SLIM NAV -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 76px;
+            padding: 0 56px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FF5A1F"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"
+              />
+              <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+              <circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none" />
+            </svg>
+            <span
+              style="
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 23px;
+                letter-spacing: 0.14em;
+                color: #f7f4ed;
+              "
+              >SKELMET</span
+            >
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 11.5px;
+              letter-spacing: 0.14em;
+              color: #d4ff3d;
+            "
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D4FF3D"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+            SECURE CHECKOUT · 256-BIT TLS
+          </div>
+        </div>
 
-  <!-- SLIM NAV -->
-  <div style="display: flex; align-items: center; justify-content: space-between; height: 76px; padding: 0 56px; border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M12 2C7.6 2 4.5 5.2 4.5 9.6c0 2.4.9 4 2.1 5.2.5.5.8 1.1.8 1.8V19a1 1 0 0 0 1 1h1.2v-2h1.6v2h1.6v-2h1.6v2H16a1 1 0 0 0 1-1v-2.4c0-.7.3-1.3.8-1.8 1.2-1.2 2.1-2.8 2.1-5.2C19.9 5.2 16.4 2 12 2Z"/>
-        <circle cx="9.1" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/><circle cx="14.9" cy="10.4" r="1.5" fill="#FF5A1F" stroke="none"/>
-      </svg>
-      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 23px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .14em; color: #D4FF3D;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-      SECURE CHECKOUT · 256-BIT TLS
-    </div>
-  </div>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 420px;
+            gap: 48px;
+            padding: 52px 56px 0;
+          "
+        >
+          <!-- FORM COLUMN -->
+          <div>
+            <div
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11.5px;
+                letter-spacing: 0.22em;
+                color: #ff8a00;
+                margin-bottom: 14px;
+              "
+            >
+              STEP 02 OF 03
+            </div>
+            <h1
+              style="
+                margin: 0 0 40px;
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 66px;
+                line-height: 0.9;
+                color: #f7f4ed;
+                text-transform: uppercase;
+              "
+            >
+              Where's it going?
+            </h1>
 
-  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 48px; padding: 52px 56px 0;">
+            <!-- STEP 1 — done -->
+            <div
+              style="
+                padding: 22px 26px;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                background: #0e0d13;
+                margin-bottom: 14px;
+              "
+            >
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span
+                    style="
+                      width: 28px;
+                      height: 28px;
+                      border-radius: 50%;
+                      background: #d4ff3d;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                    "
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#07060A"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m5 13 4 4L19 7" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div
+                      style="
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 10.5px;
+                        letter-spacing: 0.18em;
+                        color: #63606f;
+                        margin-bottom: 4px;
+                      "
+                    >
+                      CONTACT
+                    </div>
+                    <div style="font-size: 15px; color: #f7f4ed">
+                      rohan.m@example.com · +91 98xxx xxx21
+                    </div>
+                  </div>
+                </div>
+                <span
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    letter-spacing: 0.12em;
+                    color: #ff8a00;
+                  "
+                  >EDIT</span
+                >
+              </div>
+            </div>
 
-    <!-- FORM COLUMN -->
-    <div>
-      <div style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .22em; color: #FF8A00; margin-bottom: 14px;">STEP 02 OF 03</div>
-      <h1 style="margin: 0 0 40px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 66px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">Where's it going?</h1>
+            <!-- STEP 2 — open -->
+            <div
+              style="
+                padding: 30px;
+                border: 1px solid rgba(255, 90, 31, 0.34);
+                border-radius: 16px;
+                background:
+                  linear-gradient(160deg, rgba(255, 90, 31, 0.05), transparent 46%), #0e0d13;
+                margin-bottom: 14px;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px">
+                <span
+                  style="
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: #ff5a1f;
+                    color: #07060a;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 13px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                  "
+                  >2</span
+                >
+                <h2
+                  style="
+                    margin: 0;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 28px;
+                    color: #f7f4ed;
+                    text-transform: uppercase;
+                  "
+                >
+                  Delivery address
+                </h2>
+              </div>
 
-      <!-- STEP 1 — done -->
-      <div style="padding: 22px 26px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13; margin-bottom: 14px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="width: 28px; height: 28px; border-radius: 50%; background: #D4FF3D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-            </span>
-            <div>
-              <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .18em; color: #63606F; margin-bottom: 4px;">CONTACT</div>
-              <div style="font-size: 15px; color: #F7F4ED;">rohan.m@example.com · +91 98xxx xxx21</div>
+              <div
+                style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px"
+              >
+                <div style="display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >FIRST NAME</label
+                  >
+                  <input
+                    value="Rohan"
+                    style="
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >LAST NAME</label
+                  >
+                  <input
+                    value="Mehta"
+                    style="
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                </div>
+                <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >ADDRESS LINE 1</label
+                  >
+                  <input
+                    value="Flat 402, Sunrise Residency"
+                    style="
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                </div>
+                <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >ADDRESS LINE 2 <span style="color: #46434f">(OPTIONAL)</span></label
+                  >
+                  <input
+                    placeholder="Landmark, area"
+                    style="
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >PINCODE</label
+                  >
+                  <div style="position: relative">
+                    <input
+                      value="411045"
+                      style="
+                        width: 100%;
+                        height: 52px;
+                        padding: 0 16px;
+                        border: 1px solid rgba(212, 255, 61, 0.42);
+                        border-radius: 10px;
+                        background: #07060a;
+                        color: #f7f4ed;
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 15px;
+                        letter-spacing: 0.1em;
+                        outline: none;
+                      "
+                    />
+                    <span
+                      style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%)"
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#D4FF3D"
+                        stroke-width="2.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="m5 13 4 4L19 7" />
+                      </svg>
+                    </span>
+                  </div>
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.1em;
+                      color: #d4ff3d;
+                    "
+                    >DELIVERS IN 3–4 DAYS</span
+                  >
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >CITY</label
+                  >
+                  <input
+                    value="Pune"
+                    style="
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                      outline: none;
+                    "
+                  />
+                </div>
+                <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px">
+                  <label
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 10.5px;
+                      letter-spacing: 0.16em;
+                      color: #63606f;
+                    "
+                    >STATE</label
+                  >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      height: 52px;
+                      padding: 0 16px;
+                      border: 1px solid rgba(255, 255, 255, 0.14);
+                      border-radius: 10px;
+                      background: #07060a;
+                      color: #f7f4ed;
+                      font-size: 15px;
+                    "
+                  >
+                    Maharashtra
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#63606F"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 22px">
+                <span
+                  style="
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 5px;
+                    background: #ff5a1f;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                  "
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#07060A"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m5 13 4 4L19 7" />
+                  </svg>
+                </span>
+                <span style="font-size: 14px; color: #a3a0b0">Save this address for next time</span>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 10px;
+                  height: 56px;
+                  border-radius: 999px;
+                  background: linear-gradient(96deg, #ff5a1f, #ff8a00);
+                  color: #07060a;
+                  font-weight: 700;
+                  font-size: 15px;
+                  letter-spacing: 0.05em;
+                  text-transform: uppercase;
+                  margin-top: 28px;
+                  box-shadow: 0 12px 30px rgba(255, 90, 31, 0.28);
+                "
+              >
+                Continue to payment
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#07060A"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- STEP 3 — locked -->
+            <div
+              style="
+                padding: 22px 26px;
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                border-radius: 16px;
+                background: rgba(14, 13, 19, 0.5);
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 14px">
+                <span
+                  style="
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    color: #63606f;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 13px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                  "
+                  >3</span
+                >
+                <h2
+                  style="
+                    margin: 0;
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 28px;
+                    color: #46434f;
+                    text-transform: uppercase;
+                  "
+                >
+                  Payment
+                </h2>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 14px;
+                  margin-top: 18px;
+                  padding-left: 42px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    height: 40px;
+                    padding: 0 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 10px;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    letter-spacing: 0.1em;
+                    color: #63606f;
+                  "
+                >
+                  UPI
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    height: 40px;
+                    padding: 0 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 10px;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    letter-spacing: 0.1em;
+                    color: #63606f;
+                  "
+                >
+                  CARD
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    height: 40px;
+                    padding: 0 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 10px;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    letter-spacing: 0.1em;
+                    color: #63606f;
+                  "
+                >
+                  NETBANKING
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    height: 40px;
+                    padding: 0 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    border-radius: 10px;
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 11.5px;
+                    letter-spacing: 0.1em;
+                    color: #63606f;
+                  "
+                >
+                  COD +₹49
+                </div>
+              </div>
             </div>
           </div>
-          <span style="font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .12em; color: #FF8A00;">EDIT</span>
+
+          <!-- SUMMARY RAIL -->
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div
+              style="
+                padding: 26px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 18px;
+                background: #0e0d13;
+              "
+            >
+              <h3
+                style="
+                  margin: 0 0 20px;
+                  font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                  font-size: 24px;
+                  color: #f7f4ed;
+                  text-transform: uppercase;
+                "
+              >
+                Your order
+              </h3>
+
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 16px;
+                  padding-bottom: 20px;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <div
+                    style="
+                      position: relative;
+                      width: 58px;
+                      height: 58px;
+                      border-radius: 10px;
+                      background: #07060a;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                    "
+                  >
+                    <img
+                      src="product-front.jpg"
+                      alt="Blaze Orange"
+                      style="width: 38px; height: auto"
+                    />
+                    <span
+                      style="
+                        position: absolute;
+                        top: -6px;
+                        right: -6px;
+                        min-width: 20px;
+                        height: 20px;
+                        border-radius: 999px;
+                        background: #ff5a1f;
+                        color: #07060a;
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 11px;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      "
+                      >2</span
+                    >
+                  </div>
+                  <div style="flex-grow: 1">
+                    <div style="font-size: 14px; font-weight: 600; color: #f7f4ed">
+                      Flame Skull Mount
+                    </div>
+                    <div
+                      style="
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 11px;
+                        letter-spacing: 0.1em;
+                        color: #63606f;
+                        margin-top: 3px;
+                      "
+                    >
+                      BLAZE ORANGE
+                    </div>
+                  </div>
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 14px;
+                      color: #f7f4ed;
+                    "
+                    >₹2,998</span
+                  >
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <div
+                    style="
+                      position: relative;
+                      width: 58px;
+                      height: 58px;
+                      border-radius: 10px;
+                      background: #07060a;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                    "
+                  >
+                    <img
+                      src="product-front.jpg"
+                      alt="Militia Olive"
+                      style="
+                        width: 38px;
+                        height: auto;
+                        filter: hue-rotate(38deg) saturate(0.44) brightness(0.84);
+                      "
+                    />
+                    <span
+                      style="
+                        position: absolute;
+                        top: -6px;
+                        right: -6px;
+                        min-width: 20px;
+                        height: 20px;
+                        border-radius: 999px;
+                        background: #ff5a1f;
+                        color: #07060a;
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 11px;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                      "
+                      >1</span
+                    >
+                  </div>
+                  <div style="flex-grow: 1">
+                    <div style="font-size: 14px; font-weight: 600; color: #f7f4ed">
+                      Flame Skull Mount
+                    </div>
+                    <div
+                      style="
+                        font-family: &quot;JetBrains Mono&quot;, monospace;
+                        font-size: 11px;
+                        letter-spacing: 0.1em;
+                        color: #63606f;
+                        margin-top: 3px;
+                      "
+                    >
+                      MILITIA OLIVE
+                    </div>
+                  </div>
+                  <span
+                    style="
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 14px;
+                      color: #f7f4ed;
+                    "
+                    >₹1,499</span
+                  >
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 12px;
+                  padding: 20px 0;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                "
+              >
+                <div style="display: flex; justify-content: space-between; font-size: 14px">
+                  <span style="color: #a3a0b0">Subtotal</span
+                  ><span style="color: #f7f4ed; font-family: &quot;JetBrains Mono&quot;, monospace"
+                    >₹4,497</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px">
+                  <span style="color: #a3a0b0">Bundle discount</span
+                  ><span style="color: #d4ff3d; font-family: &quot;JetBrains Mono&quot;, monospace"
+                    >− ₹299</span
+                  >
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px">
+                  <span style="color: #a3a0b0">Shipping</span
+                  ><span style="color: #d4ff3d; font-family: &quot;JetBrains Mono&quot;, monospace"
+                    >FREE</span
+                  >
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  align-items: baseline;
+                  justify-content: space-between;
+                  padding-top: 20px;
+                "
+              >
+                <span style="font-size: 15px; font-weight: 600; color: #f7f4ed">Total</span>
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 38px;
+                    color: #f7f4ed;
+                  "
+                  >₹4,198</span
+                >
+              </div>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 20px 22px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 16px;
+                background: #0e0d13;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 12px">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D4FF3D"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="flex-shrink: 0"
+                >
+                  <rect x="1" y="6" width="14" height="12" rx="2" />
+                  <path d="M15 10h4l3 3v5h-7" />
+                  <circle cx="6" cy="18" r="2" />
+                  <circle cx="18" cy="18" r="2" />
+                </svg>
+                <span style="font-size: 13.5px; color: #a3a0b0">Dispatched within 48 hours</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D4FF3D"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="flex-shrink: 0"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                </svg>
+                <span style="font-size: 13.5px; color: #a3a0b0">7-day returns, pickup on us</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D4FF3D"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="flex-shrink: 0"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span style="font-size: 13.5px; color: #a3a0b0">No account needed to order</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- STEP 2 — open -->
-      <div style="padding: 30px; border: 1px solid rgba(255,90,31,.34); border-radius: 16px; background: linear-gradient(160deg, rgba(255,90,31,.05), transparent 46%), #0E0D13; margin-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
-          <span style="width: 28px; height: 28px; border-radius: 50%; background: #FF5A1F; color: #07060A; font-family: 'JetBrains Mono',monospace; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</span>
-          <h2 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; color: #F7F4ED; text-transform: uppercase;">Delivery address</h2>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">FIRST NAME</label>
-            <input value="Rohan" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">LAST NAME</label>
-            <input value="Mehta" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
-          </div>
-          <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">ADDRESS LINE 1</label>
-            <input value="Flat 402, Sunrise Residency" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
-          </div>
-          <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">ADDRESS LINE 2 <span style="color: #46434F;">(OPTIONAL)</span></label>
-            <input placeholder="Landmark, area" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">PINCODE</label>
-            <div style="position: relative;">
-              <input value="411045" style="width: 100%; height: 52px; padding: 0 16px; border: 1px solid rgba(212,255,61,.42); border-radius: 10px; background: #07060A; color: #F7F4ED; font-family: 'JetBrains Mono',monospace; font-size: 15px; letter-spacing: .1em; outline: none;">
-              <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%);">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-              </span>
-            </div>
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .1em; color: #D4FF3D;">DELIVERS IN 3–4 DAYS</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">CITY</label>
-            <input value="Pune" style="height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px; outline: none;">
-          </div>
-          <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .16em; color: #63606F;">STATE</label>
-            <div style="display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #07060A; color: #F7F4ED; font-size: 15px;">
-              Maharashtra
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 12px; margin-top: 22px;">
-          <span style="width: 20px; height: 20px; border-radius: 5px; background: #FF5A1F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-          </span>
-          <span style="font-size: 14px; color: #A3A0B0;">Save this address for next time</span>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 56px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 15px; letter-spacing: .05em; text-transform: uppercase; margin-top: 28px; box-shadow: 0 12px 30px rgba(255,90,31,.28);">
-          Continue to payment
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-        </div>
-      </div>
-
-      <!-- STEP 3 — locked -->
-      <div style="padding: 22px 26px; border: 1px solid rgba(255,255,255,.07); border-radius: 16px; background: rgba(14,13,19,.5);">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <span style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); color: #63606F; font-family: 'JetBrains Mono',monospace; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</span>
-          <h2 style="margin: 0; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 28px; color: #46434F; text-transform: uppercase;">Payment</h2>
-        </div>
-        <div style="display: flex; align-items: center; gap: 14px; margin-top: 18px; padding-left: 42px;">
-          <div style="display: flex; align-items: center; height: 40px; padding: 0 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">UPI</div>
-          <div style="display: flex; align-items: center; height: 40px; padding: 0 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">CARD</div>
-          <div style="display: flex; align-items: center; height: 40px; padding: 0 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">NETBANKING</div>
-          <div style="display: flex; align-items: center; height: 40px; padding: 0 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; font-family: 'JetBrains Mono',monospace; font-size: 11.5px; letter-spacing: .1em; color: #63606F;">COD +₹49</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUMMARY RAIL -->
-    <div style="display: flex; flex-direction: column; gap: 14px;">
-      <div style="padding: 26px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #0E0D13;">
-        <h3 style="margin: 0 0 20px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #F7F4ED; text-transform: uppercase;">Your order</h3>
-
-        <div style="display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,.1);">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="position: relative; width: 58px; height: 58px; border-radius: 10px; background: #07060A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <img src="product-front.jpg" alt="Blaze Orange" style="width: 38px; height: auto;">
-              <span style="position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 999px; background: #FF5A1F; color: #07060A; font-family: 'JetBrains Mono',monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</span>
-            </div>
-            <div style="flex-grow: 1;">
-              <div style="font-size: 14px; font-weight: 600; color: #F7F4ED;">Flame Skull Mount</div>
-              <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .1em; color: #63606F; margin-top: 3px;">BLAZE ORANGE</div>
-            </div>
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 14px; color: #F7F4ED;">₹2,998</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="position: relative; width: 58px; height: 58px; border-radius: 10px; background: #07060A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <img src="product-front.jpg" alt="Militia Olive" style="width: 38px; height: auto; filter: hue-rotate(38deg) saturate(.44) brightness(.84);">
-              <span style="position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 999px; background: #FF5A1F; color: #07060A; font-family: 'JetBrains Mono',monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">1</span>
-            </div>
-            <div style="flex-grow: 1;">
-              <div style="font-size: 14px; font-weight: 600; color: #F7F4ED;">Flame Skull Mount</div>
-              <div style="font-family: 'JetBrains Mono',monospace; font-size: 11px; letter-spacing: .1em; color: #63606F; margin-top: 3px;">MILITIA OLIVE</div>
-            </div>
-            <span style="font-family: 'JetBrains Mono',monospace; font-size: 14px; color: #F7F4ED;">₹1,499</span>
-          </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.1);">
-          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Subtotal</span><span style="color: #F7F4ED; font-family: 'JetBrains Mono',monospace;">₹4,497</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Bundle discount</span><span style="color: #D4FF3D; font-family: 'JetBrains Mono',monospace;">− ₹299</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Shipping</span><span style="color: #D4FF3D; font-family: 'JetBrains Mono',monospace;">FREE</span></div>
-        </div>
-
-        <div style="display: flex; align-items: baseline; justify-content: space-between; padding-top: 20px;">
-          <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Total</span>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 38px; color: #F7F4ED;">₹4,198</span>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: #0E0D13;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="1" y="6" width="14" height="12" rx="2"/><path d="M15 10h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-          <span style="font-size: 13.5px; color: #A3A0B0;">Dispatched within 48 hours</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-          <span style="font-size: 13.5px; color: #A3A0B0;">7-day returns, pickup on us</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M20 6 9 17l-5-5"/></svg>
-          <span style="font-size: 13.5px; color: #A3A0B0;">No account needed to order</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-</x-dc>
-</body>
+    </x-dc>
+  </body>
 </html>

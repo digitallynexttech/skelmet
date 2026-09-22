@@ -47,7 +47,11 @@ export function Button({ className, variant, size, full, ...props }: ButtonProps
 
 export function ButtonLink({ className, variant, size, full, href, ...props }: ButtonLinkProps) {
   return (
-    <Link href={href} className={cn(buttonVariants({ variant, size, full }), className)} {...props} />
+    <Link
+      href={href}
+      className={cn(buttonVariants({ variant, size, full }), className)}
+      {...props}
+    />
   )
 }
 

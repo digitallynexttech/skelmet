@@ -1,155 +1,787 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <style>
-    body { margin: 0; background: #07060A; font-family: 'Space Grotesk','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-    * { box-sizing: border-box; }
-    a { color: #FF8A00; text-decoration: none; }
-    a:hover { color: #FFC24D; }
-    input::placeholder { color: #63606F; }
-  </style>
-</helmet>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
+        <style>
+          body {
+            margin: 0;
+            background: #07060a;
+            font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          a {
+            color: #ff8a00;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #ffc24d;
+          }
+          input::placeholder {
+            color: #63606f;
+          }
+        </style>
+      </helmet>
 
-<div style="width: 390px; background: #07060A;">
-
-  <!-- TOP BAR -->
-  <div style="display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,.07);">
-    <div style="width: 44px; height: 44px; display: flex; align-items: center;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
-    </div>
-    <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 19px; letter-spacing: .14em; color: #F7F4ED;">SKELMET</span>
-    <div style="width: 44px;"></div>
-  </div>
-
-  <!-- HEAD -->
-  <div style="padding: 28px 20px 22px;">
-    <div style="font-family: 'JetBrains Mono',monospace; font-size: 10.5px; letter-spacing: .2em; color: #FF8A00; margin-bottom: 12px;">STEP 01 OF 03</div>
-    <h1 style="margin: 0 0 22px; font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 46px; line-height: .9; color: #F7F4ED; text-transform: uppercase;">Your stash</h1>
-
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 24px; height: 24px; border-radius: 50%; background: #FF5A1F; color: #07060A; font-family: 'JetBrains Mono',monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">1</span>
-        <span style="font-size: 12px; font-weight: 600; color: #F7F4ED; letter-spacing: .04em; text-transform: uppercase;">Cart</span>
-      </div>
-      <span style="flex-grow: 1; height: 1px; background: rgba(255,255,255,.16);"></span>
-      <span style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); color: #63606F; font-family: 'JetBrains Mono',monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">2</span>
-      <span style="flex-grow: 1; height: 1px; background: rgba(255,255,255,.16);"></span>
-      <span style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); color: #63606F; font-family: 'JetBrains Mono',monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">3</span>
-    </div>
-  </div>
-
-  <!-- LINES -->
-  <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 20px;">
-
-    <div style="display: flex; gap: 16px; padding: 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-      <div style="width: 88px; height: 88px; border-radius: 12px; flex-shrink: 0; background: radial-gradient(circle at 50% 45%, rgba(255,90,31,.24), transparent 68%), #07060A; display: flex; align-items: center; justify-content: center;">
-        <img src="product-front.jpg" alt="Blaze Orange mount" style="width: 58px; height: auto;">
-      </div>
-      <div style="flex-grow: 1; min-width: 0;">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
-          <h3 style="margin: 0 0 5px; font-size: 15px; font-weight: 700; color: #F7F4ED; line-height: 1.3;">Flame Skull Mount</h3>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #63606F;">
-          <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5A1F;"></span>BLAZE ORANGE
-        </div>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 2px; height: 40px; padding: 0 5px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px;">
-            <span style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></span>
-            <span style="min-width: 20px; text-align: center; font-family: 'JetBrains Mono',monospace; font-size: 14px; font-weight: 700; color: #F7F4ED;">2</span>
-            <span style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span>
+      <div style="width: 390px; background: #07060a">
+        <!-- TOP BAR -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            padding: 0 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          "
+        >
+          <div style="width: 44px; height: 44px; display: flex; align-items: center">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#F7F4ED"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M19 12H5" />
+              <path d="m11 18-6-6 6-6" />
+            </svg>
           </div>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #F7F4ED;">₹2,998</span>
+          <span
+            style="
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 19px;
+              letter-spacing: 0.14em;
+              color: #f7f4ed;
+            "
+            >SKELMET</span
+          >
+          <div style="width: 44px"></div>
         </div>
-      </div>
-    </div>
 
-    <div style="display: flex; gap: 16px; padding: 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: #0E0D13;">
-      <div style="width: 88px; height: 88px; border-radius: 12px; flex-shrink: 0; background: radial-gradient(circle at 50% 45%, rgba(138,154,91,.2), transparent 68%), #07060A; display: flex; align-items: center; justify-content: center;">
-        <img src="product-front.jpg" alt="Militia Olive mount" style="width: 58px; height: auto; filter: hue-rotate(38deg) saturate(.44) brightness(.84);">
-      </div>
-      <div style="flex-grow: 1; min-width: 0;">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
-          <h3 style="margin: 0 0 5px; font-size: 15px; font-weight: 700; color: #F7F4ED; line-height: 1.3;">Flame Skull Mount</h3>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-family: 'JetBrains Mono',monospace; font-size: 10px; letter-spacing: .1em; color: #63606F;">
-          <span style="width: 10px; height: 10px; border-radius: 50%; background: #8A9A5B;"></span>MILITIA OLIVE
-        </div>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 2px; height: 40px; padding: 0 5px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px;">
-            <span style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></span>
-            <span style="min-width: 20px; text-align: center; font-family: 'JetBrains Mono',monospace; font-size: 14px; font-weight: 700; color: #F7F4ED;">1</span>
-            <span style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F7F4ED" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span>
+        <!-- HEAD -->
+        <div style="padding: 28px 20px 22px">
+          <div
+            style="
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 10.5px;
+              letter-spacing: 0.2em;
+              color: #ff8a00;
+              margin-bottom: 12px;
+            "
+          >
+            STEP 01 OF 03
           </div>
-          <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 24px; color: #F7F4ED;">₹1,499</span>
+          <h1
+            style="
+              margin: 0 0 22px;
+              font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+              font-size: 46px;
+              line-height: 0.9;
+              color: #f7f4ed;
+              text-transform: uppercase;
+            "
+          >
+            Your stash
+          </h1>
+
+          <div style="display: flex; align-items: center; gap: 8px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span
+                style="
+                  width: 24px;
+                  height: 24px;
+                  border-radius: 50%;
+                  background: #ff5a1f;
+                  color: #07060a;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 11px;
+                  font-weight: 700;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+                >1</span
+              >
+              <span
+                style="
+                  font-size: 12px;
+                  font-weight: 600;
+                  color: #f7f4ed;
+                  letter-spacing: 0.04em;
+                  text-transform: uppercase;
+                "
+                >Cart</span
+              >
+            </div>
+            <span style="flex-grow: 1; height: 1px; background: rgba(255, 255, 255, 0.16)"></span>
+            <span
+              style="
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #63606f;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+              >2</span
+            >
+            <span style="flex-grow: 1; height: 1px; background: rgba(255, 255, 255, 0.16)"></span>
+            <span
+              style="
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #63606f;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+              >3</span
+            >
+          </div>
+        </div>
+
+        <!-- LINES -->
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 20px">
+          <div
+            style="
+              display: flex;
+              gap: 16px;
+              padding: 16px;
+              border: 1px solid rgba(255, 255, 255, 0.09);
+              border-radius: 16px;
+              background: #0e0d13;
+            "
+          >
+            <div
+              style="
+                width: 88px;
+                height: 88px;
+                border-radius: 12px;
+                flex-shrink: 0;
+                background:
+                  radial-gradient(circle at 50% 45%, rgba(255, 90, 31, 0.24), transparent 68%),
+                  #07060a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <img
+                src="product-front.jpg"
+                alt="Blaze Orange mount"
+                style="width: 58px; height: auto"
+              />
+            </div>
+            <div style="flex-grow: 1; min-width: 0">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 10px;
+                "
+              >
+                <h3
+                  style="
+                    margin: 0 0 5px;
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #f7f4ed;
+                    line-height: 1.3;
+                  "
+                >
+                  Flame Skull Mount
+                </h3>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#63606F"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="flex-shrink: 0; margin-top: 2px"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                </svg>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  margin-bottom: 14px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.1em;
+                  color: #63606f;
+                "
+              >
+                <span
+                  style="width: 10px; height: 10px; border-radius: 50%; background: #ff5a1f"
+                ></span
+                >BLAZE ORANGE
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 2px;
+                    height: 40px;
+                    padding: 0 5px;
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    border-radius: 999px;
+                  "
+                >
+                  <span
+                    style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                    ><svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#F7F4ED"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M5 12h14" /></svg
+                  ></span>
+                  <span
+                    style="
+                      min-width: 20px;
+                      text-align: center;
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 14px;
+                      font-weight: 700;
+                      color: #f7f4ed;
+                    "
+                    >2</span
+                  >
+                  <span
+                    style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                    ><svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#F7F4ED"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" /></svg
+                  ></span>
+                </div>
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 24px;
+                    color: #f7f4ed;
+                  "
+                  >₹2,998</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              gap: 16px;
+              padding: 16px;
+              border: 1px solid rgba(255, 255, 255, 0.09);
+              border-radius: 16px;
+              background: #0e0d13;
+            "
+          >
+            <div
+              style="
+                width: 88px;
+                height: 88px;
+                border-radius: 12px;
+                flex-shrink: 0;
+                background:
+                  radial-gradient(circle at 50% 45%, rgba(138, 154, 91, 0.2), transparent 68%),
+                  #07060a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <img
+                src="product-front.jpg"
+                alt="Militia Olive mount"
+                style="
+                  width: 58px;
+                  height: auto;
+                  filter: hue-rotate(38deg) saturate(0.44) brightness(0.84);
+                "
+              />
+            </div>
+            <div style="flex-grow: 1; min-width: 0">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 10px;
+                "
+              >
+                <h3
+                  style="
+                    margin: 0 0 5px;
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #f7f4ed;
+                    line-height: 1.3;
+                  "
+                >
+                  Flame Skull Mount
+                </h3>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#63606F"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="flex-shrink: 0; margin-top: 2px"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                </svg>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  margin-bottom: 14px;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 10px;
+                  letter-spacing: 0.1em;
+                  color: #63606f;
+                "
+              >
+                <span
+                  style="width: 10px; height: 10px; border-radius: 50%; background: #8a9a5b"
+                ></span
+                >MILITIA OLIVE
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 2px;
+                    height: 40px;
+                    padding: 0 5px;
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    border-radius: 999px;
+                  "
+                >
+                  <span
+                    style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                    ><svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#63606F"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M5 12h14" /></svg
+                  ></span>
+                  <span
+                    style="
+                      min-width: 20px;
+                      text-align: center;
+                      font-family: &quot;JetBrains Mono&quot;, monospace;
+                      font-size: 14px;
+                      font-weight: 700;
+                      color: #f7f4ed;
+                    "
+                    >1</span
+                  >
+                  <span
+                    style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                    ><svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#F7F4ED"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" /></svg
+                  ></span>
+                </div>
+                <span
+                  style="
+                    font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                    font-size: 24px;
+                    color: #f7f4ed;
+                  "
+                  >₹1,499</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- upsell -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              padding: 16px;
+              border: 1px dashed rgba(212, 255, 61, 0.36);
+              border-radius: 16px;
+              background: linear-gradient(110deg, rgba(212, 255, 61, 0.07), transparent 62%);
+            "
+          >
+            <div
+              style="
+                width: 52px;
+                height: 52px;
+                border-radius: 10px;
+                background: #07060a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+              "
+            >
+              <img
+                src="product-front.jpg"
+                alt="Ghost Grey mount"
+                style="width: 34px; height: auto; filter: saturate(0.06) brightness(1.2)"
+              />
+            </div>
+            <div style="flex-grow: 1; min-width: 0">
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 9.5px;
+                  letter-spacing: 0.16em;
+                  color: #d4ff3d;
+                  margin-bottom: 5px;
+                "
+              >
+                COMPLETE THE SET
+              </div>
+              <div style="font-size: 13.5px; font-weight: 600; color: #f7f4ed; line-height: 1.35">
+                Add Ghost Grey for ₹1,199
+              </div>
+            </div>
+            <span
+              style="
+                display: flex;
+                align-items: center;
+                height: 44px;
+                padding: 0 18px;
+                border-radius: 999px;
+                background: #d4ff3d;
+                color: #07060a;
+                font-weight: 700;
+                font-size: 12px;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                flex-shrink: 0;
+              "
+              >Add</span
+            >
+          </div>
+        </div>
+
+        <!-- COUPON + SUMMARY -->
+        <div style="padding: 24px 20px 0">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              height: 52px;
+              padding: 0 16px;
+              border: 1px solid rgba(255, 255, 255, 0.12);
+              border-radius: 12px;
+              background: #0e0d13;
+              margin-bottom: 20px;
+            "
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FF8A00"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="flex-shrink: 0"
+            >
+              <path d="M20.6 13.4 12 22l-9-9V3h10Z" />
+              <circle cx="7.5" cy="7.5" r="1.2" fill="#FF8A00" stroke="none" />
+            </svg>
+            <input
+              placeholder="Discount code"
+              style="
+                flex-grow: 1;
+                min-width: 0;
+                background: transparent;
+                border: none;
+                outline: none;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 13px;
+                color: #f7f4ed;
+                letter-spacing: 0.06em;
+              "
+            />
+            <span
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                color: #d4ff3d;
+              "
+              >APPLY</span
+            >
+          </div>
+
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 13px;
+              padding-bottom: 18px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            "
+          >
+            <div style="display: flex; justify-content: space-between; font-size: 14px">
+              <span style="color: #a3a0b0">Subtotal (3 items)</span
+              ><span style="color: #f7f4ed; font-family: &quot;JetBrains Mono&quot;, monospace"
+                >₹4,497</span
+              >
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px">
+              <span style="color: #a3a0b0">Bundle discount</span
+              ><span style="color: #d4ff3d; font-family: &quot;JetBrains Mono&quot;, monospace"
+                >− ₹299</span
+              >
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px">
+              <span style="color: #a3a0b0">Shipping</span
+              ><span style="color: #d4ff3d; font-family: &quot;JetBrains Mono&quot;, monospace"
+                >FREE</span
+              >
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px">
+              <span style="color: #a3a0b0">GST (included)</span
+              ><span style="color: #63606f; font-family: &quot;JetBrains Mono&quot;, monospace"
+                >₹640</span
+              >
+            </div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              align-items: baseline;
+              justify-content: space-between;
+              padding: 18px 0 22px;
+            "
+          >
+            <span style="font-size: 15px; font-weight: 600; color: #f7f4ed">Total</span>
+            <span
+              style="
+                font-family: &quot;Anton&quot;, &quot;Arial Narrow&quot;, Impact, sans-serif;
+                font-size: 38px;
+                color: #f7f4ed;
+              "
+              >₹4,198</span
+            >
+          </div>
+
+          <div
+            style="
+              display: flex;
+              align-items: flex-start;
+              gap: 11px;
+              padding: 16px 18px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 14px;
+              background: #0e0d13;
+              margin-bottom: 24px;
+            "
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D4FF3D"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="flex-shrink: 0; margin-top: 1px"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+            </svg>
+            <span style="font-size: 13px; line-height: 1.5; color: #a3a0b0"
+              >Doesn't fit your wall? Send it back within 7 days — we pay the return pickup.</span
+            >
+          </div>
+
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 9px;
+              padding-bottom: 30px;
+              font-size: 13.5px;
+              color: #63606f;
+            "
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#63606F"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M19 12H5" />
+              <path d="m11 18-6-6 6-6" />
+            </svg>
+            Continue shopping
+          </div>
+        </div>
+
+        <!-- STICKY CHECKOUT -->
+        <div
+          style="
+            position: sticky;
+            bottom: 0;
+            z-index: 70;
+            padding: 12px 16px 16px;
+            background: rgba(7, 6, 10, 0.92);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              height: 54px;
+              border-radius: 999px;
+              background: linear-gradient(96deg, #ff5a1f, #ff8a00);
+              color: #07060a;
+              font-weight: 700;
+              font-size: 15px;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+              box-shadow: 0 10px 28px rgba(255, 90, 31, 0.3);
+            "
+          >
+            Checkout · ₹4,198
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#07060A"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              padding-top: 12px;
+              font-family: &quot;JetBrains Mono&quot;, monospace;
+              font-size: 9.5px;
+              letter-spacing: 0.1em;
+              color: #63606f;
+            "
+          >
+            <span>UPI</span><span>·</span><span>CARDS</span><span>·</span><span>NETBANKING</span
+            ><span>·</span><span>COD</span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- upsell -->
-    <div style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px dashed rgba(212,255,61,.36); border-radius: 16px; background: linear-gradient(110deg, rgba(212,255,61,.07), transparent 62%);">
-      <div style="width: 52px; height: 52px; border-radius: 10px; background: #07060A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <img src="product-front.jpg" alt="Ghost Grey mount" style="width: 34px; height: auto; filter: saturate(.06) brightness(1.2);">
-      </div>
-      <div style="flex-grow: 1; min-width: 0;">
-        <div style="font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .16em; color: #D4FF3D; margin-bottom: 5px;">COMPLETE THE SET</div>
-        <div style="font-size: 13.5px; font-weight: 600; color: #F7F4ED; line-height: 1.35;">Add Ghost Grey for ₹1,199</div>
-      </div>
-      <span style="display: flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 999px; background: #D4FF3D; color: #07060A; font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; flex-shrink: 0;">Add</span>
-    </div>
-  </div>
-
-  <!-- COUPON + SUMMARY -->
-  <div style="padding: 24px 20px 0;">
-    <div style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: #0E0D13; margin-bottom: 20px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M20.6 13.4 12 22l-9-9V3h10Z"/><circle cx="7.5" cy="7.5" r="1.2" fill="#FF8A00" stroke="none"/></svg>
-      <input placeholder="Discount code" style="flex-grow: 1; min-width: 0; background: transparent; border: none; outline: none; font-family: 'JetBrains Mono',monospace; font-size: 13px; color: #F7F4ED; letter-spacing: .06em;">
-      <span style="font-family: 'JetBrains Mono',monospace; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #D4FF3D;">APPLY</span>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 13px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.1);">
-      <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Subtotal (3 items)</span><span style="color: #F7F4ED; font-family: 'JetBrains Mono',monospace;">₹4,497</span></div>
-      <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Bundle discount</span><span style="color: #D4FF3D; font-family: 'JetBrains Mono',monospace;">− ₹299</span></div>
-      <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">Shipping</span><span style="color: #D4FF3D; font-family: 'JetBrains Mono',monospace;">FREE</span></div>
-      <div style="display: flex; justify-content: space-between; font-size: 14px;"><span style="color: #A3A0B0;">GST (included)</span><span style="color: #63606F; font-family: 'JetBrains Mono',monospace;">₹640</span></div>
-    </div>
-
-    <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 18px 0 22px;">
-      <span style="font-size: 15px; font-weight: 600; color: #F7F4ED;">Total</span>
-      <span style="font-family: 'Anton','Arial Narrow',Impact,sans-serif; font-size: 38px; color: #F7F4ED;">₹4,198</span>
-    </div>
-
-    <div style="display: flex; align-items: flex-start; gap: 11px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: #0E0D13; margin-bottom: 24px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4FF3D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-      <span style="font-size: 13px; line-height: 1.5; color: #A3A0B0;">Doesn't fit your wall? Send it back within 7 days — we pay the return pickup.</span>
-    </div>
-
-    <div style="display: flex; align-items: center; justify-content: center; gap: 9px; padding-bottom: 30px; font-size: 13.5px; color: #63606F;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63606F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
-      Continue shopping
-    </div>
-  </div>
-
-  <!-- STICKY CHECKOUT -->
-  <div style="position: sticky; bottom: 0; z-index: 70; padding: 12px 16px 16px; background: rgba(7,6,10,.92); backdrop-filter: blur(16px); border-top: 1px solid rgba(255,255,255,.1);">
-    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; border-radius: 999px; background: linear-gradient(96deg, #FF5A1F, #FF8A00); color: #07060A; font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 10px 28px rgba(255,90,31,.3);">
-      Checkout · ₹4,198
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#07060A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-    </div>
-    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 12px; font-family: 'JetBrains Mono',monospace; font-size: 9.5px; letter-spacing: .1em; color: #63606F;">
-      <span>UPI</span><span>·</span><span>CARDS</span><span>·</span><span>NETBANKING</span><span>·</span><span>COD</span>
-    </div>
-  </div>
-
-</div>
-</x-dc>
-</body>
+    </x-dc>
+  </body>
 </html>

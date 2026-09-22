@@ -41,16 +41,22 @@ export function LoginForm({ next = "/admin" }: { next?: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <Field label="Email">
-        <Input name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+        <Input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+        />
       </Field>
       <Field label="Password">
         <Input name="password" type="password" required autoComplete="current-password" />
       </Field>
 
       {error ? (
-        <div className="flex items-start gap-2.5 rounded-xl border border-magenta/35 bg-magenta/[0.06] p-4">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-magenta" strokeWidth={1.9} />
-          <p className="text-[13.5px] leading-[1.5] text-bone">{error}</p>
+        <div className="border-magenta/35 bg-magenta/[0.06] flex items-start gap-2.5 rounded-xl border p-4">
+          <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
+          <p className="text-bone text-[13.5px] leading-[1.5]">{error}</p>
         </div>
       ) : null}
 

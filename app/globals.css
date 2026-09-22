@@ -62,7 +62,10 @@
   /* motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --animate-marquee: marquee 26s linear infinite;
+  /* Travel is one track — a content width, ~4.3kpx — rather than one
+     viewport, so the duration is retuned to hold the old ~75px/s. Tied to
+     MarqueeTicker's REPEATS: change one and retune the other. */
+  --animate-marquee: marquee 57s linear infinite;
   --animate-spin-slow: spin-slow 16s linear infinite;
   --animate-spin-rev: spin-rev 52s linear infinite;
   --animate-bloom: bloom 6s ease-in-out infinite;
@@ -125,16 +128,6 @@
     100% {
       transform: translateY(-200px);
       opacity: 0;
-    }
-  }
-  @keyframes reveal-up {
-    from {
-      opacity: 0;
-      transform: translateY(28px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
     }
   }
 }
@@ -222,11 +215,11 @@
       transparent 360deg
     );
     mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-  }
-
-  .reveal {
-    animation: reveal-up 700ms var(--ease-out-expo) both;
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 2px)
+    );
   }
 }
 

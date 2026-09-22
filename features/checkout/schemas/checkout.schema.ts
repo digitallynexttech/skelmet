@@ -7,7 +7,10 @@ export const addressSchema = z.object({
   line2: z.string().trim().max(160).optional().or(z.literal("")),
   city: z.string().trim().min(2, "City is required").max(80),
   state: z.string().trim().min(2, "State is required").max(80),
-  pincode: z.string().trim().regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit pincode"),
+  pincode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit pincode"),
 })
 
 export const placeOrderSchema = z.object({

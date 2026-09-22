@@ -9,6 +9,8 @@ import { CartButton } from "@/components/layout/cart-button"
 import { Wordmark } from "@/components/shared/wordmark"
 import { ButtonLink } from "@/components/ui/button"
 import { primaryNav } from "@/config/nav"
+import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
@@ -31,7 +33,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-void/80 backdrop-blur-xl">
+      <header className="bg-void/80 sticky top-0 z-50 border-b border-white/[0.07] backdrop-blur-xl">
         <div className="flex h-[74px] items-center justify-between px-5 sm:px-8 xl:px-14">
           <div className="flex items-center gap-3">
             <button
@@ -42,7 +44,7 @@ export function SiteHeader() {
                 setOpenedOn(pathname)
                 setOpen(true)
               }}
-              className="-ml-2 flex size-11 items-center justify-center text-bone lg:hidden"
+              className="text-bone -ml-2 flex size-11 items-center justify-center lg:hidden"
             >
               <Menu className="size-[22px]" strokeWidth={2} />
             </button>
@@ -69,7 +71,12 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-3">
             <CartButton />
-            <ButtonLink href="/product/flame-skull-mount" variant="accent" size="xs" className="hidden sm:inline-flex">
+            <ButtonLink
+              href="/product/flame-skull-mount"
+              variant="accent"
+              size="xs"
+              className="hidden sm:inline-flex"
+            >
               Buy now
             </ButtonLink>
           </div>
@@ -90,13 +97,13 @@ export function SiteHeader() {
           aria-label="Close menu"
           onClick={() => setOpen(false)}
           className={cn(
-            "absolute inset-0 bg-void/80 backdrop-blur-sm transition-opacity duration-300",
+            "bg-void/80 absolute inset-0 backdrop-blur-sm transition-opacity duration-300",
             open ? "opacity-100" : "opacity-0",
           )}
         />
         <div
           className={cn(
-            "absolute inset-y-0 left-0 flex w-[86%] max-w-[360px] flex-col border-r border-white/[0.08] bg-carbon transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            "bg-carbon absolute inset-y-0 left-0 flex w-[86%] max-w-[360px] flex-col border-r border-white/[0.08] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
@@ -106,7 +113,7 @@ export function SiteHeader() {
               type="button"
               aria-label="Close menu"
               onClick={() => setOpen(false)}
-              className="-mr-2 flex size-11 items-center justify-center text-bone"
+              className="text-bone -mr-2 flex size-11 items-center justify-center"
             >
               <X className="size-[22px]" strokeWidth={2} />
             </button>
@@ -117,7 +124,7 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex min-h-[52px] items-center border-b border-white/[0.05] font-display leading-[1.08] text-[26px] tracking-[0.02em] text-bone uppercase"
+                className="font-display text-bone flex min-h-[52px] items-center border-b border-white/[0.05] text-[26px] leading-[1.08] tracking-[0.02em] uppercase"
               >
                 {item.label}
               </Link>
@@ -126,7 +133,7 @@ export function SiteHeader() {
 
           <div className="border-t border-white/[0.07] p-5">
             <ButtonLink href="/product/flame-skull-mount" variant="primary" size="md" full>
-              Grab yours · ₹1,499
+              Grab yours · {formatMoney(FLAME_SKULL_MOUNT.price)}
             </ButtonLink>
           </div>
         </div>

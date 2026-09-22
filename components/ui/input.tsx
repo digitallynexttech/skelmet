@@ -20,7 +20,7 @@ export function Textarea({ className, ...props }: TextareaProps) {
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn("font-mono text-[10.5px] tracking-[0.16em] text-dim uppercase", className)}
+      className={cn("text-dim font-mono text-[10.5px] tracking-[0.16em] uppercase", className)}
       {...props}
     />
   )
@@ -41,7 +41,9 @@ export function Field({
     <div className={cn("flex flex-col gap-2", className)}>
       <Label>{label}</Label>
       {children}
-      {hint ? <span className="font-mono text-[10.5px] tracking-[0.1em] text-acid">{hint}</span> : null}
+      {hint ? (
+        <span className="text-acid font-mono text-[10.5px] tracking-[0.1em]">{hint}</span>
+      ) : null}
     </div>
   )
 }

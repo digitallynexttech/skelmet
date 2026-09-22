@@ -14,19 +14,19 @@ export function FaqSection() {
           <SectionLabel index="15" className="mb-3.5">
             Questions
           </SectionLabel>
-          <h2 className="mb-5 font-display text-[38px] leading-[1.04] text-bone uppercase sm:text-[48px] xl:text-[58px]">
+          <h2 className="font-display text-bone mb-5 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">
             Before you
             <br />
             ask us
           </h2>
-          <p className="mb-7 text-[15.5px] leading-[1.6] text-ash">
+          <p className="text-ash mb-7 text-[15.5px] leading-[1.6]">
             Still stuck?{" "}
-            <Link href="/contact" className="border-b border-acid/40 text-acid hover:text-bone">
+            <Link href="/contact" className="border-acid/40 text-acid hover:text-bone border-b">
               Message us
             </Link>{" "}
             and we answer within a working day.
           </p>
-          <div className="relative hidden aspect-4/3 overflow-hidden rounded-tile border border-white/[0.08] lg:block">
+          <div className="rounded-tile relative hidden aspect-4/3 overflow-hidden border border-white/[0.08] lg:block">
             <Image
               src="/product/product-profile.jpg"
               alt="Side profile of the SKELMET mount"

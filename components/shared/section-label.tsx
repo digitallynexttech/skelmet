@@ -21,11 +21,7 @@ export function SectionLabel({
 }) {
   return (
     <div
-      className={cn(
-        "font-mono text-[11.5px] tracking-[0.22em] uppercase",
-        TONES[tone],
-        className,
-      )}
+      className={cn("font-mono text-[11.5px] tracking-[0.22em] uppercase", TONES[tone], className)}
     >
       {index ? `${index} / ` : null}
       {children}

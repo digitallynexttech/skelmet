@@ -17,7 +17,7 @@ export function AnyWall() {
         <SectionLabel index="12" tone="acid" className="mb-4">
           Any wall
         </SectionLabel>
-        <h2 className="mb-5 font-display text-[40px] leading-[1.0] text-bone uppercase sm:text-[52px] xl:text-[66px]">
+        <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[66px]">
           Bedroom.
           <br />
           Garage. Hallway.

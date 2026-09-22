@@ -97,7 +97,12 @@ export const INSTALL_STEPS = [
 ]
 
 export const COMPARISON_ROWS = [
-  { label: "Scratches the shell", floor: "Constantly", hook: "Yes, bare metal", us: "No, soft cradle inside" },
+  {
+    label: "Scratches the shell",
+    floor: "Constantly",
+    hook: "Yes, bare metal",
+    us: "No, soft cradle inside",
+  },
   { label: "Airs out the liner", floor: "Never", hook: "Partly", us: "Fully, open all night" },
   { label: "Holds your gloves", floor: "No", hook: "No", us: "Hook under the jaw" },
   { label: "Looks like", floor: "A mess", hook: "A coat hook", us: "A flaming skull" },

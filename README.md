@@ -28,17 +28,17 @@ The storefront renders with no database. Orders, login and everything under
 
 ### Storefront
 
-| Route | State |
-| --- | --- |
-| `/` | Home, 19 sections |
-| `/shop` | Collection |
-| `/product/[slug]` | Colourway switcher, qty, gallery |
-| `/cart` | Live totals, qty, remove, upsell, empty state |
-| `/checkout` | Address, contact, coupon, COD or Razorpay |
-| `/checkout/thank-you` | Confirmation and timeline |
-| `/about` `/contact` `/refer` `/riders` `/faq` `/track` | Live |
-| `/policies/[slug]` | privacy, terms, shipping, returns, referral |
-| `/login` | One door for staff and customers |
+| Route                                                  | State                                         |
+| ------------------------------------------------------ | --------------------------------------------- |
+| `/`                                                    | Home, 19 sections                             |
+| `/shop`                                                | Collection                                    |
+| `/product/[slug]`                                      | Colourway switcher, qty, gallery              |
+| `/cart`                                                | Live totals, qty, remove, upsell, empty state |
+| `/checkout`                                            | Address, contact, coupon, COD or Razorpay     |
+| `/checkout/thank-you`                                  | Confirmation and timeline                     |
+| `/about` `/contact` `/refer` `/riders` `/faq` `/track` | Live                                          |
+| `/policies/[slug]`                                     | privacy, terms, shipping, returns, referral   |
+| `/login`                                               | One door for staff and customers              |
 
 The cart persists to `localStorage` and survives a reload.
 
@@ -49,17 +49,17 @@ service re-checks the permission itself, so an API call that skips the UI is
 refused the same way. A signed-in customer who guesses an admin URL gets a 404,
 not a 403, so the console never confirms it exists.
 
-| Route | What an employee does there |
-| --- | --- |
-| `/admin` | Today: revenue, order count, pending payments, low stock, recent orders |
-| `/admin/orders` | Search, filter by status, paginate |
+| Route                | What an employee does there                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/admin`             | Today: revenue, order count, pending payments, low stock, recent orders                                           |
+| `/admin/orders`      | Search, filter by status, paginate                                                                                |
 | `/admin/orders/[id]` | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
-| `/admin/products` | Prices, stock in and out, publish or unpublish |
-| `/admin/coupons` | Create, edit, activate, deactivate discount codes |
-| `/admin/referrals` | Credit a referrer, void a referral |
-| `/admin/reviews` | Moderation queue, publish or reject |
-| `/admin/inquiries` | Contact form inbox, pick up and resolve |
-| `/admin/settings` | Add employees, assign roles, reset passwords, revoke access |
+| `/admin/products`    | Prices, stock in and out, publish or unpublish                                                                    |
+| `/admin/coupons`     | Create, edit, activate, deactivate discount codes                                                                 |
+| `/admin/referrals`   | Credit a referrer, void a referral                                                                                |
+| `/admin/reviews`     | Moderation queue, publish or reject                                                                               |
+| `/admin/inquiries`   | Contact form inbox, pick up and resolve                                                                           |
+| `/admin/settings`    | Add employees, assign roles, reset passwords, revoke access                                                       |
 
 Order transitions are atomic claims (`updateMany` with the expected status in
 the `where`), so two employees clicking "Mark packed" at the same moment cannot
@@ -82,7 +82,7 @@ since that is a one-click way to lock every employee out for good.
    body and does the same. Either can land first, both are idempotent.
 
 Cash on delivery works with no Razorpay keys at all. With the keys blank an
-online payment is refused *before* any order is written, so nothing is left
+online payment is refused _before_ any order is written, so nothing is left
 holding stock. COD orders are packed while still `PENDING` and become paid at
 delivery, which is when they start counting as revenue.
 
@@ -133,14 +133,14 @@ degrades to `any`, and type-check fails the build.
 
 Set these on the host, not just in `.env`:
 
-| Variable | Note |
-| --- | --- |
-| `DATABASE_URL` | include `&uselibpqcompat=true` for Aiven, see TLS above |
-| `AUTH_SECRET` | `openssl rand -base64 32` |
-| `AUTH_URL` `NEXT_PUBLIC_SITE_URL` | the real domain, never localhost |
-| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET` | live keys, not test, when you go live |
-| `PAYMENT_WEBHOOK_SECRET` | the webhook 401s everything until this is set |
-| `REQUIRE_BACKEND=1` | boot fails fast on a missing secret |
+| Variable                              | Note                                                    |
+| ------------------------------------- | ------------------------------------------------------- |
+| `DATABASE_URL`                        | include `&uselibpqcompat=true` for Aiven, see TLS above |
+| `AUTH_SECRET`                         | `openssl rand -base64 32`                               |
+| `AUTH_URL` `NEXT_PUBLIC_SITE_URL`     | the real domain, never localhost                        |
+| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET` | live keys, not test, when you go live                   |
+| `PAYMENT_WEBHOOK_SECRET`              | the webhook 401s everything until this is set           |
+| `REQUIRE_BACKEND=1`                   | boot fails fast on a missing secret                     |
 
 Point the Razorpay dashboard webhook at
 `https://<host>/api/webhooks/razorpay` and subscribe to `payment.captured` and

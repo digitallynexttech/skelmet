@@ -20,7 +20,7 @@ export function ColourwayGrid() {
           </SectionLabel>
           <SectionHeading>Pick your poison</SectionHeading>
         </div>
-        <p className="max-w-[340px] text-[15px] leading-[1.6] text-ash lg:pb-2 lg:text-right">
+        <p className="text-ash max-w-[340px] text-[15px] leading-[1.6] lg:pb-2 lg:text-right">
           Same skull, same bracket. Three finishes that read completely differently on a wall.
         </p>
       </div>
@@ -30,7 +30,7 @@ export function ColourwayGrid() {
           <article
             key={c.id}
             className={cn(
-              "overflow-hidden rounded-card border bg-carbon",
+              "rounded-card bg-carbon overflow-hidden border",
               c.bestSeller ? "border-blaze/35" : "border-white/[0.09]",
             )}
           >
@@ -55,13 +55,13 @@ export function ColourwayGrid() {
                   className="size-[15px] shrink-0 rounded-full"
                   style={{ backgroundColor: c.hex }}
                 />
-                <h3 className="font-display leading-[1.08] text-[24px] tracking-[0.04em] text-bone uppercase sm:text-[26px]">
+                <h3 className="font-display text-bone text-[24px] leading-[1.08] tracking-[0.04em] uppercase sm:text-[26px]">
                   {c.name}
                 </h3>
               </div>
-              <p className="mb-5 text-[14.5px] leading-[1.58] text-ash">{c.blurb}</p>
+              <p className="text-ash mb-5 text-[14.5px] leading-[1.58]">{c.blurb}</p>
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[18px] font-bold text-bone">
+                <span className="text-bone font-mono text-[18px] font-bold">
                   {formatMoney(product.price)}
                 </span>
                 <AddToCartButton

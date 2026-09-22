@@ -1,7 +1,7 @@
 /**
  * Policy content registry (client-safe, §4).
  *
- * NOT LEGAL ADVICE. The structure follows what an Indian D2C store needs, 
+ * NOT LEGAL ADVICE. The structure follows what an Indian D2C store needs,
  * the DPDP Act 2023 and the Consumer Protection (E-Commerce) Rules 2020,
  * including the grievance-officer block both require. Every [BRACKETED] value
  * and the final wording must be settled by a lawyer before launch, which is
@@ -487,7 +487,10 @@ const TERMS: Policy = {
           type: "p",
           text: "The SKELMET name, the skull design, the 3D model files, the photography and the site itself are ours. Buying a mount buys you the object, not the design. You may not copy, 3D-scan, reproduce or sell the design, and you may not list our photography on a marketplace as your own.",
         },
-        { type: "p", text: "Photographing your own mount and posting it is entirely fine, and encouraged." },
+        {
+          type: "p",
+          text: "Photographing your own mount and posting it is entirely fine, and encouraged.",
+        },
       ],
     },
     {
@@ -626,7 +629,8 @@ const RETURNS: Policy = {
   title: "Returns & refunds",
   intro: "Seven days, no interrogation, and we pay the pickup.",
   readingTime: "~4 min read",
-  shortVersion: "Changed your mind? Seven days, unused, original box. We collect it and refund you.",
+  shortVersion:
+    "Changed your mind? Seven days, unused, original box. We collect it and refund you.",
   accent: "magenta",
   sections: [
     {
@@ -750,7 +754,7 @@ const REFERRAL: Policy = {
       blocks: [
         {
           type: "list",
-            items: [
+          items: [
             "The person you refer gets ₹250 off their first order.",
             "You get ₹250 credited to your SKELMET balance.",
             "Tiers raise your side: ₹350 from 5 referrals, ₹500 from 15.",

@@ -108,7 +108,7 @@ function ProductCard({ product }: { product: ProductRow }) {
   const busy = updateProduct.isPending || updateVariant.isPending || adjustStock.isPending
 
   return (
-    <article className="rounded-card border border-white/[0.09] bg-carbon">
+    <article className="rounded-card bg-carbon border border-white/[0.09]">
       <header className="flex flex-wrap items-center gap-4 border-b border-white/[0.07] px-6 py-5">
         <button
           type="button"
@@ -119,24 +119,22 @@ function ProductCard({ product }: { product: ProductRow }) {
           <ChevronDown
             className={
               open
-                ? "size-4 shrink-0 text-ash transition-transform"
-                : "size-4 shrink-0 -rotate-90 text-ash transition-transform"
+                ? "text-ash size-4 shrink-0 transition-transform"
+                : "text-ash size-4 shrink-0 -rotate-90 transition-transform"
             }
             strokeWidth={2}
           />
           <span className="min-w-0">
-            <span className="block truncate text-[16px] font-semibold text-bone">
+            <span className="text-bone block truncate text-[16px] font-semibold">
               {product.name}
             </span>
-            <span className="block font-mono text-[11px] text-dim">/{product.slug}</span>
+            <span className="text-dim block font-mono text-[11px]">/{product.slug}</span>
           </span>
         </button>
 
         <Badge variant={STATUS_TONE[product.status]}>{product.status}</Badge>
 
-        <span className="font-mono text-[12.5px] text-ash">
-          {product.totalStock} in stock
-        </span>
+        <span className="text-ash font-mono text-[12.5px]">{product.totalStock} in stock</span>
 
         <div className="flex gap-2">
           {product.status === "ACTIVE" ? (
@@ -164,7 +162,7 @@ function ProductCard({ product }: { product: ProductRow }) {
       {open ? (
         <table className="w-full">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+            <tr className="text-dim border-b border-white/[0.06] text-left font-mono text-[10px] tracking-[0.16em] uppercase">
               <th className="px-6 py-3 font-normal">Colourway</th>
               <th className="px-6 py-3 font-normal">SKU</th>
               <th className="px-6 py-3 font-normal">Price</th>
@@ -175,8 +173,8 @@ function ProductCard({ product }: { product: ProductRow }) {
           <tbody className="divide-y divide-white/[0.06]">
             {product.variants.map((v) => (
               <tr key={v.id}>
-                <td className="px-6 py-4 text-[14px] text-bone capitalize">{v.colourway}</td>
-                <td className="px-6 py-4 font-mono text-[12px] text-ash">{v.sku}</td>
+                <td className="text-bone px-6 py-4 text-[14px] capitalize">{v.colourway}</td>
+                <td className="text-ash px-6 py-4 font-mono text-[12px]">{v.sku}</td>
                 <td className="px-6 py-4">
                   <PriceCell variant={v} disabled={busy} />
                 </td>
@@ -184,18 +182,18 @@ function ProductCard({ product }: { product: ProductRow }) {
                   <span
                     className={
                       v.stock === 0
-                        ? "font-mono text-[14px] font-bold text-magenta"
+                        ? "text-magenta font-mono text-[14px] font-bold"
                         : v.stock <= LOW_STOCK
-                          ? "font-mono text-[14px] font-bold text-ember"
-                          : "font-mono text-[14px] text-bone"
+                          ? "text-ember font-mono text-[14px] font-bold"
+                          : "text-bone font-mono text-[14px]"
                     }
                   >
                     {v.stock}
                   </span>
                   {v.stock === 0 ? (
-                    <span className="ml-2 text-[12px] text-magenta">out</span>
+                    <span className="text-magenta ml-2 text-[12px]">out</span>
                   ) : v.stock <= LOW_STOCK ? (
-                    <span className="ml-2 text-[12px] text-ember">low</span>
+                    <span className="text-ember ml-2 text-[12px]">low</span>
                   ) : null}
                 </td>
                 <td className="px-6 py-4">
@@ -217,7 +215,7 @@ export function ProductManager() {
     return (
       <div className="flex flex-col gap-5">
         <div className="h-14 w-72 animate-pulse rounded-xl bg-white/5" />
-        <div className="h-72 animate-pulse rounded-card bg-white/5" />
+        <div className="rounded-card h-72 animate-pulse bg-white/5" />
       </div>
     )
   }
@@ -254,14 +252,14 @@ export function ProductManager() {
         </div>
       )}
 
-      <p className="text-[13px] text-dim">
+      <p className="text-dim text-[13px]">
         Total catalogue value at list price:{" "}
         <Money
           value={products.reduce(
             (sum, p) => sum + p.variants.reduce((s, v) => s + Number(v.price) * v.stock, 0),
             0,
           )}
-          className="font-mono text-bone"
+          className="text-bone font-mono"
         />
       </p>
     </div>

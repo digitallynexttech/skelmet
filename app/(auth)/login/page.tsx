@@ -24,20 +24,20 @@ export default async function LoginPage({
       <div className="flex flex-col justify-center px-5 py-14 sm:px-10 xl:px-20">
         <Link href="/" className="mb-12 flex items-center gap-3">
           <SkullMark className="size-6" />
-          <span className="font-display text-[21px] tracking-[0.14em] text-bone">SKELMET</span>
+          <span className="font-display text-bone text-[21px] tracking-[0.14em]">SKELMET</span>
         </Link>
 
         <div className="max-w-[400px]">
-          <h1 className="mb-3 font-display text-[42px] leading-[1.02] text-bone uppercase sm:text-[52px]">
+          <h1 className="font-display text-bone mb-3 text-[42px] leading-[1.02] uppercase sm:text-[52px]">
             Sign in
           </h1>
-          <p className="mb-9 text-[15px] leading-[1.6] text-ash">
+          <p className="text-ash mb-9 text-[15px] leading-[1.6]">
             Staff console and customer accounts, one door. You will land wherever you belong.
           </p>
 
           <LoginForm next={safeNext} />
 
-          <p className="mt-8 text-[13.5px] text-dim">
+          <p className="text-dim mt-8 text-[13.5px]">
             Trouble getting in?{" "}
             <Link href="/contact" className="text-ember hover:text-flare">
               Tell us

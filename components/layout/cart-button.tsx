@@ -21,7 +21,7 @@ export function CartButton({ className }: { className?: string }) {
       href="/cart"
       aria-label={mounted && count > 0 ? `Cart, ${count} items` : "Cart"}
       className={cn(
-        "flex h-10 items-center gap-2 rounded-full border border-white/[0.14] px-4 font-mono text-xs text-bone transition-colors hover:border-white/30",
+        "text-bone flex h-10 items-center gap-2 rounded-full border border-white/[0.14] px-4 font-mono text-xs transition-colors hover:border-white/30",
         className,
       )}
     >
@@ -30,7 +30,7 @@ export function CartButton({ className }: { className?: string }) {
       <span
         className={cn(
           "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-          mounted && count > 0 ? "bg-blaze text-void" : "bg-white/10 text-dim",
+          mounted && count > 0 ? "bg-blaze text-void" : "text-dim bg-white/10",
         )}
       >
         {mounted ? count : 0}

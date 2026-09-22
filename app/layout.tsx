@@ -62,7 +62,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html
+      lang="en-IN"
+      // globals.css sets scroll-behavior: smooth. Without this attribute Next
+      // cannot tell a deliberate choice from an accident, so it disables smooth
+      // scrolling during route transitions and warns. Opting in keeps the
+      // in-page anchors smooth and the console quiet.
+      data-scroll-behavior="smooth"
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+    >
       <body className="antialiased">{children}</body>
     </html>
   )
