@@ -20,6 +20,14 @@ export type Colourway = {
   hex: string
   blurb: string
   image: string
+  /**
+   * Wire-shaped money (§5). The registry value is a fallback; the live one is
+   * overlaid from the variant row by the catalogue service, because price is
+   * per variant in the database and an admin can change it without a deploy.
+   */
+  price: string
+  /** Units on hand for this variant. Same overlay, same reason. */
+  stock: number
   inStock: boolean
   bestSeller?: boolean
 }
@@ -33,7 +41,6 @@ export type Product = {
   compareAtPrice: string
   rating: number
   reviewCount: number
-  batch: string
   unitsLeft: number
   colourways: Colourway[]
   gallery: Array<{ src: string; alt: string }>
@@ -49,6 +56,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#FF5A1F",
     blurb: "Bright and Hot, Built to catch eyes",
     image: "/product/product-front.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
     bestSeller: true,
   },
@@ -59,6 +68,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#8A9A5B",
     blurb: "Bold in Presence, Subtle in Colour",
     image: "/product/colourway-olive.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
   },
   {
@@ -68,6 +79,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#C8CED6",
     blurb: "Calm. Cold. Still as stone.",
     image: "/product/colourway-ghost.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
   },
 ]
@@ -80,7 +93,6 @@ export const FLAME_SKULL_MOUNT: Product = {
   compareAtPrice: "4999",
   rating: 4.9,
   reviewCount: 312,
-  batch: "04",
   unitsLeft: 12,
   colourways: COLOURWAYS,
   gallery: [

@@ -14,6 +14,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!session?.user) redirect("/login?next=/admin")
   if (session.user.kind !== "STAFF") redirect("/")
 
+  // The flag was set by createStaff and resetStaffPassword, carried onto the
+  // JWT, typed on the session — and read by nothing, so a temporary password
+  // an admin chose stayed valid for as long as its owner never bothered. This
+  // is the half that makes it mean something. The target is in the (auth)
+  // group precisely so this redirect cannot loop into itself.
+  if (session.user.mustChangePassword) redirect("/change-password?next=/admin")
+
   return (
     <QueryProvider>
       <div className="bg-void flex min-h-dvh">

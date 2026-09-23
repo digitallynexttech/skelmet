@@ -3,26 +3,16 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import {
-  AlertTriangle,
-  ArrowRight,
-  Banknote,
-  Check,
-  ChevronDown,
-  CreditCard,
-  Lock,
-  ShieldCheck,
-  Truck,
-} from "lucide-react"
+import { AlertTriangle, ArrowRight, Check, ChevronDown, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
 import { useHydrated } from "@/hooks/use-hydrated"
-import { cn } from "@/lib/utils"
 
 const PROMISES = [
   { Icon: Truck, text: "Dispatched within 48 hours" },
@@ -62,10 +52,11 @@ function Lines({ items }: { items: CartLine[] }) {
 
 export function CheckoutView() {
   const items = useCart((s) => s.items)
+  const couponCode = useCart((s) => s.couponCode)
   const mounted = useHydrated()
-  const [method, setMethod] = React.useState<"ONLINE" | "COD">("ONLINE")
   const { submit, pending, error } = useCheckout()
-  const totals = calculateTotals(items, method === "COD")
+  const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
+  const totals = calculateTotals(items, false, coupon?.discount ?? 0)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -86,10 +77,15 @@ export function CheckoutView() {
       },
       // Only SKUs and quantities cross the wire; the server prices the order.
       items: items.map((l) => ({ sku: l.sku, qty: l.qty })),
-      couponCode: str("couponCode"),
-      paymentMethod: method,
+      // The field below lives in a `hidden lg:flex` rail, so on a phone it is
+      // present but invisible — which is why the code applied on /cart has to
+      // seed it rather than being re-typed somewhere it cannot be typed.
+      // The named input is gone — CouponBox validates before anything is
+      // applied, so the code that goes to the server is the one it accepted,
+      // falling back to whatever the cart is still carrying.
+      couponCode: coupon?.code ?? couponCode ?? "",
+      paymentMethod: "ONLINE",
       saveAddress: false,
-      giftNote: form.get("giftNote") === "on",
     })
   }
 
@@ -215,14 +211,6 @@ export function CheckoutView() {
               </Field>
             </div>
 
-            <label className="text-ash mt-5 flex cursor-pointer items-center gap-3 text-[14px]">
-              <input
-                type="checkbox"
-                name="giftNote"
-                className="size-4 accent-[var(--color-blaze)]"
-              />
-              This is a gift, leave the invoice out of the box
-            </label>
           </section>
 
           {/* 3 · payment */}
@@ -236,60 +224,15 @@ export function CheckoutView() {
               </h2>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setMethod("ONLINE")}
-                aria-pressed={method === "ONLINE"}
-                className={cn(
-                  "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-colors",
-                  method === "ONLINE"
-                    ? "border-blaze bg-blaze/[0.08]"
-                    : "border-white/[0.12] hover:border-white/25",
-                )}
-              >
-                <CreditCard
-                  className={cn(
-                    "mt-0.5 size-5 shrink-0",
-                    method === "ONLINE" ? "text-blaze" : "text-dim",
-                  )}
-                  strokeWidth={1.8}
-                />
-                <span>
-                  <span className="text-bone block text-[14.5px] font-semibold">Pay now</span>
-                  <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
-                    UPI, cards and netbanking via Razorpay
-                  </span>
+            {/* One method, so this states it rather than asking. */}
+            <div className="border-blaze bg-blaze/[0.08] flex items-start gap-3.5 rounded-xl border p-4">
+              <CreditCard className="text-blaze mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
+              <span>
+                <span className="text-bone block text-[14.5px] font-semibold">Pay now</span>
+                <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
+                  UPI, cards and netbanking via Razorpay
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMethod("COD")}
-                aria-pressed={method === "COD"}
-                className={cn(
-                  "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-colors",
-                  method === "COD"
-                    ? "border-blaze bg-blaze/[0.08]"
-                    : "border-white/[0.12] hover:border-white/25",
-                )}
-              >
-                <Banknote
-                  className={cn(
-                    "mt-0.5 size-5 shrink-0",
-                    method === "COD" ? "text-blaze" : "text-dim",
-                  )}
-                  strokeWidth={1.8}
-                />
-                <span>
-                  <span className="text-bone block text-[14.5px] font-semibold">
-                    Cash on delivery
-                  </span>
-                  <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
-                    Adds a <Money value={49} /> handling charge
-                  </span>
-                </span>
-              </button>
+              </span>
             </div>
           </section>
 
@@ -310,11 +253,6 @@ export function CheckoutView() {
           >
             {pending ? (
               "Working…"
-            ) : method === "COD" ? (
-              <>
-                Place order
-                <ArrowRight className="size-4" strokeWidth={2.4} />
-              </>
             ) : (
               <>
                 Pay <Money value={totals.total} />
@@ -332,14 +270,7 @@ export function CheckoutView() {
             </h2>
             <Lines items={items} />
 
-            <div className="bg-void mb-5 flex h-12 items-center rounded-xl border border-white/[0.12] px-4">
-              <Input
-                name="couponCode"
-                placeholder="Discount code"
-                aria-label="Discount code"
-                className="h-auto border-0 bg-transparent px-0 font-mono text-[13px] tracking-[0.08em] uppercase focus:ring-0"
-              />
-            </div>
+            <CouponBox subtotal={totals.subtotal} applied={coupon} onApplied={setCoupon} />
 
             <dl className="flex flex-col gap-3 border-y border-white/10 py-5">
               <div className="flex justify-between text-sm">
@@ -348,11 +279,19 @@ export function CheckoutView() {
                   <Money value={totals.subtotal} />
                 </dd>
               </div>
-              {totals.discount > 0 ? (
+              {coupon && totals.couponOff > 0 ? (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-ash">{coupon.label}</dt>
+                  <dd className="text-acid font-mono">
+                    &minus; <Money value={totals.couponOff} />
+                  </dd>
+                </div>
+              ) : null}
+              {totals.discount - totals.couponOff > 0 ? (
                 <div className="flex justify-between text-sm">
                   <dt className="text-ash">Bundle discount</dt>
                   <dd className="text-acid font-mono">
-                    &minus; <Money value={totals.discount} />
+                    &minus; <Money value={totals.discount - totals.couponOff} />
                   </dd>
                 </div>
               ) : null}
@@ -360,14 +299,6 @@ export function CheckoutView() {
                 <dt className="text-ash">Shipping</dt>
                 <dd className="text-acid font-mono">FREE</dd>
               </div>
-              {totals.codFee > 0 ? (
-                <div className="flex justify-between text-sm">
-                  <dt className="text-ash">COD handling</dt>
-                  <dd className="text-bone font-mono">
-                    <Money value={totals.codFee} />
-                  </dd>
-                </div>
-              ) : null}
             </dl>
 
             <div className="flex items-baseline justify-between pt-5">

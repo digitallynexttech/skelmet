@@ -3,7 +3,12 @@ import { CreditCard, ShieldCheck, Truck } from "lucide-react"
 const ITEMS = [
   { Icon: Truck, tone: "text-ember", title: "Ships in 48 hours", body: "Free, pan-India, tracked" },
   { Icon: ShieldCheck, tone: "text-acid", title: "7-day returns", body: "We pay the pickup" },
-  { Icon: CreditCard, tone: "text-violet", title: "UPI · Cards · COD", body: "Secure checkout" },
+  {
+    Icon: CreditCard,
+    tone: "text-violet",
+    title: "UPI · Cards · Netbanking",
+    body: "Secure checkout",
+  },
 ]
 
 /**
@@ -16,7 +21,7 @@ const ITEMS = [
  */
 export function TrustStrip() {
   return (
-    <div className="grid grid-cols-1 border-b border-white/[0.07] md:grid-cols-3">
+    <div className="grid grid-cols-1 border-y border-white/[0.07] md:grid-cols-3">
       {ITEMS.map(({ Icon, tone, title, body }) => (
         <div
           key={title}

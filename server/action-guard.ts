@@ -34,12 +34,6 @@ export async function requirePermission(scope: Permission): Promise<Session> {
   return session
 }
 
-export async function requireCustomer(): Promise<Session> {
-  const session = await requireSession()
-  if (session.user.kind !== "CUSTOMER") throw new ForbiddenError("Not found.")
-  return session
-}
-
 /** Null instead of a throw, for pages that render differently when signed out. */
 export async function optionalSession(): Promise<Session | null> {
   return auth()

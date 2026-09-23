@@ -13,8 +13,6 @@ export const PERMISSIONS = {
   ORDER_REFUND: "order:refund",
   COUPON_READ: "coupon:read",
   COUPON_WRITE: "coupon:write",
-  REFERRAL_READ: "referral:read",
-  REFERRAL_APPROVE: "referral:approve",
   REVIEW_READ: "review:read",
   REVIEW_MODERATE: "review:moderate",
   INQUIRY_READ: "inquiry:read",
@@ -39,8 +37,6 @@ export const PERMISSION_DEFINITIONS: Array<{
   { scope: PERMISSIONS.ORDER_REFUND, module: "order", label: "Refund orders" },
   { scope: PERMISSIONS.COUPON_READ, module: "coupon", label: "View coupons" },
   { scope: PERMISSIONS.COUPON_WRITE, module: "coupon", label: "Manage coupons" },
-  { scope: PERMISSIONS.REFERRAL_READ, module: "referral", label: "View referrals" },
-  { scope: PERMISSIONS.REFERRAL_APPROVE, module: "referral", label: "Approve payouts" },
   { scope: PERMISSIONS.REVIEW_READ, module: "review", label: "View reviews" },
   { scope: PERMISSIONS.REVIEW_MODERATE, module: "review", label: "Moderate reviews" },
   { scope: PERMISSIONS.INQUIRY_READ, module: "inquiry", label: "View inquiries" },
@@ -91,4 +87,3 @@ export const PAGE_SIZE = 20
 export const FREE_SHIPPING = true
 export const COD_FEE = 49
 export const BUNDLE_DISCOUNT = 299
-export const REFERRAL_REWARD = 250

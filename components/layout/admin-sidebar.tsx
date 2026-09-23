@@ -4,21 +4,9 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import {
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  MessageSquare,
-  Package,
-  Percent,
-  Settings,
-  ShoppingBag,
-  Star,
-  Users,
-  X,
-} from "lucide-react"
+import { LayoutDashboard, LogOut, Menu, MessageSquare, Package, Percent, Settings, ShoppingBag, Star, X } from "lucide-react"
 
-import { SkullMark } from "@/components/shared/skull-mark"
+import { Wordmark } from "@/components/shared/wordmark"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +20,6 @@ const NAV = [
     icon: Percent,
     scope: PERMISSIONS.COUPON_READ,
   },
-  { label: "Referrals", href: "/admin/referrals", icon: Users, scope: PERMISSIONS.REFERRAL_READ },
   { label: "Reviews", href: "/admin/reviews", icon: Star, scope: PERMISSIONS.REVIEW_READ },
   {
     label: "Inquiries",
@@ -62,12 +49,9 @@ export function AdminSidebar({
   const body = (
     <>
       <div className="flex h-[68px] items-center gap-3 border-b border-white/[0.07] px-5">
-        <SkullMark className="size-6" />
-        <div className="min-w-0">
-          <div className="font-display text-bone text-[19px] leading-none tracking-[0.14em]">
-            SKELMET
-          </div>
-          <div className="text-dim mt-1 font-mono text-[9.5px] tracking-[0.16em]">CONSOLE</div>
+        <Wordmark size="sm" />
+        <div className="text-dim border-l border-white/[0.12] pl-3 font-mono text-[9.5px] tracking-[0.16em]">
+          CONSOLE
         </div>
       </div>
 

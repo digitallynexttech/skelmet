@@ -33,7 +33,10 @@ export type CartLine = {
 export type CartTotals = {
   itemCount: number
   subtotal: number
+  /** Bundle and coupon together, which is what the summary shows as one line. */
   discount: number
+  /** The coupon's share of `discount`, so a screen can name it separately. */
+  couponOff: number
   shipping: number
   codFee: number
   total: number
@@ -41,9 +44,17 @@ export type CartTotals = {
 
 type CartState = {
   items: CartLine[]
+  /**
+   * The code accepted on /cart, so checkout can send it without the customer
+   * typing it twice. The value is a claim, never an authority — checkout
+   * re-validates it against the database and re-prices from scratch, so a
+   * hand-edited localStorage entry buys nothing.
+   */
+  couponCode: string | null
   add: (colourway: ColourwayId, qty?: number) => void
   setQty: (id: string, qty: number) => void
   remove: (id: string) => void
+  setCoupon: (code: string | null) => void
   clear: () => void
 }
 
@@ -53,6 +64,7 @@ export const useCart = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      couponCode: null,
 
       add: (colourwayId, qty = 1) =>
         set((state) => {
@@ -96,9 +108,11 @@ export const useCart = create<CartState>()(
 
       remove: (id) => set((state) => ({ items: state.items.filter((line) => line.id !== id) })),
 
-      clear: () => set({ items: [] }),
+      setCoupon: (code) => set({ couponCode: code }),
+
+      clear: () => set({ items: [], couponCode: null }),
     }),
-    { name: "skelmet.cart", version: 1 },
+    { name: "skelmet.cart", version: 2 },
   ),
 )
 
@@ -106,10 +120,26 @@ export const useCart = create<CartState>()(
  * Pure pricing, mirrored by `features/cart/server/cart-pricing.ts` so the server
  * is the authority at checkout and this is only ever a preview.
  */
-export function calculateTotals(items: CartLine[], codSelected = false): CartTotals {
+/**
+ * Mirrors `priceCart` in features/cart/server/cart-pricing.ts deliberately,
+ * including the clamp: the two are the same arithmetic on purpose so the
+ * number on screen matches the one the server charges. This copy is a preview
+ * only — checkout recomputes from the database and can disagree, and when it
+ * does the server wins.
+ */
+export function calculateTotals(
+  items: CartLine[],
+  codSelected = false,
+  couponOff = 0,
+): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
   const subtotal = items.reduce((sum, line) => sum + Number(line.unitPrice) * line.qty, 0)
-  const discount = itemCount >= 2 ? BUNDLE_DISCOUNT : 0
+
+  const bundle = itemCount >= 2 ? BUNDLE_DISCOUNT : 0
+  const coupon = Math.max(0, Math.round(couponOff))
+  // Never past the subtotal, so the two together cannot make an order negative.
+  const discount = Math.min(subtotal, bundle + coupon)
+
   const shipping = 0
   const codFee = codSelected ? COD_FEE : 0
 
@@ -117,6 +147,7 @@ export function calculateTotals(items: CartLine[], codSelected = false): CartTot
     itemCount,
     subtotal,
     discount,
+    couponOff: Math.max(0, discount - bundle),
     shipping,
     codFee,
     total: subtotal - discount + shipping + codFee,

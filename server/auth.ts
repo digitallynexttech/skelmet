@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials"
 
 import { verifyPassword } from "@/lib/crypto"
 import type { Permission } from "@/lib/constants"
+import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { db } from "@/server/db"
 
 /**
@@ -22,10 +23,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(raw) {
+      async authorize(raw, request) {
         const email = typeof raw?.email === "string" ? raw.email.trim().toLowerCase() : ""
         const password = typeof raw?.password === "string" ? raw.password : ""
         if (!email || !password) return null
+
+        // Checkout, coupons and contact were rate-limited; the one endpoint
+        // that trades a guess for an account was not. Keyed on the address
+        // rather than the email so cycling addresses does not reset the
+        // budget, and rateLimit throws a 429 AppError, which Auth.js turns
+        // into the same opaque failure as a wrong password — a blocked
+        // attacker learns nothing a wrong guess would not have told them.
+        try {
+          rateLimit(`login:${clientIp(request.headers)}`, 10, 10 * 60_000)
+        } catch {
+          return null
+        }
 
         // passwordHash is omitted by default in server/db.ts, so opt back in
         // here — the one place it is genuinely needed (§6).

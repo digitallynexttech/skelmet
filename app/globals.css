@@ -234,3 +234,28 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Razorpay's checkout sheet.
+ *
+ * Their container is injected into our document (the payment form itself is a
+ * cross-origin iframe, but the backdrop around it is not), so the blur belongs
+ * here while the colour is passed as theme.backdrop_color — a CSS background
+ * would be overwritten by their own inline style on open.
+ *
+ * Not scoped to a wrapper of ours: the container is appended to <body> and we
+ * never get a handle on it.
+ */
+.razorpay-container {
+  /* Unprefixed only: Lightning CSS adds -webkit- per the browser targets, and
+     writing both made it keep the prefixed one and drop the standard property,
+     which would have left Firefox unblurred. */
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+/* The backdrop is the container's own child div, the one that is not the
+ * iframe. Razorpay sets its background inline, which is what backdrop_color
+ * feeds; all this adds is the transition so the page dims rather than snaps.
+ */
+.razorpay-container > div:not([class]) {
+  transition: background-color 180ms ease-out;
+}

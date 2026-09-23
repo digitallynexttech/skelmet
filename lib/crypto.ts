@@ -44,13 +44,3 @@ export function shortCode(length = 4): string {
 export function orderNumber(now: Date): string {
   return `SKM-${now.getUTCFullYear()}-${shortCode(4)}`
 }
-
-export function referralCode(name: string): string {
-  const base =
-    name
-      .split(/\s+/)[0]
-      ?.toUpperCase()
-      .replace(/[^A-Z]/g, "")
-      .slice(0, 8) || "RIDER"
-  return `${base}-${shortCode(4)}`
-}

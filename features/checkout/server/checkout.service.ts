@@ -9,6 +9,8 @@ import {
   verifyPaymentSignature,
 } from "@/features/checkout/server/payment-gateway"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
+import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
+import { sendMail } from "@/lib/mailer"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
@@ -24,6 +26,21 @@ export type StartedCheckout = {
   gatewayOrderId: string | null
   gatewayKeyId: string | null
   paymentMethod: "ONLINE" | "COD"
+}
+
+/**
+ * True only for a unique-constraint violation on the order number.
+ *
+ * Checked structurally rather than with `instanceof`, so it does not depend on
+ * which Prisma entrypoint happened to construct the error, and narrowed to the
+ * `number` target so a different unique index never silently retries.
+ */
+function isDuplicateNumber(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  if ((err as { code?: unknown }).code !== "P2002") return false
+  const target = (err as { meta?: { target?: unknown } }).meta?.target
+  const fields = Array.isArray(target) ? target.map(String) : [String(target ?? "")]
+  return fields.some((x) => x.includes("number"))
 }
 
 /**
@@ -156,61 +173,84 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // Before the transaction, not after: failing here once the order exists
     // leaves an orphan holding stock nobody can buy.
     if (input.paymentMethod === "ONLINE" && !isGatewayConfigured()) {
-      return fail("Online payment is not configured yet. Try cash on delivery.", undefined, 503)
+      return fail(
+        "Payments are temporarily unavailable. Please try again shortly.",
+        undefined,
+        503,
+      )
     }
 
-    const priced = priceCart(lines, { cod: input.paymentMethod === "COD", couponOff })
-    const number = orderNumber(new Date())
+    // cod stays in priceCart for the orders already placed with it and for
+    // the day it comes back; nothing reaching here can select it now.
+    const priced = priceCart(lines, { cod: false, couponOff })
 
     // ── write the order and claim stock in one transaction ──
-    const order = await db.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          number,
-          paymentMethod: input.paymentMethod,
-          userId: session?.user?.id ?? null,
-          status: "PENDING",
-          email: input.email.toLowerCase(),
-          phone: input.phone,
-          shippingAddress: { ...input.address, giftNote: input.giftNote },
-          subtotal: priced.subtotal,
-          discount: priced.discount,
-          shipping: priced.shipping,
-          tax: 0,
-          total: priced.total,
-          couponId,
-          items: {
-            create: lines.map((l) => ({
-              variantId: l.variant.id,
-              qty: l.qty,
-              unitPrice: l.unitPrice,
-              nameSnapshot: `${l.variant.product.name} · ${l.variant.colourway}`,
-            })),
+    const writeOrder = (number: string) =>
+      db.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            number,
+            paymentMethod: input.paymentMethod,
+            userId: session?.user?.id ?? null,
+            status: "PENDING",
+            email: input.email.toLowerCase(),
+            phone: input.phone,
+            shippingAddress: { ...input.address },
+            subtotal: priced.subtotal,
+            discount: priced.discount,
+            shipping: priced.shipping,
+            tax: 0,
+            total: priced.total,
+            couponId,
+            items: {
+              create: lines.map((l) => ({
+                variantId: l.variant.id,
+                qty: l.qty,
+                unitPrice: l.unitPrice,
+                nameSnapshot: `${l.variant.product.name} · ${l.variant.colourway}`,
+              })),
+            },
           },
-        },
-        select: { id: true, number: true, total: true },
+          select: { id: true, number: true, total: true },
+        })
+
+        // Atomic claim per line — a concurrent order cannot oversell (§5).
+        for (const line of lines) {
+          const claimed = await tx.variant.updateMany({
+            where: { id: line.variant.id, stock: { gte: line.qty } },
+            data: { stock: { decrement: line.qty } },
+          })
+          if (claimed.count === 0) {
+            throw new Error(`OUT_OF_STOCK:${line.variant.sku}`)
+          }
+        }
+
+        if (couponId) {
+          await tx.coupon.update({
+            where: { id: couponId },
+            data: { usedCount: { increment: 1 } },
+          })
+        }
+
+        return created
       })
 
-      // Atomic claim per line — a concurrent order cannot oversell (§5).
-      for (const line of lines) {
-        const claimed = await tx.variant.updateMany({
-          where: { id: line.variant.id, stock: { gte: line.qty } },
-          data: { stock: { decrement: line.qty } },
-        })
-        if (claimed.count === 0) {
-          throw new Error(`OUT_OF_STOCK:${line.variant.sku}`)
-        }
+    // SKM-YYYY-XXXX draws 4 characters from a 32-letter alphabet, so a year's
+    // numbers collide with each other at about a one-in-a-million chance per
+    // pair — rare, and `number` is @unique, so the loser used to get a raw
+    // P2002 rendered as "Something went wrong" after their card was already
+    // charged. A fresh number costs nothing; only a genuine duplicate retries,
+    // and an out-of-stock throw still aborts on the first attempt.
+    let order: Awaited<ReturnType<typeof writeOrder>> | null = null
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        order = await writeOrder(orderNumber(new Date()))
+        break
+      } catch (err) {
+        if (!isDuplicateNumber(err) || attempt === 5) throw err
       }
-
-      if (couponId) {
-        await tx.coupon.update({
-          where: { id: couponId },
-          data: { usedCount: { increment: 1 } },
-        })
-      }
-
-      return created
-    })
+    }
+    if (!order) return fail("Could not place the order just now. Try again.", undefined, 503)
 
     // ── open the gateway order ─────────────────────────────
     //
@@ -259,6 +299,11 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // The one moment we know for certain this browser owns this order.
     await rememberOrder(order.number)
 
+    // No receipt from here any more. With cash on delivery withdrawn, placing
+    // an order is no longer a commitment to anything — an order is real when
+    // its payment clears, so confirmPayment and the webhook own the email.
+    // Sending one here would confirm an abandoned payment page.
+
     return ok({
       orderId: order.id,
       orderNumber: order.number,
@@ -306,10 +351,20 @@ export async function confirmPayment(
 
     const order = await db.order.findUnique({
       where: { id: input.orderId },
-      select: { number: true, status: true },
+      select: {
+        number: true,
+        status: true,
+        email: true,
+        total: true,
+        items: { select: { nameSnapshot: true, qty: true } },
+      },
     })
     if (!order) return fail("Order not found.", undefined, 404)
 
+    // Everything in here hangs off the claim, which is what makes it
+    // exactly-once: this route and the webhook both try to flip PENDING, only
+    // one of them gets a row back, and the loser must not email a second
+    // receipt for the same payment.
     if (claimed.count > 0) {
       await createAuditLog(null, {
         action: "order:paid",
@@ -317,6 +372,15 @@ export async function confirmPayment(
         entityId: input.orderId,
         meta: { gatewayPaymentId: input.gatewayPaymentId },
       })
+
+      const mail = renderOrderConfirmed({
+        number: order.number,
+        email: order.email,
+        total: order.total.toString(),
+        paymentMethod: "ONLINE",
+        items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+      })
+      await sendMail({ to: order.email, ...mail })
     }
 
     return ok({ orderNumber: order.number, status: order.status })
@@ -343,7 +407,7 @@ export async function applyPaymentWebhook(event: {
     if (!payment) return ok({ handled: false })
 
     if (event.event === "payment.captured") {
-      await db.order.updateMany({
+      const claimed = await db.order.updateMany({
         where: { id: payment.orderId, status: "PENDING" },
         data: { status: "PAID", placedAt: new Date() },
       })
@@ -357,6 +421,30 @@ export async function applyPaymentWebhook(event: {
         entityId: payment.orderId,
         meta: { gatewayPaymentId },
       })
+
+      // Only when this delivery is what moved the order. A redelivery, or a
+      // browser that already confirmed, claims nothing and sends nothing.
+      if (claimed.count > 0) {
+        const order = await db.order.findUnique({
+          where: { id: payment.orderId },
+          select: {
+            number: true,
+            email: true,
+            total: true,
+            items: { select: { nameSnapshot: true, qty: true } },
+          },
+        })
+        if (order) {
+          const mail = renderOrderConfirmed({
+            number: order.number,
+            email: order.email,
+            total: order.total.toString(),
+            paymentMethod: "ONLINE",
+            items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+          })
+          await sendMail({ to: order.email, ...mail })
+        }
+      }
       return ok({ handled: true })
     }
 

@@ -318,11 +318,6 @@ export function OrderDetailView({ id }: { id: string }) {
                 {order.phone}
               </a>
             </div>
-            {order.shippingAddress.giftNote ? (
-              <Badge variant="magenta" className="mt-4">
-                Gift, no invoice in box
-              </Badge>
-            ) : null}
           </section>
 
           <section className="rounded-card bg-carbon border border-white/[0.09] p-6">

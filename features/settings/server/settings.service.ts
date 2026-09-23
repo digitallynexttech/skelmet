@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
-import { hashPassword, referralCode } from "@/lib/crypto"
+import { hashPassword } from "@/lib/crypto"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
@@ -132,7 +132,6 @@ export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>>
         passwordHash: await hashPassword(input.password),
         // They chose nothing here, someone else did. Force a change at first login.
         mustChangePassword: true,
-        referralCode: referralCode(input.name),
         roles: { create: input.roleIds.map((roleId) => ({ roleId })) },
       },
       select: STAFF_SELECT,

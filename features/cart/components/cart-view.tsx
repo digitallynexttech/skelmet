@@ -3,13 +3,13 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, Minus, Plus, ShieldCheck, Tag, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Minus, Plus, ShieldCheck, Trash2 } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
-import { Button, ButtonLink } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { ButtonLink } from "@/components/ui/button"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
+import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
@@ -86,6 +86,7 @@ export function CartView() {
   const mounted = useHydrated()
 
   const totals = calculateTotals(items)
+  const [coupon, setCouponApplied] = React.useState<AppliedCoupon | null>(null)
   const missing = COLOURWAYS.filter((c) => !items.some((line) => line.colourway === c.id))
 
   if (!mounted) {
@@ -231,23 +232,11 @@ export function CartView() {
               Order summary
             </h2>
 
-            <form
-              className="bg-void mb-6 flex h-13 items-center gap-2.5 rounded-xl border border-white/[0.12] px-4"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <Tag className="text-ember size-4 shrink-0" strokeWidth={1.8} />
-              <Input
-                placeholder="Discount code"
-                aria-label="Discount code"
-                className="h-auto border-0 bg-transparent px-0 font-mono text-[13px] tracking-[0.08em] focus:ring-0"
-              />
-              <button
-                type="submit"
-                className="text-acid shrink-0 font-mono text-[11.5px] font-bold tracking-[0.12em]"
-              >
-                APPLY
-              </button>
-            </form>
+            <CouponBox
+              subtotal={totals.subtotal}
+              applied={coupon}
+              onApplied={setCouponApplied}
+            />
 
             <dl className="flex flex-col gap-3.5 border-b border-white/10 pb-5">
               <div className="flex justify-between text-[14.5px]">
@@ -256,6 +245,14 @@ export function CartView() {
                   <Money value={totals.subtotal} />
                 </dd>
               </div>
+              {coupon ? (
+                <div className="flex justify-between text-[14.5px]">
+                  <dt className="text-ash">{coupon.label}</dt>
+                  <dd className="text-acid font-mono">
+                    − <Money value={coupon.discount} />
+                  </dd>
+                </div>
+              ) : null}
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-[14.5px]">
                   <dt className="text-ash">Bundle discount</dt>
@@ -278,10 +275,10 @@ export function CartView() {
               />
             </div>
 
-            <Button variant="primary" size="lg" full>
+            <ButtonLink href="/checkout" variant="primary" size="lg" full>
               Checkout
               <ArrowRight className="size-4" strokeWidth={2.4} />
-            </Button>
+            </ButtonLink>
 
             <div className="text-dim flex flex-wrap items-center justify-center gap-3 pt-4 font-mono text-[10.5px] tracking-[0.12em]">
               <span>UPI</span>
@@ -290,7 +287,7 @@ export function CartView() {
               <span aria-hidden>·</span>
               <span>NETBANKING</span>
               <span aria-hidden>·</span>
-              <span>COD</span>
+              <span>Netbanking</span>
             </div>
           </div>
 

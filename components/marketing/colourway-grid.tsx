@@ -6,11 +6,13 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-export function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
-  const product = FLAME_SKULL_MOUNT
+export async function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
+  const live = await getProductBySlug(FLAME_SKULL_MOUNT.slug)
+  const product = live.ok && live.data ? live.data : FLAME_SKULL_MOUNT
 
   return (
     <Section id="colourways">
@@ -81,13 +83,13 @@ export function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-bone font-mono text-[18px] font-bold">
-                    {formatMoney(product.price)}
+                    {formatMoney(c.price)}
                   </span>
                   <span className="text-dim font-mono text-[13px] line-through">
                     {formatMoney(product.compareAtPrice)}
                   </span>
                   <span className="text-acid font-mono text-[11.5px] tracking-[0.08em]">
-                    {discountPercent(product.compareAtPrice, product.price)}% OFF
+                    {discountPercent(product.compareAtPrice, c.price)}% OFF
                   </span>
                 </div>
                 {/* Lifted above the card-wide link so it adds to the cart

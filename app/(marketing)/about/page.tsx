@@ -32,7 +32,7 @@ const WONT_DO = [
   {
     Icon: Ban,
     title: "Fake urgency",
-    body: "No countdown timers that reset when you reload. When we say 12 left in the batch, there are 12 left in the batch.",
+    body: "No countdown timers that reset when you reload. When we say 12 are left, there are 12 left.",
   },
   {
     Icon: Trash2,
@@ -121,16 +121,15 @@ export default function AboutPage() {
           not imported
         </h2>
         <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          Every mount comes off our own printers in {siteConfig.city}. Small batches, hand-checked,
-          packed the same week. Nothing sits in a container for three months and nothing arrives
-          with a mould seam down the middle of its face.
+          Every mount comes off our own printers in {siteConfig.city}, hand-checked and packed
+          the same week. Nothing sits in a container for three months and nothing arrives with a
+          mould seam down the middle of its face.
         </p>
         <p className="text-ash mb-7 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
           It also means we can change things fast. Three of the tweaks in the current version came
           straight out of customer emails.
         </p>
         <div className="flex flex-wrap gap-2.5">
-          <Badge variant="acid">Small batch</Badge>
           <Badge variant="acid">Hand-finished</Badge>
           <Badge variant="acid">Plastic-free packing</Badge>
         </div>

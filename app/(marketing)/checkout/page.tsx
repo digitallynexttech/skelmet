@@ -4,7 +4,7 @@ import { CheckoutView } from "@/features/checkout/components/checkout-view"
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Secure checkout: UPI, cards, netbanking and cash on delivery.",
+  description: "Secure checkout: UPI, cards and netbanking.",
   robots: { index: false, follow: false },
 }
 

@@ -7,9 +7,9 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
 
 export function FaqSection({ index = "13" }: { index?: string } = {}) {
-  // Carbon, like rider-wall. Hiding install-steps and gifting from the
-  // homepage took away two of its three darker bands and left the last three
-  // sections running flat into each other; this puts one back. It is the only
+  // Carbon, like rider-wall. The homepage has only one other darker band, so
+  // without this one its last three sections run flat into each other. It is
+  // also the only
   // section that can take it without losing anything — every other candidate
   // builds its cards out of bg-carbon, which would have dissolved them into
   // the panel behind.
