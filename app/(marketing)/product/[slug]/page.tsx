@@ -57,6 +57,18 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
  * swatch for one frame before switching — which is cheap next to the page
  * being uncacheable.
  */
+/**
+ * Only the slugs generateStaticParams knows are real routes; anything else is
+ * a genuine 404 rather than a 200 carrying a not-found page. notFound() in a
+ * route that still renders unknown params on demand answers HTTP 200, so every
+ * mistyped or dead product URL was telling crawlers the page was fine.
+ *
+ * The catalogue lives in code, so a new product already needs a deploy — this
+ * takes nothing away today. It would need revisiting alongside ISR the day
+ * products come from the database and can appear between builds.
+ */
+export const dynamicParams = false
+
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
   const result = await getProductBySlug(slug)
