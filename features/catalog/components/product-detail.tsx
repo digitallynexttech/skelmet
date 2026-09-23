@@ -113,7 +113,7 @@ export function ProductDetail({
       </div>
 
       {/* ── Buy panel ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-5 xl:max-w-[720px]">
+      <div className="flex flex-col gap-5">
         <div>
           <div className="text-acid mb-3.5 flex items-center gap-2.5 font-mono text-[10px] tracking-[0.18em] uppercase">
             <span className="animate-blink bg-acid size-1.5 rounded-full" />
@@ -184,7 +184,7 @@ export function ProductDetail({
         </div>
 
         {/* qty + add + buy. One row from xl, stacked below it. */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:flex-nowrap">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:flex-nowrap xl:max-w-[720px]">
           <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
             <button
               type="button"
