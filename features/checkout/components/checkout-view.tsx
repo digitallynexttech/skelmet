@@ -163,15 +163,20 @@ export function CheckoutView() {
         </div>
       </details>
 
-      <div className="grid gap-10 px-5 pt-9 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-12 xl:px-14">
+      <div className="flex flex-col gap-6 px-5 pt-9 sm:px-8 lg:flex-row lg:items-end lg:justify-between xl:px-14">
         <div>
           <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
             Step 02 of 03
           </div>
-          <h1 className="font-display text-bone mb-9 text-[42px] leading-[1.0] uppercase sm:text-[56px] xl:text-[66px]">
+          <h1 className="font-display text-bone text-[42px] leading-[1.0] uppercase sm:text-[56px] xl:text-[66px]">
             Where&apos;s it going?
           </h1>
+        </div>
+        <CheckoutSteps current={2} />
+      </div>
 
+      <div className="grid gap-10 px-5 pt-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-12 xl:px-14">
+        <div>
           {/* 1 · contact */}
           <section className="rounded-tile bg-carbon mb-3.5 border border-white/[0.09] p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3.5">
@@ -306,7 +311,6 @@ export function CheckoutView() {
             off screen, and the running total is the thing people check
             while they fill it in. top-[90px] clears the 74px sticky header plus a 16px gap. */}
         <aside className="hidden flex-col gap-3.5 lg:flex lg:sticky lg:top-[90px] lg:self-start lg:max-h-[calc(100dvh-106px)] lg:overflow-y-auto">
-          <CheckoutSteps current={2} className="mb-1" />
           <div className="rounded-card bg-carbon border border-white/10 p-6">
             <h2 className="font-display text-bone mb-5 text-[24px] leading-[1.08] uppercase">
               Your order
