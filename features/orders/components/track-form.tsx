@@ -1,20 +1,43 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowRight, PackageSearch, Truck } from "lucide-react"
+import { AlertTriangle, ArrowRight, Check, Copy, PackageSearch, Truck } from "lucide-react"
 
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import type { TrackedOrder } from "@/features/orders/server/track.service"
-import { apiFetch } from "@/lib/api-fetch"
-import { ApiFetchError } from "@/lib/api-fetch"
+import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import type { OrderStatus } from "@/lib/constants"
 
 /**
  * The lookup this page has always displayed but never performed — the form was
  * markup with no handler, so "Track it" reloaded the page and nothing else.
+ *
+ * Form and result sit side by side once there is room for both: the result is
+ * the thing people came for, and stacking it under a form pushed it below the
+ * fold on the very screens with space to spare.
  */
+
+/** Orders that have left the delivery path. A progress rail would mislead. */
+const OFF_PATH = new Set<OrderStatus>(["CANCELLED", "RETURNED", "REFUNDED"])
+
+const OFF_PATH_NOTE: Partial<Record<OrderStatus, string>> = {
+  CANCELLED:
+    "This order was cancelled. Nothing is on its way, and anything paid goes back to the original method.",
+  RETURNED:
+    "This order came back to us. Once it has been checked in, the refund follows to the original method.",
+  REFUNDED: "This order has been refunded. Banks usually take 5-7 working days to show it.",
+}
+
+function formatFullDay(iso: string | null): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+}
+
 export function TrackForm() {
   const [order, setOrder] = React.useState<TrackedOrder | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -40,7 +63,7 @@ export function TrackForm() {
       // The service answers 404 the same way for a bad number and a bad email,
       // so its message is already the right thing to show.
       setError(
-        err instanceof ApiFetchError ? err.message : "That didn't work. Try again in a moment.",
+        err instanceof ApiFetchError ? err.message : "That did not work. Try again in a moment.",
       )
     } finally {
       setPending(false)
@@ -48,8 +71,11 @@ export function TrackForm() {
   }
 
   return (
-    <div className="max-w-[520px]">
-      <form onSubmit={handleSubmit} className="rounded-card bg-carbon border border-white/10 p-6 sm:p-8">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7"
+      >
         <div className="mb-5 flex items-center gap-3">
           <PackageSearch className="text-ember size-5" strokeWidth={1.8} />
           <span className="text-dim font-mono text-[10.5px] tracking-[0.18em] uppercase">
@@ -62,7 +88,9 @@ export function TrackForm() {
               name="orderNumber"
               required
               placeholder="SKM-2026-0412"
-              className="font-mono tracking-[0.06em]"
+              autoComplete="off"
+              spellCheck={false}
+              className="font-mono tracking-[0.06em] uppercase"
             />
           </Field>
           <Field label="Email on the order">
@@ -72,52 +100,116 @@ export function TrackForm() {
             {pending ? "Looking…" : "Track it"}
             <ArrowRight className="size-4" strokeWidth={2.4} />
           </Button>
+          <p className="text-dim mt-1 text-[12px] leading-[1.5]">
+            Both are on your confirmation email.
+          </p>
         </div>
       </form>
 
-      {error ? (
-        <div className="border-magenta/35 bg-magenta/[0.06] mt-5 flex items-start gap-2.5 rounded-xl border p-4">
-          <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
-          <p className="text-bone text-[13.5px] leading-[1.5]">{error}</p>
-        </div>
+      <div className="min-w-0">
+        {error ? (
+          <div className="border-magenta/35 bg-magenta/[0.06] flex items-start gap-2.5 rounded-xl border p-4">
+            <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
+            <p className="text-bone text-[13.5px] leading-[1.5]">{error}</p>
+          </div>
+        ) : order ? (
+          <OrderResult order={order} />
+        ) : (
+          // Desktop only: on a phone the form already fills the screen, and an
+          // empty box under it is just one more thing to scroll past.
+          <div className="rounded-card hidden place-items-center border border-dashed border-white/[0.09] p-10 lg:grid">
+            <p className="text-dim text-center text-[13.5px] leading-[1.6]">
+              Your order and where it has got to
+              <br />
+              will appear here.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function OrderResult({ order }: { order: TrackedOrder }) {
+  const [copied, setCopied] = React.useState(false)
+  const status = order.status as OrderStatus
+  const placed = formatFullDay(order.placedAt)
+
+  async function copyAwb() {
+    if (!order.awb) return
+    try {
+      await navigator.clipboard.writeText(order.awb)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      // Clipboard is blocked in some in-app browsers. The number is on screen
+      // to read either way, so there is nothing useful to say here.
+    }
+  }
+
+  return (
+    <div className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
+        <span className="font-display text-bone text-[24px] tracking-[0.06em]">{order.number}</span>
+        <StatusBadge status={status} />
+      </div>
+      {placed ? (
+        <p className="text-dim mb-6 text-[12.5px]">
+          Placed {placed} · {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
+        </p>
       ) : null}
 
-      {order ? (
-        <div className="rounded-card bg-carbon mt-5 border border-white/10 p-6 sm:p-8">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <span className="font-display text-bone text-[22px] tracking-[0.06em]">
-              {order.number}
-            </span>
-            <StatusBadge status={order.status as OrderStatus} />
-          </div>
+      <ul className="mb-6 flex flex-col gap-1.5">
+        {order.items.map((item) => (
+          <li key={item.name} className="text-ash text-[14px] leading-[1.5]">
+            <span className="text-dim font-mono text-[12.5px]">{item.qty}×</span> {item.name}
+          </li>
+        ))}
+      </ul>
 
-          <ul className="mb-5 flex flex-col gap-1.5">
-            {order.items.map((item) => (
-              <li key={item.name} className="text-ash text-[14px] leading-[1.5]">
-                {item.qty} × {item.name}
-              </li>
-            ))}
-          </ul>
-
-          {order.courier ? (
-            <div className="flex items-start gap-2.5 border-t border-white/[0.08] pt-5">
-              <Truck className="text-ember mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
-              <p className="text-ash text-[13.5px] leading-[1.5]">
-                <span className="text-bone">{order.courier}</span>
-                {order.awb ? (
-                  <>
-                    {" · "}
-                    <span className="font-mono tracking-[0.04em]">{order.awb}</span>
-                  </>
-                ) : null}
-              </p>
-            </div>
-          ) : (
-            <p className="text-dim border-t border-white/[0.08] pt-5 text-[13.5px] leading-[1.5]">
-              No courier assigned yet. We dispatch within 48 hours of the order.
-            </p>
-          )}
+      {OFF_PATH.has(status) ? (
+        <p className="text-ash border-t border-white/[0.08] pt-5 text-[13.5px] leading-[1.6]">
+          {OFF_PATH_NOTE[status]}
+        </p>
+      ) : (
+        <div className="border-t border-white/[0.08] pt-5">
+          <OrderTimeline
+            status={status}
+            dates={{
+              placedAt: order.placedAt,
+              shippedAt: order.shippedAt,
+              deliveredAt: order.deliveredAt,
+            }}
+          />
         </div>
+      )}
+
+      {order.courier ? (
+        <div className="mt-5 flex items-start gap-2.5 border-t border-white/[0.08] pt-5">
+          <Truck className="text-ember mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
+          <div className="min-w-0 flex-1">
+            <p className="text-bone text-[13.5px] leading-[1.5]">{order.courier}</p>
+            {order.awb ? (
+              <button
+                type="button"
+                onClick={copyAwb}
+                className="text-ash hover:text-bone mt-1 inline-flex items-center gap-1.5 font-mono text-[12.5px] tracking-[0.04em] transition-colors"
+                aria-label={`Copy tracking number ${order.awb}`}
+              >
+                {order.awb}
+                {copied ? (
+                  <Check className="text-ember size-3.5" strokeWidth={2.6} />
+                ) : (
+                  <Copy className="size-3.5 opacity-55" strokeWidth={2} />
+                )}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : !OFF_PATH.has(status) ? (
+        <p className="text-dim mt-5 border-t border-white/[0.08] pt-5 text-[13px] leading-[1.5]">
+          No courier assigned yet. We dispatch within 48 hours of the order.
+        </p>
       ) : null}
     </div>
   )
