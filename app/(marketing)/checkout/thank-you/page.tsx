@@ -5,6 +5,7 @@ import { Section } from "@/components/marketing/section"
 import { SkullStage } from "@/components/marketing/skull-stage"
 import { ButtonLink } from "@/components/ui/button"
 import { getConfirmation, type Confirmation } from "@/features/checkout/server/checkout.service"
+import { formatEta } from "@/lib/delivery"
 import { formatMoney } from "@/lib/money"
 
 export const metadata: Metadata = {
@@ -27,25 +28,6 @@ export const metadata: Metadata = {
  * fallback below, which names no one.
  */
 
-const DELIVERY_DAYS = 6
-
-function etaFrom(iso: string): string {
-  const placed = new Date(iso)
-  // Date.UTC, not new Date(y, m, d): the server runs UTC and local midnight
-  // would shift the date by a day for anyone east or west of it (§6).
-  const eta = new Date(
-    Date.UTC(placed.getUTCFullYear(), placed.getUTCMonth(), placed.getUTCDate() + DELIVERY_DAYS),
-  )
-  return eta
-    .toLocaleDateString("en-IN", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      timeZone: "UTC",
-    })
-    .toUpperCase()
-}
-
 function timelineFor(order: Confirmation) {
   const paid = order.status !== "PENDING"
   return [
@@ -67,7 +49,7 @@ function timelineFor(order: Confirmation) {
     },
     {
       Icon: Home,
-      when: etaFrom(order.placedAt ?? new Date().toISOString()),
+      when: formatEta(order.placedAt ?? new Date().toISOString()),
       title: "On your wall",
       body: "Ten minutes with a drill and the floor is free again.",
       done: order.status === "DELIVERED",
@@ -156,7 +138,7 @@ export default async function ThankYouPage({
                 Arrives by
               </dt>
               <dd className="font-display text-acid text-[20px] leading-[1.12] tracking-[0.04em]">
-                {etaFrom(order.placedAt ?? new Date().toISOString())}
+                {formatEta(order.placedAt ?? new Date().toISOString())}
               </dd>
             </div>
             <div className="flex items-center justify-between px-5 py-4 sm:flex-1 sm:flex-col sm:items-start sm:gap-1.5">

@@ -9,7 +9,9 @@ import { Field, Input } from "@/components/ui/input"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import type { TrackedOrder } from "@/features/orders/server/track.service"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
+import { formatDay, formatEta } from "@/lib/delivery"
 import type { OrderStatus } from "@/lib/constants"
+import { cn } from "@/lib/utils"
 
 /**
  * The lookup this page has always displayed but never performed — the form was
@@ -29,13 +31,6 @@ const OFF_PATH_NOTE: Partial<Record<OrderStatus, string>> = {
   RETURNED:
     "This order came back to us. Once it has been checked in, the refund follows to the original method.",
   REFUNDED: "This order has been refunded. Banks usually take 5-7 working days to show it.",
-}
-
-function formatFullDay(iso: string | null): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 }
 
 export function TrackForm() {
@@ -133,7 +128,15 @@ export function TrackForm() {
 function OrderResult({ order }: { order: TrackedOrder }) {
   const [copied, setCopied] = React.useState(false)
   const status = order.status as OrderStatus
-  const placed = formatFullDay(order.placedAt)
+  const placed = formatDay(order.placedAt)
+
+  const arrival = OFF_PATH.has(order.status as OrderStatus)
+    ? null
+    : order.deliveredAt
+      ? { label: "Delivered on", value: formatDay(order.deliveredAt) ?? "—", done: true }
+      : order.placedAt
+        ? { label: "Arriving by", value: formatEta(order.placedAt), done: false }
+        : null
 
   async function copyAwb() {
     if (!order.awb) return
@@ -154,9 +157,37 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         <StatusBadge status={status} />
       </div>
       {placed ? (
-        <p className="text-dim mb-6 text-[12.5px]">
+        <p className="text-dim mb-5 text-[12.5px]">
           Placed {placed} · {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
         </p>
+      ) : null}
+
+      {/* The date is the question. Delivered orders show the day it actually
+          landed; anything still moving shows the far end of the published
+          window, because quoting the optimistic end turns a normal delivery
+          into a late one. Cancelled and returned orders get neither — there
+          is nothing coming. */}
+      {arrival ? (
+        <div
+          className={cn(
+            "rounded-tile mb-6 flex items-center justify-between gap-3 border px-4 py-3.5",
+            arrival.done
+              ? "border-acid/30 bg-acid/[0.06]"
+              : "border-ember/30 bg-ember/[0.06]",
+          )}
+        >
+          <span className="text-dim font-mono text-[10px] tracking-[0.18em] uppercase">
+            {arrival.label}
+          </span>
+          <span
+            className={cn(
+              "font-mono text-[14px] font-bold tracking-[0.06em]",
+              arrival.done ? "text-acid" : "text-ember",
+            )}
+          >
+            {arrival.value}
+          </span>
+        </div>
       ) : null}
 
       <ul className="mb-6 flex flex-col gap-1.5">
