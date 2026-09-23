@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight, Mail, MapPin } from "lucide-react"
+import { ArrowRight, Mail } from "lucide-react"
 
 import { FaqSection } from "@/components/marketing/faq-section"
 import { Section } from "@/components/marketing/section"
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 }
 
 const HOURS = [
-  { day: "Mon – Fri", time: "10:00 – 19:00" },
+  { day: "Mon – Fri", time: "10:00 – 18:00" },
   { day: "Saturday", time: "11:00 – 16:00" },
   { day: "Sunday", time: "RIDING" },
 ]
@@ -86,23 +86,6 @@ export default function ContactPage() {
               </div>
             </a>
 
-            <div className="rounded-tile bg-carbon border border-white/10 p-6">
-              <div className="mb-3.5 flex items-center gap-3">
-                <MapPin className="text-ember size-5" strokeWidth={1.8} />
-                <span className="font-display text-bone text-[22px] leading-[1.08] uppercase">
-                  The workshop
-                </span>
-              </div>
-              <p className="text-ash mb-3 text-[14.5px] leading-[1.56]">
-                Not a shopfront, but if you&apos;re local and want to see one in person, message
-                first and we&apos;ll sort it.
-              </p>
-              <address className="text-ember text-[14.5px] leading-[1.6] not-italic">
-                {siteConfig.address.line1}
-                <br />
-                {siteConfig.address.city}, {siteConfig.address.pin}
-              </address>
-            </div>
 
             <div className="rounded-tile bg-carbon border border-white/10 p-6">
               <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
