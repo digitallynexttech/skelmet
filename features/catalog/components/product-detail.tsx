@@ -9,7 +9,6 @@ import {
   Minus,
   Package,
   Plus,
-  RotateCcw,
   ShieldCheck,
   Truck,
 } from "lucide-react"
@@ -18,8 +17,8 @@ import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useCart } from "@/features/cart/hooks/use-cart"
+import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -237,21 +236,7 @@ export function ProductDetail({
         </div>
 
         {/* pincode */}
-        <div className="rounded-field bg-carbon flex h-[54px] items-center gap-2.5 border border-white/10 px-4">
-          <RotateCcw className="text-ember size-[17px] shrink-0" strokeWidth={1.7} />
-          <Input
-            placeholder="Enter pincode"
-            inputMode="numeric"
-            aria-label="Delivery pincode"
-            className="h-auto border-0 bg-transparent px-0 font-mono text-[13px] tracking-[0.06em] focus:ring-0"
-          />
-          <button
-            type="button"
-            className="text-acid shrink-0 font-mono text-[11px] font-bold tracking-[0.1em]"
-          >
-            CHECK
-          </button>
-        </div>
+        <PincodeCheck />
 
         {/* trust */}
         <div className="grid grid-cols-2 gap-2.5">
