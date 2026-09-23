@@ -321,7 +321,7 @@ export function SkullCanvas({
       written.transform = ""
     }
     measure()
-    window.addEventListener("resize", measure)
+    window.addEventListener("resize", measure, { passive: true })
     const layout = new ResizeObserver(measure)
     layout.observe(document.body)
     void document.fonts?.ready.then(() => {
@@ -512,14 +512,22 @@ export function SkullCanvas({
       }
     }
 
+    // One retry, once, after a short pause. A dropped connection mid-download
+    // otherwise strands the visitor on the poster for the rest of the session:
+    // the loader has no recovery of its own and nothing else asks again. Two
+    // attempts and then it stays on the poster, which is a finished hero
+    // rather than a failure state, so there is nothing louder to do.
+    let modelAttempt = 0
+    let retryTimer = 0
     const loader = new GLTFLoader()
     // The mesh ships meshopt-compressed (EXT_meshopt_compression), which cut
     // it from 8.9 MB to 1 MB with the triangle count untouched. The decoder is
     // NOT optional: without it the loader rejects the file outright and the
     // hero never gets past its poster.
     loader.setMeshoptDecoder(MeshoptDecoder)
-    loader.load(
-      "/product/skull.glb",
+    const loadModel = () =>
+      loader.load(
+        "/product/skull.glb",
       (gltf) => {
         if (disposed) return
 
@@ -599,14 +607,26 @@ export function SkullCanvas({
       undefined,
       (reason) => {
         if (disposed) return
+        // A dropped connection is the common failure here, not a bad file, so
+        // it is worth asking once more before settling for the poster. After
+        // that it stays on the poster, which is a finished hero rather than an
+        // error state, so there is nothing louder to do.
+        if (modelAttempt < 1) {
+          modelAttempt += 1
+          retryTimer = window.setTimeout(loadModel, 1200)
+          return
+        }
         errorRef.current(reason)
       },
     )
+
+    loadModel()
 
     frame = requestAnimationFrame(loop)
 
     return () => {
       disposed = true
+      window.clearTimeout(retryTimer)
       cancelAnimationFrame(frame)
       observer.disconnect()
       layout.disconnect()

@@ -190,7 +190,7 @@ export function HeroHeadline({ className, children }: { className?: string; chil
     resize.observe(frame)
     // Crossing xl changes the headline's scale, which a ResizeObserver does
     // not see on its own.
-    window.addEventListener("resize", measure)
+    window.addEventListener("resize", measure, { passive: true })
 
     // Only follow the skull while it can be seen.
     const visible = new IntersectionObserver(([entry]) => {
