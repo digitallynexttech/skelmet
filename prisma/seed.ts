@@ -44,23 +44,28 @@ async function main() {
     })
   }
 
-  // ── roles ──────────────────────────────────────────────────
-  const owner = await db.role.upsert({
-    where: { name: "Owner" },
-    create: { name: "Owner", description: "Full access to everything" },
-    update: {},
+  // ── role ───────────────────────────────────────────────────
+  // One role, holding every permission.
+  //
+  // This is not the same thing as UserKind. `kind: STAFF` is what lets
+  // someone reach the console at all, and it is checked in proxy.ts and
+  // requireStaff before any permission is looked at — customers have rows
+  // in this same table and must never pass that gate. The role is only
+  // about what a member of staff may do once inside.
+  //
+  // The grant is derived from the permissions table rather than listed, so
+  // a permission added later is held by Admin the moment it exists and
+  // cannot be forgotten here.
+  const adminRole = await db.role.upsert({
+    where: { name: "Admin" },
+    create: { name: "Admin", description: "Full access to everything" },
+    update: { description: "Full access to everything" },
   })
 
   const allPermissions = await db.permission.findMany({ select: { id: true } })
   await db.rolePermission.createMany({
-    data: allPermissions.map((p) => ({ roleId: owner.id, permissionId: p.id })),
+    data: allPermissions.map((x) => ({ roleId: adminRole.id, permissionId: x.id })),
     skipDuplicates: true,
-  })
-
-  await db.role.upsert({
-    where: { name: "Support" },
-    create: { name: "Support", description: "Orders and inquiries, no settings" },
-    update: {},
   })
 
   // ── catalogue ──────────────────────────────────────────────
@@ -104,7 +109,7 @@ async function main() {
     where: { email },
     create: {
       email,
-      name: "Console Owner",
+      name: "Console Admin",
       kind: "STAFF",
       passwordHash: await hashPassword(password),
     },
@@ -113,8 +118,8 @@ async function main() {
   })
 
   await db.userRole.upsert({
-    where: { userId_roleId: { userId: admin.id, roleId: owner.id } },
-    create: { userId: admin.id, roleId: owner.id },
+    where: { userId_roleId: { userId: admin.id, roleId: adminRole.id } },
+    create: { userId: admin.id, roleId: adminRole.id },
     update: {},
   })
 
