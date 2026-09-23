@@ -4,7 +4,16 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, LogOut, Menu, MessageSquare, Package, Percent, Settings, ShoppingBag, Star, X } from "lucide-react"
+import {
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Package,
+  Percent,
+  ShoppingBag,
+  X,
+} from "lucide-react"
 
 import { Wordmark } from "@/components/shared/wordmark"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
@@ -20,14 +29,12 @@ const NAV = [
     icon: Percent,
     scope: PERMISSIONS.COUPON_READ,
   },
-  { label: "Reviews", href: "/admin/reviews", icon: Star, scope: PERMISSIONS.REVIEW_READ },
   {
     label: "Inquiries",
     href: "/admin/inquiries",
     icon: MessageSquare,
     scope: PERMISSIONS.INQUIRY_READ,
   },
-  { label: "Settings", href: "/admin/settings", icon: Settings, scope: PERMISSIONS.SETTING_READ },
 ] as const
 
 export function AdminSidebar({
@@ -50,9 +57,6 @@ export function AdminSidebar({
     <>
       <div className="flex h-[68px] items-center gap-3 border-b border-white/[0.07] px-5">
         <Wordmark size="sm" />
-        <div className="text-dim border-l border-white/[0.12] pl-3 font-mono text-[9.5px] tracking-[0.16em]">
-          CONSOLE
-        </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
@@ -114,7 +118,7 @@ export function AdminSidebar({
         <Menu className="size-5" strokeWidth={2} />
       </button>
 
-      <aside className="bg-carbon hidden w-[248px] shrink-0 flex-col border-r border-white/[0.07] lg:flex">
+      <aside className="bg-carbon sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-white/[0.07] lg:flex">
         {body}
       </aside>
 
