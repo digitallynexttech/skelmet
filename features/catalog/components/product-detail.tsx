@@ -220,10 +220,10 @@ export function ProductDetail({
           </Button>
 
           <Button
-            variant="ghost"
+            variant="accent"
             size="lg"
             full
-            className="shrink-0 xl:w-auto xl:basis-[220px]"
+            className="min-w-0 flex-1"
             onClick={() => {
               // Add first, then navigate: checkout reads the cart on mount, and
               // arriving before the write lands shows the empty state.
