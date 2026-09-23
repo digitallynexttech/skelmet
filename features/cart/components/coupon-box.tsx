@@ -90,7 +90,7 @@ export function CouponBox({
 
   if (shown) {
     return (
-      <div className="border-acid/35 bg-acid/[0.06] mb-6 flex h-13 items-center gap-2.5 rounded-xl border px-4">
+      <div className="border-acid/35 bg-acid/[0.06] mb-6 flex h-13 items-center gap-2.5 rounded-lg border px-4">
         <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
         <span className="text-bone flex-1 font-mono text-[13px] tracking-[0.08em]">
           {shown.code}
@@ -112,7 +112,7 @@ export function CouponBox({
 
   return (
     <div className="mb-6">
-      <div className="bg-void flex h-13 items-center gap-2.5 rounded-xl border border-white/[0.12] px-4">
+      <div className="bg-void flex h-13 items-center gap-2.5 rounded-lg border border-white/[0.12] px-4">
         <Tag className="text-ember size-4 shrink-0" strokeWidth={1.8} />
         <Input
           value={draft}
@@ -125,7 +125,7 @@ export function CouponBox({
             e.preventDefault()
             void apply()
           }}
-          className="h-auto border-0 bg-transparent px-0 font-mono text-[13px] tracking-[0.08em] focus:ring-0"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-0 font-mono text-[15px] tracking-[0.08em] focus:ring-0"
         />
         <button
           type="button"

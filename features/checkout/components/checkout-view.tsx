@@ -345,9 +345,6 @@ export function CheckoutView() {
               <Money value={totals.total} className="font-display text-bone text-[38px]" />
             </div>
 
-            <p className="text-dim mt-3 text-[12px] leading-[1.5]">
-              Codes and prices are re-checked on the server when you pay.
-            </p>
           </div>
 
           <ul className="rounded-tile bg-carbon flex flex-col gap-3 border border-white/[0.08] p-5">
