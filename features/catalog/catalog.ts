@@ -104,16 +104,15 @@ export const FLAME_SKULL_MOUNT: Product = {
   ],
   specs: [
     { label: "Material", value: "PLA+ · matte" },
-    { label: "Dimensions", value: "[H × W × D mm]", pending: true },
-    { label: "Load rating", value: "[X kg]", pending: true },
-    { label: "Weight", value: "[X g]", pending: true },
-    { label: "Fixings", value: "[4 × screw spec]", pending: true },
+    { label: "Load rating", value: "10 kg" },
+    { label: "Weight", value: "315 g" },
+    { label: "Fixings", value: "3 × screws + wall anchors" },
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
   inTheBox: [
     "Skull mount",
     "Black steel bracket",
-    "4 × screws + wall anchors",
+    "3 × screws + wall anchors",
     "Paper drill template",
   ],
 }

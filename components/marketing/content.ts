@@ -93,7 +93,7 @@ export const INSTALL_STEPS = [
     title: "Tape the template",
     body: "Stick the paper guide at helmet height: eye level works for most walls.",
   },
-  { n: "02", title: "Drill four holes", body: "Anchors are in the box for masonry and drywall." },
+  { n: "02", title: "Drill three holes", body: "Anchors are in the box for masonry and drywall." },
   {
     n: "03",
     title: "Screw the bracket",
