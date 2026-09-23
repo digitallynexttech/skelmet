@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
-import { BUNDLE_DISCOUNT, COD_FEE } from "@/lib/constants"
+import { COD_FEE } from "@/lib/constants"
 
 /**
  * Pricing is the one pure module in the money path, and it is the authority —
@@ -16,15 +16,15 @@ describe("priceCart", () => {
     expect(priceCart([line("3499", 2)]).subtotal).toBe(6998)
   })
 
-  it("gives the bundle discount from two items, not one", () => {
+  it("does not discount for quantity — a coupon is the only reduction", () => {
     expect(priceCart([line("3499", 1)]).discount).toBe(0)
-    expect(priceCart([line("3499", 2)]).discount).toBe(BUNDLE_DISCOUNT)
+    expect(priceCart([line("3499", 2)]).discount).toBe(0)
+    expect(priceCart([line("3499", 5)]).discount).toBe(0)
   })
 
   it("counts quantity across lines, not the number of lines", () => {
-    // Two of one colourway is still a bundle.
     expect(priceCart([line("3499", 2)]).itemCount).toBe(2)
-    expect(priceCart([line("3499", 1), line("3499", 1)]).discount).toBe(BUNDLE_DISCOUNT)
+    expect(priceCart([line("3499", 1), line("3499", 1)]).itemCount).toBe(2)
   })
 
   it("adds the COD fee only when paying on delivery", () => {
@@ -34,14 +34,14 @@ describe("priceCart", () => {
 
   it("totals subtotal minus discount plus the COD fee", () => {
     const p = priceCart([line("3499", 2)], { cod: true })
-    expect(p.total).toBe(6998 - BUNDLE_DISCOUNT + COD_FEE)
-    expect(p.total).toBe(6748)
+    expect(p.total).toBe(6998 + COD_FEE)
+    expect(p.total).toBe(7047)
   })
 
-  it("stacks a coupon on top of the bundle discount", () => {
+  it("applies a coupon and nothing else", () => {
     const p = priceCart([line("3499", 2)], { couponOff: 700 })
-    expect(p.discount).toBe(BUNDLE_DISCOUNT + 700)
-    expect(p.total).toBe(6998 - BUNDLE_DISCOUNT - 700)
+    expect(p.discount).toBe(700)
+    expect(p.total).toBe(6998 - 700)
   })
 
   it("never discounts past the subtotal, so an order cannot go negative", () => {

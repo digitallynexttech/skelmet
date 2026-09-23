@@ -86,4 +86,3 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, "neutral" | "accent" | "su
 export const PAGE_SIZE = 20
 export const FREE_SHIPPING = true
 export const COD_FEE = 49
-export const BUNDLE_DISCOUNT = 299

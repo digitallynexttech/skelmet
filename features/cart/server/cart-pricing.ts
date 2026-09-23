@@ -1,6 +1,6 @@
 import "server-only"
 
-import { BUNDLE_DISCOUNT, COD_FEE } from "@/lib/constants"
+import { COD_FEE } from "@/lib/constants"
 
 /**
  * Pure pricing. The browser's copy in `use-cart.ts` is a preview only — this is
@@ -25,10 +25,10 @@ export function priceCart(
   const itemCount = lines.reduce((n, l) => n + l.qty, 0)
   const subtotal = lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0)
 
-  const bundle = itemCount >= 2 ? BUNDLE_DISCOUNT : 0
   const coupon = Math.max(0, Math.round(opts.couponOff ?? 0))
-  // Never discount below zero, and never let the two stack past the subtotal.
-  const discount = Math.min(subtotal, bundle + coupon)
+  // A coupon is the only discount now; never take it past the subtotal,
+  // which would make an order negative.
+  const discount = Math.min(subtotal, coupon)
 
   const shipping = 0
   const codFee = opts.cod ? COD_FEE : 0

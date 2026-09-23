@@ -4,7 +4,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 import { COLOURWAYS, FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
-import { BUNDLE_DISCOUNT, COD_FEE } from "@/lib/constants"
+import { COD_FEE } from "@/lib/constants"
 
 /**
  * Guest cart.
@@ -33,7 +33,7 @@ export type CartLine = {
 export type CartTotals = {
   itemCount: number
   subtotal: number
-  /** Bundle and coupon together, which is what the summary shows as one line. */
+  /** The coupon's reduction, which is the whole discount now. */
   discount: number
   /** The coupon's share of `discount`, so a screen can name it separately. */
   couponOff: number
@@ -135,10 +135,9 @@ export function calculateTotals(
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
   const subtotal = items.reduce((sum, line) => sum + Number(line.unitPrice) * line.qty, 0)
 
-  const bundle = itemCount >= 2 ? BUNDLE_DISCOUNT : 0
   const coupon = Math.max(0, Math.round(couponOff))
-  // Never past the subtotal, so the two together cannot make an order negative.
-  const discount = Math.min(subtotal, bundle + coupon)
+  // Never past the subtotal, so a coupon cannot make an order negative.
+  const discount = Math.min(subtotal, coupon)
 
   const shipping = 0
   const codFee = codSelected ? COD_FEE : 0
@@ -147,7 +146,7 @@ export function calculateTotals(
     itemCount,
     subtotal,
     discount,
-    couponOff: Math.max(0, discount - bundle),
+    couponOff: discount,
     shipping,
     codFee,
     total: subtotal - discount + shipping + codFee,

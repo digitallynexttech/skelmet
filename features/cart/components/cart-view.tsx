@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowRight, Minus, Plus, ShieldCheck, Trash2 } from "lucide-
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
-import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
@@ -87,7 +86,6 @@ export function CartView() {
 
   const totals = calculateTotals(items)
   const [coupon, setCouponApplied] = React.useState<AppliedCoupon | null>(null)
-  const missing = COLOURWAYS.filter((c) => !items.some((line) => line.colourway === c.id))
 
   if (!mounted) {
     return <div className="min-h-[60vh]" aria-hidden />
@@ -192,29 +190,6 @@ export function CartView() {
             </article>
           ))}
 
-          {/* Upsell: only offers a colourway that isn't already in the cart */}
-          {missing[0] ? (
-            <div className="rounded-card border-acid/35 flex items-center gap-4 border border-dashed bg-[linear-gradient(110deg,rgb(212_255_61_/_0.07),transparent_62%)] p-4 sm:p-6">
-              <div className="bg-void relative size-13 shrink-0 overflow-hidden rounded-xl sm:size-16">
-                <Image src={missing[0].image} alt="" fill sizes="64px" className="object-cover" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-acid mb-1 font-mono text-[9.5px] tracking-[0.16em] uppercase">
-                  Complete the set
-                </div>
-                <div className="text-bone text-[13.5px] leading-snug font-semibold sm:text-[15.5px]">
-                  Add {missing[0].name} and the third one is <Money value={1199} />
-                </div>
-              </div>
-              <AddToCartButton
-                colourway={missing[0].id}
-                label="Add"
-                variant="accent"
-                size="sm"
-                className="shrink-0"
-              />
-            </div>
-          ) : null}
 
           <Link
             href="/product/flame-skull-mount"
@@ -253,14 +228,6 @@ export function CartView() {
                   </dd>
                 </div>
               ) : null}
-              {totals.discount > 0 ? (
-                <div className="flex justify-between text-[14.5px]">
-                  <dt className="text-ash">Bundle discount</dt>
-                  <dd className="text-acid font-mono">
-                    − <Money value={totals.discount} />
-                  </dd>
-                </div>
-              ) : null}
               <div className="flex justify-between text-[14.5px]">
                 <dt className="text-ash">Shipping</dt>
                 <dd className="text-acid font-mono">FREE</dd>
@@ -275,7 +242,7 @@ export function CartView() {
               />
             </div>
 
-            <ButtonLink href="/checkout" variant="primary" size="lg" full>
+            <ButtonLink href="/checkout" variant="primary" size="lg" full className="bg-blaze bg-none shadow-none hover:shadow-none">
               Checkout
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </ButtonLink>
@@ -286,8 +253,6 @@ export function CartView() {
               <span>CARDS</span>
               <span aria-hidden>·</span>
               <span>NETBANKING</span>
-              <span aria-hidden>·</span>
-              <span>Netbanking</span>
             </div>
           </div>
 

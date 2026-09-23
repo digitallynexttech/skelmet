@@ -337,14 +337,6 @@ export function CheckoutView() {
                   </dd>
                 </div>
               ) : null}
-              {totals.discount - totals.couponOff > 0 ? (
-                <div className="flex justify-between text-sm">
-                  <dt className="text-ash">Bundle discount</dt>
-                  <dd className="text-acid font-mono">
-                    &minus; <Money value={totals.discount - totals.couponOff} />
-                  </dd>
-                </div>
-              ) : null}
               <div className="flex justify-between text-sm">
                 <dt className="text-ash">Shipping</dt>
                 <dd className="text-acid font-mono">FREE</dd>
