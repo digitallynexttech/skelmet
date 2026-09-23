@@ -12,8 +12,8 @@ export function Anatomy() {
         <div className="rounded-card bg-carbon overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-16/10">
             <Image
-              src="/product/parts-flatlay.jpg"
-              alt="Everything in the box: the skull with its arm attached, screws, wall anchors, keychain and manual"
+              src="/product/mount-in-hand.jpg"
+              alt="A hand holding the mount: the flame skull with its arm attached in one piece, hooks along the underside and the wall plate at the far end"
               fill
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
