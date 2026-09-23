@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 const TAGS = ["0.2 mm layers", "Matte, not glossy", "Hand-checked"]
 
-export function Texture({ index = "04" }: { index?: string } = {}) {
+export function Texture() {
   return (
     <SplitFeature
       image="/product/detail-flame.jpg"
@@ -13,7 +13,7 @@ export function Texture({ index = "04" }: { index?: string } = {}) {
       reverse
       minHeight="min-h-[360px] lg:min-h-[460px]"
     >
-      <SectionLabel index={index} className="mb-4">
+      <SectionLabel numbered className="mb-4">
         The finish
       </SectionLabel>
       {/* One line at every width, which the design sizes alone cannot promise:

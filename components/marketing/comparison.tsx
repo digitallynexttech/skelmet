@@ -4,10 +4,10 @@ import { COMPARISON_ROWS } from "@/components/marketing/content"
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 
-export function Comparison({ index = "06" }: { index?: string } = {}) {
+export function Comparison() {
   return (
     <Section>
-      <SectionLabel index={index} className="mb-3.5">
+      <SectionLabel numbered className="mb-3.5">
         The alternatives
       </SectionLabel>
       <SectionHeading className="mb-10 sm:mb-12">Or you could keep doing this</SectionHeading>

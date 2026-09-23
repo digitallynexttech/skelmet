@@ -187,6 +187,26 @@
   }
 }
 
+@layer base {
+  /* Section numbering.
+
+     Scoped to <main>, so every page starts at 01 and numbers whatever it
+     actually renders, in document order. Components used to carry their own
+     index, which meant a section knew its position on the homepage and
+     nothing else — the product page showed 03, 04, 05, 07, 06, 10, 09, 13.
+
+     Counters read the live DOM, so commenting a section out renumbers the
+     rest with no other edit, and nothing has to be kept in step by hand. */
+  main {
+    counter-reset: section;
+  }
+
+  [data-section-no]::before {
+    counter-increment: section;
+    content: counter(section, decimal-leading-zero) " / ";
+  }
+}
+
 @layer utilities {
   /* film grain — sits over any positioned container */
   .grain::after {

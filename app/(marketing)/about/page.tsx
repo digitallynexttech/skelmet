@@ -89,7 +89,7 @@ export default function AboutPage() {
         image="/product/lifestyle-room.jpg"
         alt="A SKELMET mount holding a helmet in a rider's room"
       >
-        <SectionLabel index="01" className="mb-4">
+        <SectionLabel numbered className="mb-4">
           The design
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
@@ -112,7 +112,7 @@ export default function AboutPage() {
         alt="Three SKELMET colourways fresh off the print bed"
         reverse
       >
-        <SectionLabel index="02" tone="acid" className="mb-4">
+        <SectionLabel numbered tone="acid" className="mb-4">
           The making
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
@@ -140,7 +140,7 @@ export default function AboutPage() {
       <TrustStrip />
 
       <Section>
-        <SectionLabel index="03" tone="magenta" className="mb-3.5">
+        <SectionLabel numbered tone="magenta" className="mb-3.5">
           Our line in the sand
         </SectionLabel>
         <SectionHeading className="mb-10">What we won&apos;t do</SectionHeading>

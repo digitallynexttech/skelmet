@@ -12,7 +12,7 @@ export function ThePoint() {
       image="/product/lifestyle-concrete.jpg"
       alt="A matte black helmet resting on a SKELMET mount against a concrete wall"
     >
-      <SectionLabel index="02" tone="acid" className="mb-4">
+      <SectionLabel numbered tone="acid" className="mb-4">
         The point
       </SectionLabel>
       <h2 className="font-display text-bone mb-5 text-[42px] leading-[1.0] uppercase sm:text-[56px] xl:text-[72px]">

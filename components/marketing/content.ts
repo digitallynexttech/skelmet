@@ -117,3 +117,39 @@ export const COMPARISON_ROWS = [
   { label: "Holds your gloves", floor: "No", hook: "No", us: "Hook under the jaw" },
   { label: "Looks like", floor: "A mess", hook: "A coat hook", us: "A flaming skull" },
 ]
+
+/**
+ * The case for owning one, in two halves: what goes wrong without it, then
+ * what it does beyond holding a helmet. Copy supplied by the client and kept
+ * verbatim — the only additions are the short kickers on WHY_CARE, which are
+ * drawn from the sentence each one sits above so the list can be scanned.
+ */
+export const WHY_CARE = [
+  {
+    kicker: "The scratches",
+    body: "You buy a top-of-the-line helmet, but it gets scratched because it's placed on a shoe rack or left on the floor.",
+  },
+  {
+    kicker: "The damp liner",
+    body: "The padding soaks up sweat, but it never gets the breathing room to actually dry.",
+  },
+  {
+    kicker: "The shell itself",
+    body: "Stored carelessly, the shell can warp, crack, or weaken; damage you won't notice until it matters most.",
+  },
+]
+
+export const MORE_THAN_MOUNT = [
+  {
+    title: "Your riding gear in one place",
+    body: "Mount your helmet on the skull and store your keys, riding jacket, and riding gloves on the hooks on the mount arm.",
+  },
+  {
+    title: "More than storage",
+    body: "The first thing people notice when they walk into the room; wherever you hang it, it owns the space.",
+  },
+  {
+    title: "Built to protect, not just display",
+    body: "No scratches from the shoe rack, no padding staying damp overnight. It looks good and works well.",
+  },
+]

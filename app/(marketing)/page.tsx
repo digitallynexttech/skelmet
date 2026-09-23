@@ -53,15 +53,15 @@ export default function HomePage() {
           same block is 05 here and 03 on the product page. Commenting a
           section out therefore only means deleting a line and closing the
           numbers up, with no component edited and no other page disturbed. */}
-      <ColourwayGrid index="01" />
-      <Bento index="02" />
-      <Anatomy index="03" />
-      <Texture index="04" />
-      <Comparison index="05" />
-      <RiderWall index="06" />
-      <Reviews index="07" />
-      <FaqSection index="08" />
-      <DropList index="09" />
+      <ColourwayGrid />
+      <Bento />
+      <Anatomy />
+      <Texture />
+      <Comparison />
+      <RiderWall />
+      <Reviews />
+      <FaqSection />
+      <DropList />
 
       {/* Hidden, not deleted — all five still render on other routes and are
           one uncomment away from returning. Put a section back in its place in

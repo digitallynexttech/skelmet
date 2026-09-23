@@ -5,7 +5,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
 
-export function Anatomy({ index = "03" }: { index?: string } = {}) {
+export function Anatomy() {
   return (
     <Section id="build" className="grain">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
@@ -22,7 +22,7 @@ export function Anatomy({ index = "03" }: { index?: string } = {}) {
         </div>
 
         <div>
-          <SectionLabel index={index} className="mb-3.5">
+          <SectionLabel numbered className="mb-3.5">
             The build
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[62px]">

@@ -11,7 +11,9 @@ import { RiderWall } from "@/components/marketing/rider-wall"
 import { Texture } from "@/components/marketing/texture"
 import { TheHook } from "@/components/marketing/the-hook"
 // import { ThePoint } from "@/components/marketing/the-point"
+import { MoreThanMount } from "@/components/marketing/more-than-mount"
 import { TrustStrip } from "@/components/marketing/trust-strip"
+import { WhyCare } from "@/components/marketing/why-care"
 import { StickyBuyBar } from "@/components/layout/sticky-buy-bar"
 import { ProductDetail } from "@/features/catalog/components/product-detail"
 import { PRODUCTS, getProduct } from "@/features/catalog/catalog"
@@ -71,6 +73,8 @@ export default async function ProductPage({
       <TrustStrip />
 
       {/* <ThePoint /> */}
+      <WhyCare />
+      <MoreThanMount />
       <Anatomy />
       <Texture />
       <InstallSteps />

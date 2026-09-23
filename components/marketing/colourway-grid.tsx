@@ -10,7 +10,7 @@ import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-export async function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
+export async function ColourwayGrid() {
   const live = await getProductBySlug(FLAME_SKULL_MOUNT.slug)
   const product = live.ok && live.data ? live.data : FLAME_SKULL_MOUNT
 
@@ -18,7 +18,7 @@ export async function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
     <Section id="colourways">
       <div className="mb-10 flex flex-col gap-5 sm:mb-12 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <SectionLabel index={index} className="mb-3.5">
+          <SectionLabel numbered className="mb-3.5">
             The lineup
           </SectionLabel>
           <SectionHeading>Pick your poison</SectionHeading>

@@ -6,7 +6,7 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
 
-export function FaqSection({ index = "13" }: { index?: string } = {}) {
+export function FaqSection() {
   // Carbon, like rider-wall. The homepage has only one other darker band, so
   // without this one its last three sections run flat into each other. It is
   // also the only
@@ -17,7 +17,7 @@ export function FaqSection({ index = "13" }: { index?: string } = {}) {
     <Section id="faq" className="bg-carbon border-t border-white/[0.07]">
       <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-16">
         <div>
-          <SectionLabel index={index} className="mb-3.5">
+          <SectionLabel numbered className="mb-3.5">
             Questions
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">

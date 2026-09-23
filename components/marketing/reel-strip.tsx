@@ -10,12 +10,12 @@ const CLIPS = [
   { src: "/product/lifestyle-room.jpg", title: "A week later", length: "0:26" },
 ]
 
-export function ReelStrip({ index = "08" }: { index?: string } = {}) {
+export function ReelStrip() {
   return (
     <Section id="reel">
       <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <SectionLabel index={index} tone="violet" className="mb-3.5">
+          <SectionLabel numbered tone="violet" className="mb-3.5">
             In motion
           </SectionLabel>
           <SectionHeading>See it move</SectionHeading>
