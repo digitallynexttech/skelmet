@@ -97,7 +97,7 @@ export const FLAME_SKULL_MOUNT: Product = {
   colourways: COLOURWAYS,
   gallery: [
     { src: "/product/product-front.jpg", alt: "Blaze Orange flame skull mount, front elevation" },
-    { src: "/product/product-profile.jpg", alt: "Side profile showing the cantilever bracket" },
+    { src: "/product/product-profile.jpg", alt: "Side profile showing the mount arm" },
     { src: "/product/lifestyle-concrete.jpg", alt: "A matte black helmet resting on the mount" },
     { src: "/product/lifestyle-gloves.jpg", alt: "Gloves hanging from the hook under the jaw" },
     { src: "/product/detail-flame.jpg", alt: "Macro detail of the carved flame relief" },
@@ -110,10 +110,10 @@ export const FLAME_SKULL_MOUNT: Product = {
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
   inTheBox: [
-    "Skull mount",
-    "Black steel bracket",
+    "Skull mount, arm attached",
     "3 × screws + wall anchors",
-    "Paper drill template",
+    "SKELMET keychain",
+    "Installation manual",
   ],
 }
 

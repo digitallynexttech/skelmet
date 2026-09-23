@@ -90,19 +90,19 @@ export const RATING_BREAKDOWN = [
 export const INSTALL_STEPS = [
   {
     n: "01",
-    title: "Tape the template",
-    body: "Stick the paper guide at helmet height: eye level works for most walls.",
+    title: "Mark the holes",
+    body: "The guide is in the manual. Helmet height: eye level works for most walls.",
   },
   { n: "02", title: "Drill three holes", body: "Anchors are in the box for masonry and drywall." },
   {
     n: "03",
-    title: "Screw the bracket",
-    body: "Snug, not gorilla-tight. Check it sits level before the last quarter turn.",
+    title: "Screw the mount on",
+    body: "Skull and arm are one piece, so it goes up in one go. Snug, not gorilla-tight; check it sits level before the last quarter turn.",
   },
   {
     n: "04",
-    title: "Drop the skull on",
-    body: "Slides onto the arm and locks. Helmet over the top, gloves on the hook.",
+    title: "Hang your gear",
+    body: "Helmet over the skull, keys and gloves on the hooks along the arm.",
   },
 ]
 

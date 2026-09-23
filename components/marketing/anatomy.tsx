@@ -13,7 +13,7 @@ export function Anatomy() {
           <div className="relative aspect-16/10">
             <Image
               src="/product/parts-flatlay.jpg"
-              alt="Everything in the box: skull, bracket, screws, wall anchors and drill template"
+              alt="Everything in the box: the skull with its arm attached, screws, wall anchors, keychain and manual"
               fill
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"

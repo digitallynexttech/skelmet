@@ -624,7 +624,7 @@ const RETURNS: Policy = {
           type: "list",
           items: [
             "Unused and undamaged, with no drill marks or adhesive residue.",
-            "In the original box with the bracket, screws and template.",
+            "In the original box with the screws, keychain and manual.",
             "Test-fitting it against the wall is fine. Drilling and mounting it is not.",
           ],
         },
