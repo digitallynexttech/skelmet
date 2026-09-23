@@ -27,8 +27,10 @@ function Lines({ items }: { items: CartLine[] }) {
     <ul className="mb-5 flex flex-col gap-4">
       {items.map((line) => (
         <li key={line.id} className="flex items-center gap-3.5">
-          <div className="bg-void relative size-14 shrink-0 overflow-hidden rounded-lg">
-            <Image src={line.image} alt="" fill sizes="56px" className="object-cover" />
+          <div className="relative size-14 shrink-0">
+            <div className="bg-void relative size-full overflow-hidden rounded-lg">
+              <Image src={line.image} alt="" fill sizes="56px" className="object-cover" />
+            </div>
             <Badge
               variant="blaze"
               className="absolute -top-1.5 -right-1.5 min-w-5 justify-center rounded-full px-1.5 py-0.5"
@@ -41,6 +43,11 @@ function Lines({ items }: { items: CartLine[] }) {
             <div className="text-dim mt-0.5 font-mono text-[11px] tracking-[0.1em]">
               {line.colourwayName.toUpperCase()}
             </div>
+            {line.qty > 1 ? (
+              <div className="text-ash mt-1 text-[11.5px]">
+                {line.qty} × <Money value={line.unitPrice} />
+              </div>
+            ) : null}
           </div>
           <Money
             value={Number(line.unitPrice) * line.qty}
