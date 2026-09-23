@@ -19,8 +19,13 @@ export function Anatomy() {
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
             />
-            {/* The hero skull lands on the skull in the flatlay on its way down. */}
-            <SkullDock src="/product/parts-flatlay.jpg" sizes="(min-width: 1024px) 55vw, 92vw" />
+            {/* The hero skull lands on the mount on its way down. The shot is a
+                profile facing left, so it lands turned a quarter to match. */}
+            <SkullDock
+              src="/product/mount-assembled.jpg"
+              sizes="(min-width: 1024px) 55vw, 92vw"
+              turn={-Math.PI / 2}
+            />
           </div>
         </div>
 

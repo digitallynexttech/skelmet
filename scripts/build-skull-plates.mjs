@@ -54,7 +54,7 @@ const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
  */
 const SOURCES = [
   { src: "/product/product-front.jpg" },
-  { src: "/product/parts-flatlay.jpg" },
+  { src: "/product/mount-assembled.jpg", spill: { key: 10, reach: 160 } },
   { src: "/product/colourway-lineup.jpg", spill: { key: 10, reach: 160 } },
 ]
 const DOCKS = path.join(ROOT, "components/marketing/skull-docks.json")
@@ -69,6 +69,8 @@ const KEY = 40
 const GROW = 7
 /** Width of the plate's feathered edge beyond the hole, in source pixels. */
 const FEATHER = 16
+/** Luminance gap across a row of the hole past which one side is an object, not set. */
+const CONTRAST = 18
 
 /** Separable square max filter: a dilation by `r` in every direction. */
 function dilate(mask, W, H, r) {
@@ -277,9 +279,19 @@ function fillRows(rgb, hole, W, H) {
       const end = x - 1
       const left = mean(y, start - SAMPLE, start - 1)
       const right = mean(y, end + 1, end + SAMPLE)
-      const l = left ?? right
-      const r = right ?? left
+      let l = left ?? right
+      let r = right ?? left
       if (!l || !r) continue
+      // A span with backdrop on one side and something lit on the other —
+      // the mount's arm running up into the skull — is backdrop: whatever the
+      // skull hid of that object is gone. Blending the two smears a bright
+      // bar across the hole, so the darker side fills it alone.
+      const lumL = 0.299 * l[0] + 0.587 * l[1] + 0.114 * l[2]
+      const lumR = 0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]
+      if (Math.abs(lumL - lumR) > CONTRAST) {
+        if (lumL < lumR) r = l
+        else l = r
+      }
       for (let k = start; k <= end; k++) {
         const t = (k - start + 1) / (end - start + 2)
         const i = y * W + k

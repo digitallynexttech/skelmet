@@ -17,15 +17,23 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  * in as it leaves. On the poster path nothing ever sets it, so the photo shows
  * exactly as it always has.
  *
+ * `turn` is for a photo that shows the skull from an angle: how far it is
+ * turned from facing the camera, in radians, negative to face left. The mesh
+ * lands turned the same way, and is sized by its silhouette at that angle.
+ *
  * Plates and the skull boxes the route docks to come from
  * scripts/build-skull-plates.mjs.
  */
-export function SkullDock({ src, sizes }: { src: string; sizes: string }) {
+export function SkullDock({ src, sizes, turn }: { src: string; sizes: string; turn?: number }) {
   const dock = (DOCKS as Record<string, { plate: string } | undefined>)[src]
   if (!dock) return null
 
   return (
-    <div data-skull-dock={src} className="pointer-events-none absolute inset-0">
+    <div
+      data-skull-dock={src}
+      data-skull-turn={turn}
+      className="pointer-events-none absolute inset-0"
+    >
       <Image
         src={dock.plate}
         alt=""

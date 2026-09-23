@@ -24,18 +24,19 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  */
 
 /**
- * The mesh's silhouette in its canvas box at rest, as shares of the box
- * height: how tall it renders, and how far down its middle sits. Every dock is
- * matched against these, so they are the silhouette as drawn — measured off
- * the render, docked over the flatlay's dark ground — not the model's box.
- *
- * Perspective is why the two differ: the jaw is nearer the camera than the
+ * Where the mesh's silhouette falls in its canvas box: its height as a share
+ * of the box height, and its middle as shares of the box width and height.
+ * Every dock is matched against the silhouette, not the model's box, because
+ * perspective makes the two differ — the jaw is nearer the camera than the
  * crown, so it projects larger and lower. Sized from the bounding box (0.807
- * tall, lifted 1.9%), a docked skull came out a tenth oversize and sat low on
- * its photo.
+ * tall, lifted 1.9%), a docked skull came out a tenth oversize.
+ *
+ * skull-canvas measures the silhouette off the model's own vertices, at
+ * whatever angle a dock turns it to. REST_SILHOUETTE is that measurement
+ * facing the camera, for the frames before the model has loaded.
  */
-export const SILHOUETTE_HEIGHT = 0.893
-export const SILHOUETTE_CENTRE = 0.513
+export type Silhouette = { height: number; centreX: number; centreY: number }
+export const REST_SILHOUETTE: Silhouette = { height: 0.893, centreX: 0.5, centreY: 0.513 }
 
 /** The skull's centre lands when it reaches this share of the viewport height... */
 const ARRIVE = 0.58
@@ -63,6 +64,8 @@ export type Anchor = {
   el: HTMLElement
   /** The hero stage: the skull bobs here, and nothing is clipped. */
   home: boolean
+  /** How far the photographed skull is turned from facing the camera, radians. */
+  turn: number
   /** The photographed skull's centre and height, document px. */
   cx: number
   cy: number
@@ -78,16 +81,22 @@ export type Pose = {
   h: number
   /** Idle bob, 0..1. Off at a photo, so the skull stays seated on its bracket. */
   bob: number
-  /** Extra yaw on top of the follow and drag, radians. */
+  /** Extra yaw on top of the follow and drag, radians: the flight's turn. */
   spin: number
+  /** The dock's own yaw, eased between stops. Unlike spin, it sets the silhouette. */
+  turn: number
   /** The crop to apply, document px, or null for none. */
   clip: Box | null
   /** How far each photo's own skull should be hidden, 0..1. */
   plates: Map<HTMLElement, number>
 }
 
-/** Read every anchor on the page into document coordinates, top to bottom. */
-export function measureAnchors(): Anchor[] {
+/**
+ * Read every anchor on the page into document coordinates, top to bottom.
+ * `rest` is where the silhouette sits facing the camera, which is what puts
+ * the flying box exactly over the hero stage when the skull is home.
+ */
+export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
   const anchors: Anchor[] = []
   const els = document.querySelectorAll<HTMLElement>("[data-skull-home], [data-skull-dock]")
 
@@ -101,9 +110,10 @@ export function measureAnchors(): Anchor[] {
       anchors.push({
         el,
         home: true,
-        cx: left + rect.width / 2,
-        cy: top + rect.height * SILHOUETTE_CENTRE,
-        h: rect.height * SILHOUETTE_HEIGHT,
+        turn: 0,
+        cx: left + rect.width * rest.centreX,
+        cy: top + rect.height * rest.centreY,
+        h: rect.height * rest.height,
         clip: null,
       })
       continue
@@ -120,6 +130,7 @@ export function measureAnchors(): Anchor[] {
     anchors.push({
       el,
       home: false,
+      turn: Number(el.dataset.skullTurn) || 0,
       cx: left + offsetX + ((x0 + x1) / 2) * scale,
       cy: top + offsetY + ((y0 + y1) / 2) * scale,
       h: (y1 - y0) * scale,
@@ -186,6 +197,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
   let h = home.h
   let bob = 1
   let spin = 0
+  let turn = 0
 
   let k = 0
   while (k < anchors.length - 1 && scroll > leave[k]!) k++
@@ -197,6 +209,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     cy = a.cy
     h = a.h
     bob = a.home ? 1 : 0
+    turn = a.turn
   } else {
     const a = anchors[k - 1]!
     const b = anchors[k]!
@@ -219,6 +232,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     // One full turn, in the direction of travel. A multiple of 2π, so it
     // lands facing exactly the way it left.
     spin = (b.cx >= a.cx ? 1 : -1) * Math.PI * 2 * glide
+    turn = lerp(a.turn, b.turn, glide)
   }
 
   const plates = new Map<HTMLElement, number>()
@@ -242,5 +256,5 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     }
   }
 
-  return { cx, cy, h, bob, spin, clip, plates }
+  return { cx, cy, h, bob, spin, turn, clip, plates }
 }

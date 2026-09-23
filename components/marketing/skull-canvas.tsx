@@ -7,6 +7,7 @@ import {
   Box3,
   DirectionalLight,
   Group,
+  Matrix4,
   PCFShadowMap,
   PerspectiveCamera,
   PMREMGenerator,
@@ -25,9 +26,9 @@ import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-int
 import {
   journey,
   measureAnchors,
-  SILHOUETTE_CENTRE,
-  SILHOUETTE_HEIGHT,
+  REST_SILHOUETTE,
   type Anchor,
+  type Silhouette,
 } from "@/components/marketing/skull-journey"
 
 /**
@@ -253,6 +254,51 @@ export function SkullCanvas({
     /** Set once the context is lost: the canvas is blank, so nothing may dock. */
     let failed = false
 
+    // The model's surface, sampled once it loads, in pivot space. The route
+    // sizes the skull by its silhouette, and a dock can turn it side-on, so
+    // the silhouette is measured off these at whatever angle is asked for.
+    let surface: Float32Array | null = null
+    const silhouettes = new Map<number, Silhouette>()
+    const silhouette = (turn: number): Silhouette => {
+      if (!surface || box.height === 0) return REST_SILHOUETTE
+      // Quantised, so a flight easing between two angles reuses its answers.
+      const key = Math.round(turn * 200) / 200
+      const known = silhouettes.get(key)
+      if (known) return known
+
+      const cos = Math.cos(key)
+      const sin = Math.sin(key)
+      const tan = Math.tan((camera.fov * Math.PI) / 360)
+      const aspect = box.width / box.height
+      let minX = Infinity
+      let maxX = -Infinity
+      let minY = Infinity
+      let maxY = -Infinity
+      for (let k = 0; k < surface.length; k += 3) {
+        const x = surface[k]!
+        const y = surface[k + 1]! + OPTICAL_CENTRE_LIFT
+        const z = surface[k + 2]!
+        // Yaw about the pivot, as three applies rotation.y, then the
+        // perspective divide. Out in NDC, where the box spans -1..1.
+        const turnedX = x * cos + z * sin
+        const turnedZ = -x * sin + z * cos
+        const depth = (camera.position.z - turnedZ) * tan
+        const nx = turnedX / (depth * aspect)
+        const ny = y / depth
+        if (nx < minX) minX = nx
+        if (nx > maxX) maxX = nx
+        if (ny < minY) minY = ny
+        if (ny > maxY) maxY = ny
+      }
+      const measured = {
+        height: (maxY - minY) / 2,
+        centreX: (1 + (minX + maxX) / 2) / 2,
+        centreY: (1 - (minY + maxY) / 2) / 2,
+      }
+      silhouettes.set(key, measured)
+      return measured
+    }
+
     // The route. Re-read whenever layout can have moved: a resize, the body
     // changing height as fonts and images settle, the fonts themselves.
     let anchors: Anchor[] = []
@@ -260,7 +306,8 @@ export function SkullCanvas({
     const written = { transform: "", clip: "" }
     const plates = new Map<HTMLElement, number>()
     const measure = () => {
-      anchors = measureAnchors()
+      silhouettes.clear()
+      anchors = measureAnchors(silhouette(0))
       const home = anchors[0]
       const flight = flightRef.current
       if (!home || !flight) return
@@ -326,13 +373,15 @@ export function SkullCanvas({
       const pose = journey(anchors, scroll, vw, vh)
       if (!pose || !flight || box.height === 0) return
 
-      // Put the box where the route says the skull is. Scaled about its top
-      // left, so the translate is simply where that corner lands.
-      const s = pose.h / (SILHOUETTE_HEIGHT * box.height)
+      // Put the box where the route says the skull is, sized so the
+      // silhouette at the dock's angle matches the photographed one. Scaled
+      // about its top left, so the translate is simply where that corner lands.
+      const shape = silhouette(pose.turn)
+      const s = pose.h / (shape.height * box.height)
       const w = box.width * s
       const h = box.height * s
-      const left = pose.cx - w / 2
-      const top = pose.cy - SILHOUETTE_CENTRE * h
+      const left = pose.cx - shape.centreX * w
+      const top = pose.cy - shape.centreY * h
       const transform = `translate3d(${left.toFixed(2)}px, ${top.toFixed(2)}px, 0) scale(${s.toFixed(5)})`
       if (transform !== written.transform) {
         flight.style.transform = transform
@@ -404,7 +453,7 @@ export function SkullCanvas({
       lastCx = pose.cx
 
       pivot.rotation.x = follow.x + i.userRot.x
-      pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y + pose.spin
+      pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y + pose.spin + pose.turn
       pivot.rotation.z = bank
       pivot.position.y =
         OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045 * pose.bob
@@ -516,6 +565,28 @@ export function SkullCanvas({
         lastRot.x = follow.x
         lastRot.y = follow.y
         model = scaled
+
+        // Sample the surface into pivot space for the silhouette. About forty
+        // thousand points pins the outline to well under a pixel, and a new
+        // angle costs a fraction of a millisecond to measure.
+        pivot.updateMatrixWorld(true)
+        const toPivot = new Matrix4().copy(pivot.matrixWorld).invert()
+        const points: number[] = []
+        const point = new Vector3()
+        root.traverse((child) => {
+          const mesh = child as Mesh
+          if (!mesh.isMesh) return
+          const position = mesh.geometry.getAttribute("position")
+          const toLocal = new Matrix4().multiplyMatrices(toPivot, mesh.matrixWorld)
+          const step = Math.max(1, Math.floor(position.count / 40000))
+          for (let k = 0; k < position.count; k += step) {
+            point.fromBufferAttribute(position, k).applyMatrix4(toLocal)
+            points.push(point.x, point.y, point.z)
+          }
+        })
+        surface = Float32Array.from(points)
+        // Home is placed by the silhouette too; now it is known exactly.
+        measure()
 
         readyRef.current()
       },

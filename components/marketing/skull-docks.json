@@ -5,11 +5,11 @@
     "height": 2000,
     "skull": [387, 318, 1221, 1692]
   },
-  "/product/parts-flatlay.jpg": {
-    "plate": "/product/parts-flatlay-plate.webp",
+  "/product/mount-assembled.jpg": {
+    "plate": "/product/mount-assembled-plate.webp",
     "width": 2000,
-    "height": 1116,
-    "skull": [779, 106, 1218, 799]
+    "height": 1120,
+    "skull": [334, 26, 898, 696]
   },
   "/product/colourway-lineup.jpg": {
     "plate": "/product/colourway-lineup-plate.webp",
