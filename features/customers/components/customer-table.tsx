@@ -1,0 +1,137 @@
+"use client"
+
+import * as React from "react"
+import { Search, Users } from "lucide-react"
+
+import { Money } from "@/components/shared/money"
+import { Input } from "@/components/ui/input"
+import type { CustomerRow } from "@/features/customers/server/customers.service"
+import { apiFetch } from "@/lib/api-fetch"
+
+type Payload = {
+  data: CustomerRow[]
+  pagination: { page: number; pageSize: number; total: number; totalPages: number }
+}
+
+/**
+ * Everyone who has ever bought. There are no customer accounts, so these rows
+ * are written by checkout rather than by anyone signing up — which means this
+ * list is the only place the shop's customers exist as people rather than as
+ * a column on an order.
+ */
+export function CustomerTable() {
+  const [rows, setRows] = React.useState<CustomerRow[]>([])
+  const [total, setTotal] = React.useState(0)
+  const [search, setSearch] = React.useState("")
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let cancelled = false
+    // Debounced: the search box hits the database on every keystroke otherwise.
+    const timer = window.setTimeout(async () => {
+      setLoading(true)
+      try {
+        const q = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ""
+        const res = await apiFetch<Payload>(`/api/admin/customers${q}`)
+        if (cancelled) return
+        setRows(res.data)
+        setTotal(res.pagination.total)
+        setError(null)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load customers.")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, search ? 300 : 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [search])
+
+  const day = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"
+
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="text-dim mb-2 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+          Console
+        </div>
+        <h1 className="font-display text-bone mb-1 text-[38px] leading-[1.02] uppercase sm:text-[44px]">
+          Customers
+        </h1>
+        <p className="text-ash text-[14.5px]">
+          {total} {total === 1 ? "person has" : "people have"} bought. No accounts — these are
+          written when an order is placed.
+        </p>
+      </div>
+
+      <div className="rounded-card bg-carbon relative mb-4 flex items-center gap-2.5 border border-white/10 px-4">
+        <Search className="text-dim size-4 shrink-0" strokeWidth={1.9} />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search name, email or phone"
+          className="h-[50px] border-0 bg-transparent px-0 text-[14px] focus:ring-0"
+        />
+      </div>
+
+      {error ? (
+        <div className="border-magenta/35 bg-magenta/[0.06] rounded-card border p-5">
+          <p className="text-bone text-[14px]">{error}</p>
+        </div>
+      ) : loading && rows.length === 0 ? (
+        <div className="rounded-card border border-white/[0.08] p-10 text-center">
+          <p className="text-dim text-[14px]">Loading…</p>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-card grid place-items-center border border-dashed border-white/[0.09] p-12">
+          <Users className="text-dim mb-3 size-6" strokeWidth={1.6} />
+          <p className="text-ash text-[14px]">
+            {search ? "Nobody matches that." : "No customers yet. The first order creates one."}
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-card overflow-hidden border border-white/[0.09]">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left">
+              <thead className="bg-void/40">
+                <tr className="text-dim font-mono text-[10.5px] tracking-[0.14em] uppercase">
+                  <th className="px-5 py-3.5 font-normal">Customer</th>
+                  <th className="px-5 py-3.5 font-normal">Phone</th>
+                  <th className="px-5 py-3.5 font-normal">City</th>
+                  <th className="px-5 py-3.5 text-right font-normal">Orders</th>
+                  <th className="px-5 py-3.5 text-right font-normal">Spent</th>
+                  <th className="px-5 py-3.5 text-right font-normal">Last order</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((c) => (
+                  <tr key={c.id} className="border-t border-white/[0.07]">
+                    <td className="px-5 py-4">
+                      <div className="text-bone text-[14px] font-semibold">{c.name ?? "—"}</div>
+                      <div className="text-dim font-mono text-[11.5px]">{c.email}</div>
+                    </td>
+                    <td className="text-ash px-5 py-4 font-mono text-[12.5px]">{c.phone ?? "—"}</td>
+                    <td className="text-ash px-5 py-4 text-[13.5px]">{c.city ?? "—"}</td>
+                    <td className="text-bone px-5 py-4 text-right font-mono text-[13px]">
+                      {c.orderCount}
+                    </td>
+                    <td className="text-bone px-5 py-4 text-right text-[13.5px]">
+                      <Money value={c.totalSpent} />
+                    </td>
+                    <td className="text-ash px-5 py-4 text-right font-mono text-[12px]">
+                      {day(c.lastOrderAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

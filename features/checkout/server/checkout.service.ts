@@ -8,6 +8,7 @@ import {
   publicKeyId,
   verifyPaymentSignature,
 } from "@/features/checkout/server/payment-gateway"
+import { attachCustomer } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
 import { sendMail } from "@/lib/mailer"
@@ -187,11 +188,23 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // ── write the order and claim stock in one transaction ──
     const writeOrder = (number: string) =>
       db.$transaction(async (tx) => {
+        // Record who bought, before the order row, so it can point at them.
+        // A guest checkout still produces a customer: there is no signup here,
+        // so this is the only moment the shop ever learns who someone is.
+        const customerId = await attachCustomer(tx, {
+          email: input.email,
+          phone: input.phone,
+          address: input.address,
+        })
+
         const created = await tx.order.create({
           data: {
             number,
             paymentMethod: input.paymentMethod,
-            userId: session?.user?.id ?? null,
+            // A signed-in staff id wins when there is one, so an admin placing an
+            // order on someone's behalf still owns it. Otherwise the order points
+            // at the customer record checkout just wrote.
+            userId: session?.user?.id ?? customerId,
             status: "PENDING",
             email: input.email.toLowerCase(),
             phone: input.phone,

@@ -12,6 +12,8 @@ import { Field, Input } from "@/components/ui/input"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
+import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
+import { apiFetch } from "@/lib/api-fetch"
 import { useHydrated } from "@/hooks/use-hydrated"
 
 const PROMISES = [
@@ -56,6 +58,44 @@ export function CheckoutView() {
   const mounted = useHydrated()
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
+  const formRef = React.useRef<HTMLFormElement>(null)
+  const [prefilled, setPrefilled] = React.useState(false)
+
+  // Fill in a returning buyer's details from their last order.
+  //
+  // Authorised entirely by the httpOnly cookie the server reads — nothing
+  // typed here asks for it. An email-triggered lookup would be the obvious
+  // version and cannot be built safely: with no account to sign in to, an
+  // email is not a secret, so it would hand anyone the home address of any
+  // customer whose address they could guess.
+  //
+  // Written straight into the DOM because these inputs are uncontrolled —
+  // defaultValue only applies on mount, and the answer arrives after it.
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const saved = await apiFetch<Prefill | null>("/api/public/checkout/prefill")
+        if (cancelled || !saved || !formRef.current) return
+        const el = formRef.current.elements
+        const set = (nameAttr: string, value: string) => {
+          const field = el.namedItem(nameAttr)
+          // Never overwrite something the visitor has already typed.
+          if (field instanceof HTMLInputElement && !field.value) field.value = value
+        }
+        set("email", saved.email)
+        set("phone", saved.phone)
+        for (const [k, v] of Object.entries(saved.address)) set(k, v)
+        setPrefilled(true)
+      } catch {
+        // No saved order, or the lookup failed. An empty form is the same
+        // outcome as never having ordered, so there is nothing to say.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const totals = calculateTotals(items, false, coupon?.discount ?? 0)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -109,7 +149,7 @@ export function CheckoutView() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="pb-24">
+    <form ref={formRef} onSubmit={handleSubmit} className="pb-24">
       <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 sm:px-8 xl:px-14">
         <Link href="/cart" className="text-ash hover:text-bone text-sm transition-colors">
           &larr; Back to cart
@@ -153,6 +193,16 @@ export function CheckoutView() {
                 Contact
               </h2>
             </div>
+
+            {/* Say where the details came from. Fields that fill themselves are
+                unnerving otherwise, and a stale address that someone did not
+                notice is a parcel sent to the wrong house. */}
+            {prefilled ? (
+              <p className="text-acid mb-5 flex items-start gap-2 text-[12.5px] leading-[1.5]">
+                <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
+                Filled in from your last order on this device. Change anything that has moved.
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Email">
                 <Input

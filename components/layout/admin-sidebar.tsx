@@ -12,6 +12,7 @@ import {
   Package,
   Percent,
   ShoppingBag,
+  Users,
   X,
 } from "lucide-react"
 
@@ -23,6 +24,10 @@ const NAV = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, scope: PERMISSIONS.DASHBOARD_READ },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag, scope: PERMISSIONS.ORDER_READ },
   { label: "Products", href: "/admin/products", icon: Package, scope: PERMISSIONS.PRODUCT_WRITE },
+  // Gated on ORDER_READ, not a scope of its own: a customer list is the
+  // same personal data the orders screen already shows, just grouped by
+  // person, so anyone who can read orders can already see all of it.
+  { label: "Customers", href: "/admin/customers", icon: Users, scope: PERMISSIONS.ORDER_READ },
   {
     label: "Offers & codes",
     href: "/admin/coupons",
