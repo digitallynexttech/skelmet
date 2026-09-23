@@ -21,7 +21,7 @@ import {
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 
-import { getSkullInteraction } from "@/components/marketing/skull-interaction"
+import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-interaction"
 
 /**
  * The hero mesh, driven directly against three.js.
@@ -70,6 +70,20 @@ const OPTICAL_CENTRE_LIFT = 0.06
 
 /** Retina is not worth the fill rate on a mesh this size. */
 const MAX_PIXEL_RATIO = 1.75
+
+/**
+ * The point the headline burns around, in pivot space: up on the cranium,
+ * where the dome crosses the type, and pushed out in front of the face. The
+ * forward push is what makes the burn follow the gaze — turn the skull and the
+ * point swings out to that side, so the letters it faces go hollow first.
+ * HALO_REST in skull-interaction is this point projected at rest; change one
+ * and recompute the other.
+ */
+const HALO_CROWN = 0.45
+const HALO_REACH = 1.1
+/** Flare per radian-per-second of spin, and its ceiling. A hard fling hits it. */
+const HALO_FLARE_GAIN = 0.03
+const HALO_FLARE_MAX = 0.35
 
 export function SkullCanvas({
   active,
@@ -218,6 +232,14 @@ export function SkullCanvas({
 
     const follow = { x: 0, y: 0 }
     let model: Group | null = null
+    /** The model's scaled width and depth, for the halo's silhouette width. */
+    const extent = new Vector3()
+    const haloPoint = new Vector3()
+    const lastRot = { x: 0, y: 0 }
+    let flare = 0
+    // World units visible top to bottom at the pivot's depth — the yardstick
+    // the halo radius is published against.
+    const viewHeight = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360)
 
     const loop = () => {
       frame = requestAnimationFrame(loop)
@@ -253,6 +275,36 @@ export function SkullCanvas({
       pivot.position.y = OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045
 
       renderer.render(scene, camera)
+
+      if (model) {
+        // Tell the headline where to burn. Taken after render so the camera's
+        // matrices are current, and from the pose rather than the bob: the bob
+        // never settles, and following it would repaint four layers of display
+        // type every frame for a drift nobody would read as a response.
+        haloPoint.set(0, HALO_CROWN, HALO_REACH).applyEuler(pivot.rotation)
+        haloPoint.y += OPTICAL_CENTRE_LIFT
+        haloPoint.project(camera)
+
+        // The skull is deeper than it is wide, so its silhouette broadens as it
+        // turns toward profile — and the burn broadens with it. Projected as an
+        // ellipse, which a cranium is close to; the bounding box's own width
+        // swells half as much again at 45° and burnt the whole line away.
+        const yaw = pivot.rotation.y
+        const halfWidth = Math.hypot(Math.cos(yaw) * extent.x, Math.sin(yaw) * extent.z) / 2
+
+        // A flung skull flares the burn, which settles again as it slows.
+        if (d > 0) {
+          const spin = Math.hypot(pivot.rotation.x - lastRot.x, yaw - lastRot.y) / d
+          flare += (Math.min(spin * HALO_FLARE_GAIN, HALO_FLARE_MAX) - flare) * t
+        }
+        lastRot.x = pivot.rotation.x
+        lastRot.y = yaw
+
+        i.halo.x = (haloPoint.x + 1) / 2
+        i.halo.y = (1 - haloPoint.y) / 2
+        i.halo.r = halfWidth / viewHeight
+        i.halo.flare = flare
+      }
     }
 
     const loader = new GLTFLoader()
@@ -305,6 +357,9 @@ export function SkullCanvas({
         scaled.scale.setScalar(scale)
         scaled.add(root)
         pivot.add(scaled)
+        extent.copy(size).multiplyScalar(scale)
+        lastRot.x = pivot.rotation.x
+        lastRot.y = pivot.rotation.y
         model = scaled
 
         readyRef.current()
@@ -323,6 +378,8 @@ export function SkullCanvas({
       cancelAnimationFrame(frame)
       observer.disconnect()
       timer.dispose()
+      // The poster takes over from here, and it sits in the rest pose.
+      Object.assign(getSkullInteraction().halo, HALO_REST)
 
       // three does not walk the graph for you: every geometry, material and
       // texture holds GPU memory until it is told otherwise, and this canvas
