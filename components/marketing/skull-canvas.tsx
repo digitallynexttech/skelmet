@@ -21,6 +21,7 @@ import {
 } from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 
 import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-interaction"
 import {
@@ -512,6 +513,11 @@ export function SkullCanvas({
     }
 
     const loader = new GLTFLoader()
+    // The mesh ships meshopt-compressed (EXT_meshopt_compression), which cut
+    // it from 8.9 MB to 1 MB with the triangle count untouched. The decoder is
+    // NOT optional: without it the loader rejects the file outright and the
+    // hero never gets past its poster.
+    loader.setMeshoptDecoder(MeshoptDecoder)
     loader.load(
       "/product/skull.glb",
       (gltf) => {

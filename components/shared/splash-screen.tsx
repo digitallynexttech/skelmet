@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils"
 /** Brand beat floor, so a warm cache does not flash the splash and vanish. */
 const MIN_HOLD_MS = 1500
 /** Hard ceiling. A stalled font must never trap the visitor behind the curtain. */
-const MAX_HOLD_MS = 4500
+const MAX_HOLD_MS = 2600
 /** Content fade (400ms) then the halves parting (1200ms, starting at 150ms). */
 const EXIT_MS = 1350
 

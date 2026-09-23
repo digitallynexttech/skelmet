@@ -45,6 +45,22 @@ export function ProductDetail({
   const [colourwayId, setColourwayId] = React.useState(
     product.colourways.find((c) => c.id === initialColourway)?.id ?? product.colourways[0]!.id,
   )
+
+  // ?colour= is applied after mount rather than read on the server. Reading it
+  // server-side made the whole route dynamic and uncacheable; useSearchParams()
+  // would do the same by forcing a Suspense boundary. This runs once, only
+  // acts on a colourway that exists, and leaves a direct visit untouched.
+  React.useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("colour")
+    if (!wanted) return
+    const match = product.colourways.find((c) => c.id === wanted)
+    // set-state-in-effect is the right call almost everywhere, but not here:
+    // window.location is not available on the server, so deriving this during
+    // render would make the client's first paint disagree with the server HTML
+    // and trip a hydration mismatch. After mount is the only correct moment.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (match) setColourwayId(match.id)
+  }, [product.colourways])
   const [qty, setQty] = React.useState(1)
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)

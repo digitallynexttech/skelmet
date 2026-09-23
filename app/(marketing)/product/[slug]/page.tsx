@@ -42,15 +42,23 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   }
 }
 
-export default async function ProductPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<Params>
-  searchParams: Promise<{ colour?: string }>
-}) {
+/**
+ * Deliberately does NOT read searchParams.
+ *
+ * Reading it opted the whole route into dynamic rendering, and that one line
+ * cost three separate things: the page answered
+ * `private, no-cache, no-store` so no CDN could ever hold it — on the busiest
+ * page of a shop; it shipped no markup, so crawlers saw an empty shell with no
+ * <h1>; and notFound() in a dynamic route returns HTTP 200, so every dead
+ * product URL told Google it was fine.
+ *
+ * ?colour= is read on the client instead, by the picker that already owns that
+ * state. The cost is that a shared ?colour=ghost link paints the default
+ * swatch for one frame before switching — which is cheap next to the page
+ * being uncacheable.
+ */
+export default async function ProductPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
-  const { colour } = await searchParams
   const result = await getProductBySlug(slug)
   const product = result.ok ? result.data : null
   if (!product) notFound()
@@ -68,7 +76,7 @@ export default async function ProductPage({
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail product={product} initialColourway={colour} />
+      <ProductDetail product={product} />
 
       <TrustStrip />
 
