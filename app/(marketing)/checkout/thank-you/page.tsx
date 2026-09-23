@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import { Check, Home, MapPin, Truck } from "lucide-react"
 
 import { Section } from "@/components/marketing/section"
+import { SkullStage } from "@/components/marketing/skull-stage"
 import { ButtonLink } from "@/components/ui/button"
 import { getConfirmation, type Confirmation } from "@/features/checkout/server/checkout.service"
 import { formatMoney } from "@/lib/money"
@@ -117,36 +117,27 @@ export default async function ThankYouPage({
 
   return (
     <>
-      <div className="grain relative overflow-hidden px-5 py-14 text-center sm:px-8 sm:py-18">
+      <div className="grain relative flex min-h-[calc(100dvh-74px)] flex-col justify-center overflow-hidden px-5 py-10 text-center sm:px-8">
         <div className="animate-bloom absolute top-16 left-1/2 size-[280px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(255_90_31_/_0.34),transparent_66%)] blur-[30px] sm:size-[420px]" />
         <div className="animate-spin-rev border-blaze/30 absolute top-20 left-1/2 size-[260px] -translate-x-1/2 rounded-full border border-dashed sm:size-[388px]" />
 
         <div className="relative z-10 flex flex-col items-center">
-          <div className="relative mb-8 aspect-square w-[180px] sm:w-[240px]">
-            <Image
-              src="/product/hero-skull.jpg"
-              alt="Your SKELMET mount is on the way"
-              fill
-              priority
-              sizes="240px"
-              className="screen animate-drift object-cover"
-            />
+          <div className="relative mb-5 aspect-square w-[168px] shrink-0 sm:w-[210px]">
+            <SkullStage className="size-full" />
           </div>
 
           {/* A cash-on-delivery order has not been paid for, and saying it has
               is the kind of small lie a customer notices at the door. */}
-          <div className="text-acid mb-5 flex items-center gap-2.5 font-mono text-[11px] tracking-[0.2em] uppercase sm:text-[11.5px]">
+          <div className="text-acid mb-4 flex items-center gap-2.5 font-mono text-[11px] tracking-[0.2em] uppercase sm:text-[11.5px]">
             <Check className="size-4" strokeWidth={2.6} />
             {paid ? "Payment confirmed" : "Order confirmed · pay on delivery"}
           </div>
 
-          <h1 className="font-display text-bone mb-5 text-[62px] leading-[1.0] uppercase sm:text-[84px] xl:text-[96px]">
-            You&apos;re
-            <br />
-            <span className="text-blaze">mounted</span>
+          <h1 className="font-display text-bone mb-4 text-[clamp(34px,13vw,96px)] leading-[1.0] whitespace-nowrap uppercase">
+            You&apos;re <span className="text-blaze">mounted</span>
           </h1>
 
-          <p className="text-ash mb-8 max-w-[520px] text-[15.5px] leading-[1.6] text-pretty sm:text-[17.5px]">
+          <p className="text-ash mb-7 max-w-[520px] text-[15px] leading-[1.6] text-pretty sm:text-[16.5px]">
             Order&apos;s in and the printers are already warm. We&apos;ve sent the confirmation to{" "}
             <span className="text-bone">{order.email}</span>, check spam if it&apos;s shy.
           </p>
