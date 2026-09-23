@@ -122,7 +122,7 @@ export function CheckoutView() {
       </div>
 
       <details className="bg-carbon border-b border-white/[0.07] lg:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5">
+        <summary className="flex list-none items-center justify-between px-5 py-3.5">
           <span className="text-bone flex items-center gap-2.5 text-[13.5px]">
             Order summary ({totals.itemCount})
             <ChevronDown className="text-dim size-4" strokeWidth={2} />

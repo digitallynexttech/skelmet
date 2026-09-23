@@ -207,6 +207,27 @@
   }
 }
 
+@layer base {
+  /* Pointer cursors.
+
+     Tailwind v4's Preflight stopped giving <button> the user agent's pointer
+     cursor, so every button on the site read as plain text under the mouse.
+     Restored once here rather than as a utility on each button — which is how
+     the <summary> in checkout-view ended up carrying its own cursor-pointer.
+
+     Disabled controls are excluded on purpose: a pointer on a control that
+     cannot be pressed promises something that will not happen. The quantity
+     stepper hits its limits constantly, so this is not hypothetical. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer utilities {
   /* film grain — sits over any positioned container */
   .grain::after {
