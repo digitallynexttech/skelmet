@@ -4,8 +4,7 @@ import { Check, Home, MapPin, Package, Truck } from "lucide-react"
 
 import { Section } from "@/components/marketing/section"
 import { ButtonLink } from "@/components/ui/button"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
-import { BUNDLE_DISCOUNT } from "@/lib/constants"
+import { getConfirmation, type Confirmation } from "@/features/checkout/server/checkout.service"
 import { formatMoney } from "@/lib/money"
 
 export const metadata: Metadata = {
@@ -14,49 +13,115 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-const TIMELINE = [
-  {
-    Icon: Check,
-    when: "Done · today",
-    title: "Order placed",
-    body: "Payment cleared and your batch slot is reserved.",
-    done: true,
-  },
-  {
-    Icon: Package,
-    when: "Next 48 hrs",
-    title: "Printed & finished",
-    body: "Your skull goes on the bed, gets cleaned up and packed by hand.",
-    done: false,
-  },
-  {
-    Icon: Truck,
-    when: "Day 3",
-    title: "Out for delivery",
-    body: "Tracking link lands in your inbox and on WhatsApp.",
-    done: false,
-  },
-  {
-    Icon: Home,
-    when: "Fri, 3 Sep",
-    title: "On your wall",
-    body: "Ten minutes with a drill and the floor is free again.",
-    done: false,
-  },
-]
-
 /**
- * Sample order values: replaced by the real order once the checkout service
- * and payment webhook are wired up.
+ * Reads the order it is confirming rather than describing a sample one.
+ *
+ * It used to render a hardcoded `SKM-2026-0412` for `rohan.m@example.com`,
+ * which meant the redirect out of checkout carried a real order number in
+ * `?order=` to a page that ignored it and showed every customer the same
+ * stranger's details.
+ *
+ * Authorisation lives in `getConfirmation`, not here: an order number is short
+ * enough to guess, so the service only answers for the browser that placed the
+ * order or the account that owns it. Anything else is a 404 and lands on the
+ * fallback below, which names no one.
  */
-const ORDER = {
-  number: "SKM-2026-0412",
-  eta: "FRI, 3 SEP",
-  total: formatMoney(Number(FLAME_SKULL_MOUNT.price) * 3 - BUNDLE_DISCOUNT),
-  email: "rohan.m@example.com",
+
+const DELIVERY_DAYS = 6
+
+function etaFrom(iso: string): string {
+  const placed = new Date(iso)
+  // Date.UTC, not new Date(y, m, d): the server runs UTC and local midnight
+  // would shift the date by a day for anyone east or west of it (§6).
+  const eta = new Date(
+    Date.UTC(placed.getUTCFullYear(), placed.getUTCMonth(), placed.getUTCDate() + DELIVERY_DAYS),
+  )
+  return eta
+    .toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    })
+    .toUpperCase()
 }
 
-export default function ThankYouPage() {
+function timelineFor(order: Confirmation) {
+  const paid = order.status !== "PENDING"
+  return [
+    {
+      Icon: Check,
+      when: paid ? "Done · today" : "Done · today",
+      title: "Order placed",
+      body: paid
+        ? "Payment cleared and your batch slot is reserved."
+        : "Your batch slot is reserved. You pay the courier on delivery.",
+      done: true,
+    },
+    {
+      Icon: Package,
+      when: "Next 48 hrs",
+      title: "Printed & finished",
+      body: "Your skull goes on the bed, gets cleaned up and packed by hand.",
+      done: order.status === "PACKED" || order.status === "SHIPPED" || order.status === "DELIVERED",
+    },
+    {
+      Icon: Truck,
+      when: "Day 3",
+      title: "Out for delivery",
+      body: "Tracking link lands in your inbox and on WhatsApp.",
+      done: order.status === "SHIPPED" || order.status === "DELIVERED",
+    },
+    {
+      Icon: Home,
+      when: etaFrom(order.placedAt ?? new Date().toISOString()),
+      title: "On your wall",
+      body: "Ten minutes with a drill and the floor is free again.",
+      done: order.status === "DELIVERED",
+    },
+  ]
+}
+
+/** Shown when there is no order to confirm. Deliberately names nobody. */
+function Unknown() {
+  return (
+    <div className="grain relative overflow-hidden px-5 py-20 text-center sm:px-8 sm:py-28">
+      <div className="relative z-10 mx-auto flex max-w-[520px] flex-col items-center">
+        <h1 className="font-display text-bone mb-5 text-[44px] leading-[1.02] uppercase sm:text-[60px]">
+          Nothing to show
+        </h1>
+        <p className="text-ash mb-9 text-[15.5px] leading-[1.6] text-pretty sm:text-[17px]">
+          We can&apos;t find an order for this browser. If you&apos;ve just paid, the confirmation
+          is in your inbox — look it up with your order number and we&apos;ll pull up the status.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <ButtonLink href="/track" variant="light" size="md">
+            <MapPin className="size-4" strokeWidth={2.2} />
+            Track an order
+          </ButtonLink>
+          <ButtonLink href="/product/flame-skull-mount" variant="ghost" size="md">
+            Back to the mount
+          </ButtonLink>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default async function ThankYouPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ order?: string }>
+}) {
+  const { order: requested } = await searchParams
+  const result = requested ? await getConfirmation(requested) : null
+
+  if (!result?.ok) return <Unknown />
+
+  const order = result.data
+  const paid = order.status !== "PENDING"
+  const timeline = timelineFor(order)
+
   return (
     <>
       <div className="grain relative overflow-hidden px-5 py-14 text-center sm:px-8 sm:py-18">
@@ -75,9 +140,11 @@ export default function ThankYouPage() {
             />
           </div>
 
+          {/* A cash-on-delivery order has not been paid for, and saying it has
+              is the kind of small lie a customer notices at the door. */}
           <div className="text-acid mb-5 flex items-center gap-2.5 font-mono text-[11px] tracking-[0.2em] uppercase sm:text-[11.5px]">
             <Check className="size-4" strokeWidth={2.6} />
-            Payment confirmed
+            {paid ? "Payment confirmed" : "Order confirmed · pay on delivery"}
           </div>
 
           <h1 className="font-display text-bone mb-5 text-[62px] leading-[1.0] uppercase sm:text-[84px] xl:text-[96px]">
@@ -88,7 +155,7 @@ export default function ThankYouPage() {
 
           <p className="text-ash mb-8 max-w-[520px] text-[15.5px] leading-[1.6] text-pretty sm:text-[17.5px]">
             Order&apos;s in and the printers are already warm. We&apos;ve sent the confirmation to{" "}
-            <span className="text-bone">{ORDER.email}</span>, check spam if it&apos;s shy.
+            <span className="text-bone">{order.email}</span>, check spam if it&apos;s shy.
           </p>
 
           <dl className="rounded-tile bg-carbon/70 flex w-full max-w-[560px] flex-col overflow-hidden border border-dashed border-white/20 sm:flex-row">
@@ -97,7 +164,7 @@ export default function ThankYouPage() {
                 Order number
               </dt>
               <dd className="font-display text-bone text-[20px] leading-[1.12] tracking-[0.06em]">
-                {ORDER.number}
+                {order.number}
               </dd>
             </div>
             <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4 sm:flex-1 sm:flex-col sm:items-start sm:gap-1.5 sm:border-r sm:border-b-0">
@@ -105,14 +172,16 @@ export default function ThankYouPage() {
                 Arrives by
               </dt>
               <dd className="font-display text-acid text-[20px] leading-[1.12] tracking-[0.04em]">
-                {ORDER.eta}
+                {etaFrom(order.placedAt ?? new Date().toISOString())}
               </dd>
             </div>
             <div className="flex items-center justify-between px-5 py-4 sm:flex-1 sm:flex-col sm:items-start sm:gap-1.5">
               <dt className="text-dim font-mono text-[9.5px] tracking-[0.16em] uppercase">
-                Total paid
+                {paid ? "Total paid" : "Due on delivery"}
               </dt>
-              <dd className="font-display text-bone text-[20px] leading-[1.12]">{ORDER.total}</dd>
+              <dd className="font-display text-bone text-[20px] leading-[1.12]">
+                {formatMoney(order.total)}
+              </dd>
             </div>
           </dl>
         </div>
@@ -124,7 +193,7 @@ export default function ThankYouPage() {
         </h2>
 
         <ol className="flex flex-col gap-0 lg:grid lg:grid-cols-4 lg:gap-6">
-          {TIMELINE.map((step, i) => (
+          {timeline.map((step, i) => (
             <li key={step.title} className="flex gap-4 lg:flex-col lg:gap-0">
               <div className="flex flex-col items-center lg:w-full lg:flex-row">
                 <span
@@ -139,7 +208,7 @@ export default function ThankYouPage() {
                     strokeWidth={step.done ? 2.6 : 1.8}
                   />
                 </span>
-                {i < TIMELINE.length - 1 ? (
+                {i < timeline.length - 1 ? (
                   <span className="my-1.5 w-0.5 flex-1 bg-white/12 lg:my-0 lg:ml-3 lg:h-0.5 lg:w-full lg:flex-none" />
                 ) : null}
               </div>

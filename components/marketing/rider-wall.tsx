@@ -10,12 +10,12 @@ const SHOTS = [
   { src: "/product/lifestyle-garage.jpg", alt: "The mount on a workshop wall" },
 ]
 
-export function RiderWall() {
+export function RiderWall({ index = "09" }: { index?: string } = {}) {
   return (
     <Section className="bg-carbon border-t border-white/[0.07]">
       <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <SectionLabel index="10" tone="magenta" className="mb-3.5">
+          <SectionLabel index={index} tone="magenta" className="mb-3.5">
             Rider wall
           </SectionLabel>
           <SectionHeading>Mounted &amp; posted</SectionHeading>

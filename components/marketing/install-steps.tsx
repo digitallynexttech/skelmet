@@ -5,7 +5,7 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { cn } from "@/lib/utils"
 
-export function InstallSteps() {
+export function InstallSteps({ index = "05" }: { index?: string } = {}) {
   return (
     <Section id="install" className="bg-carbon border-y border-white/[0.07]">
       <div className="grid items-center gap-10 lg:grid-cols-[560px_minmax(0,1fr)] lg:gap-14">
@@ -22,7 +22,7 @@ export function InstallSteps() {
         </div>
 
         <div>
-          <SectionLabel index="06" tone="acid" className="mb-3.5">
+          <SectionLabel index={index} tone="acid" className="mb-3.5">
             Install
           </SectionLabel>
           <h2 className="font-display text-bone mb-8 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">

@@ -5,14 +5,14 @@ import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 
-export function Reviews() {
+export function Reviews({ index = "10" }: { index?: string } = {}) {
   const product = FLAME_SKULL_MOUNT
 
   return (
     <Section id="reviews">
       <div className="grid gap-10 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-14">
         <div>
-          <SectionLabel index="11" className="mb-3.5">
+          <SectionLabel index={index} className="mb-3.5">
             Reviews
           </SectionLabel>
           <h2 className="font-display text-bone mb-6 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">

@@ -14,12 +14,12 @@ import { formatMoney } from "@/lib/money"
  */
 const PAIR_PRICE = Number(FLAME_SKULL_MOUNT.price) * 2 - BUNDLE_DISCOUNT
 
-export function Gifting() {
+export function Gifting({ index = "12" }: { index?: string } = {}) {
   return (
     <Section className="bg-carbon border-t border-white/[0.07]">
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
-          <SectionLabel index="13" tone="magenta" className="mb-3.5">
+          <SectionLabel index={index} tone="magenta" className="mb-3.5">
             Gifting
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[50px] xl:text-[60px]">

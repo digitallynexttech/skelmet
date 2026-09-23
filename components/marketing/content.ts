@@ -18,7 +18,17 @@ export const FAQ_ITEMS = [
   {
     question: "Can I mount it without drilling?",
     answer:
-      "Not reliably, and we would rather say so. A helmet is heavy enough that adhesive strips creep over time. The bracket takes four screws and the anchors are in the box.",
+      "Not recommended; screws provide a solid hold against the wall, which makes the mount able to hold 10 kg. Any other way can compromise the mount and its holding capacity.",
+  },
+  {
+    question: "Can the Skelmet hold jackets or gloves along with the helmet?",
+    answer:
+      "Yes, the mount has hooks on the arm and is made to hold up to 10 kg of weight. You can mount your helmet and store your keys, gloves, and jackets all at once.",
+  },
+  {
+    question: "Does the Skelmet scratch or damage the helmet's paint or visor?",
+    answer:
+      "No. The contact points are smooth and rounded, so the helmet rests on the mount without any scratching or pressure marks.",
   },
   {
     question: "Does the colour fade in sunlight?",

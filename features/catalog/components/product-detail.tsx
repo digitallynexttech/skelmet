@@ -20,6 +20,7 @@ import { Button, ButtonLink } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import type { Product } from "@/features/catalog/catalog"
+import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TRUST = [
@@ -31,8 +32,19 @@ const TRUST = [
 
 const MAX_QTY = 9
 
-export function ProductDetail({ product }: { product: Product }) {
-  const [colourwayId, setColourwayId] = React.useState(product.colourways[0]!.id)
+export function ProductDetail({
+  product,
+  initialColourway,
+}: {
+  product: Product
+  /** From `?colour=` — a lineup card opens this page on the colour clicked. */
+  initialColourway?: string
+}) {
+  // Validated against the catalogue rather than trusted: ?colour=anything
+  // would otherwise leave the page with no selection and no gallery image.
+  const [colourwayId, setColourwayId] = React.useState(
+    product.colourways.find((c) => c.id === initialColourway)?.id ?? product.colourways[0]!.id,
+  )
   const [qty, setQty] = React.useState(1)
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)
@@ -123,7 +135,7 @@ export function ProductDetail({ product }: { product: Product }) {
               className="font-display text-bone text-[38px] leading-[1.04] sm:text-[46px]"
             />
             <Money value={product.compareAtPrice} strike className="text-[17px]" />
-            <Badge variant="solid">Save 25%</Badge>
+            <Badge variant="solid">Save {discountPercent(product.compareAtPrice, product.price)}%</Badge>
           </div>
           <p className="text-dim mt-1.5 text-[12.5px]">
             Inclusive of all taxes · Free shipping pan-India

@@ -6,12 +6,18 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
 
-export function FaqSection() {
+export function FaqSection({ index = "13" }: { index?: string } = {}) {
+  // Carbon, like rider-wall. Hiding install-steps and gifting from the
+  // homepage took away two of its three darker bands and left the last three
+  // sections running flat into each other; this puts one back. It is the only
+  // section that can take it without losing anything — every other candidate
+  // builds its cards out of bg-carbon, which would have dissolved them into
+  // the panel behind.
   return (
-    <Section id="faq">
+    <Section id="faq" className="bg-carbon border-t border-white/[0.07]">
       <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-16">
         <div>
-          <SectionLabel index="15" className="mb-3.5">
+          <SectionLabel index={index} className="mb-3.5">
             Questions
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">

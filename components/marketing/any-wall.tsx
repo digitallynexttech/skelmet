@@ -2,7 +2,7 @@ import Image from "next/image"
 
 import { SectionLabel } from "@/components/shared/section-label"
 
-export function AnyWall() {
+export function AnyWall({ index = "11" }: { index?: string } = {}) {
   return (
     <section className="relative min-h-[420px] overflow-hidden border-t border-white/[0.07] lg:h-[520px]">
       <Image
@@ -14,7 +14,7 @@ export function AnyWall() {
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(7_6_10_/_0.9)_0%,rgb(7_6_10_/_0.75)_60%,rgb(7_6_10_/_0.55)_100%)] lg:bg-[linear-gradient(90deg,rgb(7_6_10_/_0.97)_0%,rgb(7_6_10_/_0.88)_34%,rgb(7_6_10_/_0.1)_68%)]" />
       <div className="relative z-10 flex h-full flex-col justify-center px-5 py-16 sm:px-8 lg:w-[620px] lg:py-0 lg:pl-14">
-        <SectionLabel index="12" tone="acid" className="mb-4">
+        <SectionLabel index={index} tone="acid" className="mb-4">
           Any wall
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[66px]">

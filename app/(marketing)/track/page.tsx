@@ -1,12 +1,10 @@
 import type { Metadata } from "next"
-import { ArrowRight, PackageSearch } from "lucide-react"
 
 import { Section } from "@/components/marketing/section"
 import { TrustStrip } from "@/components/marketing/trust-strip"
+import { TrackForm } from "@/features/orders/components/track-form"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
-import { Button } from "@/components/ui/button"
-import { Field, Input } from "@/components/ui/input"
 
 export const metadata: Metadata = {
   title: "Track your order",
@@ -37,31 +35,7 @@ export default function TrackPage() {
         </div>
 
         <div className="mt-10">
-          <form className="rounded-card bg-carbon max-w-[520px] border border-white/10 p-6 sm:p-8">
-            <div className="mb-5 flex items-center gap-3">
-              <PackageSearch className="text-ember size-5" strokeWidth={1.8} />
-              <span className="text-dim font-mono text-[10.5px] tracking-[0.18em] uppercase">
-                Order lookup
-              </span>
-            </div>
-            <div className="flex flex-col gap-4">
-              <Field label="Order number">
-                <Input
-                  name="orderNumber"
-                  required
-                  placeholder="SKM-2026-0412"
-                  className="font-mono tracking-[0.06em]"
-                />
-              </Field>
-              <Field label="Email on the order">
-                <Input name="email" type="email" required placeholder="you@example.com" />
-              </Field>
-              <Button type="submit" variant="primary" size="md" full className="mt-1">
-                Track it
-                <ArrowRight className="size-4" strokeWidth={2.4} />
-              </Button>
-            </div>
-          </form>
+          <TrackForm />
         </div>
       </Section>
       <TrustStrip />

@@ -8,6 +8,7 @@ import {
   publicKeyId,
   verifyPaymentSignature,
 } from "@/features/checkout/server/payment-gateway"
+import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
@@ -23,6 +24,51 @@ export type StartedCheckout = {
   gatewayOrderId: string | null
   gatewayKeyId: string | null
   paymentMethod: "ONLINE" | "COD"
+}
+
+/**
+ * Gives back everything a committed order took, when its payment could never
+ * be started.
+ *
+ * The status claim goes first and is conditional on PENDING, so two concurrent
+ * releases cannot both restock the same lines — whoever flips it wins and the
+ * loser returns having done nothing. All of it rides one transaction because a
+ * half-undo is worse than none: stock back while the order is still PENDING
+ * would let it be paid for goods that have already been re-sold.
+ */
+async function releaseOrder(input: {
+  orderId: string
+  lines: { variant: { id: string }; qty: number }[]
+  couponId: string | null
+}): Promise<void> {
+  try {
+    await db.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id: input.orderId, status: "PENDING" },
+        data: { status: "CANCELLED" },
+      })
+      if (claimed.count === 0) return
+
+      for (const line of input.lines) {
+        await tx.variant.update({
+          where: { id: line.variant.id },
+          data: { stock: { increment: line.qty } },
+        })
+      }
+
+      if (input.couponId) {
+        await tx.coupon.updateMany({
+          where: { id: input.couponId, usedCount: { gt: 0 } },
+          data: { usedCount: { decrement: 1 } },
+        })
+      }
+    })
+  } catch (err) {
+    // A cleanup that fails must not replace the gateway error the customer is
+    // waiting on. The order stays PENDING and an admin can cancel it, which
+    // restocks down this same path.
+    console.error("[CHECKOUT] release failed for", input.orderId, err)
+  }
 }
 
 /**
@@ -167,24 +213,39 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     })
 
     // ── open the gateway order ─────────────────────────────
+    //
+    // The transaction above has already committed, so a failure here cannot be
+    // rolled back — it has to be compensated. The isGatewayConfigured() check
+    // further up only proves the keys are PRESENT; Razorpay can still refuse
+    // the call itself, and does: rejected credentials answer 401, and an
+    // outage or a dropped connection never answers at all. Every one of those
+    // used to leave exactly the orphan that check was written to prevent — a
+    // PENDING order nobody can pay, sitting on claimed stock and on a coupon
+    // redemption nobody used.
     let gatewayOrderId: string | null = null
     if (input.paymentMethod === "ONLINE") {
-      const gw = await createGatewayOrder({
-        amountRupees: priced.total,
-        receipt: order.number,
-        notes: { orderId: order.id, orderNumber: order.number },
-      })
-      gatewayOrderId = gw.id
+      try {
+        const gw = await createGatewayOrder({
+          amountRupees: priced.total,
+          receipt: order.number,
+          notes: { orderId: order.id, orderNumber: order.number },
+        })
+        gatewayOrderId = gw.id
 
-      await db.payment.create({
-        data: {
-          orderId: order.id,
-          gateway: "razorpay",
-          gatewayOrderId: gw.id,
-          status: "CREATED",
-          amount: priced.total,
-        },
-      })
+        await db.payment.create({
+          data: {
+            orderId: order.id,
+            gateway: "razorpay",
+            gatewayOrderId: gw.id,
+            status: "CREATED",
+            amount: priced.total,
+          },
+        })
+      } catch (err) {
+        console.error("[CHECKOUT] gateway refused, releasing", order.number, err)
+        await releaseOrder({ orderId: order.id, lines, couponId })
+        return fail("Could not start the payment. Try again.", undefined, 502)
+      }
     }
 
     await createAuditLog(session, {
@@ -194,6 +255,9 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       meta: { number: order.number, total: priced.total, method: input.paymentMethod },
       ...(await getAuditMeta()),
     })
+
+    // The one moment we know for certain this browser owns this order.
+    await rememberOrder(order.number)
 
     return ok({
       orderId: order.id,
@@ -297,10 +361,22 @@ export async function applyPaymentWebhook(event: {
     }
 
     if (event.event === "payment.failed") {
-      await db.payment.update({
-        where: { id: payment.id },
+      // Conditional on CREATED, the same way the capture above claims PENDING.
+      //
+      // A customer whose first card is declined and whose second succeeds
+      // generates BOTH events, and Razorpay does not promise the order they
+      // arrive in. An unconditional write here let a late failure land on a
+      // row that had already been captured — flipping a paid order's payment
+      // to FAILED and, worse, overwriting the gatewayPaymentId with the
+      // declined attempt's, which is the id a refund would later resolve by.
+      const claimed = await db.payment.updateMany({
+        where: { id: payment.id, status: "CREATED" },
         data: { status: "FAILED", gatewayPaymentId: gatewayPaymentId ?? null },
       })
+      if (claimed.count === 0) {
+        console.error("[WEBHOOK] ignored a late payment.failed for", payment.orderId)
+        return ok({ handled: false })
+      }
       await createAuditLog(null, {
         action: "payment:failed",
         module: "order",
@@ -310,5 +386,69 @@ export async function applyPaymentWebhook(event: {
     }
 
     return ok({ handled: false })
+  })
+}
+
+export type Confirmation = {
+  number: string
+  email: string
+  total: string
+  status: string
+  paymentMethod: "ONLINE" | "COD"
+  placedAt: string | null
+  itemCount: number
+  items: { name: string; qty: number }[]
+}
+
+/**
+ * The order behind the confirmation screen.
+ *
+ * Authorised by the cookie `placeOrder` set, or by owning the order when
+ * signed in. A wrong number, someone else's number and a number that never
+ * existed all answer the same 404 — anything else turns this into an oracle
+ * for which order numbers are real.
+ */
+export async function getConfirmation(rawNumber: string): Promise<ActionResult<Confirmation>> {
+  return runAction(async () => {
+    if (!hasDatabase()) return fail("Not available.", undefined, 503)
+
+    const number = rawNumber.trim().toUpperCase()
+    if (!number) return fail("Order not found.", undefined, 404)
+
+    const session = await optionalSession()
+    const remembered = await rememberedOrder()
+
+    const order = await db.order.findUnique({
+      where: { number },
+      select: {
+        number: true,
+        email: true,
+        total: true,
+        status: true,
+        paymentMethod: true,
+        placedAt: true,
+        createdAt: true,
+        userId: true,
+        items: { select: { nameSnapshot: true, qty: true } },
+      },
+    })
+
+    if (!order) return fail("Order not found.", undefined, 404)
+
+    const ownsIt =
+      remembered === order.number ||
+      (Boolean(session?.user?.id) && order.userId === session?.user?.id)
+    if (!ownsIt) return fail("Order not found.", undefined, 404)
+
+    return ok({
+      number: order.number,
+      email: order.email,
+      total: order.total.toString(),
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      placedAt: (order.placedAt ?? order.createdAt).toISOString(),
+      itemCount: order.items.reduce((sum, i) => sum + i.qty, 0),
+      items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+    })
   })
 }

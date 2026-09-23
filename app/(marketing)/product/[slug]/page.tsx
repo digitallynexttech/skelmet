@@ -12,7 +12,7 @@ import { RiderWall } from "@/components/marketing/rider-wall"
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { Texture } from "@/components/marketing/texture"
 import { TheHook } from "@/components/marketing/the-hook"
-import { ThePoint } from "@/components/marketing/the-point"
+// import { ThePoint } from "@/components/marketing/the-point"
 import { TrustStrip } from "@/components/marketing/trust-strip"
 import { StickyBuyBar } from "@/components/layout/sticky-buy-bar"
 import { SectionLabel } from "@/components/shared/section-label"
@@ -43,8 +43,15 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   }
 }
 
-export default async function ProductPage({ params }: { params: Promise<Params> }) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>
+  searchParams: Promise<{ colour?: string }>
+}) {
   const { slug } = await params
+  const { colour } = await searchParams
   const product = getProduct(slug)
   if (!product) notFound()
 
@@ -61,7 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail product={product} />
+      <ProductDetail product={product} initialColourway={colour} />
 
       <TrustStrip />
 
@@ -93,7 +100,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         </dl>
       </Section>
 
-      <ThePoint />
+      {/* <ThePoint /> */}
       <Anatomy />
       <Texture />
       <InstallSteps />

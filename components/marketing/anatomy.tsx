@@ -5,7 +5,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
 
-export function Anatomy() {
+export function Anatomy({ index = "03" }: { index?: string } = {}) {
   return (
     <Section id="build" className="grain">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
@@ -22,17 +22,15 @@ export function Anatomy() {
         </div>
 
         <div>
-          <SectionLabel index="03" className="mb-3.5">
+          <SectionLabel index={index} className="mb-3.5">
             The build
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[62px]">
-            Two parts.
-            <br />
-            Zero wobble.
+            Simple yet Solid.
           </h2>
           <p className="text-ash mb-8 max-w-[460px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
-            A cantilever arm takes the load into the wall, the skull cradles the shell from inside,
-            and the notch under the jaw takes your gloves. Everything you need is in the box.
+            The Mount Arm is affixed to the wall with 3 screws. The skull is shaped to fit into any
+            helmet type and size. The Helmet Mount supports up to 10 kg.
           </p>
 
           <dl className="flex flex-col border-t border-white/[0.09]">

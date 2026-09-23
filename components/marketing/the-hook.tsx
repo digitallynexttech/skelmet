@@ -5,7 +5,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 
 const USES = ["Gloves, wet or dry", "Keys and a lanyard", "A jacket, by the collar loop"]
 
-export function TheHook() {
+export function TheHook({ index = "07" }: { index?: string } = {}) {
   return (
     <SplitFeature
       image="/product/lifestyle-gloves.jpg"
@@ -13,7 +13,7 @@ export function TheHook() {
       reverse
       minHeight="min-h-[380px] lg:min-h-[500px]"
     >
-      <SectionLabel index="08" className="mb-4">
+      <SectionLabel index={index} className="mb-4">
         The hook
       </SectionLabel>
       <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[50px] xl:text-[60px]">

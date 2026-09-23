@@ -4,7 +4,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function DropList() {
+export function DropList({ index = "14" }: { index?: string } = {}) {
   return (
     <section className="grid border-t border-white/[0.07] lg:grid-cols-2">
       <div className="relative min-h-[260px] lg:min-h-[380px]">
@@ -17,17 +17,15 @@ export function DropList() {
         />
       </div>
       <div className="bg-carbon flex flex-col justify-center px-5 py-14 sm:px-8 sm:py-16 xl:px-14">
-        <SectionLabel index="16" tone="violet" className="mb-4">
+        <SectionLabel index={index} tone="violet" className="mb-4">
           Next drop
         </SectionLabel>
         <h2 className="font-display text-bone mb-4 text-[34px] leading-[1.04] uppercase sm:text-[44px] xl:text-[50px]">
-          Get first dibs
-          <br />
-          on batch 05
+          Want Some More?
         </h2>
         <p className="text-ash mb-7 max-w-[420px] text-[15px] leading-[1.6] sm:text-[15.5px]">
-          New colourways drop roughly every six weeks and the small ones sell out. One email per
-          drop, nothing else, ever.
+          New designs and colourways are dropping soon, and the good ones sell out fast. Be the
+          first to know.
         </p>
         <form className="flex max-w-[460px] flex-col gap-2.5 sm:flex-row">
           <Input
