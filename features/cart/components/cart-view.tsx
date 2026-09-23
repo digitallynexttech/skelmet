@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Minus, Plus, ShieldCheck, Trash2 } from "lucide-react"
 
+import { CheckoutSteps } from "@/components/shared/checkout-steps"
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
@@ -12,43 +13,6 @@ import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
-
-function Steps({ current }: { current: 1 | 2 | 3 }) {
-  const steps = ["Cart", "Details", "Payment"] as const
-  return (
-    <div className="flex items-center gap-2.5 sm:gap-4">
-      {steps.map((label, i) => {
-        const n = (i + 1) as 1 | 2 | 3
-        const active = n === current
-        return (
-          <React.Fragment key={label}>
-            {i > 0 ? <span className="h-px flex-1 bg-white/15 sm:w-11 sm:flex-none" /> : null}
-            <div className="flex items-center gap-2.5">
-              <span
-                className={
-                  active
-                    ? "bg-blaze text-void flex size-6.5 items-center justify-center rounded-full font-mono text-xs font-bold"
-                    : "text-dim flex size-6.5 items-center justify-center rounded-full border border-white/20 font-mono text-xs"
-                }
-              >
-                {n}
-              </span>
-              <span
-                className={
-                  active
-                    ? "text-bone hidden text-[13.5px] font-semibold tracking-[0.04em] uppercase sm:inline"
-                    : "text-dim hidden text-[13.5px] tracking-[0.04em] uppercase sm:inline"
-                }
-              >
-                {label}
-              </span>
-            </div>
-          </React.Fragment>
-        )
-      })}
-    </div>
-  )
-}
 
 function EmptyCart() {
   return (
@@ -106,7 +70,7 @@ export function CartView() {
             Your stash
           </h1>
         </div>
-        <Steps current={1} />
+        <CheckoutSteps current={1} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">

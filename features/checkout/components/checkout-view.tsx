@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { AlertTriangle, ArrowRight, Check, ChevronDown, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react"
+import { AlertTriangle, ArrowRight, Check, ChevronDown, CreditCard, ShieldCheck, Truck } from "lucide-react"
 
+import { CheckoutSteps } from "@/components/shared/checkout-steps"
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
 import { Button, ButtonLink } from "@/components/ui/button"
@@ -150,17 +150,6 @@ export function CheckoutView() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="pb-24">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 sm:px-8 xl:px-14">
-        <Link href="/cart" className="text-ash hover:text-bone text-sm transition-colors">
-          &larr; Back to cart
-        </Link>
-        <div className="text-acid flex items-center gap-2.5 font-mono text-[11px] tracking-[0.14em] uppercase">
-          <Lock className="size-[15px]" strokeWidth={1.9} />
-          <span className="hidden sm:inline">Secure checkout · 256-bit TLS</span>
-          <span className="sm:hidden">Secure</span>
-        </div>
-      </div>
-
       <details className="bg-carbon border-b border-white/[0.07] lg:hidden">
         <summary className="flex list-none items-center justify-between px-5 py-3.5">
           <span className="text-bone flex items-center gap-2.5 text-[13.5px]">
@@ -313,7 +302,11 @@ export function CheckoutView() {
         </div>
 
         {/* Desktop summary rail */}
-        <aside className="hidden flex-col gap-3.5 lg:flex">
+        {/* Sticky: the form beside this is long enough to scroll the total
+            off screen, and the running total is the thing people check
+            while they fill it in. top-[90px] clears the 74px sticky header plus a 16px gap. */}
+        <aside className="hidden flex-col gap-3.5 lg:flex lg:sticky lg:top-[90px] lg:self-start lg:max-h-[calc(100dvh-106px)] lg:overflow-y-auto">
+          <CheckoutSteps current={2} className="mb-1" />
           <div className="rounded-card bg-carbon border border-white/10 p-6">
             <h2 className="font-display text-bone mb-5 text-[24px] leading-[1.08] uppercase">
               Your order
