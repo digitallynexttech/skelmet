@@ -6,18 +6,22 @@ import { getToken } from "next-auth/jwt"
  *
  * The auth fence and page RBAC. Hiding a nav item is cosmetic; this file and
  * the service guard are the enforcement (§6).
+ *
+ * There is exactly one population behind this fence: staff. Customers do not
+ * get accounts — they buy as guests, get a confirmation email, and look an
+ * order up by number and email at /track, which is public and needs no
+ * session. The /account rules that used to sit here fenced routes that were
+ * never built and now never will be.
  */
 
 type RouteRule = {
   prefix: string
-  kind: "STAFF" | "CUSTOMER"
+  kind: "STAFF"
 }
 
 export const ROUTE_RULES: RouteRule[] = [
   { prefix: "/admin", kind: "STAFF" },
   { prefix: "/api/admin", kind: "STAFF" },
-  { prefix: "/account", kind: "CUSTOMER" },
-  { prefix: "/api/account", kind: "CUSTOMER" },
 ]
 
 const AUTH_READY = Boolean(process.env.AUTH_SECRET)
@@ -73,5 +77,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/account/:path*", "/api/account/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 }

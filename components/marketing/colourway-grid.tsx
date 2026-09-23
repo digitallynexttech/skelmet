@@ -7,23 +7,25 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-export function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
-  const product = FLAME_SKULL_MOUNT
+export async function ColourwayGrid() {
+  const live = await getProductBySlug(FLAME_SKULL_MOUNT.slug)
+  const product = live.ok && live.data ? live.data : FLAME_SKULL_MOUNT
 
   return (
     <Section id="colourways">
       <div className="mb-10 flex flex-col gap-5 sm:mb-12 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <SectionLabel index={index} className="mb-3.5">
+          <SectionLabel numbered className="mb-3.5">
             The lineup
           </SectionLabel>
           <SectionHeading>Pick your poison</SectionHeading>
         </div>
         <p className="text-ash max-w-[340px] text-[15px] leading-[1.6] lg:pb-2 lg:text-right">
-          Same skull, same bracket. Three finishes that read completely differently on a wall.
+          Same skull, same arm. Three finishes that read completely differently on a wall.
         </p>
       </div>
 
@@ -91,13 +93,13 @@ export function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="text-bone font-mono text-[18px] font-bold">
-                    {formatMoney(product.price)}
+                    {formatMoney(c.price)}
                   </span>
                   <span className="text-dim font-mono text-[13px] line-through">
                     {formatMoney(product.compareAtPrice)}
                   </span>
                   <span className="text-acid font-mono text-[11.5px] tracking-[0.08em]">
-                    {discountPercent(product.compareAtPrice, product.price)}% OFF
+                    {discountPercent(product.compareAtPrice, c.price)}% OFF
                   </span>
                 </div>
                 {/* Lifted above the card-wide link so it adds to the cart

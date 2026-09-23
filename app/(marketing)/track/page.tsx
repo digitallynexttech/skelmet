@@ -34,7 +34,7 @@ export default function TrackPage() {
           </div>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-10 max-w-[1020px]">
           <TrackForm />
         </div>
       </Section>

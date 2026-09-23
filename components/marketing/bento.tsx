@@ -10,10 +10,10 @@ import { SectionLabel } from "@/components/shared/section-label"
  * and the accessories band runs the full width underneath. The previous
  * six-tile arrangement left the bottom-right two cells empty.
  */
-export function Bento({ index = "02" }: { index?: string } = {}) {
+export function Bento() {
   return (
     <Section>
-      <SectionLabel index={index} className="mb-3.5">
+      <SectionLabel numbered className="mb-3.5">
         Why it slaps
       </SectionLabel>
       <SectionHeading className="mb-10 sm:mb-12">Made for a Reason.</SectionHeading>

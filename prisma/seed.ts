@@ -8,7 +8,7 @@ import fs from "node:fs"
 
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PERMISSION_DEFINITIONS } from "@/lib/constants"
-import { hashPassword, referralCode } from "@/lib/crypto"
+import { hashPassword } from "@/lib/crypto"
 import { db } from "@/server/db"
 
 async function main() {
@@ -107,7 +107,6 @@ async function main() {
       name: "Console Owner",
       kind: "STAFF",
       passwordHash: await hashPassword(password),
-      referralCode: referralCode("Owner"),
     },
     update: { kind: "STAFF", passwordHash: await hashPassword(password) },
     select: { id: true },

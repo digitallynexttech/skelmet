@@ -20,6 +20,14 @@ export type Colourway = {
   hex: string
   blurb: string
   image: string
+  /**
+   * Wire-shaped money (§5). The registry value is a fallback; the live one is
+   * overlaid from the variant row by the catalogue service, because price is
+   * per variant in the database and an admin can change it without a deploy.
+   */
+  price: string
+  /** Units on hand for this variant. Same overlay, same reason. */
+  stock: number
   inStock: boolean
   bestSeller?: boolean
 }
@@ -33,7 +41,6 @@ export type Product = {
   compareAtPrice: string
   rating: number
   reviewCount: number
-  batch: string
   unitsLeft: number
   colourways: Colourway[]
   gallery: Array<{ src: string; alt: string }>
@@ -49,6 +56,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#FF5A1F",
     blurb: "Bright and Hot, Built to catch eyes",
     image: "/product/product-front.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
     bestSeller: true,
   },
@@ -59,6 +68,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#8A9A5B",
     blurb: "Bold in Presence, Subtle in Colour",
     image: "/product/colourway-olive.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
   },
   {
@@ -68,6 +79,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#C8CED6",
     blurb: "Calm. Cold. Still as stone.",
     image: "/product/colourway-ghost.jpg",
+    price: "3499",
+    stock: 0,
     inStock: true,
   },
 ]
@@ -80,29 +93,27 @@ export const FLAME_SKULL_MOUNT: Product = {
   compareAtPrice: "4999",
   rating: 4.9,
   reviewCount: 312,
-  batch: "04",
   unitsLeft: 12,
   colourways: COLOURWAYS,
   gallery: [
     { src: "/product/product-front.jpg", alt: "Blaze Orange flame skull mount, front elevation" },
-    { src: "/product/product-profile.jpg", alt: "Side profile showing the cantilever bracket" },
+    { src: "/product/product-profile.jpg", alt: "Side profile showing the mount arm" },
     { src: "/product/lifestyle-concrete.jpg", alt: "A matte black helmet resting on the mount" },
     { src: "/product/lifestyle-gloves.jpg", alt: "Gloves hanging from the hook under the jaw" },
     { src: "/product/detail-flame.jpg", alt: "Macro detail of the carved flame relief" },
   ],
   specs: [
     { label: "Material", value: "PLA+ · matte" },
-    { label: "Dimensions", value: "[H × W × D mm]", pending: true },
-    { label: "Load rating", value: "[X kg]", pending: true },
-    { label: "Weight", value: "[X g]", pending: true },
-    { label: "Fixings", value: "[4 × screw spec]", pending: true },
+    { label: "Load rating", value: "10 kg" },
+    { label: "Weight", value: "315 g" },
+    { label: "Fixings", value: "3 × screws + wall anchors" },
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
   inTheBox: [
-    "Skull mount",
-    "Black steel bracket",
-    "4 × screws + wall anchors",
-    "Paper drill template",
+    "Skull mount, arm attached",
+    "3 × screws + wall anchors",
+    "SKELMET keychain",
+    "Installation manual",
   ],
 }
 

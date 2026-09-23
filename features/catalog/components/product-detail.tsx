@@ -2,13 +2,13 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   Check,
   CreditCard,
   Minus,
   Package,
   Plus,
-  RotateCcw,
   ShieldCheck,
   Truck,
 } from "lucide-react"
@@ -16,9 +16,9 @@ import {
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
-import { Button, ButtonLink } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useCart } from "@/features/cart/hooks/use-cart"
+import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -26,8 +26,8 @@ import { cn } from "@/lib/utils"
 const TRUST = [
   { Icon: ShieldCheck, label: "7-day returns" },
   { Icon: Truck, label: "Ships in 48 hrs" },
-  { Icon: Package, label: "Printed to order" },
-  { Icon: CreditCard, label: "UPI · Card · COD" },
+  { Icon: Package, label: "Made in India" },
+  { Icon: CreditCard, label: "UPI · Card · Netbanking" },
 ]
 
 const MAX_QTY = 9
@@ -48,6 +48,7 @@ export function ProductDetail({
   const [qty, setQty] = React.useState(1)
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)
+  const router = useRouter()
 
   const colourway = product.colourways.find((c) => c.id === colourwayId) ?? product.colourways[0]!
 
@@ -62,35 +63,36 @@ export function ProductDetail({
   )
   const active = gallery[Math.min(shot, gallery.length - 1)]!
 
-  const lineTotal = Number(product.price) * qty
+  const lineTotal = Number(colourway.price) * qty
 
   return (
-    <div className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_480px] lg:gap-14 lg:py-10 xl:grid-cols-[minmax(0,1fr)_520px] xl:px-14">
+    <div className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14">
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
-        {/* Square, and capped to the viewport so the whole buy panel is on one
-            screen. The colourway shots are 1:1, so a square box shows them
-            uncropped; a 4:5 box was scaling them up 25% and cutting the sides.
-            max-w is tied to the same value as max-h to keep it square. */}
-        <div className="grain rounded-card bg-carbon relative mx-auto aspect-square w-full overflow-hidden border border-white/[0.08] lg:max-h-[calc(100dvh-18rem)] lg:max-w-[calc(100dvh-18rem)]">
+        {/* Fills its column. It used to be capped to a square the height of
+            the viewport, which on any wide screen left the image narrower than
+            the space it sat in — centred, with dead air down both sides.
+
+            Still square, because the colourway shots are 1:1 and a 4:5 box was
+            scaling them up 25% and cutting the sides off. */}
+        <div className="grain rounded-card bg-carbon relative aspect-square w-full overflow-hidden border border-white/[0.08]">
           <Image
             key={active.src}
             src={active.src}
             alt={active.alt}
             fill
             priority
-            sizes="(min-width: 1024px) min(55vw, 100vh), 92vw"
+            sizes="(min-width: 1024px) 55vw, 92vw"
             className="object-cover"
           />
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">
             {colourway.inStock ? <Badge variant="solid">In stock</Badge> : null}
-            <Badge variant="outline">Batch {product.batch}</Badge>
           </div>
         </div>
 
         {/* Fixed height rather than aspect-square: at this column width square
             thumbs are ~160px tall and push the gallery past the fold. */}
-        <div className="mx-auto grid w-full grid-cols-5 gap-2.5 lg:max-w-[calc(100dvh-18rem)]">
+        <div className="grid w-full grid-cols-5 gap-2.5">
           {gallery.map((g, i) => (
             <button
               key={g.src + i}
@@ -114,9 +116,9 @@ export function ProductDetail({
         <div>
           <div className="text-acid mb-3.5 flex items-center gap-2.5 font-mono text-[10px] tracking-[0.18em] uppercase">
             <span className="animate-blink bg-acid size-1.5 rounded-full" />
-            {product.unitsLeft} left in this batch
+            {colourway.stock} left in this colourway
           </div>
-          <h1 className="font-display text-bone mb-3 text-[38px] leading-[1.04] uppercase sm:text-[46px] xl:text-[54px]">
+          <h1 className="font-display text-bone mb-3 text-[38px] leading-[1.04] uppercase sm:text-[46px] lg:text-[40px] xl:text-[54px]">
             {product.name}
           </h1>
           <div className="text-dim flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-mono text-[11px] tracking-[0.08em] sm:text-xs">
@@ -131,11 +133,13 @@ export function ProductDetail({
         <div>
           <div className="flex flex-wrap items-baseline gap-3">
             <Money
-              value={product.price}
+              value={colourway.price}
               className="font-display text-bone text-[38px] leading-[1.04] sm:text-[46px]"
             />
             <Money value={product.compareAtPrice} strike className="text-[17px]" />
-            <Badge variant="solid">Save {discountPercent(product.compareAtPrice, product.price)}%</Badge>
+            <Badge variant="solid">
+              Save {discountPercent(product.compareAtPrice, colourway.price)}%
+            </Badge>
           </div>
           <p className="text-dim mt-1.5 text-[12.5px]">
             Inclusive of all taxes · Free shipping pan-India
@@ -178,8 +182,8 @@ export function ProductDetail({
           </div>
         </div>
 
-        {/* qty + add */}
-        <div className="flex flex-col gap-2.5 sm:flex-row">
+        {/* qty + add + buy. One row from xl, stacked below it. */}
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:flex-nowrap xl:max-w-[720px]">
           <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
             <button
               type="button"
@@ -209,33 +213,30 @@ export function ProductDetail({
             variant="primary"
             size="lg"
             full
-            className="flex-1"
+            className="min-w-0 flex-1"
             onClick={() => add(colourwayId, qty)}
           >
             Add to cart · <Money value={lineTotal} />
           </Button>
-        </div>
 
-        <ButtonLink href="/cart" variant="ghost" size="md" full>
-          Buy it now
-        </ButtonLink>
+          <Button
+            variant="accent"
+            size="lg"
+            full
+            className="min-w-0 flex-1"
+            onClick={() => {
+              // Add first, then navigate: checkout reads the cart on mount, and
+              // arriving before the write lands shows the empty state.
+              add(colourwayId, qty)
+              router.push("/checkout")
+            }}
+          >
+            Buy it now
+          </Button>
+        </div>
 
         {/* pincode */}
-        <div className="rounded-field bg-carbon flex h-[54px] items-center gap-2.5 border border-white/10 px-4">
-          <RotateCcw className="text-ember size-[17px] shrink-0" strokeWidth={1.7} />
-          <Input
-            placeholder="Enter pincode"
-            inputMode="numeric"
-            aria-label="Delivery pincode"
-            className="h-auto border-0 bg-transparent px-0 font-mono text-[13px] tracking-[0.06em] focus:ring-0"
-          />
-          <button
-            type="button"
-            className="text-acid shrink-0 font-mono text-[11px] font-bold tracking-[0.1em]"
-          >
-            CHECK
-          </button>
-        </div>
+        <PincodeCheck />
 
         {/* trust */}
         <div className="grid grid-cols-2 gap-2.5">

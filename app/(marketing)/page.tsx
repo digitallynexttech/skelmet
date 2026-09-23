@@ -8,7 +8,6 @@ import { Comparison } from "@/components/marketing/comparison"
 import { TICKER_ITEMS } from "@/components/marketing/content"
 import { DropList } from "@/components/marketing/drop-list"
 import { FaqSection } from "@/components/marketing/faq-section"
-// import { Gifting } from "@/components/marketing/gifting"   // hidden from this page
 import { Hero } from "@/components/marketing/hero"
 // import { InstallSteps } from "@/components/marketing/install-steps"   // hidden from this page
 // import { ReelStrip } from "@/components/marketing/reel-strip"   // hidden from this page
@@ -33,6 +32,16 @@ export const metadata: Metadata = {
  * static marketing, so it stays on the server and only the genuinely
  * interactive leaves (add-to-cart, accordion, header) ship JavaScript.
  */
+/**
+ * Regenerated at most once a minute, because the lineup cards now quote live
+ * prices. Left purely static they were baked at build: after a price change
+ * the homepage advertised one figure while the product page and checkout used
+ * another, which is the mismatch this page exists to avoid. Fully dynamic
+ * would be the wrong trade for a marketing page carrying a 3D hero — a minute
+ * of staleness on a price an admin just edited is the cheaper side.
+ */
+export const revalidate = 60
+
 export default function HomePage() {
   return (
     <>
@@ -44,15 +53,15 @@ export default function HomePage() {
           same block is 05 here and 03 on the product page. Commenting a
           section out therefore only means deleting a line and closing the
           numbers up, with no component edited and no other page disturbed. */}
-      <ColourwayGrid index="01" />
-      <Bento index="02" />
-      <Anatomy index="03" />
-      <Texture index="04" />
-      <Comparison index="05" />
-      <RiderWall index="06" />
-      <Reviews index="07" />
-      <FaqSection index="08" />
-      <DropList index="09" />
+      <ColourwayGrid />
+      <Bento />
+      <Anatomy />
+      <Texture />
+      <Comparison />
+      <RiderWall />
+      <Reviews />
+      <FaqSection />
+      <DropList />
 
       {/* Hidden, not deleted — all five still render on other routes and are
           one uncomment away from returning. Put a section back in its place in
@@ -62,7 +71,6 @@ export default function HomePage() {
       {/* <TheHook /> */}
       {/* <ReelStrip /> */}
       {/* <AnyWall /> */}
-      {/* <Gifting /> */}
     </>
   )
 }

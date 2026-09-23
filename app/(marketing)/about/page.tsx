@@ -32,7 +32,7 @@ const WONT_DO = [
   {
     Icon: Ban,
     title: "Fake urgency",
-    body: "No countdown timers that reset when you reload. When we say 12 left in the batch, there are 12 left in the batch.",
+    body: "No countdown timers that reset when you reload. When we say 12 are left, there are 12 left.",
   },
   {
     Icon: Trash2,
@@ -89,7 +89,7 @@ export default function AboutPage() {
         image="/product/lifestyle-room.jpg"
         alt="A SKELMET mount holding a helmet in a rider's room"
       >
-        <SectionLabel index="01" className="mb-4">
+        <SectionLabel numbered className="mb-4">
           The design
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
@@ -112,7 +112,7 @@ export default function AboutPage() {
         alt="Three SKELMET colourways fresh off the print bed"
         reverse
       >
-        <SectionLabel index="02" tone="acid" className="mb-4">
+        <SectionLabel numbered tone="acid" className="mb-4">
           The making
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
@@ -121,16 +121,15 @@ export default function AboutPage() {
           not imported
         </h2>
         <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          Every mount comes off our own printers in {siteConfig.city}. Small batches, hand-checked,
-          packed the same week. Nothing sits in a container for three months and nothing arrives
-          with a mould seam down the middle of its face.
+          Every mount comes off our own printers in {siteConfig.city}, hand-checked and packed
+          the same week. Nothing sits in a container for three months and nothing arrives with a
+          mould seam down the middle of its face.
         </p>
         <p className="text-ash mb-7 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
           It also means we can change things fast. Three of the tweaks in the current version came
           straight out of customer emails.
         </p>
         <div className="flex flex-wrap gap-2.5">
-          <Badge variant="acid">Small batch</Badge>
           <Badge variant="acid">Hand-finished</Badge>
           <Badge variant="acid">Plastic-free packing</Badge>
         </div>
@@ -141,7 +140,7 @@ export default function AboutPage() {
       <TrustStrip />
 
       <Section>
-        <SectionLabel index="03" tone="magenta" className="mb-3.5">
+        <SectionLabel numbered tone="magenta" className="mb-3.5">
           Our line in the sand
         </SectionLabel>
         <SectionHeading className="mb-10">What we won&apos;t do</SectionHeading>

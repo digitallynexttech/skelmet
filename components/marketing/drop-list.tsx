@@ -5,7 +5,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function DropList({ index = "14" }: { index?: string } = {}) {
+export function DropList() {
   return (
     <section className="grid border-t border-white/[0.07] lg:grid-cols-2">
       <div className="relative min-h-[260px] lg:min-h-[380px]">
@@ -20,7 +20,7 @@ export function DropList({ index = "14" }: { index?: string } = {}) {
         <SkullDock src="/product/colourway-lineup.jpg" sizes="(min-width: 1024px) 50vw, 100vw" />
       </div>
       <div className="bg-carbon flex flex-col justify-center px-5 py-14 sm:px-8 sm:py-16 xl:px-14">
-        <SectionLabel index={index} tone="violet" className="mb-4">
+        <SectionLabel numbered tone="violet" className="mb-4">
           Next drop
         </SectionLabel>
         <h2 className="font-display text-bone mb-4 text-[34px] leading-[1.04] uppercase sm:text-[44px] xl:text-[50px]">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import { Check, Home, MapPin, Package, Truck } from "lucide-react"
+import { Check, Home, MapPin, Truck } from "lucide-react"
 
 import { Section } from "@/components/marketing/section"
 import { ButtonLink } from "@/components/ui/button"
@@ -54,16 +54,9 @@ function timelineFor(order: Confirmation) {
       when: paid ? "Done · today" : "Done · today",
       title: "Order placed",
       body: paid
-        ? "Payment cleared and your batch slot is reserved."
-        : "Your batch slot is reserved. You pay the courier on delivery.",
+        ? "Payment cleared and your mount is reserved."
+        : "Your mount is reserved. You pay the courier on delivery.",
       done: true,
-    },
-    {
-      Icon: Package,
-      when: "Next 48 hrs",
-      title: "Printed & finished",
-      body: "Your skull goes on the bed, gets cleaned up and packed by hand.",
-      done: order.status === "PACKED" || order.status === "SHIPPED" || order.status === "DELIVERED",
     },
     {
       Icon: Truck,

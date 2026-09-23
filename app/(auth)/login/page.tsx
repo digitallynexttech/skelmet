@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
-import { SkullMark } from "@/components/shared/skull-mark"
+import { Wordmark } from "@/components/shared/wordmark"
 import { LoginForm } from "@/features/account/components/login-form"
+import { auth } from "@/server/auth"
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -19,20 +21,28 @@ export default async function LoginPage({
   // Only ever an internal path, so a crafted ?next= cannot bounce someone off-site.
   const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : "/admin"
 
+  // Already signed in? Send them on rather than showing a form they cannot
+  // usefully submit. Signing in again would only mint the same session.
+  //
+  // Deliberately not re-checking mustChangePassword here: the (app) layout
+  // owns that rule, and duplicating it is how the two drift apart. Someone
+  // with a temporary password takes one extra hop through /admin and lands
+  // on /change-password, which is the same place either way.
+  const session = await auth()
+  if (session?.user) redirect(safeNext)
+
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col justify-center px-5 py-14 sm:px-10 xl:px-20">
-        <Link href="/" className="mb-12 flex items-center gap-3">
-          <SkullMark className="size-6" />
-          <span className="font-display text-bone text-[21px] tracking-[0.14em]">SKELMET</span>
-        </Link>
+        <Wordmark className="mb-12" />
 
         <div className="max-w-[400px]">
           <h1 className="font-display text-bone mb-3 text-[42px] leading-[1.02] uppercase sm:text-[52px]">
             Sign in
           </h1>
           <p className="text-ash mb-9 text-[15px] leading-[1.6]">
-            Staff console and customer accounts, one door. You will land wherever you belong.
+            The staff console. Customers never need this — orders are placed as a guest and
+            tracked by order number.
           </p>
 
           <LoginForm next={safeNext} />

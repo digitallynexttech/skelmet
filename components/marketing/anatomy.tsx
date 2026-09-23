@@ -6,15 +6,15 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
 
-export function Anatomy({ index = "03" }: { index?: string } = {}) {
+export function Anatomy() {
   return (
     <Section id="build" className="grain">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
         <div className="rounded-card bg-carbon overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-16/10">
             <Image
-              src="/product/parts-flatlay.jpg"
-              alt="Everything in the box: skull, bracket, screws, wall anchors and drill template"
+              src="/product/mount-assembled.jpg"
+              alt="The mount as it ships: the flame skull and its arm in one piece, hooks along the underside and the wall plate at the far end"
               fill
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
@@ -25,7 +25,7 @@ export function Anatomy({ index = "03" }: { index?: string } = {}) {
         </div>
 
         <div>
-          <SectionLabel index={index} className="mb-3.5">
+          <SectionLabel numbered className="mb-3.5">
             The build
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[62px]">

@@ -30,7 +30,13 @@ type RazorpayOptions = {
   description: string
   order_id: string
   prefill: { name: string; email: string; contact: string }
-  theme: { color: string }
+  /**
+   * backdrop_color is Razorpay's own option, not a CSS override — their
+   * container is same-origin but the sheet inside is an iframe, and the
+   * default backdrop is a near-opaque white that blanks a dark site the
+   * instant the modal opens. The blur on top of it is ours (globals.css).
+   */
+  theme: { color: string; backdrop_color: string }
   handler: (response: RazorpayHandlerResponse) => void
   modal: { ondismiss: () => void }
 }
@@ -103,7 +109,9 @@ export function useCheckout() {
             email: input.email,
             contact: input.phone,
           },
-          theme: { color: "#FF5A1F" },
+          // --color-void at 62%: the page stays visible behind the sheet
+          // instead of being replaced by a white plate.
+          theme: { color: "#FF5A1F", backdrop_color: "rgba(7, 6, 10, 0.62)" },
           handler: (response) => {
             // Confirm so the customer sees success immediately. The webhook is
             // still the source of truth if this request never lands.

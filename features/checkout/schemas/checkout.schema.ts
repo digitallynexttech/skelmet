@@ -30,9 +30,16 @@ export const placeOrderSchema = z.object({
     .min(1, "Your cart is empty")
     .max(20),
   couponCode: z.string().trim().max(40).optional().or(z.literal("")),
-  paymentMethod: z.enum(["ONLINE", "COD"]).default("ONLINE"),
+  /**
+   * Cash on delivery is not offered. This is a literal rather than a narrowed
+   * enum so the refusal lives at the boundary: hiding the button alone would
+   * still let a hand-made request place an order that never pays.
+   *
+   * PaymentMethod in the schema keeps COD, because orders already placed with
+   * it still have to pack, ship and display.
+   */
+  paymentMethod: z.literal("ONLINE").default("ONLINE"),
   saveAddress: z.boolean().default(false),
-  giftNote: z.boolean().default(false),
 })
 
 export const verifyPaymentSchema = z.object({

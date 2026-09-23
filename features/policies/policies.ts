@@ -63,9 +63,9 @@ const PRIVACY: Policy = {
           items: [
             "Identity and contact: name, email address, phone number.",
             "Delivery: shipping address, pincode, any delivery note you add.",
-            "Order: what you bought, colourway, quantity, price paid, discount or referral code used.",
+            "Order: what you bought, colourway, quantity, price paid, any discount code used.",
             "Payment: the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.",
-            "Account: a hashed password, saved addresses, your referral code and balance, if you create an account.",
+            "Account: a hashed password and saved addresses, if you create an account.",
             "Technical: IP address, browser and device type, pages viewed, referring site.",
             "Content you send us: support messages, review text, and any photo you submit to the rider wall.",
           ],
@@ -93,7 +93,6 @@ const PRIVACY: Policy = {
             "To email or message you about that order: confirmation, dispatch, tracking, delivery.",
             "To handle returns, replacements and refunds.",
             "To answer your support messages.",
-            "To run the referral programme and pay out what you have earned.",
             "To detect fraud and abuse of discount codes.",
             "To meet tax, accounting and consumer-law obligations.",
             "With your consent only, to send marketing about new drops.",
@@ -210,16 +209,6 @@ const PRIVACY: Policy = {
     },
     {
       n: "12",
-      title: "Referral programme data",
-      blocks: [
-        {
-          type: "p",
-          text: "If you refer someone, we record their email in a masked form (for example a****k@gmail.com) so you can see the status of your invite without us exposing their full address to you. The person you referred is told which code they used but not who owns it, unless you tell them yourself.",
-        },
-      ],
-    },
-    {
-      n: "13",
       title: "Children",
       blocks: [
         {
@@ -229,7 +218,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "14",
+      n: "13",
       title: "Security",
       blocks: [
         {
@@ -243,7 +232,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "15",
+      n: "14",
       title: "Transfers outside India",
       blocks: [
         {
@@ -253,7 +242,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "16",
+      n: "15",
       title: "Changes to this policy",
       blocks: [
         {
@@ -263,7 +252,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "17",
+      n: "16",
       title: "Grievance officer",
       blocks: [
         {
@@ -325,7 +314,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Every mount is 3D printed to order. That means small variations in layer texture and finish between units are normal and are not defects, it is the point of the product.",
+          text: "Every mount is 3D printed. That means small variations in layer texture and finish between units are normal and are not defects, it is the point of the product.",
         },
         {
           type: "p",
@@ -339,7 +328,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Prices are in Indian Rupees and include GST. The price you see at checkout is the price you pay, no surprise fees at delivery, except the COD handling charge which is shown before you confirm.",
+          text: "Prices are in Indian Rupees and include GST. The price you see at checkout is the price you pay, with no surprise fees at delivery.",
         },
         {
           type: "p",
@@ -353,7 +342,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Your order is an offer to buy. The contract forms when we send the dispatch confirmation, not the order confirmation. Until then we may decline the order, because stock ran out mid-batch, the address is not serviceable, or payment failed verification.",
+          text: "Your order is an offer to buy. The contract forms when we send the dispatch confirmation, not the order confirmation. Until then we may decline the order, because stock ran out, the address is not serviceable, or payment failed verification.",
         },
       ],
     },
@@ -363,7 +352,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "We accept UPI, cards, netbanking and cash on delivery. Payments are handled by Razorpay; we never see your card or UPI credentials. For COD, the parcel is only handed over on full payment.",
+          text: "We accept UPI, cards and netbanking. Payments are handled by Razorpay; we never see your card or UPI credentials.",
         },
       ],
     },
@@ -393,7 +382,7 @@ const TERMS: Policy = {
         },
         {
           type: "p",
-          text: "Refunds are issued to the original payment method within [7] working days of the return reaching us and passing inspection. For COD orders we refund by UPI or bank transfer to details you provide.",
+          text: "Refunds are issued to the original payment method within [7] working days of the return reaching us and passing inspection.",
         },
         {
           type: "p",
@@ -451,22 +440,6 @@ const TERMS: Policy = {
     },
     {
       n: "14",
-      title: "Referral programme",
-      blocks: [
-        {
-          type: "list",
-          items: [
-            "The person you refer must be a new customer using your code on their first order.",
-            "Your reward credits once their order has shipped and cleared the 7-day return window.",
-            "Rewards can be cashed out to UPI from [₹500], or spent on the site at any balance.",
-            "Self-referrals, duplicate accounts and fake orders void the reward and may close the account.",
-            "We may change the reward amount for future referrals, but never for one already earned.",
-          ],
-        },
-      ],
-    },
-    {
-      n: "15",
       title: "Reviews & photos you post",
       blocks: [
         {
@@ -480,7 +453,7 @@ const TERMS: Policy = {
       ],
     },
     {
-      n: "16",
+      n: "15",
       title: "Our intellectual property",
       blocks: [
         {
@@ -494,7 +467,7 @@ const TERMS: Policy = {
       ],
     },
     {
-      n: "17",
+      n: "16",
       title: "Liability",
       blocks: [
         {
@@ -508,7 +481,7 @@ const TERMS: Policy = {
       ],
     },
     {
-      n: "18",
+      n: "17",
       title: "Governing law",
       blocks: [
         {
@@ -518,7 +491,7 @@ const TERMS: Policy = {
       ],
     },
     {
-      n: "19",
+      n: "18",
       title: "Grievance officer",
       blocks: [
         { type: "p", text: "Appointed under the Consumer Protection (E-Commerce) Rules 2020:" },
@@ -552,7 +525,7 @@ const SHIPPING: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Nothing. Shipping is free on every order, to every serviceable pincode, with no minimum. Cash on delivery adds a [₹49] handling charge, shown before you confirm.",
+          text: "Nothing. Shipping is free on every order, to every serviceable pincode, with no minimum.",
         },
       ],
     },
@@ -566,7 +539,7 @@ const SHIPPING: Policy = {
         },
         {
           type: "p",
-          text: "During a batch changeover this can stretch to [4] working days. If it does, we email you rather than let you wonder.",
+          text: "At busy times this can stretch to [4] working days. If it does, we email you rather than let you wonder.",
         },
       ],
     },
@@ -651,7 +624,7 @@ const RETURNS: Policy = {
           type: "list",
           items: [
             "Unused and undamaged, with no drill marks or adhesive residue.",
-            "In the original box with the bracket, screws and template.",
+            "In the original box with the screws, keychain and manual.",
             "Test-fitting it against the wall is fine. Drilling and mounting it is not.",
           ],
         },
@@ -683,7 +656,6 @@ const RETURNS: Policy = {
             ["UPI", "[1–3] working days"],
             ["Card", "[5–7] working days"],
             ["Netbanking", "[3–5] working days"],
-            ["Cash on delivery", "[2–4] working days to your UPI or bank"],
           ],
         },
       ],
@@ -730,88 +702,7 @@ const RETURNS: Policy = {
   ],
 }
 
-const REFERRAL: Policy = {
-  slug: "referral",
-  title: "Referral terms",
-  intro: "How the ₹250 works, when it lands, and what voids it.",
-  readingTime: "~3 min read",
-  shortVersion: "They save ₹250, you earn ₹250 once their order ships and clears returns.",
-  accent: "acid",
-  sections: [
-    {
-      n: "01",
-      title: "Who can take part",
-      blocks: [
-        {
-          type: "p",
-          text: "Anyone with a SKELMET account. Every order generates a code automatically, and you can also sign up for one without buying first.",
-        },
-      ],
-    },
-    {
-      n: "02",
-      title: "What each side gets",
-      blocks: [
-        {
-          type: "list",
-          items: [
-            "The person you refer gets ₹250 off their first order.",
-            "You get ₹250 credited to your SKELMET balance.",
-            "Tiers raise your side: ₹350 from 5 referrals, ₹500 from 15.",
-          ],
-        },
-      ],
-    },
-    {
-      n: "03",
-      title: "When it credits",
-      blocks: [
-        {
-          type: "p",
-          text: "Once their order has shipped and cleared the 7-day return window. If they return the order, the reward does not credit, which is why it waits rather than paying out on checkout.",
-        },
-      ],
-    },
-    {
-      n: "04",
-      title: "Cashing out",
-      blocks: [
-        {
-          type: "p",
-          text: "Spend the balance on the site at any amount, or cash out to UPI from [₹500]. Payouts are processed within [5] working days of the request.",
-        },
-      ],
-    },
-    {
-      n: "05",
-      title: "What voids a reward",
-      blocks: [
-        {
-          type: "list",
-          items: [
-            "Referring yourself, or a duplicate account at your own address.",
-            "Orders placed and then returned.",
-            "Posting your code to coupon-aggregator or deal sites.",
-            "Paid advertising that bids on the SKELMET brand name.",
-          ],
-        },
-      ],
-    },
-    {
-      n: "06",
-      title: "Changes",
-      blocks: [
-        {
-          type: "p",
-          text: "We may change the reward amount or the tiers for future referrals. Anything you have already earned is yours at the rate it was earned at.",
-        },
-      ],
-    },
-    { n: "07", title: "Questions", blocks: [{ type: "contact" }] },
-  ],
-}
-
-export const POLICIES: Policy[] = [PRIVACY, TERMS, SHIPPING, RETURNS, REFERRAL]
+export const POLICIES: Policy[] = [PRIVACY, TERMS, SHIPPING, RETURNS]
 
 export function getPolicy(slug: string): Policy | undefined {
   return POLICIES.find((p) => p.slug === slug)

@@ -24,7 +24,12 @@ export async function rememberOrder(number: string): Promise<void> {
   jar.set(COOKIE, number, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Keyed on the deployment's real scheme, NOT NODE_ENV. A Secure cookie is
+    // silently DROPPED by the browser on a plain-http origin — localhost is
+    // exempt, so tying this to NODE_ENV works in dev and then breaks the
+    // confirmation page the moment it ships to an http host. Flips itself back
+    // on the day NEXT_PUBLIC_SITE_URL becomes https.
+    secure: (process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://"),
     path: "/",
     maxAge: MAX_AGE_SECONDS,
   })

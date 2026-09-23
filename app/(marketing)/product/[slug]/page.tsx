@@ -5,20 +5,19 @@ import { notFound } from "next/navigation"
 import { Anatomy } from "@/components/marketing/anatomy"
 import { Comparison } from "@/components/marketing/comparison"
 import { FaqSection } from "@/components/marketing/faq-section"
-import { Gifting } from "@/components/marketing/gifting"
 import { InstallSteps } from "@/components/marketing/install-steps"
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
-import { Section, SectionHeading } from "@/components/marketing/section"
 import { Texture } from "@/components/marketing/texture"
 import { TheHook } from "@/components/marketing/the-hook"
 // import { ThePoint } from "@/components/marketing/the-point"
+import { MoreThanMount } from "@/components/marketing/more-than-mount"
 import { TrustStrip } from "@/components/marketing/trust-strip"
+import { WhyCare } from "@/components/marketing/why-care"
 import { StickyBuyBar } from "@/components/layout/sticky-buy-bar"
-import { SectionLabel } from "@/components/shared/section-label"
 import { ProductDetail } from "@/features/catalog/components/product-detail"
 import { PRODUCTS, getProduct } from "@/features/catalog/catalog"
-import { cn } from "@/lib/utils"
+import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 
 type Params = { slug: string }
 
@@ -52,7 +51,8 @@ export default async function ProductPage({
 }) {
   const { slug } = await params
   const { colour } = await searchParams
-  const product = getProduct(slug)
+  const result = await getProductBySlug(slug)
+  const product = result.ok ? result.data : null
   if (!product) notFound()
 
   return (
@@ -72,35 +72,9 @@ export default async function ProductPage({
 
       <TrustStrip />
 
-      {/* Spec numbers */}
-      <Section className="bg-carbon border-b border-white/[0.07]">
-        <SectionLabel className="mb-3.5">The numbers</SectionLabel>
-        <SectionHeading className="mb-9 text-[34px] sm:text-[44px] xl:text-[46px]">
-          Specifications
-        </SectionHeading>
-        <dl className="grid grid-cols-2 gap-3.5 lg:grid-cols-3 xl:grid-cols-6">
-          {product.specs.map((spec) => (
-            <div
-              key={spec.label}
-              className="rounded-tile bg-void border border-white/[0.08] p-5 sm:p-6"
-            >
-              <dt className="text-dim mb-3 font-mono text-[9.5px] tracking-[0.16em] uppercase">
-                {spec.label}
-              </dt>
-              <dd
-                className={cn(
-                  "font-display text-[22px] leading-[1.08] sm:text-[26px]",
-                  spec.pending ? "text-ember" : "text-bone",
-                )}
-              >
-                {spec.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Section>
-
       {/* <ThePoint /> */}
+      <WhyCare />
+      <MoreThanMount />
       <Anatomy />
       <Texture />
       <InstallSteps />
@@ -108,7 +82,6 @@ export default async function ProductPage({
       <Comparison />
       <Reviews />
       <RiderWall />
-      <Gifting />
       <FaqSection />
 
       <StickyBuyBar price={product.price} />

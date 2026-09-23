@@ -187,6 +187,47 @@
   }
 }
 
+@layer base {
+  /* Section numbering.
+
+     Scoped to <main>, so every page starts at 01 and numbers whatever it
+     actually renders, in document order. Components used to carry their own
+     index, which meant a section knew its position on the homepage and
+     nothing else — the product page showed 03, 04, 05, 07, 06, 10, 09, 13.
+
+     Counters read the live DOM, so commenting a section out renumbers the
+     rest with no other edit, and nothing has to be kept in step by hand. */
+  main {
+    counter-reset: section;
+  }
+
+  [data-section-no]::before {
+    counter-increment: section;
+    content: counter(section, decimal-leading-zero) " / ";
+  }
+}
+
+@layer base {
+  /* Pointer cursors.
+
+     Tailwind v4's Preflight stopped giving <button> the user agent's pointer
+     cursor, so every button on the site read as plain text under the mouse.
+     Restored once here rather than as a utility on each button — which is how
+     the <summary> in checkout-view ended up carrying its own cursor-pointer.
+
+     Disabled controls are excluded on purpose: a pointer on a control that
+     cannot be pressed promises something that will not happen. The quantity
+     stepper hits its limits constantly, so this is not hypothetical. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer utilities {
   /* film grain — sits over any positioned container */
   .grain::after {
@@ -337,4 +378,29 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Razorpay's checkout sheet.
+ *
+ * Their container is injected into our document (the payment form itself is a
+ * cross-origin iframe, but the backdrop around it is not), so the blur belongs
+ * here while the colour is passed as theme.backdrop_color — a CSS background
+ * would be overwritten by their own inline style on open.
+ *
+ * Not scoped to a wrapper of ours: the container is appended to <body> and we
+ * never get a handle on it.
+ */
+.razorpay-container {
+  /* Unprefixed only: Lightning CSS adds -webkit- per the browser targets, and
+     writing both made it keep the prefixed one and drop the standard property,
+     which would have left Firefox unblurred. */
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+/* The backdrop is the container's own child div, the one that is not the
+ * iframe. Razorpay sets its background inline, which is what backdrop_color
+ * feeds; all this adds is the transition so the page dims rather than snaps.
+ */
+.razorpay-container > div:not([class]) {
+  transition: background-color 180ms ease-out;
 }
