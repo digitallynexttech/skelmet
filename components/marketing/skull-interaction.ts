@@ -10,7 +10,13 @@
  * Single instance by design: there is one hero skull per page.
  */
 export type SkullInteraction = {
-  /** Cursor position normalised to -1..1 across the viewport. */
+  /** Last cursor position in the viewport, or null before the first move. */
+  cursor: { x: number; y: number } | null
+  /**
+   * Cursor position relative to the skull, -1..1 over half the viewport each
+   * way. Worked out by the render loop, since the skull moves under a still
+   * cursor as the page scrolls.
+   */
   pointer: { x: number; y: number }
   /** Free-spin offset accumulated while dragging; decays back to zero. */
   userRot: { x: number; y: number }
@@ -25,6 +31,13 @@ export type SkullInteraction = {
    * Flare is how hard the skull is spinning, 0 at rest.
    */
   halo: { x: number; y: number; r: number; flare: number }
+  /**
+   * The canvas box on screen, in viewport px, while the mesh is live; null on
+   * the poster path, where the box is the hero stage and never moves.
+   */
+  box: { x: number; y: number; w: number; h: number } | null
+  /** The skull's silhouette on screen, as an ellipse, for grabbing it. Null when off screen. */
+  hit: { x: number; y: number; rx: number; ry: number } | null
 }
 
 /**
@@ -40,11 +53,14 @@ export type SkullInteraction = {
 export const HALO_REST = { x: 0.5, y: 0.293, r: 0.257, flare: 0 } as const
 
 const interaction: SkullInteraction = {
+  cursor: null,
   pointer: { x: 0, y: 0 },
   userRot: { x: 0, y: 0 },
   vel: { x: 0, y: 0 },
   dragging: false,
   halo: { ...HALO_REST },
+  box: null,
+  hit: null,
 }
 
 export function getSkullInteraction(): SkullInteraction {

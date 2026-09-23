@@ -1,6 +1,7 @@
 import Image from "next/image"
 
 import { Section } from "@/components/marketing/section"
+import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,8 @@ export function Anatomy({ index = "03" }: { index?: string } = {}) {
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
             />
+            {/* The hero skull lands on the skull in the flatlay on its way down. */}
+            <SkullDock src="/product/parts-flatlay.jpg" sizes="(min-width: 1024px) 55vw, 92vw" />
           </div>
         </div>
 

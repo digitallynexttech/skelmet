@@ -304,6 +304,27 @@
     mask-image: radial-gradient(var(--halo), #000 var(--core), transparent var(--hin));
     -webkit-mask-image: radial-gradient(var(--halo), #000 var(--core), transparent var(--hin));
   }
+
+  /* The flying hero skull (skull-stage) takes no pointer events of its own —
+     the window listeners hit-test it — so it cannot set its own cursor. They
+     flag the root instead, and this outranks whatever the skull is over. */
+  html[data-skull="grab"],
+  html[data-skull="grab"] * {
+    cursor: grab !important;
+  }
+
+  html[data-skull="grabbing"],
+  html[data-skull="grabbing"] * {
+    cursor: grabbing !important;
+  }
+
+  /* Where the skull can dock, a sideways drag on touch spins it rather than
+     being claimed by the browser. The card's link overlay is a sibling of the
+     photo, so on a card this has to sit on the article. Pinch zoom stays. */
+  :has(> [data-skull-dock]),
+  article:has([data-skull-dock]) {
+    touch-action: pan-y pinch-zoom;
+  }
 }
 
 /* Everything ambient stops when the visitor asks it to. */

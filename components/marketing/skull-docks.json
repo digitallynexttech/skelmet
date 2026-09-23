@@ -1,0 +1,20 @@
+{
+  "/product/product-front.jpg": {
+    "plate": "/product/product-front-plate.webp",
+    "width": 1611,
+    "height": 2000,
+    "skull": [387, 318, 1221, 1692]
+  },
+  "/product/parts-flatlay.jpg": {
+    "plate": "/product/parts-flatlay-plate.webp",
+    "width": 2000,
+    "height": 1116,
+    "skull": [779, 106, 1218, 799]
+  },
+  "/product/colourway-lineup.jpg": {
+    "plate": "/product/colourway-lineup-plate.webp",
+    "width": 2000,
+    "height": 1116,
+    "skull": [106, 152, 664, 976]
+  }
+}

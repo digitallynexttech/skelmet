@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { Section, SectionHeading } from "@/components/marketing/section"
+import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
@@ -51,8 +52,17 @@ export function ColourwayGrid({ index = "01" }: { index?: string } = {}) {
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
                 className="object-cover"
               />
+              {/* The hero skull lands here on its way down the page. Only the
+                  blaze plate has a dock; the others render nothing. */}
+              <SkullDock
+                src={c.image}
+                sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
+              />
               {c.bestSeller ? (
-                <Badge variant="solid" className="absolute top-4 left-4">
+                // Above the hero skull (z-30) when it docks here, as the badge
+                // is above the photo — on a phone the skull reaches this
+                // corner. Click-through, so the card link under it still works.
+                <Badge variant="solid" className="pointer-events-none absolute top-4 left-4 z-[35]">
                   Best seller
                 </Badge>
               ) : null}

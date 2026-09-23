@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import dynamic from "next/dynamic"
 import Image from "next/image"
 
@@ -35,6 +36,13 @@ import { cn } from "@/lib/utils"
  * the visor lifts on schedule, the poster is already there, and the canvas
  * cross-fades in later if it makes it.
  *
+ * The canvas is not drawn inside this box. It is portalled to the body, into
+ * a box the size of this one, and flown down the page by skull-journey: it
+ * starts here, and on scroll lifts off and lands on the photographs of the
+ * skull further down (see SkullDock). This element stays behind as its home —
+ * `data-skull-home` is how the route finds it — along with the atmosphere and
+ * the poster, which never leave the hero.
+ *
  * `ssr: false` is rejected inside a Server Component in Next 16, which is why
  * this wrapper exists at all: the hero stays a Server Component and only this
  * leaf ships the three.js bundle.
@@ -44,8 +52,21 @@ const SkullCanvas = dynamic(() => import("@/components/marketing/skull-canvas"),
   loading: () => null,
 })
 
+/**
+ * Where the mesh sits in frame, so the poster can be put in the same place.
+ *
+ * The canvas camera is at z=5.4 with a 32° vertical fov, so it sees
+ * 2 * 5.4 * tan(16°) = 3.096 units at the origin. skull-canvas normalises the
+ * model's longest axis — its height — to 2.5 of those units and lifts it by
+ * OPTICAL_CENTRE_LIFT (0.06). Both fall out as a share of the stage height.
+ */
+const MESH_HEIGHT_RATIO = 80.7 // 2.5 / 3.096
+const MESH_LIFT_RATIO = 1.9 // 0.06 / 3.096
+
 /** Radians of spin per pixel dragged. */
 const DRAG_SENSITIVITY = 0.008
+/** Travel, in px, past which a press on the skull was a drag rather than a click. */
+const CLICK_SLOP = 5
 
 /** Drifting embers, carried over from the original hero plate. */
 const EMBERS = [
@@ -58,17 +79,6 @@ const EMBERS = [
   "left-[80%] bottom-[24%] size-[3px] [animation-delay:8.5s]",
   "left-[90%] bottom-[12%] size-[2px] [animation-delay:9.8s]",
 ]
-
-/**
- * Where the mesh sits in frame, so the poster can be put in the same place.
- *
- * The canvas camera is at z=5.4 with a 32° vertical fov, so it sees
- * 2 * 5.4 * tan(16°) = 3.096 units at the origin. skull-canvas normalises the
- * model's longest axis — its height — to 2.5 of those units and lifts it by
- * OPTICAL_CENTRE_LIFT (0.06). Both fall out as a share of the stage height.
- */
-const MESH_HEIGHT_RATIO = 80.7 // 2.5 / 3.096
-const MESH_LIFT_RATIO = 1.9 // 0.06 / 3.096
 
 /** Not in lib.dom, and absent in Safari — every read has to tolerate both. */
 type NetworkInformation = { saveData?: boolean; effectiveType?: string }
@@ -84,16 +94,23 @@ function prefersLessData(): boolean {
   return connection.effectiveType === "slow-2g" || connection.effectiveType === "2g"
 }
 
+/** Is this viewport point on the skull, wherever it currently is on the page. */
+function onSkull(x: number, y: number): boolean {
+  const hit = getSkullInteraction().hit
+  if (!hit || hit.rx <= 0 || hit.ry <= 0) return false
+  const dx = (x - hit.x) / hit.rx
+  const dy = (y - hit.y) / hit.ry
+  return dx * dx + dy * dy <= 1
+}
+
 export function SkullStage({ className }: { className?: string }) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const last = useRef<{ x: number; y: number } | null>(null)
+  const flightRef = useRef<HTMLDivElement>(null)
   const release = useRef<(() => void) | null>(null)
 
   /** Are we downloading the model at all. */
   const [attempt, setAttempt] = useState(false)
   /** Is the mesh on screen — the only thing that hides the poster. */
   const [live, setLive] = useState(false)
-  const [active, setActive] = useState(true)
 
   const releaseSplash = useCallback(() => {
     release.current?.()
@@ -141,77 +158,104 @@ export function SkullStage({ className }: { className?: string }) {
     }
   }, [releaseSplash])
 
-  // The skull tracks the cursor anywhere on screen, not just over the canvas.
+  // The skull tracks the cursor anywhere on screen, and can be grabbed and
+  // spun wherever it has flown to — so these listen on the window rather than
+  // on this box, and hit-test against the silhouette the render loop
+  // publishes. Everything else under the skull keeps working: a press that is
+  // not on the skull is left alone, and a press on it that never moves is
+  // still a click, so the skull docked on a product card opens the product.
   useEffect(() => {
     if (!live) return
+    const i = getSkullInteraction()
+    const root = document.documentElement
+    let last: { x: number; y: number } | null = null
+    let travel = 0
+
+    const setCursor = (state: "grab" | "grabbing" | null) => {
+      if (state) root.dataset.skull = state
+      else delete root.dataset.skull
+    }
+
     const onMove = (e: PointerEvent) => {
-      const i = getSkullInteraction()
-      i.pointer.x = (e.clientX / window.innerWidth) * 2 - 1
-      i.pointer.y = (e.clientY / window.innerHeight) * 2 - 1
+      i.cursor = { x: e.clientX, y: e.clientY }
+      if (!i.dragging || !last) {
+        if (e.pointerType === "mouse") setCursor(onSkull(e.clientX, e.clientY) ? "grab" : null)
+        return
+      }
+      const dx = (e.clientX - last.x) * DRAG_SENSITIVITY
+      const dy = (e.clientY - last.y) * DRAG_SENSITIVITY
+      travel += Math.abs(e.clientX - last.x) + Math.abs(e.clientY - last.y)
+      last = { x: e.clientX, y: e.clientY }
+      i.userRot.y += dx
+      i.userRot.x += dy
+      // Carry the last frame's movement as momentum for the release.
+      i.vel.y = dx
+      i.vel.x = dy
     }
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0 || !onSkull(e.clientX, e.clientY)) return
+      i.dragging = true
+      i.vel.x = 0
+      i.vel.y = 0
+      last = { x: e.clientX, y: e.clientY }
+      travel = 0
+      if (e.pointerType === "mouse") {
+        // No text selection or native link drag starting under the skull.
+        e.preventDefault()
+        setCursor("grabbing")
+      }
+    }
+
+    // A drag that ends over a link would otherwise click it.
+    const swallowClick = (e: MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    const onUp = (e: PointerEvent) => {
+      if (!i.dragging) return
+      i.dragging = false
+      last = null
+      if (travel > CLICK_SLOP) {
+        window.addEventListener("click", swallowClick, { capture: true, once: true })
+        // If no click follows (released off the element), drop the trap.
+        setTimeout(() => window.removeEventListener("click", swallowClick, true), 0)
+      }
+      setCursor(e.pointerType === "mouse" && onSkull(e.clientX, e.clientY) ? "grab" : null)
+    }
+
+    const blockWhileDragging = (e: Event) => {
+      if (i.dragging) e.preventDefault()
+    }
+
     window.addEventListener("pointermove", onMove, { passive: true })
-    return () => window.removeEventListener("pointermove", onMove)
-  }, [live])
-
-  // Stop the render loop once the hero leaves the viewport.
-  useEffect(() => {
-    const el = wrapRef.current
-    if (!el || !attempt) return
-    const io = new IntersectionObserver(([entry]) => setActive(Boolean(entry?.isIntersecting)), {
-      rootMargin: "120px",
-    })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [attempt])
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!live) return
-    const i = getSkullInteraction()
-    i.dragging = true
-    i.vel.x = 0
-    i.vel.y = 0
-    last.current = { x: e.clientX, y: e.clientY }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const i = getSkullInteraction()
-    if (!i.dragging || !last.current) return
-    const dx = (e.clientX - last.current.x) * DRAG_SENSITIVITY
-    const dy = (e.clientY - last.current.y) * DRAG_SENSITIVITY
-    last.current = { x: e.clientX, y: e.clientY }
-    i.userRot.y += dx
-    i.userRot.x += dy
-    // Carry the last frame's movement as momentum for the release.
-    i.vel.y = dx
-    i.vel.x = dy
-  }
-
-  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    const i = getSkullInteraction()
-    if (!i.dragging) return
-    i.dragging = false
-    last.current = null
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
+    window.addEventListener("pointerdown", onDown, { capture: true })
+    window.addEventListener("pointerup", onUp)
+    window.addEventListener("pointercancel", onUp)
+    window.addEventListener("dragstart", blockWhileDragging, { capture: true })
+    window.addEventListener("selectstart", blockWhileDragging, { capture: true })
+    return () => {
+      window.removeEventListener("pointermove", onMove)
+      window.removeEventListener("pointerdown", onDown, true)
+      window.removeEventListener("pointerup", onUp)
+      window.removeEventListener("pointercancel", onUp)
+      window.removeEventListener("dragstart", blockWhileDragging, true)
+      window.removeEventListener("selectstart", blockWhileDragging, true)
+      window.removeEventListener("click", swallowClick, true)
+      i.dragging = false
+      i.cursor = null
+      setCursor(null)
     }
-  }
+  }, [live])
 
   return (
     <div
-      ref={wrapRef}
-      className={cn(
-        "relative select-none",
-        live && "cursor-grab active:cursor-grabbing",
-        className,
-      )}
+      data-skull-home=""
+      className={cn("relative select-none", className)}
       // pan-y keeps vertical page scrolling working on touch while still
       // letting a horizontal drag spin the skull.
       style={{ touchAction: "pan-y" }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
       role="img"
       aria-label={
         live
@@ -223,8 +267,7 @@ export function SkullStage({ className }: { className?: string }) {
           scene, so the backdrop has to carry that through or the mesh reads as
           a cut-out floating on flat black: a wide cool-edged haze, a tight
           fire core, then three arcs at different speeds to give the depth a
-          reference. All of it is decorative and non-interactive, so pointer
-          events stay with the canvas and dragging still works over them. */}
+          reference. All of it is decorative and non-interactive. */}
       <div
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-1/2 size-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgb(255_90_31_/_0.14),rgb(124_92_255_/_0.06)_44%,transparent_70%)] blur-[80px]"
@@ -279,18 +322,32 @@ export function SkullStage({ className }: { className?: string }) {
         />
       </div>
 
-      {attempt ? (
-        <SkullBoundary onError={onFailed}>
-          <div
-            className={cn(
-              "absolute inset-0 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-              live ? "opacity-100" : "opacity-0",
-            )}
-          >
-            <SkullCanvas active={active} onReady={onReady} onError={onFailed} />
-          </div>
-        </SkullBoundary>
-      ) : null}
+      {/* The flying skull. In the document rather than fixed to the viewport,
+          so that docked it scrolls with its photograph natively instead of a
+          frame behind it. Above the page (z-30) but under the sticky header
+          and buy bar. Never takes pointer events itself: grabbing it is the
+          window listeners' job, so it cannot block what it floats over. */}
+      {attempt
+        ? createPortal(
+            <div
+              ref={flightRef}
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-0 z-30 origin-top-left"
+            >
+              <SkullBoundary onError={onFailed}>
+                <div
+                  className={cn(
+                    "ease-out-expo size-full transition-opacity duration-700",
+                    live ? "opacity-100" : "opacity-0",
+                  )}
+                >
+                  <SkullCanvas flightRef={flightRef} onReady={onReady} onError={onFailed} />
+                </div>
+              </SkullBoundary>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

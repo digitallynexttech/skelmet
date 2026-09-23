@@ -21,9 +21,11 @@ import { cn } from "@/lib/utils"
  * faces, turning it to profile widens it, and flinging it flares it. On the
  * poster path nothing writes the halo, and the burn simply rests on the skull.
  *
- * The frame is this element's parent, which SkullStage fills edge to edge:
- * the halo is measured against the canvas, so the headline has to be rendered
- * as its sibling inside the same box.
+ * The halo is measured against the canvas box, which the render loop
+ * publishes as `box` wherever the skull has flown — so as it lifts off on
+ * scroll, the burn goes with it and the line heals behind it. On the poster
+ * path there is no box, and the canvas is taken to be this element's parent,
+ * the hero stage: the headline has to be rendered inside it.
  *
  * Only the first copy is the heading. The other three are aria-hidden and
  * outside the h1, so the heading's text — what a screen reader announces and a
@@ -59,33 +61,48 @@ export function HeroHeadline({ className, children }: { className?: string; chil
     const frame = el?.parentElement
     if (!el || !frame) return
 
-    // Headline box relative to the frame, in screen pixels — after the
+    // The headline and the hero stage in document pixels — after the
     // headline's own translate and scale, which the mask percentages are
     // blind to. A percentage of the transformed box is the same percentage of
     // the untransformed one, since both axes scale independently.
-    const box = { left: 0, top: 0, width: 1, height: 1, frameWidth: 1, frameHeight: 1 }
+    const box = { left: 0, top: 0, width: 1, height: 1 }
+    const stage = { left: 0, top: 0, width: 1, height: 1 }
     const last = { x: NaN, y: NaN, rx: NaN, ry: NaN, inner: NaN }
+    let parked = false
 
     const measure = () => {
       const a = el.getBoundingClientRect()
       const b = frame.getBoundingClientRect()
       if (a.width === 0 || a.height === 0) return
-      box.left = a.left - b.left
-      box.top = a.top - b.top
+      box.left = a.left + window.scrollX
+      box.top = a.top + window.scrollY
       box.width = a.width
       box.height = a.height
-      box.frameWidth = b.width
-      box.frameHeight = b.height
+      stage.left = b.left + window.scrollX
+      stage.top = b.top + window.scrollY
+      stage.width = b.width
+      stage.height = b.height
       // Geometry moved under the last write, so the next frame must write
       // even if the halo itself has not.
       last.x = NaN
+      parked = false
     }
 
     const write = () => {
-      const { halo } = getSkullInteraction()
-      const skull = halo.r * box.frameHeight
-      const centreX = halo.x * box.frameWidth - box.left
-      const centreY = halo.y * box.frameHeight - box.top
+      const { halo, box: live } = getSkullInteraction()
+      // Everything relative to the headline, in viewport terms: the headline
+      // scrolls, and the live canvas box may be anywhere on the page.
+      const originX = box.left - window.scrollX
+      const originY = box.top - window.scrollY
+      const canvas = live ?? {
+        x: stage.left - window.scrollX,
+        y: stage.top - window.scrollY,
+        w: stage.width,
+        h: stage.height,
+      }
+      const skull = halo.r * canvas.h
+      const centreX = canvas.x + halo.x * canvas.w - originX
+      const centreY = canvas.y + halo.y * canvas.h - originY
       // A spinning skull throws its heat further.
       const reach = 1 + halo.flare
       const hollow = (HOLLOW.skull * skull + HOLLOW.line * box.height) * reach
@@ -98,6 +115,25 @@ export function HeroHeadline({ className, children }: { className?: string; chil
       const offset = (centreY - box.height / 2) / HALO_ASPECT
       const outer = Math.hypot(solid, offset)
       const inner = (Math.hypot(hollow, offset) / outer) * 100
+
+      // Once the skull has flown clear, the halo no longer reaches the line.
+      // Park it — a zero-size gradient paints its last stop everywhere, which
+      // is full paint and no outline — and stop repainting four layers of
+      // type every frame of the flight for no visible change.
+      const clear =
+        centreX + outer < 0 ||
+        centreX - outer > box.width ||
+        centreY + outer * HALO_ASPECT < 0 ||
+        centreY - outer * HALO_ASPECT > box.height
+      if (clear) {
+        if (parked) return
+        parked = true
+        last.x = NaN
+        el.style.setProperty("--hrx", "0%")
+        el.style.setProperty("--hry", "0%")
+        return
+      }
+      parked = false
 
       const x = (centreX / box.width) * 100
       const y = (centreY / box.height) * 100
