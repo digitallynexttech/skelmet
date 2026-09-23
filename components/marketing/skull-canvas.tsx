@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type RefObject } from "react"
 import {
   ACESFilmicToneMapping,
   AmbientLight,
   Box3,
   DirectionalLight,
   Group,
+  Matrix4,
   PCFShadowMap,
   PerspectiveCamera,
   PMREMGenerator,
@@ -21,7 +22,14 @@ import {
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 
-import { getSkullInteraction } from "@/components/marketing/skull-interaction"
+import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-interaction"
+import {
+  journey,
+  measureAnchors,
+  REST_SILHOUETTE,
+  type Anchor,
+  type Silhouette,
+} from "@/components/marketing/skull-journey"
 
 /**
  * The hero mesh, driven directly against three.js.
@@ -41,6 +49,15 @@ import { getSkullInteraction } from "@/components/marketing/skull-interaction"
  *   userRot - free spin accumulated while dragging. It keeps its momentum on
  *             release, then decays back to zero, handing the skull back to the
  *             follow pose instead of leaving it stranded facing backwards.
+ *
+ * The canvas does not live in the hero. It is drawn into `flightRef`, a box
+ * the size of the hero stage positioned in the document, and every frame the
+ * loop asks skull-journey where the skull should be for the current scroll and
+ * moves and scales that box to put it there — at home in the hero, docked over
+ * a photograph further down, or flying between the two. Moving the box rather
+ * than the camera keeps every number above (framing, lift, halo) true in the
+ * box's own terms, and a transform on one element costs the compositor almost
+ * nothing.
  */
 
 /** How far the look-at pose swings at the edges of the viewport (radians). */
@@ -71,12 +88,31 @@ const OPTICAL_CENTRE_LIFT = 0.06
 /** Retina is not worth the fill rate on a mesh this size. */
 const MAX_PIXEL_RATIO = 1.75
 
+/**
+ * The point the headline burns around, in pivot space: up on the cranium,
+ * where the dome crosses the type, and pushed out in front of the face. The
+ * forward push is what makes the burn follow the gaze — turn the skull and the
+ * point swings out to that side, so the letters it faces go hollow first.
+ * HALO_REST in skull-interaction is this point projected at rest; change one
+ * and recompute the other.
+ */
+const HALO_CROWN = 0.45
+const HALO_REACH = 1.1
+/** Flare per radian-per-second of spin, and its ceiling. A hard fling hits it. */
+const HALO_FLARE_GAIN = 0.03
+const HALO_FLARE_MAX = 0.35
+
+/** Roll per px/s of sideways flight, and its ceiling: the skull banks into its turns. */
+const BANK_GAIN = 0.0003
+const BANK_MAX = 0.3
+
 export function SkullCanvas({
-  active,
+  flightRef,
   onReady,
   onError,
 }: {
-  active: boolean
+  /** The positioned box the canvas fills, which the loop flies down the page. */
+  flightRef: RefObject<HTMLDivElement | null>
   onReady: () => void
   onError: (reason: unknown) => void
 }) {
@@ -84,17 +120,14 @@ export function SkullCanvas({
 
   // Everything the loop needs from props, behind refs so none of it lands in
   // the scene effect dependency list — a parent re-render must never be able to
-  // tear down WebGL. `active` in particular flips on every scroll past the
-  // hero, and rebuilding the renderer for that would be absurd.
+  // tear down WebGL.
   //
   // Synced in an effect, not assigned during render, which React forbids.
   // Declared above the scene effect so it has already run when the loop starts.
-  const activeRef = useRef(active)
   const readyRef = useRef(onReady)
   const errorRef = useRef(onError)
 
   useEffect(() => {
-    activeRef.current = active
     readyRef.current = onReady
     errorRef.current = onError
   })
@@ -218,12 +251,114 @@ export function SkullCanvas({
 
     const follow = { x: 0, y: 0 }
     let model: Group | null = null
+    /** Set once the context is lost: the canvas is blank, so nothing may dock. */
+    let failed = false
+
+    // The model's surface, sampled once it loads, in pivot space. The route
+    // sizes the skull by its silhouette, and a dock can turn it side-on, so
+    // the silhouette is measured off these at whatever angle is asked for.
+    let surface: Float32Array | null = null
+    const silhouettes = new Map<number, Silhouette>()
+    const silhouette = (turn: number): Silhouette => {
+      if (!surface || box.height === 0) return REST_SILHOUETTE
+      // Quantised, so a flight easing between two angles reuses its answers.
+      const key = Math.round(turn * 200) / 200
+      const known = silhouettes.get(key)
+      if (known) return known
+
+      const cos = Math.cos(key)
+      const sin = Math.sin(key)
+      const tan = Math.tan((camera.fov * Math.PI) / 360)
+      const aspect = box.width / box.height
+      let minX = Infinity
+      let maxX = -Infinity
+      let minY = Infinity
+      let maxY = -Infinity
+      for (let k = 0; k < surface.length; k += 3) {
+        const x = surface[k]!
+        const y = surface[k + 1]! + OPTICAL_CENTRE_LIFT
+        const z = surface[k + 2]!
+        // Yaw about the pivot, as three applies rotation.y, then the
+        // perspective divide. Out in NDC, where the box spans -1..1.
+        const turnedX = x * cos + z * sin
+        const turnedZ = -x * sin + z * cos
+        const depth = (camera.position.z - turnedZ) * tan
+        const nx = turnedX / (depth * aspect)
+        const ny = y / depth
+        if (nx < minX) minX = nx
+        if (nx > maxX) maxX = nx
+        if (ny < minY) minY = ny
+        if (ny > maxY) maxY = ny
+      }
+      const measured = {
+        height: (maxY - minY) / 2,
+        centreX: (1 + (minX + maxX) / 2) / 2,
+        centreY: (1 - (minY + maxY) / 2) / 2,
+      }
+      silhouettes.set(key, measured)
+      return measured
+    }
+
+    // The route. Re-read whenever layout can have moved: a resize, the body
+    // changing height as fonts and images settle, the fonts themselves.
+    let anchors: Anchor[] = []
+    const box = { width: 0, height: 0 }
+    const written = { transform: "", clip: "" }
+    const plates = new Map<HTMLElement, number>()
+    const measure = () => {
+      silhouettes.clear()
+      anchors = measureAnchors(silhouette(0))
+      const home = anchors[0]
+      const flight = flightRef.current
+      if (!home || !flight) return
+      // The flying box is the hero stage's size, so at home it is the stage.
+      const rect = home.el.getBoundingClientRect()
+      box.width = rect.width
+      box.height = rect.height
+      flight.style.width = `${rect.width}px`
+      flight.style.height = `${rect.height}px`
+      written.transform = ""
+    }
+    measure()
+    window.addEventListener("resize", measure)
+    const layout = new ResizeObserver(measure)
+    layout.observe(document.body)
+    void document.fonts?.ready.then(() => {
+      if (!disposed) measure()
+    })
+
+    /** Hand every photo its own skull back, and stop offering this one for grabs. */
+    const release = () => {
+      for (const el of plates.keys()) el.style.removeProperty("--skull-dock")
+      plates.clear()
+      const i = getSkullInteraction()
+      i.box = null
+      i.hit = null
+    }
+
+    const onLost = (event: Event) => {
+      event.preventDefault()
+      failed = true
+      release()
+      errorRef.current(new Error("WebGL context lost"))
+    }
+    renderer.domElement.addEventListener("webglcontextlost", onLost)
+
+    let bank = 0
+    let lastCx = NaN
+    /** The pose last submitted to the GPU, so an idle skull costs no draws. */
+    const drawn = { x: NaN, y: NaN, z: NaN, lift: NaN, width: 0, height: 0 }
+    /** The model's scaled width and depth, for the halo's silhouette width. */
+    const extent = new Vector3()
+    const haloPoint = new Vector3()
+    const lastRot = { x: 0, y: 0 }
+    let flare = 0
+    // World units visible top to bottom at the pivot's depth — the yardstick
+    // the halo radius is published against.
+    const viewHeight = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360)
 
     const loop = () => {
       frame = requestAnimationFrame(loop)
-      // Stop drawing once the hero scrolls away. The rAF keeps ticking so the
-      // timer stays honest, but nothing is submitted to the GPU.
-      if (!activeRef.current) return
 
       timer.update()
       // Timer already zeroes the delta for a hidden tab; this is the backstop
@@ -231,6 +366,68 @@ export function SkullCanvas({
       // model finishes decoding.
       const d = Math.min(timer.getDelta(), 0.05)
       const i = getSkullInteraction()
+      const flight = flightRef.current
+      const scroll = window.scrollY
+      const vw = document.documentElement.clientWidth
+      const vh = window.innerHeight
+      const pose = journey(anchors, scroll, vw, vh)
+      if (!pose || !flight || box.height === 0) return
+
+      // Put the box where the route says the skull is, sized so the
+      // silhouette at the dock's angle matches the photographed one. Scaled
+      // about its top left, so the translate is simply where that corner lands.
+      const shape = silhouette(pose.turn)
+      const s = pose.h / (shape.height * box.height)
+      const w = box.width * s
+      const h = box.height * s
+      const left = pose.cx - shape.centreX * w
+      const top = pose.cy - shape.centreY * h
+      const transform = `translate3d(${left.toFixed(2)}px, ${top.toFixed(2)}px, 0) scale(${s.toFixed(5)})`
+      if (transform !== written.transform) {
+        flight.style.transform = transform
+        written.transform = transform
+      }
+
+      // The crop is an inset of the box, in its own unscaled pixels.
+      const clip = pose.clip
+        ? `inset(${[
+            pose.clip.top - top,
+            left + w - pose.clip.right,
+            top + h - pose.clip.bottom,
+            pose.clip.left - left,
+          ]
+            .map((v) => `${Math.max(0, v / s).toFixed(1)}px`)
+            .join(" ")})`
+        : "none"
+      if (clip !== written.clip) {
+        flight.style.clipPath = clip
+        written.clip = clip
+      }
+
+      const visible = top - scroll < vh && top - scroll + h > 0
+      const ready = model !== null && !failed
+
+      if (ready) {
+        for (const [el, weight] of pose.plates) {
+          const was = plates.get(el) ?? 0
+          if (Math.abs(weight - was) < 0.004 && !(weight === 0 && was !== 0)) continue
+          plates.set(el, weight)
+          el.style.setProperty("--skull-dock", weight.toFixed(3))
+        }
+        i.box = { x: left, y: top - scroll, w, h }
+        i.hit = visible
+          ? { x: pose.cx, y: pose.cy - scroll, rx: i.halo.r * h, ry: pose.h / 2 }
+          : null
+      }
+
+      // The skull looks at the cursor from wherever it is, not from the middle
+      // of the screen: docked on the left, a cursor to its right turns it right.
+      if (i.cursor) {
+        i.pointer.x = Math.max(-1, Math.min(1, (i.cursor.x - pose.cx) / (vw / 2)))
+        i.pointer.y = Math.max(-1, Math.min(1, (i.cursor.y - (pose.cy - scroll)) / (vh / 2)))
+      }
+
+      if (!visible) return
 
       if (!i.dragging) {
         i.userRot.x += i.vel.x
@@ -248,11 +445,70 @@ export function SkullCanvas({
       follow.x += (i.pointer.y * MAX_PITCH - follow.x) * t
       follow.y += (i.pointer.x * MAX_YAW - follow.y) * t
 
-      pivot.rotation.x = follow.x + i.userRot.x
-      pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y
-      pivot.position.y = OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045
+      // Bank into sideways flight, and settle level again once it stops.
+      if (d > 0 && Number.isFinite(lastCx)) {
+        const lean = Math.max(-BANK_MAX, Math.min(BANK_MAX, (-(pose.cx - lastCx) / d) * BANK_GAIN))
+        bank += (lean - bank) * t
+      }
+      lastCx = pose.cx
 
-      renderer.render(scene, camera)
+      pivot.rotation.x = follow.x + i.userRot.x
+      pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y + pose.spin + pose.turn
+      pivot.rotation.z = bank
+      pivot.position.y =
+        OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045 * pose.bob
+
+      const size = renderer.domElement
+      if (
+        Math.abs(pivot.rotation.x - drawn.x) > 1e-5 ||
+        Math.abs(pivot.rotation.y - drawn.y) > 1e-5 ||
+        Math.abs(pivot.rotation.z - drawn.z) > 1e-5 ||
+        Math.abs(pivot.position.y - drawn.lift) > 1e-5 ||
+        size.width !== drawn.width ||
+        size.height !== drawn.height
+      ) {
+        renderer.render(scene, camera)
+        drawn.x = pivot.rotation.x
+        drawn.y = pivot.rotation.y
+        drawn.z = pivot.rotation.z
+        drawn.lift = pivot.position.y
+        drawn.width = size.width
+        drawn.height = size.height
+      }
+
+      if (model) {
+        // Tell the headline where to burn. Taken after render so the camera's
+        // matrices are current, and from the pose rather than the bob: the bob
+        // never settles, and following it would repaint four layers of display
+        // type every frame for a drift nobody would read as a response.
+        haloPoint.set(0, HALO_CROWN, HALO_REACH).applyEuler(pivot.rotation)
+        haloPoint.y += OPTICAL_CENTRE_LIFT
+        haloPoint.project(camera)
+
+        // The skull is deeper than it is wide, so its silhouette broadens as it
+        // turns toward profile — and the burn broadens with it. Projected as an
+        // ellipse, which a cranium is close to; the bounding box's own width
+        // swells half as much again at 45° and burnt the whole line away.
+        const yaw = pivot.rotation.y
+        const halfWidth = Math.hypot(Math.cos(yaw) * extent.x, Math.sin(yaw) * extent.z) / 2
+
+        // A flung skull flares the burn, which settles again as it slows.
+        // Measured on the visitor's own turning, not the route's: the flight
+        // spin is not something they did, and it wraps a full turn on landing.
+        const ownPitch = follow.x + i.userRot.x
+        const ownYaw = follow.y + i.userRot.y
+        if (d > 0) {
+          const spin = Math.hypot(ownPitch - lastRot.x, ownYaw - lastRot.y) / d
+          flare += (Math.min(spin * HALO_FLARE_GAIN, HALO_FLARE_MAX) - flare) * t
+        }
+        lastRot.x = ownPitch
+        lastRot.y = ownYaw
+
+        i.halo.x = (haloPoint.x + 1) / 2
+        i.halo.y = (1 - haloPoint.y) / 2
+        i.halo.r = halfWidth / viewHeight
+        i.halo.flare = flare
+      }
     }
 
     const loader = new GLTFLoader()
@@ -305,7 +561,32 @@ export function SkullCanvas({
         scaled.scale.setScalar(scale)
         scaled.add(root)
         pivot.add(scaled)
+        extent.copy(size).multiplyScalar(scale)
+        lastRot.x = follow.x
+        lastRot.y = follow.y
         model = scaled
+
+        // Sample the surface into pivot space for the silhouette. About forty
+        // thousand points pins the outline to well under a pixel, and a new
+        // angle costs a fraction of a millisecond to measure.
+        pivot.updateMatrixWorld(true)
+        const toPivot = new Matrix4().copy(pivot.matrixWorld).invert()
+        const points: number[] = []
+        const point = new Vector3()
+        root.traverse((child) => {
+          const mesh = child as Mesh
+          if (!mesh.isMesh) return
+          const position = mesh.geometry.getAttribute("position")
+          const toLocal = new Matrix4().multiplyMatrices(toPivot, mesh.matrixWorld)
+          const step = Math.max(1, Math.floor(position.count / 40000))
+          for (let k = 0; k < position.count; k += step) {
+            point.fromBufferAttribute(position, k).applyMatrix4(toLocal)
+            points.push(point.x, point.y, point.z)
+          }
+        })
+        surface = Float32Array.from(points)
+        // Home is placed by the silhouette too; now it is known exactly.
+        measure()
 
         readyRef.current()
       },
@@ -322,7 +603,13 @@ export function SkullCanvas({
       disposed = true
       cancelAnimationFrame(frame)
       observer.disconnect()
+      layout.disconnect()
+      window.removeEventListener("resize", measure)
+      renderer.domElement.removeEventListener("webglcontextlost", onLost)
       timer.dispose()
+      // The poster takes over from here, and it sits in the rest pose.
+      release()
+      Object.assign(getSkullInteraction().halo, HALO_REST)
 
       // three does not walk the graph for you: every geometry, material and
       // texture holds GPU memory until it is told otherwise, and this canvas
@@ -344,7 +631,7 @@ export function SkullCanvas({
       renderer.dispose()
       renderer.domElement.remove()
     }
-  }, [])
+  }, [flightRef])
 
   return <div ref={hostRef} className="size-full" />
 }

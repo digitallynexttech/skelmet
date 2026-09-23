@@ -262,6 +262,110 @@
       #000 calc(100% - 2px)
     );
   }
+
+  /* The hero headline burn — see components/marketing/hero-headline.tsx.
+
+     Four copies of the line, stacked, every one masked by the same ellipse on
+     the skull. The ellipse is where the paint is back in full; --hin is where
+     the outline-only zone ends, which the component works out per layout so
+     the burn stays about a letter either side of the skull. Everything else
+     hangs off those two:
+
+       0     – core   outline runs blaze
+       0     – hin    hollow: outline only, no paint
+       hin   – 100%   paint returns, through a blaze heat band that peaks a
+                      third of the way out and is gone by heat-end
+       100%  –        solid, as if the skull were not there
+
+     The halo vars are rewritten whenever the skull moves. The defaults are its
+     rest pose at xl, for the frames before the first write. */
+  .burn {
+    --hx: 50%;
+    --hy: 77%;
+    --hrx: 33.4%;
+    --hry: 349%;
+    --hin: 58%;
+    --halo: var(--hrx) var(--hry) at var(--hx) var(--hy);
+    --core: calc(var(--hin) * 0.52);
+    --heat: calc(var(--hin) + (100% - var(--hin)) / 3);
+    --heat-end: calc(var(--hin) + (100% - var(--hin)) * 0.86);
+  }
+
+  .burn-paint {
+    mask-image: radial-gradient(var(--halo), transparent var(--hin), #000 100%);
+    -webkit-mask-image: radial-gradient(var(--halo), transparent var(--hin), #000 100%);
+  }
+
+  /* Tints the paint as it comes back, so the bone letters warm on their way
+     into the halo rather than just greying out. The accent word is already
+     blaze, so on that side this only holds the colour up a little longer. */
+  .burn-heat {
+    position: absolute;
+    inset: 0;
+    color: var(--color-blaze);
+    mask-image: radial-gradient(
+      var(--halo),
+      transparent var(--hin),
+      rgb(0 0 0 / 0.7) var(--heat),
+      transparent var(--heat-end)
+    );
+    -webkit-mask-image: radial-gradient(
+      var(--halo),
+      transparent var(--hin),
+      rgb(0 0 0 / 0.7) var(--heat),
+      transparent var(--heat-end)
+    );
+  }
+
+  /* Outline in each word's own colour. Fill is cleared through
+     -webkit-text-fill-color rather than `color`, so currentColor still means
+     bone on the plain words and blaze on the accent. Set on the descendants as
+     well, so each one resolves currentColor against itself. */
+  .burn-line {
+    position: absolute;
+    inset: 0;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-width: max(1px, 0.0065em);
+    mask-image: radial-gradient(var(--halo), #000 var(--hin), transparent 100%);
+    -webkit-mask-image: radial-gradient(var(--halo), #000 var(--hin), transparent 100%);
+  }
+
+  .burn-line,
+  .burn-line * {
+    -webkit-text-stroke-color: currentColor;
+  }
+
+  /* Closest to the skull the outline runs hot, whatever the word. */
+  .burn-core,
+  .burn-core * {
+    -webkit-text-stroke-color: var(--color-blaze);
+  }
+
+  .burn-core {
+    mask-image: radial-gradient(var(--halo), #000 var(--core), transparent var(--hin));
+    -webkit-mask-image: radial-gradient(var(--halo), #000 var(--core), transparent var(--hin));
+  }
+
+  /* The flying hero skull (skull-stage) takes no pointer events of its own —
+     the window listeners hit-test it — so it cannot set its own cursor. They
+     flag the root instead, and this outranks whatever the skull is over. */
+  html[data-skull="grab"],
+  html[data-skull="grab"] * {
+    cursor: grab !important;
+  }
+
+  html[data-skull="grabbing"],
+  html[data-skull="grabbing"] * {
+    cursor: grabbing !important;
+  }
+
+  /* Where the skull can dock, a sideways drag on touch spins it rather than
+     being claimed by the browser. The card's link overlay is a sibling of the
+     photo, so on a card this has to sit on the article. Pinch zoom stays. */
+  :has(> [data-skull-dock]),
+  article:has([data-skull-dock]) {
+    touch-action: pan-y pinch-zoom;
+  }
 }
 
 /* Everything ambient stops when the visitor asks it to. */

@@ -1,6 +1,7 @@
 import Image from "next/image"
 
 import { Section } from "@/components/marketing/section"
+import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
@@ -17,6 +18,13 @@ export function Anatomy() {
               fill
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
+            />
+            {/* The hero skull lands on the mount on its way down. The shot is a
+                profile facing left, so it lands turned a quarter to match. */}
+            <SkullDock
+              src="/product/mount-assembled.jpg"
+              sizes="(min-width: 1024px) 55vw, 92vw"
+              turn={-Math.PI / 2}
             />
           </div>
         </div>

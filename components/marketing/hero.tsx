@@ -1,5 +1,6 @@
 import { MoveLeft, MoveRight } from "lucide-react"
 
+import { HeroHeadline } from "@/components/marketing/hero-headline"
 import { SkullStage } from "@/components/marketing/skull-stage"
 import { ButtonLink } from "@/components/ui/button"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
@@ -24,8 +25,8 @@ import { cn } from "@/lib/utils"
  * ratio survives any resize. `--hw` caps the headline against viewport width,
  * which is the binding constraint on phones and never on desktop.
  *
- * Stays a Server Component. Only `SkullStage` is a client leaf, and the
- * three.js chunk is dynamically imported inside it.
+ * Stays a Server Component. `SkullStage` and `HeroHeadline` are the client
+ * leaves, and the three.js chunk is dynamically imported inside the former.
  */
 export function Hero() {
   const product = FLAME_SKULL_MOUNT
@@ -62,9 +63,11 @@ export function Hero() {
               "lg:h-[var(--stage)] lg:w-auto lg:max-w-none",
             )}
           >
-            {/* Deliberately unadorned: no shadow, outline or glow. All the
-                weight comes from scale, the condensed cut and tight tracking,
-                and from the skull cutting across the middle of the line.
+            {/* No shadow or glow: the weight comes from scale, the condensed
+                cut and tight tracking, and from the skull cutting across the
+                middle of the line. Where the skull meets the type the paint
+                burns away to an outline, and that burn follows the skull as it
+                turns (see HeroHeadline).
 
                 Sized to run out to the viewport edges, which a display face at
                 its natural width cannot do without growing taller than the
@@ -72,17 +75,7 @@ export function Hero() {
                 with `scale-x`. The cranium is a solid mass several glyphs
                 wide, so a line this size and a skull this size cannot be
                 disjoint; it swallows the middle word, which is the effect. */}
-            {/* Deliberately unadorned: no shadow, outline or glow. All the
-                weight comes from scale, the condensed cut and tight tracking,
-                and from the skull cutting across the middle of the line.
-
-                Sized to run out to the viewport edges, which a display face at
-                its natural width cannot do without growing taller than the
-                space under the header — so at xl the cap height is bought back
-                with `scale-x`. The cranium is a solid mass several glyphs
-                wide, so a line this size and a skull this size cannot be
-                disjoint; it swallows the middle word, which is the effect. */}
-            <h1
+            <HeroHeadline
               className={cn(
                 "pointer-events-none absolute top-[8%] left-1/2 z-10 w-max",
                 "-translate-x-1/2 -translate-y-1/2 lg:top-[23%] xl:top-[20.3%]",
@@ -103,7 +96,7 @@ export function Hero() {
               )}
             >
               Park the <span className="text-blaze">menace</span>
-            </h1>
+            </HeroHeadline>
 
             <SkullStage className="z-20 size-full" />
           </div>
