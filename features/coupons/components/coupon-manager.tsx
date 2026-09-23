@@ -8,8 +8,9 @@ import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DataTable, type Column } from "@/components/ui/data-table"
 import { Field, Input } from "@/components/ui/input"
-import { useCouponMutations, useCoupons } from "@/features/coupons/hooks/use-coupons"
+import { useCouponMutations, useCoupons, type CouponRow } from "@/features/coupons/hooks/use-coupons"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { cn } from "@/lib/utils"
@@ -53,7 +54,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-card border-blaze/30 bg-carbon border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
+      className="rounded-md border-blaze/30 bg-carbon border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
     >
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-display text-bone text-[22px] uppercase">New discount code</h2>
@@ -76,7 +77,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
               type="button"
               onClick={() => setKind(k)}
               className={cn(
-                "flex min-h-11 items-center gap-2 rounded-full border px-5 text-[13.5px] transition-colors",
+                "flex min-h-11 items-center gap-2 rounded-md border px-5 text-[13.5px] transition-colors",
                 kind === k
                   ? "border-blaze bg-blaze/12 text-bone font-semibold"
                   : "text-ash border-white/[0.14] hover:border-white/30",
@@ -129,18 +130,106 @@ function CreateForm({ onDone }: { onDone: () => void }) {
 }
 
 export function CouponManager() {
-  const [state, setState] = useUrlState({ page: "1", q: "" })
+  // Search lives in the URL so a filtered view is shareable; paging is the
+  // table's job now, over the window the server sent.
+  const [state, setState] = useUrlState({ q: "" })
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const [creating, setCreating] = React.useState(false)
   const debounced = useDebounce(rawQuery, 350)
 
   React.useEffect(() => {
-    if (debounced !== state.q) setState({ q: debounced, page: "1" })
+    if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  const page = Math.max(1, Number(state.page) || 1)
-  const { data, isLoading, isError, error } = useCoupons({ page, q: state.q })
+  const { data, isLoading, isError, error } = useCoupons({ page: 1, q: state.q })
   const { expire } = useCouponMutations()
+
+  const columns: Column<CouponRow>[] = [
+    {
+      key: "code",
+      header: "Code",
+      value: (c) => c.code,
+      cell: (c) => (
+        <span className="font-display text-bone text-[20px] tracking-[0.08em]">{c.code}</span>
+      ),
+    },
+    {
+      key: "state",
+      header: "State",
+      value: (c) => c.state,
+      cell: (c) => <Badge variant={STATE_TONE[c.state]}>{c.state}</Badge>,
+    },
+    {
+      key: "value",
+      header: "Discount",
+      align: "right",
+      // Percent and flat are different units, so this sorts within a kind
+      // rather than pretending 10% and ₹250 sit on one scale.
+      value: (c) => Number(c.value),
+      cell: (c) => (
+        <span className="text-bone text-[14px]">
+          {c.kind === "PERCENT" ? (
+            `${Number(c.value)}% off`
+          ) : (
+            <>
+              <Money value={c.value} /> off
+            </>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "min",
+      header: "Minimum",
+      align: "right",
+      value: (c) => Number(c.minSubtotal),
+      cell: (c) => (
+        <span className="text-ash text-[13px]">
+          {Number(c.minSubtotal) > 0 ? <Money value={c.minSubtotal} /> : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "used",
+      header: "Used",
+      align: "right",
+      value: (c) => c.usedCount,
+      cell: (c) => (
+        <span className="text-dim font-mono text-[12px]">
+          {c.usedCount}
+          {c.maxUses !== null ? ` / ${c.maxUses}` : ""}
+        </span>
+      ),
+    },
+    {
+      key: "expires",
+      header: "Expires",
+      align: "right",
+      value: (c) => c.expiresAt ?? "",
+      cell: (c) => (
+        <span className="text-dim font-mono text-[12px]">
+          {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : "never"}
+        </span>
+      ),
+    },
+    {
+      // No value: a button is not data.
+      key: "actions",
+      header: "",
+      align: "right",
+      cell: (c) =>
+        c.state === "ACTIVE" ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={expire.isPending}
+            onClick={() => expire.mutate(c.id)}
+          >
+            Expire
+          </Button>
+        ) : null,
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-7">
@@ -179,80 +268,29 @@ export function CouponManager() {
           title="Could not load codes"
           description={error instanceof Error ? error.message : undefined}
         />
-      ) : isLoading ? (
-        <div className="space-y-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-white/5" />
-          ))}
-        </div>
-      ) : !data || data.data.length === 0 ? (
-        <EmptyState
-          title="No discount codes yet"
-          description="Create one and it works at checkout immediately."
-          action={
-            <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
-              <Plus className="size-4" strokeWidth={2.2} />
-              New code
-            </Button>
-          }
-        />
       ) : (
-        <div className="flex flex-col gap-3">
-          {data.data.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-card bg-carbon flex flex-wrap items-center gap-x-6 gap-y-3 border border-white/[0.09] p-5"
-            >
-              <span className="font-display text-bone text-[24px] tracking-[0.08em]">{c.code}</span>
-              <Badge variant={STATE_TONE[c.state]}>{c.state}</Badge>
-
-              <span className="text-bone text-[14px]">
-                {c.kind === "PERCENT" ? (
-                  `${Number(c.value)}% off`
-                ) : (
-                  <>
-                    <Money value={c.value} /> off
-                  </>
-                )}
-              </span>
-
-              <span className="text-ash text-[13px]">
-                {Number(c.minSubtotal) > 0 ? (
-                  <>
-                    min <Money value={c.minSubtotal} />
-                  </>
-                ) : (
-                  "no minimum"
-                )}
-              </span>
-
-              <span className="text-dim font-mono text-[12px]">
-                used {c.usedCount}
-                {c.maxUses !== null ? ` / ${c.maxUses}` : ""}
-              </span>
-
-              {c.expiresAt ? (
-                <span className="text-dim font-mono text-[12px]">
-                  {c.state === "EXPIRED" ? "expired" : "expires"}{" "}
-                  {new Date(c.expiresAt).toLocaleDateString("en-IN")}
-                </span>
-              ) : null}
-
-              <span className="ml-auto">
-                {c.state === "ACTIVE" ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={expire.isPending}
-                    onClick={() => expire.mutate(c.id)}
-                  >
-                    Expire
-                  </Button>
-                ) : null}
-              </span>
-            </div>
-          ))}
-        </div>
+        <DataTable
+          rows={data?.data ?? []}
+          columns={columns}
+          rowId={(c) => c.id}
+          exportName="discount-codes"
+          loading={isLoading}
+          total={data?.pagination?.total}
+          empty="No discount codes yet. Create one and it works at checkout immediately."
+          exportColumns={[
+            { header: "Code", value: (c) => c.code },
+            { header: "State", value: (c) => c.state },
+            { header: "Kind", value: (c) => c.kind },
+            { header: "Value", value: (c) => Number(c.value) },
+            { header: "Minimum", value: (c) => Number(c.minSubtotal) },
+            { header: "Used", value: (c) => c.usedCount },
+            { header: "Max uses", value: (c) => c.maxUses ?? "" },
+            {
+              header: "Expires",
+              value: (c) => (c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : ""),
+            },
+          ]}
+        />
       )}
     </div>
   )

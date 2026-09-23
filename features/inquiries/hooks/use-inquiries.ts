@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api-fetch"
+import { MAX_PAGE_SIZE } from "@/lib/constants"
 import { mutationWithToast } from "@/lib/query"
 
 export type InquiryStatus = "NEW" | "OPEN" | "RESOLVED"
@@ -29,7 +30,11 @@ export function useInquiries(params: { page: number; status: string; q: string }
   return useQuery({
     queryKey: ["inquiries", params],
     queryFn: () => {
-      const search = new URLSearchParams({ page: String(params.page) })
+      const search = new URLSearchParams({
+        page: String(params.page),
+        // Sorting and export run over what is loaded, so take the window.
+        pageSize: String(MAX_PAGE_SIZE),
+      })
       if (params.status && params.status !== "ALL") search.set("status", params.status)
       if (params.q) search.set("q", params.q)
       return apiFetch<InquiryPage>(`/api/admin/inquiries?${search}`)

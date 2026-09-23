@@ -84,5 +84,16 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, "neutral" | "accent" | "su
   }
 
 export const PAGE_SIZE = 20
+
+/**
+ * The most rows one admin list request may return.
+ *
+ * The console asks for a whole window rather than a page of twenty, so
+ * that sorting and exporting cover the entire filtered set instead of
+ * whichever twenty happened to load — a spreadsheet that silently holds
+ * one page is worse than no export at all. Bounded, because "all rows"
+ * stops being a safe request once the shop has years of orders.
+ */
+export const MAX_PAGE_SIZE = 200
 export const FREE_SHIPPING = true
 export const COD_FEE = 49

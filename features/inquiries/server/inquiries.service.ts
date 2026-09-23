@@ -1,7 +1,7 @@
 import "server-only"
 
 import { paginate } from "@/lib/api-response"
-import { PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
+import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
@@ -66,6 +66,7 @@ function serialize(row: {
 
 export async function listInquiries(params: {
   page?: number
+  pageSize?: number
   status?: string | null
   q?: string | null
 }): Promise<ActionResult<{ data: InquiryRow[]; pagination: unknown; newCount: number }>> {
@@ -74,6 +75,7 @@ export async function listInquiries(params: {
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
     const page = Math.max(1, params.page ?? 1)
+    const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const status = params.status?.trim()
     const q = params.q?.trim()
 
@@ -96,14 +98,14 @@ export async function listInquiries(params: {
         select: INQUIRY_SELECT,
         // Oldest first, so the person who has waited longest is answered first.
         orderBy: { createdAt: "asc" },
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
+        skip: (page - 1) * size,
+        take: size,
       }),
       db.inquiry.count({ where }),
       db.inquiry.count({ where: { status: "NEW" } }),
     ])
 
-    return ok({ ...paginate(rows.map(serialize), page, PAGE_SIZE, total), newCount })
+    return ok({ ...paginate(rows.map(serialize), page, size, total), newCount })
   })
 }
 

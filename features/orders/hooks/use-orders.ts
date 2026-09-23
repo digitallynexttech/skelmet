@@ -3,7 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api-fetch"
-import type { OrderStatus } from "@/lib/constants"
+import { MAX_PAGE_SIZE, type OrderStatus } from "@/lib/constants"
 import { mutationWithToast } from "@/lib/query"
 
 // ── wire types ────────────────────────────────────────────
@@ -80,7 +80,13 @@ type Paginated<T> = {
 const getDashboard = () => apiFetch<Dashboard>("/api/admin/dashboard")
 
 const getOrders = (params: { page: number; status: OrderStatus | "ALL"; q: string }) => {
-  const search = new URLSearchParams({ page: String(params.page), status: params.status })
+  const search = new URLSearchParams({
+    page: String(params.page),
+    status: params.status,
+    // The console sorts and exports client-side, so it takes the whole
+    // window rather than twenty rows it would then mis-describe.
+    pageSize: String(MAX_PAGE_SIZE),
+  })
   if (params.q) search.set("q", params.q)
   return apiFetch<Paginated<OrderRow>>(`/api/admin/orders?${search}`)
 }

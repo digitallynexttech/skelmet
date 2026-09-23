@@ -7,7 +7,7 @@ import {
   validateCouponSchema,
 } from "@/features/coupons/schemas/coupon.schema"
 import { paginate } from "@/lib/api-response"
-import { PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
+import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
@@ -68,6 +68,7 @@ function serialize(row: {
 
 export async function listCoupons(params: {
   page?: number
+  pageSize?: number
   q?: string | null
 }): Promise<ActionResult<{ data: CouponRow[]; pagination: unknown }>> {
   return runAction(async () => {
@@ -75,6 +76,7 @@ export async function listCoupons(params: {
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
     const page = Math.max(1, params.page ?? 1)
+    const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
     const where = q ? { code: { contains: q.toUpperCase() } } : {}
 
@@ -83,13 +85,13 @@ export async function listCoupons(params: {
         where,
         select: COUPON_SELECT,
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
+        skip: (page - 1) * size,
+        take: size,
       }),
       db.coupon.count({ where }),
     ])
 
-    return ok(paginate(rows.map(serialize), page, PAGE_SIZE, total))
+    return ok(paginate(rows.map(serialize), page, size, total))
   })
 }
 

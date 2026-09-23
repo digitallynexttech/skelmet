@@ -2,14 +2,15 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { DataTable, type Column } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
-import { useOrders } from "@/features/orders/hooks/use-orders"
+import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
@@ -33,20 +34,89 @@ function fmtDate(iso: string) {
 }
 
 export function OrderTable() {
-  // List state lives in the URL, so a filtered view is shareable (§6).
-  const [state, setState] = useUrlState({ page: "1", status: "ALL", q: "" })
+  // Filter and search live in the URL, so a filtered view is shareable (§6).
+  // The page number no longer does: paging happens in the table now, over the
+  // window the server sent.
+  const [state, setState] = useUrlState({ status: "ALL", q: "" })
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const debounced = useDebounce(rawQuery, 350)
 
   React.useEffect(() => {
-    if (debounced !== state.q) setState({ q: debounced, page: "1" })
+    if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  const page = Math.max(1, Number(state.page) || 1)
   const status = state.status as OrderStatus | "ALL"
+  const { data, isLoading, isError, error } = useOrders({ page: 1, status, q: state.q })
 
-  const { data, isLoading, isError, error } = useOrders({ page, status, q: state.q })
-  const pagination = data?.pagination
+  const columns: Column<OrderRow>[] = [
+    {
+      key: "number",
+      header: "Order",
+      value: (o) => o.number,
+      // The row is not the link: a clickable row and a selection checkbox
+      // fight over the same click.
+      cell: (o) => (
+        <Link
+          href={`/admin/orders/${o.id}`}
+          className="text-bone hover:text-blaze font-mono text-[13px] transition-colors"
+        >
+          {o.number}
+        </Link>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      value: (o) => o.status,
+      cell: (o) => <StatusBadge status={o.status} />,
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      value: (o) => o.customer || o.email,
+      cell: (o) => (
+        <span className="block min-w-0">
+          <span className="text-bone block truncate text-[14px]">{o.customer}</span>
+          <span className="text-dim block truncate font-mono text-[11px]">{o.email}</span>
+        </span>
+      ),
+    },
+    {
+      key: "items",
+      header: "Items",
+      align: "right",
+      value: (o) => o.itemCount,
+      cell: (o) => (
+        <span className="text-ash text-[13.5px]">
+          {o.itemCount} {o.itemCount === 1 ? "item" : "items"}
+        </span>
+      ),
+    },
+    {
+      key: "total",
+      header: "Total",
+      align: "right",
+      // Money is a string on the wire; as text "₹1,000" sorts below "₹2".
+      value: (o) => Number(o.total),
+      cell: (o) => (
+        <span className="text-bone font-mono text-[13.5px]">
+          <Money value={o.total} />
+        </span>
+      ),
+    },
+    {
+      key: "placed",
+      header: "Placed",
+      align: "right",
+      // Sorts on the ISO string, which orders correctly.
+      value: (o) => o.placedAt ?? o.createdAt,
+      cell: (o) => (
+        <span className="text-dim font-mono text-[11.5px]">
+          {fmtDate(o.placedAt ?? o.createdAt)}
+        </span>
+      ),
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-7">
@@ -76,9 +146,9 @@ export function OrderTable() {
             <button
               key={f.value}
               type="button"
-              onClick={() => setState({ status: f.value, page: "1" })}
+              onClick={() => setState({ status: f.value })}
               className={cn(
-                "min-h-9 shrink-0 rounded-full border px-4 text-[12.5px] transition-colors",
+                "min-h-9 shrink-0 rounded-md border px-4 text-[12.5px] transition-colors",
                 status === f.value
                   ? "border-blaze bg-blaze/12 text-bone font-semibold"
                   : "text-ash border-white/[0.12] hover:border-white/25",
@@ -95,108 +165,28 @@ export function OrderTable() {
           title="Could not load orders"
           description={error instanceof Error ? error.message : undefined}
         />
-      ) : isLoading ? (
-        <div className="space-y-2">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-white/5" />
-          ))}
-        </div>
-      ) : !data || data.data.length === 0 ? (
-        <EmptyState
-          title="Nothing matches"
-          description="Try a different status or clear the search."
-        />
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="rounded-card hidden overflow-hidden border border-white/[0.09] lg:block">
-            <div className="bg-carbon text-dim grid grid-cols-[150px_130px_minmax(0,1fr)_120px_110px_150px] gap-4 border-b border-white/[0.07] px-5 py-3.5 font-mono text-[10px] tracking-[0.16em] uppercase">
-              <span>Order</span>
-              <span>Status</span>
-              <span>Customer</span>
-              <span>Items</span>
-              <span className="text-right">Total</span>
-              <span className="text-right">Placed</span>
-            </div>
-            {data.data.map((order) => (
-              <Link
-                key={order.id}
-                href={`/admin/orders/${order.id}`}
-                className="grid grid-cols-[150px_130px_minmax(0,1fr)_120px_110px_150px] items-center gap-4 border-b border-white/[0.06] px-5 py-4 transition-colors last:border-b-0 hover:bg-white/[0.03]"
-              >
-                <span className="text-bone font-mono text-[13px]">{order.number}</span>
-                <StatusBadge status={order.status} />
-                <span className="min-w-0">
-                  <span className="text-bone block truncate text-[14px]">{order.customer}</span>
-                  <span className="text-dim block truncate font-mono text-[11px]">
-                    {order.email}
-                  </span>
-                </span>
-                <span className="text-ash text-[13.5px]">
-                  {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
-                </span>
-                <span className="text-bone text-right font-mono text-[13.5px]">
-                  <Money value={order.total} />
-                </span>
-                <span className="text-dim text-right font-mono text-[11.5px]">
-                  {fmtDate(order.placedAt ?? order.createdAt)}
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Mobile cards */}
-          <div className="flex flex-col gap-3 lg:hidden">
-            {data.data.map((order) => (
-              <Link
-                key={order.id}
-                href={`/admin/orders/${order.id}`}
-                className="rounded-card bg-carbon border border-white/[0.09] p-5"
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="text-bone font-mono text-[13px]">{order.number}</span>
-                  <StatusBadge status={order.status} />
-                </div>
-                <div className="text-bone mb-1 truncate text-[14.5px]">{order.customer}</div>
-                <div className="text-dim mb-3 truncate font-mono text-[11px]">{order.email}</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-ash text-[13px]">
-                    {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
-                  </span>
-                  <Money value={order.total} className="font-display text-bone text-[22px]" />
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {pagination && pagination.totalPages > 1 ? (
-            <div className="flex items-center justify-between">
-              <span className="text-dim font-mono text-[11.5px]">
-                Page {pagination.page} of {pagination.totalPages} · {pagination.total} orders
-              </span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setState({ page: String(page - 1) })}
-                  className="text-bone flex size-10 items-center justify-center rounded-xl border border-white/[0.12] disabled:opacity-35"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft className="size-4" strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  disabled={page >= pagination.totalPages}
-                  onClick={() => setState({ page: String(page + 1) })}
-                  className="text-bone flex size-10 items-center justify-center rounded-xl border border-white/[0.12] disabled:opacity-35"
-                  aria-label="Next page"
-                >
-                  <ChevronRight className="size-4" strokeWidth={2} />
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </>
+        <DataTable
+          rows={data?.data ?? []}
+          columns={columns}
+          rowId={(o) => o.id}
+          exportName="orders"
+          loading={isLoading}
+          total={data?.pagination?.total}
+          empty="Nothing matches. Try a different status or clear the search."
+          exportColumns={[
+            { header: "Order", value: (o) => o.number },
+            { header: "Status", value: (o) => o.status },
+            { header: "Payment", value: (o) => o.paymentMethod },
+            { header: "Customer", value: (o) => o.customer },
+            { header: "Email", value: (o) => o.email },
+            { header: "Phone", value: (o) => o.phone },
+            { header: "City", value: (o) => o.city },
+            { header: "Items", value: (o) => o.itemCount },
+            { header: "Total", value: (o) => Number(o.total) },
+            { header: "Placed", value: (o) => fmtDate(o.placedAt ?? o.createdAt) },
+          ]}
+        />
       )}
     </div>
   )

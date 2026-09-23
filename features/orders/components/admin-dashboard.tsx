@@ -24,7 +24,7 @@ function Tile({
   tone: string
 }) {
   return (
-    <div className="rounded-card bg-carbon border border-white/[0.09] p-6">
+    <div className="rounded-md bg-carbon border border-white/[0.09] p-6">
       <div className="mb-5 flex items-center justify-between">
         <span className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">{label}</span>
         <Icon className={cn("size-[18px]", tone)} strokeWidth={1.8} />
@@ -84,7 +84,7 @@ export function AdminDashboard() {
       </div>
 
       {data && data.lowStock.length > 0 ? (
-        <div className="rounded-card border-magenta/25 bg-magenta/[0.04] border p-6">
+        <div className="rounded-md border-magenta/25 bg-magenta/[0.04] border p-6">
           <div className="mb-4 flex items-center gap-2.5">
             <AlertTriangle className="text-magenta size-[18px]" strokeWidth={1.8} />
             <h2 className="font-display text-bone text-[20px] uppercase">Running low</h2>
@@ -93,7 +93,7 @@ export function AdminDashboard() {
             {data.lowStock.map((v) => (
               <li
                 key={v.sku}
-                className="bg-void flex items-center gap-3 rounded-xl border border-white/[0.09] px-4 py-2.5"
+                className="bg-void flex items-center gap-3 rounded-md border border-white/[0.09] px-4 py-2.5"
               >
                 <span className="text-dim font-mono text-[11px] tracking-[0.1em]">{v.sku}</span>
                 <span className="text-bone text-[13.5px] capitalize">{v.colourway}</span>
@@ -111,7 +111,7 @@ export function AdminDashboard() {
         </div>
       ) : null}
 
-      <div className="rounded-card bg-carbon border border-white/[0.09]">
+      <div className="rounded-md bg-carbon border border-white/[0.09]">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
           <h2 className="font-display text-bone text-[22px] uppercase">Latest orders</h2>
           <Link
@@ -126,7 +126,7 @@ export function AdminDashboard() {
         {isLoading ? (
           <div className="space-y-2 p-6">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-14 animate-pulse rounded-xl bg-white/5" />
+              <div key={i} className="h-14 animate-pulse rounded-md bg-white/5" />
             ))}
           </div>
         ) : data && data.recent.length > 0 ? (

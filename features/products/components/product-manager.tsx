@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
+import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -102,13 +103,33 @@ function PriceCell({ variant, disabled }: { variant: VariantRow; disabled: boole
   )
 }
 
+function StockLevel({ variant }: { variant: VariantRow }) {
+  const tone =
+    variant.stock === 0
+      ? "text-magenta font-mono text-[14px] font-bold"
+      : variant.stock <= LOW_STOCK
+        ? "text-ember font-mono text-[14px] font-bold"
+        : "text-bone font-mono text-[14px]"
+
+  return (
+    <>
+      <span className={tone}>{variant.stock}</span>
+      {variant.stock === 0 ? (
+        <span className="text-magenta ml-2 text-[12px]">out</span>
+      ) : variant.stock <= LOW_STOCK ? (
+        <span className="text-ember ml-2 text-[12px]">low</span>
+      ) : null}
+    </>
+  )
+}
+
 function ProductCard({ product }: { product: ProductRow }) {
   const [open, setOpen] = React.useState(true)
   const { updateProduct, updateVariant, adjustStock } = useProductMutations()
   const busy = updateProduct.isPending || updateVariant.isPending || adjustStock.isPending
 
   return (
-    <article className="rounded-card bg-carbon border border-white/[0.09]">
+    <article className="rounded-md bg-carbon border border-white/[0.09]">
       <header className="flex flex-wrap items-center gap-4 border-b border-white/[0.07] px-6 py-5">
         <button
           type="button"
@@ -160,49 +181,53 @@ function ProductCard({ product }: { product: ProductRow }) {
       </header>
 
       {open ? (
-        <table className="w-full">
-          <thead>
-            <tr className="text-dim border-b border-white/[0.06] text-left font-mono text-[10px] tracking-[0.16em] uppercase">
-              <th className="px-6 py-3 font-normal">Colourway</th>
-              <th className="px-6 py-3 font-normal">SKU</th>
-              <th className="px-6 py-3 font-normal">Price</th>
-              <th className="px-6 py-3 font-normal">Stock</th>
-              <th className="px-6 py-3 font-normal">Adjust</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.06]">
-            {product.variants.map((v) => (
-              <tr key={v.id}>
-                <td className="text-bone px-6 py-4 text-[14px] capitalize">{v.colourway}</td>
-                <td className="text-ash px-6 py-4 font-mono text-[12px]">{v.sku}</td>
-                <td className="px-6 py-4">
-                  <PriceCell variant={v} disabled={busy} />
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={
-                      v.stock === 0
-                        ? "text-magenta font-mono text-[14px] font-bold"
-                        : v.stock <= LOW_STOCK
-                          ? "text-ember font-mono text-[14px] font-bold"
-                          : "text-bone font-mono text-[14px]"
-                    }
-                  >
-                    {v.stock}
-                  </span>
-                  {v.stock === 0 ? (
-                    <span className="text-magenta ml-2 text-[12px]">out</span>
-                  ) : v.stock <= LOW_STOCK ? (
-                    <span className="text-ember ml-2 text-[12px]">low</span>
-                  ) : null}
-                </td>
-                <td className="px-6 py-4">
-                  <StockCell variant={v} disabled={busy} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="px-6 py-5">
+          <DataTable
+            rows={product.variants}
+            rowId={(v) => v.id}
+            exportName={`variants-${product.slug}`}
+            frame={false}
+            pageSize={25}
+            empty="This product has no variants."
+            columns={[
+              {
+                key: "colourway",
+                header: "Colourway",
+                value: (v) => v.colourway,
+                cell: (v) => (
+                  <span className="text-bone text-[14px] capitalize">{v.colourway}</span>
+                ),
+              },
+              {
+                key: "sku",
+                header: "SKU",
+                value: (v) => v.sku,
+                cell: (v) => <span className="text-ash font-mono text-[12px]">{v.sku}</span>,
+              },
+              {
+                // Sorted as a number: price is a string on the wire, and
+                // "1000" sorts below "2" as text.
+                key: "price",
+                header: "Price",
+                value: (v) => Number(v.price),
+                cell: (v) => <PriceCell variant={v} disabled={busy} />,
+              },
+              {
+                key: "stock",
+                header: "Stock",
+                value: (v) => v.stock,
+                cell: (v) => <StockLevel variant={v} />,
+              },
+              {
+                // No value, so it neither sorts nor exports — a pair of
+                // buttons is not data.
+                key: "adjust",
+                header: "Adjust",
+                cell: (v) => <StockCell variant={v} disabled={busy} />,
+              },
+            ]}
+          />
+        </div>
       ) : null}
     </article>
   )
@@ -214,8 +239,8 @@ export function ProductManager() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-5">
-        <div className="h-14 w-72 animate-pulse rounded-xl bg-white/5" />
-        <div className="rounded-card h-72 animate-pulse bg-white/5" />
+        <div className="h-14 w-72 animate-pulse rounded-md bg-white/5" />
+        <div className="rounded-md h-72 animate-pulse bg-white/5" />
       </div>
     )
   }
