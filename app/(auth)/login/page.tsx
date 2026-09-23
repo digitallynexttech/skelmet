@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
 import { Wordmark } from "@/components/shared/wordmark"
 import { LoginForm } from "@/features/account/components/login-form"
+import { auth } from "@/server/auth"
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -18,6 +20,16 @@ export default async function LoginPage({
   const { next } = await searchParams
   // Only ever an internal path, so a crafted ?next= cannot bounce someone off-site.
   const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : "/admin"
+
+  // Already signed in? Send them on rather than showing a form they cannot
+  // usefully submit. Signing in again would only mint the same session.
+  //
+  // Deliberately not re-checking mustChangePassword here: the (app) layout
+  // owns that rule, and duplicating it is how the two drift apart. Someone
+  // with a temporary password takes one extra hop through /admin and lands
+  // on /change-password, which is the same place either way.
+  const session = await auth()
+  if (session?.user) redirect(safeNext)
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
