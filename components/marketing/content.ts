@@ -90,19 +90,18 @@ export const RATING_BREAKDOWN = [
 export const INSTALL_STEPS = [
   {
     n: "01",
-    title: "Mark the holes",
-    body: "The guide is in the manual. Helmet height: eye level works for most walls.",
+    title: "Hold it up and mark",
+    body: "Hold the mount against the wall where you want it and mark through the holes in the arm.",
   },
-  { n: "02", title: "Drill three holes", body: "Anchors are in the box for masonry and drywall." },
+  {
+    n: "02",
+    title: "Drill and plug",
+    body: "Drill the holes, clear out any dust or debris in them, and push in the wall plugs from the box.",
+  },
   {
     n: "03",
-    title: "Screw the mount on",
-    body: "Skull and arm are one piece, so it goes up in one go. Snug, not gorilla-tight; check it sits level before the last quarter turn.",
-  },
-  {
-    n: "04",
-    title: "Hang your gear",
-    body: "Helmet over the skull, keys and gloves on the hooks along the arm.",
+    title: "Screw it on",
+    body: "Line up the mount with the holes, screw it in with the screws from the box, and you're done.",
   },
 ]
 

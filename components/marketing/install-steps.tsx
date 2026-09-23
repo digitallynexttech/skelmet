@@ -26,9 +26,9 @@ export function InstallSteps() {
             Install
           </SectionLabel>
           <h2 className="font-display text-bone mb-8 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">
-            Wall to skull
+            On the wall
             <br />
-            in ten minutes
+            before you know it
           </h2>
 
           <ol className="grid gap-3.5 sm:grid-cols-2">
@@ -39,6 +39,7 @@ export function InstallSteps() {
                   key={step.n}
                   className={cn(
                     "rounded-tile bg-void border p-5 sm:p-6",
+                    last && "sm:col-span-2",
                     last
                       ? "border-blaze/35 bg-[linear-gradient(150deg,rgb(255_90_31_/_0.12),transparent_62%)]"
                       : "border-white/[0.09]",
