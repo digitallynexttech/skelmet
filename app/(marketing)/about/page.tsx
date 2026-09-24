@@ -35,7 +35,6 @@ const NUMBERS = [
   { value: "10 kg", label: "Load rated" },
   { value: siteConfig.promise.deliveryDays.replace(" working days", ""), label: "Working days to deliver" },
   { value: "4.9", label: "Average rating" },
-  { value: `${siteConfig.promise.warrantyMonths} mo`, label: "Warranty" },
 ]
 
 const WONT_DO = [
@@ -79,11 +78,14 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 border-b border-white/[0.07] lg:grid-cols-4">
+      {/* Three across from sm up, stacked below it. Two columns would leave
+          the third tile orphaned beside an empty cell, and three columns on a
+          phone gives "Working days to deliver" about 90px to wrap into. */}
+      <dl className="grid grid-cols-1 border-b border-white/[0.07] sm:grid-cols-3">
         {NUMBERS.map((n) => (
           <div
             key={n.label}
-            className="border-r border-b border-white/[0.07] px-6 py-9 last:border-r-0 sm:px-10 lg:border-b-0"
+            className="border-b border-white/[0.07] px-6 py-9 last:border-b-0 sm:border-r sm:border-b-0 sm:px-10 sm:last:border-r-0"
           >
             <dd className="font-display text-blaze mb-2.5 text-[42px] leading-none sm:text-[58px]">
               {n.value}
