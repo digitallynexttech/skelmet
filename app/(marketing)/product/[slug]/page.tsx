@@ -96,7 +96,9 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <WhyCare />
       <MoreThanMount />
       <Anatomy />
-      <Texture />
+      {/* Links back up to the buy panel: on this page the product link
+          would only point at the page the reader is already on. */}
+      <Texture ctaHref="#buy" />
       <InstallSteps />
       {/* <TheHook /> */}
       <Comparison />

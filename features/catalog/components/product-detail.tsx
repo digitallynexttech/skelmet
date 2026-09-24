@@ -82,7 +82,7 @@ export function ProductDetail({
   const lineTotal = Number(colourway.price) * qty
 
   return (
-    <div className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14">
+    <div id="buy" className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14">
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
         {/* Fills its column. It used to be capped to a square the height of

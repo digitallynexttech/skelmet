@@ -1,11 +1,24 @@
 import { SplitFeature } from "@/components/marketing/split-feature"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
+import { ButtonLink } from "@/components/ui/button"
+import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TAGS = ["0.2 mm layers", "Matte, not glossy", "Hand-checked"]
 
-export function Texture() {
+export function Texture({
+  /**
+   * Where the buy button goes. This section runs on the home page, the about
+   * page and the product page, and on the product page a link to the product
+   * page is a link to where you already are — so that page points it at the
+   * buy panel it scrolled away from instead.
+   */
+  ctaHref = `/product/${FLAME_SKULL_MOUNT.slug}`,
+}: {
+  ctaHref?: string
+} = {}) {
   return (
     <SplitFeature
       image="/product/detail-flame.jpg"
@@ -57,6 +70,12 @@ export function Texture() {
           </Badge>
         ))}
       </div>
+      {/* Carries the price, as the other marketing CTAs do: there is no price
+          anywhere else in this section, and a bare "Buy it now" that opens a
+          page rather than a checkout should at least say what it costs. */}
+      <ButtonLink href={ctaHref} variant="accent" size="md" className="mt-8 self-start">
+        Buy it now · {formatMoney(FLAME_SKULL_MOUNT.price)}
+      </ButtonLink>
     </SplitFeature>
   )
 }
