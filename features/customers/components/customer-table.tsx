@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Search } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
@@ -71,11 +72,15 @@ export function CustomerTable() {
       // Sorts on the name people read, falling back to the email for the rows
       // that have no name yet.
       value: (c) => c.name ?? c.email,
+      // The name is the link, not the whole row: a clickable row and a
+      // selection checkbox fight over the same click.
       cell: (c) => (
-        <>
-          <div className="text-bone text-[14px] font-semibold">{c.name ?? "-"}</div>
+        <Link href={`/admin/customers/${c.id}`} className="group block">
+          <div className="text-bone group-hover:text-blaze text-[14px] font-semibold transition-colors">
+            {c.name ?? "Unnamed customer"}
+          </div>
           <div className="text-dim font-mono text-[11.5px]">{c.email}</div>
-        </>
+        </Link>
       ),
     },
     {

@@ -174,3 +174,135 @@ export async function listCustomers(
     })
   })
 }
+
+export type CustomerAddress = {
+  name: string
+  line1: string
+  line2: string | null
+  city: string
+  state: string
+  pincode: string
+  phone: string
+}
+
+export type CustomerOrder = {
+  id: string
+  number: string
+  status: string
+  paymentMethod: string
+  total: string
+  itemCount: number
+  placedAt: string | null
+  createdAt: string
+}
+
+export type CustomerDetail = {
+  id: string
+  email: string
+  name: string | null
+  phone: string | null
+  createdAt: string
+  address: CustomerAddress | null
+  orders: CustomerOrder[]
+  summary: {
+    orderCount: number
+    /** Excludes orders the shop did not keep the money for. */
+    totalSpent: string
+    averageOrder: string
+    firstOrderAt: string | null
+    lastOrderAt: string | null
+  }
+}
+
+/** Orders that exist but are not money the shop kept. */
+const NOT_REVENUE = new Set(["PENDING", "CANCELLED", "REFUNDED"])
+
+/**
+ * One customer, with everything the console knows about them.
+ *
+ * Gated on ORDER_READ, the same scope as the list it is reached from: this is
+ * the personal data already on an order, grouped by the person rather than by
+ * the purchase, so it needs no scope of its own.
+ *
+ * Staff are excluded here as they are from the list. A colleague's console
+ * account is not a customer record, and letting /admin/customers/<id> render
+ * one would turn a customer screen into a directory of staff addresses.
+ */
+export async function getCustomer(id: string): Promise<ActionResult<CustomerDetail>> {
+  return runAction(async () => {
+    await requirePermission(PERMISSIONS.ORDER_READ)
+    if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    const user = await db.user.findFirst({
+      where: { id, kind: "CUSTOMER" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        createdAt: true,
+        addresses: {
+          where: { isDefault: true },
+          select: {
+            name: true,
+            line1: true,
+            line2: true,
+            city: true,
+            state: true,
+            pincode: true,
+            phone: true,
+          },
+          take: 1,
+        },
+        orders: {
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            paymentMethod: true,
+            total: true,
+            placedAt: true,
+            createdAt: true,
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    })
+
+    if (!user) return fail("No such customer.", undefined, 404)
+
+    // Every order is listed, including the cancelled ones — they are part of
+    // this person's history. Only the kept money counts toward spend.
+    const revenue = user.orders.filter((o) => !NOT_REVENUE.has(o.status))
+    const spent = revenue.reduce((sum, o) => sum + Number(o.total), 0)
+    const dates = user.orders.map((o) => o.placedAt ?? o.createdAt).sort((a, b) => a.getTime() - b.getTime())
+
+    return ok({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      createdAt: user.createdAt.toISOString(),
+      address: user.addresses[0] ?? null,
+      orders: user.orders.map((o) => ({
+        id: o.id,
+        number: o.number,
+        status: o.status,
+        paymentMethod: o.paymentMethod,
+        // Money is a string on the wire (§7).
+        total: Number(o.total).toFixed(2),
+        itemCount: o._count.items,
+        placedAt: o.placedAt ? o.placedAt.toISOString() : null,
+        createdAt: o.createdAt.toISOString(),
+      })),
+      summary: {
+        orderCount: user.orders.length,
+        totalSpent: spent.toFixed(2),
+        averageOrder: revenue.length ? (spent / revenue.length).toFixed(2) : "0.00",
+        firstOrderAt: dates[0] ? dates[0].toISOString() : null,
+        lastOrderAt: dates.length ? dates[dates.length - 1]!.toISOString() : null,
+      },
+    })
+  })
+}
