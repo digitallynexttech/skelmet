@@ -71,6 +71,12 @@ export type Dashboard = {
   recent: OrderRow[]
 }
 
+/** The order list also carries a count per status for the board tiles. */
+export type OrderListPayload = Paginated<OrderRow> & {
+  counts: Record<OrderStatus, number>
+  allCount: number
+}
+
 type Paginated<T> = {
   data: T[]
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
@@ -88,7 +94,7 @@ const getOrders = (params: { page: number; status: OrderStatus | "ALL"; q: strin
     pageSize: String(MAX_PAGE_SIZE),
   })
   if (params.q) search.set("q", params.q)
-  return apiFetch<Paginated<OrderRow>>(`/api/admin/orders?${search}`)
+  return apiFetch<OrderListPayload>(`/api/admin/orders?${search}`)
 }
 
 const getOrder = (id: string) => apiFetch<OrderDetail>(`/api/admin/orders/${id}`)

@@ -2,7 +2,13 @@ import "server-only"
 
 import { refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paginate } from "@/lib/api-response"
-import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS, type OrderStatus } from "@/lib/constants"
+import {
+  MAX_PAGE_SIZE,
+  ORDER_STATUSES,
+  PAGE_SIZE,
+  PERMISSIONS,
+  type OrderStatus,
+} from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
@@ -80,7 +86,14 @@ export async function listOrders(params: {
   pageSize?: number
   status?: OrderStatus | "ALL"
   q?: string | null
-}): Promise<ActionResult<{ data: OrderRow[]; pagination: unknown }>> {
+}): Promise<
+  ActionResult<{
+    data: OrderRow[]
+    pagination: unknown
+    counts: Record<OrderStatus, number>
+    allCount: number
+  }>
+> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
@@ -89,20 +102,25 @@ export async function listOrders(params: {
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
 
+    // The search narrows the counts; the status filter does not. A tile
+    // showing "Shipped 4" has to keep saying 4 while you are looking at the
+    // shipped ones, or the board stops being a board.
+    const searched = q
+      ? {
+          OR: [
+            { number: { contains: q, mode: "insensitive" as const } },
+            { email: { contains: q, mode: "insensitive" as const } },
+            { phone: { contains: q } },
+          ],
+        }
+      : {}
+
     const where = {
+      ...searched,
       ...(params.status && params.status !== "ALL" ? { status: params.status } : {}),
-      ...(q
-        ? {
-            OR: [
-              { number: { contains: q, mode: "insensitive" as const } },
-              { email: { contains: q, mode: "insensitive" as const } },
-              { phone: { contains: q } },
-            ],
-          }
-        : {}),
     }
 
-    const [rows, total] = await Promise.all([
+    const [rows, total, grouped] = await Promise.all([
       db.order.findMany({
         where,
         select: ORDER_LIST_SELECT,
@@ -111,9 +129,24 @@ export async function listOrders(params: {
         take: size,
       }),
       db.order.count({ where }),
+      // One grouped query rather than eight counts.
+      db.order.groupBy({ by: ["status"], where: searched, _count: { _all: true } }),
     ])
 
-    return ok(paginate(rows.map(serializeRow), page, size, total))
+    // Every status is present, including the ones at zero: a tile that
+    // disappears when it empties is a tile you cannot trust to be there.
+    const counts = Object.fromEntries(ORDER_STATUSES.map((s) => [s, 0])) as Record<
+      OrderStatus,
+      number
+    >
+    let all = 0
+    for (const g of grouped) {
+      const n = g._count._all
+      counts[g.status as OrderStatus] = n
+      all += n
+    }
+
+    return ok({ ...paginate(rows.map(serializeRow), page, size, total), counts, allCount: all })
   })
 }
 
