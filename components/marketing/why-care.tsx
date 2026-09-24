@@ -6,7 +6,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 
 /**
  * The problem, before the product. Magenta throughout, because this is the
- * one section on the page that is not selling anything — it is describing
+ * one section on the page that is not selling anything - it is describing
  * what already happens to a helmet that lives on the floor.
  */
 const ICONS = [Footprints, Droplets, ShieldAlert]

@@ -22,8 +22,8 @@ export function Texture() {
           only 528px at xl and 448px at lg. Dropping the break without
           resizing would have overflowed everywhere except a wide desktop.
 
-          So --fit is the largest size the column can actually hold — its
-          width over the string's own em-width — and each breakpoint takes
+          So --fit is the largest size the column can actually hold - its
+          width over the string's own em-width - and each breakpoint takes
           whichever is smaller, that or the size the scale asks for. The
           divisor is 9.75 rather than 9.39 to leave ~4%: `50vw` counts the
           scrollbar the column does not get, and the fallback face is wider
@@ -43,7 +43,7 @@ export function Texture() {
           is 1611px of text: it needs more than 805px of measure to fall to two
           lines and less than ~560px to spill to four. 640 sits inside that
           band at every width the column can actually offer, which is why the
-          cap is here at all rather than removed — the column runs to 848px at
+          cap is here at all rather than removed - the column runs to 848px at
           1920, and an unbounded measure would drop this to two lines there. */}
       <p className="text-ash mb-7 max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
         We don&apos;t sand the print smooth and pretend it was moulded. The fine horizontal ridges

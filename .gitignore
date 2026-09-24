@@ -26,6 +26,6 @@ yarn-error.log*
 *.tsbuildinfo
 server.log
 
-# design working files are kept — they re-seed the canvas
+# design working files are kept - they re-seed the canvas
 # (design/*.dc.html, design/canvas.json, design/*.jpg)
 design/skelmet-storefront.html

@@ -41,7 +41,7 @@ export default async function LoginPage({
             Sign in
           </h1>
           <p className="text-ash mb-9 text-[15px] leading-[1.6]">
-            The staff console. Customers never need this — orders are placed as a guest and
+            The staff console. Customers never need this - orders are placed as a guest and
             tracked by order number.
           </p>
 

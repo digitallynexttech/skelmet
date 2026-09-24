@@ -6,7 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider"
 import { auth } from "@/server/auth"
 
 /**
- * Shell + session gate. No database queries here (§2) — the session already
+ * Shell + session gate. No database queries here (§2) - the session already
  * carries roles and permissions from the JWT.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (session.user.kind !== "STAFF") redirect("/")
 
   // The flag was set by createStaff and resetStaffPassword, carried onto the
-  // JWT, typed on the session — and read by nothing, so a temporary password
+  // JWT, typed on the session - and read by nothing, so a temporary password
   // an admin chose stayed valid for as long as its owner never bothered. This
   // is the half that makes it mean something. The target is in the (auth)
   // group precisely so this redirect cannot loop into itself.

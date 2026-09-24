@@ -12,7 +12,7 @@ import { db } from "@/server/db"
  * Lets someone change their own password, and clears `mustChangePassword`.
  *
  * That flag was already written by `createStaff` and `resetStaffPassword`,
- * carried through `authorize` onto the JWT and typed on the session — and read
+ * carried through `authorize` onto the JWT and typed on the session - and read
  * by nothing at all. A staff member handed a temporary password was marked as
  * needing to change it and then never asked to, so the password an admin could
  * see stayed valid indefinitely. This and the gate in `app/(app)/layout.tsx`
@@ -30,7 +30,7 @@ export async function changeOwnPassword(raw: unknown): Promise<ActionResult<{ ok
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
-      // Overrides the global omit in server/db.ts — one of the few places the
+      // Overrides the global omit in server/db.ts - one of the few places the
       // hash is genuinely needed (§6).
       select: { id: true, passwordHash: true },
     })
@@ -50,7 +50,7 @@ export async function changeOwnPassword(raw: unknown): Promise<ActionResult<{ ok
       },
     })
 
-    // Never log the password, old or new — only that it moved.
+    // Never log the password, old or new - only that it moved.
     await createAuditLog(session, {
       action: "user:password-change",
       module: "account",

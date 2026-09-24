@@ -6,7 +6,7 @@
  * The sheets are drawn for white paper: the wordmark is near-black, which sits
  * at roughly 1.1:1 against --color-void and disappears. Two of them also carry
  * a colour swatch strip along the bottom. So each one is cropped above the
- * strip, trimmed to the artwork, and has its dark ink repainted as bone — the
+ * strip, trimmed to the artwork, and has its dark ink repainted as bone - the
  * standard reversed variant. The orange is left exactly as delivered, so the
  * logo keeps the brand hue rather than the site token (they differ slightly:
  * #F15D22 against --color-blaze #FF5A1F).
@@ -136,7 +136,7 @@ const rowCoverage = (img, y) => {
 /**
  * Where to cut the swatch strip off a brand sheet.
  *
- * Finding the strip itself is easy — it is the run of rows at the bottom that
+ * Finding the strip itself is easy - it is the run of rows at the bottom that
  * is opaque edge to edge. Cutting there is not enough: its antialiased top
  * edge survives as a hairline, and being full width it then dictates the
  * bounding box. So keep walking up to the fully transparent gap that separates
@@ -189,7 +189,7 @@ const dist = (px, i, c) => (px[i] - c[0]) ** 2 + (px[i + 1] - c[1]) ** 2 + (px[i
 
 /**
  * Repaint the dark ink as bone. Alpha is straight, not premultiplied, so
- * antialiased edge pixels carry the full ink RGB at a partial alpha —
+ * antialiased edge pixels carry the full ink RGB at a partial alpha -
  * swapping RGB and leaving alpha alone keeps every edge clean.
  */
 function reverse(img) {

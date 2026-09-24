@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
  * above must fetch the whole set it wants sorted rather than one page of it.
  * The admin endpoints take a pageSize for exactly that reason, capped at
  * MAX_PAGE_SIZE. Past that cap the server holds rows back, and `total` makes
- * the table say so — because sorting twenty of two hundred rows and calling
+ * the table say so - because sorting twenty of two hundred rows and calling
  * it "sorted by spend" is a lie, and a spreadsheet that quietly holds one
  * page is a worse one.
  */
@@ -71,7 +71,7 @@ type Props<T> = {
   total?: number
   /**
    * Detail for one row, revealed on demand. For content a cell cannot hold
-   * honestly — a paragraph of free text truncated to one line is not a
+   * honestly - a paragraph of free text truncated to one line is not a
    * summary, it is a message the reader cannot read.
    */
   expandable?: (row: T) => React.ReactNode
@@ -308,7 +308,7 @@ export function DataTable<T>({
                           c.className,
                         )}
                       >
-                        {c.cell ? c.cell(row) : (c.value?.(row) ?? "—")}
+                        {c.cell ? c.cell(row) : (c.value?.(row) ?? "-")}
                       </td>
                     ))}
                   </tr>
@@ -338,7 +338,7 @@ export function DataTable<T>({
       {truncated ? (
         <p className="text-ember mt-3 text-[12px] leading-[1.5]">
           Showing the first {rows.length} of {total}. Sorting and export cover these
-          rows only — narrow the search to reach the rest.
+          rows only - narrow the search to reach the rest.
         </p>
       ) : null}
 

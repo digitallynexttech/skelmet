@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable, type Column } from "@/components/ui/data-table"
+import { DateField } from "@/components/ui/date-field"
 import { Field, Input } from "@/components/ui/input"
 import { useCouponMutations, useCoupons, type CouponRow } from "@/features/coupons/hooks/use-coupons"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -21,18 +22,37 @@ const STATE_TONE = {
   EXHAUSTED: "ember",
 } as const
 
+/** Digits only, so `onlyDigits("1a2") === "12"` and an empty box stays empty. */
+const onlyDigits = (s: string) => s.replace(/[^0-9]/g, "")
+
 function CreateForm({ onDone }: { onDone: () => void }) {
   const { create } = useCouponMutations()
   const [kind, setKind] = React.useState<"PERCENT" | "FLAT">("FLAT")
   const [error, setError] = React.useState<string | null>(null)
+
+  // The amounts are held here rather than read off the form on submit. They
+  // used to be <input type="number">, which brought two problems with it: a
+  // spinner that invites clicking a value up one press at a time, and a wheel
+  // that quietly edits a focused field while you scroll past — 250 became 251
+  // on one notch. Plain text boxes filtered to digits have neither.
+  const [amount, setAmount] = React.useState("")
+  const [minSubtotal, setMinSubtotal] = React.useState("")
+  const [maxUses, setMaxUses] = React.useState("")
+  const [expiresAt, setExpiresAt] = React.useState("")
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     const form = new FormData(event.currentTarget)
 
-    const expiresRaw = String(form.get("expiresAt") ?? "").trim()
-    const maxUsesRaw = String(form.get("maxUses") ?? "").trim()
+    if (!amount) {
+      setError(kind === "FLAT" ? "Enter an amount to take off." : "Enter a percentage.")
+      return
+    }
+    if (kind === "PERCENT" && Number(amount) > 100) {
+      setError("A percentage cannot be over 100.")
+      return
+    }
 
     try {
       await create.mutateAsync({
@@ -40,10 +60,14 @@ function CreateForm({ onDone }: { onDone: () => void }) {
           .trim()
           .toUpperCase(),
         kind,
-        value: Number(form.get("value")),
-        minSubtotal: Number(form.get("minSubtotal") || 0),
-        maxUses: maxUsesRaw ? Number(maxUsesRaw) : null,
-        expiresAt: expiresRaw ? new Date(expiresRaw).toISOString() : null,
+        value: Number(amount),
+        // Blank means no minimum, which is zero.
+        minSubtotal: Number(minSubtotal || 0),
+        // Blank means unlimited, which the service reads as null.
+        maxUses: maxUses ? Number(maxUses) : null,
+        // The field hands back local YYYY-MM-DD; end the day rather than
+        // start it, or a code set to expire today dies at midnight.
+        expiresAt: expiresAt ? new Date(expiresAt + "T23:59:59").toISOString() : null,
       })
       onDone()
     } catch {
@@ -96,22 +120,43 @@ function CreateForm({ onDone }: { onDone: () => void }) {
         </Field>
         <Field label={kind === "FLAT" ? "Amount off (₹)" : "Percent off"}>
           <Input
-            name="value"
-            type="number"
-            min="1"
-            step="1"
-            required
+            value={amount}
+            onChange={(e) => setAmount(onlyDigits(e.target.value))}
+            inputMode="numeric"
+            autoComplete="off"
             placeholder={kind === "FLAT" ? "250" : "10"}
+            className="font-mono"
           />
         </Field>
         <Field label="Minimum subtotal (₹)">
-          <Input name="minSubtotal" type="number" min="0" step="1" defaultValue="0" />
+          {/* Placeholder, not a value. It held a literal 0 before, so typing
+              500 into it gave 0500 unless you deleted the zero first. */}
+          <Input
+            value={minSubtotal}
+            onChange={(e) => setMinSubtotal(onlyDigits(e.target.value))}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="0"
+            className="font-mono"
+          />
         </Field>
         <Field label="Max uses (blank = unlimited)">
-          <Input name="maxUses" type="number" min="1" step="1" placeholder="100" />
+          <Input
+            value={maxUses}
+            onChange={(e) => setMaxUses(onlyDigits(e.target.value))}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="100"
+            className="font-mono"
+          />
         </Field>
         <Field label="Expires (blank = never)" className="sm:col-span-2">
-          <Input name="expiresAt" type="date" />
+          <DateField
+            name="expiresAt"
+            value={expiresAt}
+            onChange={setExpiresAt}
+            placeholder="Never expires"
+          />
         </Field>
       </div>
 
@@ -185,7 +230,7 @@ export function CouponManager() {
       value: (c) => Number(c.minSubtotal),
       cell: (c) => (
         <span className="text-ash text-[13px]">
-          {Number(c.minSubtotal) > 0 ? <Money value={c.minSubtotal} /> : "—"}
+          {Number(c.minSubtotal) > 0 ? <Money value={c.minSubtotal} /> : "-"}
         </span>
       ),
     },

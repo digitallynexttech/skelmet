@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
  * JavaScript at all. The 3D canvas is an enhancement laid over it.
  *
  * Alpha rather than a blend, because the headline runs behind this box and the
- * skull is supposed to cover it — `screen` would brighten the type showing
+ * skull is supposed to cover it - `screen` would brighten the type showing
  * through instead, and an opaque plate would punch a rectangle out of the
  * bloom. The cutout is posed and sized to sit where the mesh sits, so the
  * hand-off between them is close to invisible.
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
  * top of a ~900KB three.js chunk, so there are plenty of visitors who should
  * never be asked to download it: a metered connection, 2G, reduced motion, a
  * device with no WebGL, or a fetch that simply fails. Every one of those cases
- * lands on the poster, which is a finished hero rather than a placeholder —
+ * lands on the poster, which is a finished hero rather than a placeholder -
  * the treatment this section shipped with before the model existed.
  *
  * While the model is in flight the stage holds the splash down, so on a
@@ -39,8 +39,8 @@ import { cn } from "@/lib/utils"
  * The canvas is not drawn inside this box. It is portalled to the body, into
  * a box the size of this one, and flown down the page by skull-journey: it
  * starts here, and on scroll lifts off and lands on the photographs of the
- * skull further down (see SkullDock). This element stays behind as its home —
- * `data-skull-home` is how the route finds it — along with the atmosphere and
+ * skull further down (see SkullDock). This element stays behind as its home -
+ * `data-skull-home` is how the route finds it - along with the atmosphere and
  * the poster, which never leave the hero.
  *
  * `ssr: false` is rejected inside a Server Component in Next 16, which is why
@@ -57,7 +57,7 @@ const SkullCanvas = dynamic(() => import("@/components/marketing/skull-canvas"),
  *
  * The canvas camera is at z=5.4 with a 32° vertical fov, so it sees
  * 2 * 5.4 * tan(16°) = 3.096 units at the origin. skull-canvas normalises the
- * model's longest axis — its height — to 2.5 of those units and lifts it by
+ * model's longest axis - its height - to 2.5 of those units and lifts it by
  * OPTICAL_CENTRE_LIFT (0.06). Both fall out as a share of the stage height.
  */
 const MESH_HEIGHT_RATIO = 80.7 // 2.5 / 3.096
@@ -80,7 +80,7 @@ const EMBERS = [
   "left-[90%] bottom-[12%] size-[2px] [animation-delay:9.8s]",
 ]
 
-/** Not in lib.dom, and absent in Safari — every read has to tolerate both. */
+/** Not in lib.dom, and absent in Safari - every read has to tolerate both. */
 type NetworkInformation = { saveData?: boolean; effectiveType?: string }
 
 /**
@@ -109,7 +109,7 @@ export function SkullStage({ className }: { className?: string }) {
 
   /** Are we downloading the model at all. */
   const [attempt, setAttempt] = useState(false)
-  /** Is the mesh on screen — the only thing that hides the poster. */
+  /** Is the mesh on screen - the only thing that hides the poster. */
   const [live, setLive] = useState(false)
 
   const releaseSplash = useCallback(() => {
@@ -123,7 +123,7 @@ export function SkullStage({ className }: { className?: string }) {
   }, [releaseSplash])
 
   // Covers both routes a failure can take: the boundary, for anything thrown
-  // during render, and the canvas itself, for the async ones it owns — a model
+  // during render, and the canvas itself, for the async ones it owns - a model
   // that never downloads, or a machine with no WebGL context to give. Put the
   // poster back as well as releasing the splash, since a context lost after the
   // mesh went live would otherwise leave the stage empty.
@@ -159,7 +159,7 @@ export function SkullStage({ className }: { className?: string }) {
   }, [releaseSplash])
 
   // The skull tracks the cursor anywhere on screen, and can be grabbed and
-  // spun wherever it has flown to — so these listen on the window rather than
+  // spun wherever it has flown to - so these listen on the window rather than
   // on this box, and hit-test against the silhouette the render loop
   // publishes. Everything else under the skull keeps working: a press that is
   // not on the skull is left alone, and a press on it that never moves is

@@ -6,14 +6,14 @@
  * The lineup cards are a colour comparison, so the only thing that should
  * differ between them is the colour. The olive and ghost plates were shot at
  * three-quarter while the blaze one is straight on, which made the row read as
- * three different products rather than one product in three finishes — and no
+ * three different products rather than one product in three finishes - and no
  * straight-on plate exists for the other two, so the angle cannot be cropped
  * back. Both are therefore derived from the blaze plate: identical framing,
  * lighting, shadow and layer texture, with the filament colour remapped.
  *
  * Hue and saturation are applied to every pixel rather than through the mask.
- * Both are continuous as chroma approaches zero — a grey pixel is grey at any
- * hue, and a scaled zero is still zero — so the backdrop passes through
+ * Both are continuous as chroma approaches zero - a grey pixel is grey at any
+ * hue, and a scaled zero is still zero - so the backdrop passes through
  * untouched and the antialiased rim cannot hold an orange fringe. Only the
  * lightness change, which is not continuous that way, is ramped by the mask.
  *
@@ -22,7 +22,7 @@
  * ever covers the one-pixel edge.
  *
  * Every number comes off the swatch in the catalogue and the pixels of the
- * source plate — nothing here is eyeballed, so the photographs cannot drift
+ * source plate - nothing here is eyeballed, so the photographs cannot drift
  * away from the dots rendered beside them.
  *
  * These are derived plates, not photographs of real olive and grey prints.
@@ -66,9 +66,9 @@ const SRC_HEX = "#FF5A1F"
  * near-grey shows hue noise far more readily than a mid-tone does.
  *
  * tone pins the result to the tone of the plate it replaces. Swatch times
- * lighting response alone landed both a little light — olive at 0.471 against
+ * lighting response alone landed both a little light - olive at 0.471 against
  * the old plate's 0.437 and ghost at 0.763 against 0.688, read as the median
- * of the brighter half of a box over the cranium — because a flat swatch
+ * of the brighter half of a box over the cranium - because a flat swatch
  * carries no sense of how much of a lit object is turned away from the key.
  * Only the angle was meant to change here, so the colour is held where it was.
  */
@@ -134,7 +134,7 @@ const hexHsl = (hex) => {
  * Hue is circular and this print straddles the wrap: its deepest shadows are
  * dark reds sitting at 355-359° rather than at -5 to -1. Subtracting plainly
  * made those read as +338° from a source at 20°, which even a 0.15 hueKeep
- * turned into +51° — the difference between a blue-grey and a lilac, and the
+ * turned into +51° - the difference between a blue-grey and a lilac, and the
  * reason 14.5k pixels in the eye sockets and nose came out pink.
  */
 const hueDelta = (h, from) => ((h - from + 540) % 360) - 180
@@ -199,7 +199,7 @@ for (const t of TARGETS) {
   const wantMed = swatchL * RESPONSE * t.tone
 
   // Down is a plain scale: it cannot clip and it leaves the modelling intact.
-  // Up needs a curve, because the print's top 5% runs from 0.67 to 0.88 — a
+  // Up needs a curve, because the print's top 5% runs from 0.67 to 0.88 - a
   // tail too long to lift linearly into the headroom above a raised median
   // without flattening the highlights to paper white. So the range is
   // normalised, bent by a gamma solved to put the median on target, and

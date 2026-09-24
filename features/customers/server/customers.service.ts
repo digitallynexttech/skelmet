@@ -12,7 +12,7 @@ import { db } from "@/server/db"
 /**
  * Customers are a by-product of orders, not accounts.
  *
- * Nobody signs up here — checkout is the only thing that ever creates one of
+ * Nobody signs up here - checkout is the only thing that ever creates one of
  * these rows. The point is that the shop knows who has bought before, so the
  * admin console can show a customer list and a returning buyer does not have
  * to retype an address they have already given us.
@@ -41,7 +41,7 @@ export async function attachCustomer(
   })
 
   // `kind` is never written on an existing row. A staff member ordering with
-  // their work address must not be demoted to CUSTOMER, and — far worse — a
+  // their work address must not be demoted to CUSTOMER, and - far worse - a
   // customer must never be handed STAFF by typing an address that happens to
   // match one. Existing names and numbers are only filled in where blank, so
   // a checkout form cannot rewrite an admin's own details.

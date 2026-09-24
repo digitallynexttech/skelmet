@@ -4,7 +4,7 @@ import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
 import { COD_FEE } from "@/lib/constants"
 
 /**
- * Pricing is the one pure module in the money path, and it is the authority —
+ * Pricing is the one pure module in the money path, and it is the authority -
  * checkout re-runs it against the database rather than trusting the browser.
  * Everything here is about what a customer is charged.
  */
@@ -16,7 +16,7 @@ describe("priceCart", () => {
     expect(priceCart([line("3499", 2)]).subtotal).toBe(6998)
   })
 
-  it("does not discount for quantity — a coupon is the only reduction", () => {
+  it("does not discount for quantity - a coupon is the only reduction", () => {
     expect(priceCart([line("3499", 1)]).discount).toBe(0)
     expect(priceCart([line("3499", 2)]).discount).toBe(0)
     expect(priceCart([line("3499", 5)]).discount).toBe(0)

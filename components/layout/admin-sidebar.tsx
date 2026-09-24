@@ -55,7 +55,7 @@ export function AdminSidebar({
 
   if (open && openedOn !== pathname) setOpen(false)
 
-  // Cosmetic filter only — proxy.ts and requirePermission are the enforcement.
+  // Cosmetic filter only - proxy.ts and requirePermission are the enforcement.
   const items = NAV.filter((item) => permissions.includes(item.scope))
 
   const body = (

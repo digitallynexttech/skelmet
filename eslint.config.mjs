@@ -7,7 +7,7 @@ const config = [
   {
     ignores: [".next/**", "node_modules/**", "design/**", "public/**"],
   },
-  // Imported directly — never through FlatCompat, which crashes here.
+  // Imported directly - never through FlatCompat, which crashes here.
   ...coreWebVitals,
   ...nextTypescript,
   {
@@ -27,7 +27,7 @@ const config = [
     },
   },
   {
-    // Build scripts are CLIs — stdout is their output, not a stray debug line.
+    // Build scripts are CLIs - stdout is their output, not a stray debug line.
     files: ["scripts/**"],
     rules: { "no-console": "off" },
   },

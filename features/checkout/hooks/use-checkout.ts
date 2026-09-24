@@ -31,7 +31,7 @@ type RazorpayOptions = {
   order_id: string
   prefill: { name: string; email: string; contact: string }
   /**
-   * backdrop_color is Razorpay's own option, not a CSS override — their
+   * backdrop_color is Razorpay's own option, not a CSS override - their
    * container is same-origin but the sheet inside is an iframe, and the
    * default backdrop is a near-opaque white that blanks a dark site the
    * instant the modal opens. The blur on top of it is ours (globals.css).

@@ -37,7 +37,7 @@ export function ProductDetail({
   initialColourway,
 }: {
   product: Product
-  /** From `?colour=` — a lineup card opens this page on the colour clicked. */
+  /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
   // Validated against the catalogue rather than trusted: ?colour=anything
@@ -87,7 +87,7 @@ export function ProductDetail({
       <div className="flex flex-col gap-3.5">
         {/* Fills its column. It used to be capped to a square the height of
             the viewport, which on any wide screen left the image narrower than
-            the space it sat in — centred, with dead air down both sides.
+            the space it sat in - centred, with dead air down both sides.
 
             Still square, because the colourway shots are 1:1 and a 4:5 box was
             scaling them up 25% and cutting the sides off. */}

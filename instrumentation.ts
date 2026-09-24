@@ -10,7 +10,7 @@ export async function register() {
 
   if (!hasDatabase()) {
     console.warn(
-      "[BOOT] DATABASE_URL is not set — the storefront runs from the catalogue registry, and any database-backed route will answer 503.",
+      "[BOOT] DATABASE_URL is not set - the storefront runs from the catalogue registry, and any database-backed route will answer 503.",
     )
   }
 

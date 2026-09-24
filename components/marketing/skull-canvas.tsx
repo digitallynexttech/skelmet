@@ -38,7 +38,7 @@ import {
  * This used to be @react-three/fiber. It was dropped for two reasons that both
  * come back to owning the frame: fiber builds its store around
  * `new THREE.Clock()`, deprecated since r183, which warned on every mount with
- * nothing callable from this side to stop it — and its dist is 638KB against
+ * nothing callable from this side to stop it - and its dist is 638KB against
  * three's own 647KB, on the heaviest chunk the site loads. What it bought us
  * was JSX for a scene graph that is built once and never re-rendered.
  *
@@ -54,7 +54,7 @@ import {
  * The canvas does not live in the hero. It is drawn into `flightRef`, a box
  * the size of the hero stage positioned in the document, and every frame the
  * loop asks skull-journey where the skull should be for the current scroll and
- * moves and scales that box to put it there — at home in the hero, docked over
+ * moves and scales that box to put it there - at home in the hero, docked over
  * a photograph further down, or flying between the two. Moving the box rather
  * than the camera keeps every number above (framing, lift, halo) true in the
  * box's own terms, and a transform on one element costs the compositor almost
@@ -92,7 +92,7 @@ const MAX_PIXEL_RATIO = 1.75
 /**
  * The point the headline burns around, in pivot space: up on the cranium,
  * where the dome crosses the type, and pushed out in front of the face. The
- * forward push is what makes the burn follow the gaze — turn the skull and the
+ * forward push is what makes the burn follow the gaze - turn the skull and the
  * point swings out to that side, so the letters it faces go hollow first.
  * HALO_REST in skull-interaction is this point projected at rest; change one
  * and recompute the other.
@@ -120,7 +120,7 @@ export function SkullCanvas({
   const hostRef = useRef<HTMLDivElement>(null)
 
   // Everything the loop needs from props, behind refs so none of it lands in
-  // the scene effect dependency list — a parent re-render must never be able to
+  // the scene effect dependency list - a parent re-render must never be able to
   // tear down WebGL.
   //
   // Synced in an effect, not assigned during render, which React forbids.
@@ -230,7 +230,7 @@ export function SkullCanvas({
     scene.add(key, kicker, rim, bounce, ambient)
 
     // Pivot the animation drives, with the model parented inside it already
-    // centred and normalised — so rotation happens about the skull, not about
+    // centred and normalised - so rotation happens about the skull, not about
     // whatever origin the exporter happened to leave behind.
     const pivot = new Group()
     scene.add(pivot)
@@ -354,7 +354,7 @@ export function SkullCanvas({
     const haloPoint = new Vector3()
     const lastRot = { x: 0, y: 0 }
     let flare = 0
-    // World units visible top to bottom at the pivot's depth — the yardstick
+    // World units visible top to bottom at the pivot's depth - the yardstick
     // the halo radius is published against.
     const viewHeight = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360)
 
@@ -363,7 +363,7 @@ export function SkullCanvas({
 
       timer.update()
       // Timer already zeroes the delta for a hidden tab; this is the backstop
-      // for an ordinary stalled frame — a long GC, or the first frame after the
+      // for an ordinary stalled frame - a long GC, or the first frame after the
       // model finishes decoding.
       const d = Math.min(timer.getDelta(), 0.05)
       const i = getSkullInteraction()
@@ -487,7 +487,7 @@ export function SkullCanvas({
         haloPoint.project(camera)
 
         // The skull is deeper than it is wide, so its silhouette broadens as it
-        // turns toward profile — and the burn broadens with it. Projected as an
+        // turns toward profile - and the burn broadens with it. Projected as an
         // ellipse, which a cranium is close to; the bounding box's own width
         // swells half as much again at 45° and burnt the whole line away.
         const yaw = pivot.rotation.y

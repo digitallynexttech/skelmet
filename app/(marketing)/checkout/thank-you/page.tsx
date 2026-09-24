@@ -67,7 +67,7 @@ function Unknown() {
         </h1>
         <p className="text-ash mb-9 text-[15.5px] leading-[1.6] text-pretty sm:text-[17px]">
           We can&apos;t find an order for this browser. If you&apos;ve just paid, the confirmation
-          is in your inbox — look it up with your order number and we&apos;ll pull up the status.
+          is in your inbox - look it up with your order number and we&apos;ll pull up the status.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <ButtonLink href="/track" variant="light" size="md">

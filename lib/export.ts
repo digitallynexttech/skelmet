@@ -2,12 +2,12 @@
  * Table exports, CSV and XLSX.
  *
  * Both are generated in the browser from rows already on screen, so an export
- * can never show more than the admin is allowed to see — the server has
+ * can never show more than the admin is allowed to see - the server has
  * already applied the permission check that produced them.
  *
  * write-excel-file is imported dynamically: it is about a megabyte, and an
  * admin who never clicks Export should not pay for it on every page load.
- * SheetJS was the obvious alternative and was rejected — npm's latest is
+ * SheetJS was the obvious alternative and was rejected - npm's latest is
  * pinned at 0.18.5, which carries unpatched prototype-pollution and ReDoS
  * advisories, because the project publishes newer builds off-registry.
  */
@@ -86,7 +86,7 @@ export async function downloadXlsx<T>(
     ),
   ]
 
-  // The browser build hands back { toBlob, toFile } rather than writing —
+  // The browser build hands back { toBlob, toFile } rather than writing -
   // it cannot touch the filesystem, so the download is the caller's job.
   const widths = columns.map((c, i) => ({
     // Roughly the longest cell, so nothing opens as ####. Sampled, not

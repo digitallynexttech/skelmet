@@ -16,13 +16,13 @@ export type WatermarkAccent = keyof typeof STROKES
 /**
  * The outline word sitting behind a hero's copy.
  *
- * One shared size for every page that uses it — 19vw echoes the SKELMET mark in
- * the footer — so the heroes read as one system. Sits against the right of the
+ * One shared size for every page that uses it - 19vw echoes the SKELMET mark in
+ * the footer - so the heroes read as one system. Sits against the right of the
  * section, padded to the same gutter as the copy rather than hung off the edge
  * with a negative offset, so the last letter never clips against overflow-hidden.
  *
  * Pass an array to break a long mark over two lines. That keeps the type size
- * identical to every other page and buys the width back vertically instead —
+ * identical to every other page and buys the width back vertically instead -
  * the alternative, shrinking it to fit, would break the shared size.
  */
 export function HeroWatermark({

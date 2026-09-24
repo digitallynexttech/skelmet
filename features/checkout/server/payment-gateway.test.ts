@@ -106,7 +106,7 @@ describe("verifyWebhookSignature", () => {
   })
 
   it("FAILS CLOSED when no webhook secret is configured", () => {
-    // Unset, every delivery must be refused — never waved through.
+    // Unset, every delivery must be refused - never waved through.
     delete process.env.PAYMENT_WEBHOOK_SECRET
     expect(verifyWebhookSignature(body, sign(body))).toBe(false)
   })

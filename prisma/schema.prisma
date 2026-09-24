@@ -1,4 +1,4 @@
-// SKELMET — Postgres via Prisma 7 with the pg adapter.
+// SKELMET - Postgres via Prisma 7 with the pg adapter.
 // Migrations are hand-written SQL applied with `prisma migrate deploy` (§6);
 // `migrate dev` needs shadow-DB rights most hosted Postgres refuses.
 
@@ -181,7 +181,7 @@ model MediaAsset {
   id        String   @id @default(uuid()) @db.Uuid
   productId String?  @map("product_id") @db.Uuid
   variantId String?  @map("variant_id") @db.Uuid
-  /// The object key — never a signed URL, which expires while the row lives (§7).
+  /// The object key - never a signed URL, which expires while the row lives (§7).
   key       String
   alt       String
   sort      Int      @default(0)

@@ -5,7 +5,7 @@ import type { Permission } from "@/lib/constants"
 type UserKind = "STAFF" | "CUSTOMER"
 
 /**
- * Required augmentation — without it every permission check fails to
+ * Required augmentation - without it every permission check fails to
  * compile (§6).
  */
 declare module "next-auth" {

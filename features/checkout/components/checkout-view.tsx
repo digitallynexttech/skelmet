@@ -70,13 +70,13 @@ export function CheckoutView() {
 
   // Fill in a returning buyer's details from their last order.
   //
-  // Authorised entirely by the httpOnly cookie the server reads — nothing
+  // Authorised entirely by the httpOnly cookie the server reads - nothing
   // typed here asks for it. An email-triggered lookup would be the obvious
   // version and cannot be built safely: with no account to sign in to, an
   // email is not a secret, so it would hand anyone the home address of any
   // customer whose address they could guess.
   //
-  // Written straight into the DOM because these inputs are uncontrolled —
+  // Written straight into the DOM because these inputs are uncontrolled -
   // defaultValue only applies on mount, and the answer arrives after it.
   React.useEffect(() => {
     let cancelled = false
@@ -125,9 +125,9 @@ export function CheckoutView() {
       // Only SKUs and quantities cross the wire; the server prices the order.
       items: items.map((l) => ({ sku: l.sku, qty: l.qty })),
       // The field below lives in a `hidden lg:flex` rail, so on a phone it is
-      // present but invisible — which is why the code applied on /cart has to
+      // present but invisible - which is why the code applied on /cart has to
       // seed it rather than being re-typed somewhere it cannot be typed.
-      // The named input is gone — CouponBox validates before anything is
+      // The named input is gone - CouponBox validates before anything is
       // applied, so the code that goes to the server is the one it accepted,
       // falling back to whatever the cart is still carrying.
       couponCode: coupon?.code ?? couponCode ?? "",

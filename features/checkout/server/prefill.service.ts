@@ -8,14 +8,14 @@ import { db } from "@/server/db"
 /**
  * Fills in a returning buyer's details at checkout.
  *
- * Authorised by the httpOnly `skm.recent-order` cookie — the same proof the
- * confirmation page uses — and by NOTHING the visitor types.
+ * Authorised by the httpOnly `skm.recent-order` cookie - the same proof the
+ * confirmation page uses - and by NOTHING the visitor types.
  *
  * That constraint is the whole design. The obvious version of this feature is
  * "type an email, get the saved address back", and it cannot be built safely:
  * with no account to sign in to, an email address is not a secret, so that
  * endpoint would hand anyone the home address and phone number of any customer
- * whose email they could guess — every address in the shop, readable from the
+ * whose email they could guess - every address in the shop, readable from the
  * checkout form, one address at a time. A cookie cannot be guessed, so this
  * only ever answers the browser that actually placed the order.
  *

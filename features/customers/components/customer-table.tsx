@@ -17,7 +17,7 @@ type Payload = {
 
 /**
  * Everyone who has ever bought. There are no customer accounts, so these rows
- * are written by checkout rather than by anyone signing up — which means this
+ * are written by checkout rather than by anyone signing up - which means this
  * list is the only place the shop's customers exist as people rather than as
  * a column on an order.
  */
@@ -25,7 +25,7 @@ type Payload = {
 const day = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-    : "—"
+    : "-"
 
 export function CustomerTable() {
   const [rows, setRows] = React.useState<CustomerRow[]>([])
@@ -73,7 +73,7 @@ export function CustomerTable() {
       value: (c) => c.name ?? c.email,
       cell: (c) => (
         <>
-          <div className="text-bone text-[14px] font-semibold">{c.name ?? "—"}</div>
+          <div className="text-bone text-[14px] font-semibold">{c.name ?? "-"}</div>
           <div className="text-dim font-mono text-[11.5px]">{c.email}</div>
         </>
       ),
@@ -83,14 +83,14 @@ export function CustomerTable() {
       header: "Phone",
       value: (c) => c.phone ?? "",
       cell: (c) => (
-        <span className="text-ash font-mono text-[12.5px]">{c.phone ?? "—"}</span>
+        <span className="text-ash font-mono text-[12.5px]">{c.phone ?? "-"}</span>
       ),
     },
     {
       key: "city",
       header: "City",
       value: (c) => c.city ?? "",
-      cell: (c) => <span className="text-ash text-[13.5px]">{c.city ?? "—"}</span>,
+      cell: (c) => <span className="text-ash text-[13.5px]">{c.city ?? "-"}</span>,
     },
     {
       key: "orders",
@@ -133,7 +133,7 @@ export function CustomerTable() {
           Customers
         </h1>
         <p className="text-ash text-[14.5px]">
-          {total} {total === 1 ? "person has" : "people have"} bought. No accounts — these are
+          {total} {total === 1 ? "person has" : "people have"} bought. No accounts - these are
           written when an order is placed.
         </p>
       </div>

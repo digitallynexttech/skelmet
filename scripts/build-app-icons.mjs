@@ -3,7 +3,7 @@
  *
  *   node scripts/build-app-icons.mjs [path-to-brand-folder]
  *
- * Source is the standalone mark, `Skelmet - Branding (3).png` — orange cranium
+ * Source is the standalone mark, `Skelmet - Branding (3).png` - orange cranium
  * over a near-black jaw, on transparency. The jaw is repainted white on the way
  * through: browser chrome is dark for most people now, and against it the
  * near-black half simply disappeared, leaving an orange dome with no skull in
@@ -12,7 +12,7 @@
  * Outputs, all picked up by the App Router file conventions:
  *   app/favicon.ico     16 + 32 + 48, PNG-in-ICO, transparent
  *   app/icon.png        512, transparent
- *   app/apple-icon.png  180, on void — iOS composites the icon onto its own
+ *   app/apple-icon.png  180, on void - iOS composites the icon onto its own
  *                       background and a transparent one goes black on the home
  *                       screen. Void, not white, because the jaw is white now
  *                       and would vanish the other way.
@@ -35,7 +35,7 @@ const sharpDir = fs
   .filter((d) => d.startsWith("sharp@"))
   .sort()
   .pop()
-if (!sharpDir) throw new Error("sharp not found in the pnpm store — run pnpm install")
+if (!sharpDir) throw new Error("sharp not found in the pnpm store - run pnpm install")
 const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
 
 const BRAND = process.argv[2] ?? "D:/DN/DN_WEB/SKELMET/FILES_SKELMET/logo"
@@ -60,7 +60,7 @@ const distance = (px, i, c) =>
  * Repaint the dark ink white, leaving the orange alone.
  *
  * Alpha is straight, not premultiplied, so an antialiased edge pixel carries
- * the full ink colour at a partial alpha — swapping RGB and leaving alpha be
+ * the full ink colour at a partial alpha - swapping RGB and leaving alpha be
  * keeps every edge clean. Classified by nearest of the two inks rather than by
  * luminance, which would also catch the darker shading inside the orange.
  */

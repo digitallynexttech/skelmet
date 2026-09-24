@@ -41,7 +41,7 @@ export default async function ChangePasswordPage({
         </h1>
         <p className="text-ash mb-9 text-[15px] leading-[1.6]">
           {forced
-            ? "Your account was opened with a temporary password. Pick your own before you carry on — whoever created the account can still see the old one."
+            ? "Your account was opened with a temporary password. Pick your own before you carry on - whoever created the account can still see the old one."
             : "Pick something you have not used here before. You will be signed out and asked to sign in again with the new one."}
         </p>
 

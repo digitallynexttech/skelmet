@@ -11,7 +11,7 @@ import { getEnv } from "@/lib/env"
  *
  * It NO-OPS when SMTP is unconfigured, rather than failing. With SMTP_HOST
  * unset nothing is sent, `delivered` comes back false, and the order completes
- * exactly as it would have — which is what lets the whole flow be built and
+ * exactly as it would have - which is what lets the whole flow be built and
  * tested before the credentials exist.
  *
  * nodemailer is imported dynamically so a route that never sends mail does not

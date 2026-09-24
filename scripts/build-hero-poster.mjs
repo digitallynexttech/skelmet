@@ -4,19 +4,19 @@
  *   node scripts/build-hero-poster.mjs
  *
  * The hero stage needs a poster that occludes the headline the way the 3D mesh
- * does — by its silhouette, not by its bounding box. A plate on black cannot do
+ * does - by its silhouette, not by its bounding box. A plate on black cannot do
  * that: `mix-blend-mode: screen` brightens the type showing through instead of
  * covering it, and an opaque rectangle punches a flat hole in the bloom behind
  * the section. So the skull is keyed out to real alpha.
  *
  * Keying on chroma rather than luminance, because the backdrop is a lit grey
- * sweep, not black — luminance would eat the skull's own shadows along with it.
+ * sweep, not black - luminance would eat the skull's own shadows along with it.
  * The separation is absolute: the backdrop sits at chroma 0-15 and the skull at
  * 64-223, with not a single pixel in between, so the only judgement here is how
  * soft to make the edge.
  *
  * Also drops the black wall plate at the bottom, which is neutral and therefore
- * keys away on its own — the mesh does not include it either.
+ * keys away on its own - the mesh does not include it either.
  */
 import fs from "node:fs"
 import path from "node:path"

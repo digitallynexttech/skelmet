@@ -219,7 +219,7 @@ function ProductCard({ product }: { product: ProductRow }) {
                 cell: (v) => <StockLevel variant={v} />,
               },
               {
-                // No value, so it neither sorts nor exports — a pair of
+                // No value, so it neither sorts nor exports - a pair of
                 // buttons is not data.
                 key: "adjust",
                 header: "Adjust",

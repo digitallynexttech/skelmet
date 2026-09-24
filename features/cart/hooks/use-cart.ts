@@ -46,7 +46,7 @@ type CartState = {
   items: CartLine[]
   /**
    * The code accepted on /cart, so checkout can send it without the customer
-   * typing it twice. The value is a claim, never an authority — checkout
+   * typing it twice. The value is a claim, never an authority - checkout
    * re-validates it against the database and re-prices from scratch, so a
    * hand-edited localStorage entry buys nothing.
    */
@@ -124,7 +124,7 @@ export const useCart = create<CartState>()(
  * Mirrors `priceCart` in features/cart/server/cart-pricing.ts deliberately,
  * including the clamp: the two are the same arithmetic on purpose so the
  * number on screen matches the one the server charges. This copy is a preview
- * only — checkout recomputes from the database and can disagree, and when it
+ * only - checkout recomputes from the database and can disagree, and when it
  * does the server wins.
  */
 export function calculateTotals(

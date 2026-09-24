@@ -29,7 +29,7 @@ export function ChangePasswordForm({ next = "/admin" }: { next?: string }) {
       })
 
       // mustChangePassword rides the JWT, so the flag stays true in the token
-      // until a new one is minted — and `session.update()` needs a
+      // until a new one is minted - and `session.update()` needs a
       // SessionProvider this app does not mount. Signing out and back in is
       // the reissue, and it is the honest flow anyway: the password they just
       // replaced is the one their current session was opened with.

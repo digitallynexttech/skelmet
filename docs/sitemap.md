@@ -1,14 +1,14 @@
-# SKELMET — Sitemap & Information Architecture
+# SKELMET - Sitemap & Information Architecture
 
 Product: a 3D-printed flame-skull helmet wall mount. One hero SKU, three colourways
 (Blaze Orange · Militia Olive · Ghost Grey), sold direct-to-consumer in India.
 
 Route groups follow `docs/dn-nextjs-standard.md` §2. Route groups `(x)` do **not**
-appear in the URL — the URL column is what the visitor actually sees.
+appear in the URL - the URL column is what the visitor actually sees.
 
 ---
 
-## 1. Storefront — `app/(marketing)/` · public, no session
+## 1. Storefront - `app/(marketing)/` · public, no session
 
 | URL                   | Page              | Purpose                            | Key sections                                                                                                             |
 | --------------------- | ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -24,44 +24,44 @@ appear in the URL — the URL column is what the visitor actually sees.
 | `/refer`              | Refer & Earn      | Referral programme landing         | How it works (3 steps), reward tiers, share panel, T&C                                                                   |
 | `/riders`             | Rider wall        | UGC / social proof gallery         | Grid of customer photos, submit-yours CTA                                                                                |
 | `/faq`                | FAQ               | Long-form support                  | Grouped accordions: shipping, fitment, install, returns                                                                  |
-| `/policies/shipping`  | Shipping policy   | Legal / trust                      | —                                                                                                                        |
-| `/policies/returns`   | Returns & refunds | Legal / trust                      | —                                                                                                                        |
-| `/policies/privacy`   | Privacy policy    | Legal / trust                      | —                                                                                                                        |
-| `/policies/terms`     | Terms of service  | Legal / trust                      | —                                                                                                                        |
+| `/policies/shipping`  | Shipping policy   | Legal / trust                      | -                                                                                                                        |
+| `/policies/returns`   | Returns & refunds | Legal / trust                      | -                                                                                                                        |
+| `/policies/privacy`   | Privacy policy    | Legal / trust                      | -                                                                                                                        |
+| `/policies/terms`     | Terms of service  | Legal / trust                      | -                                                                                                                        |
 
 Plus route files: `app/sitemap.ts`, `app/robots.ts`, `app/not-found.tsx`.
 
-## 2. Auth — `app/(auth)/`
+## 2. Auth - `app/(auth)/`
 
 | URL                | Page                                                           |
 | ------------------ | -------------------------------------------------------------- |
 | `/login`           | Email + password / OTP sign-in (customers and staff, one form) |
-| `/register`        | Create account (optional — guest checkout is the default path) |
+| `/register`        | Create account (optional - guest checkout is the default path) |
 | `/forgot-password` | Request reset link                                             |
 | `/reset-password`  | Consume reset token                                            |
 
-## 3. Customer account — `app/(portal)/` · `session.user.kind === "CUSTOMER"`
+## 3. Customer account - `app/(portal)/` · `session.user.kind === "CUSTOMER"`
 
 The standard's §6 "second population" pattern. The prefix is `/account*` rather than
 `/portal*`; `proxy.ts` fences `/account*` and `/api/account*` in both directions.
 
 | URL                    | Page                                                     |
 | ---------------------- | -------------------------------------------------------- |
-| `/account`             | Overview — latest order, referral balance, saved address |
+| `/account`             | Overview - latest order, referral balance, saved address |
 | `/account/orders`      | Order list                                               |
-| `/account/orders/[id]` | Order detail — timeline, invoice, reorder                |
+| `/account/orders/[id]` | Order detail - timeline, invoice, reorder                |
 | `/account/addresses`   | Address book                                             |
 | `/account/referrals`   | Referral code, invite log, earnings, payout request      |
 | `/account/profile`     | Name, phone, password, marketing prefs                   |
 
-## 4. Admin console — `app/(app)/` · `session.user.kind === "STAFF"`
+## 4. Admin console - `app/(app)/` · `session.user.kind === "STAFF"`
 
 The authenticated product. Fenced at `/admin*` and `/api/admin*` by `proxy.ts`
 ROUTE_RULES, enforced again by `requirePermission` in every service.
 
 | URL                                        | Page                                           | Scope                        |
 | ------------------------------------------ | ---------------------------------------------- | ---------------------------- |
-| `/admin`                                   | Dashboard — today's orders, revenue, low stock | `dashboard:read`             |
+| `/admin`                                   | Dashboard - today's orders, revenue, low stock | `dashboard:read`             |
 | `/admin/orders` · `/admin/orders/[id]`     | Order queue, fulfilment, refunds               | `order:read` / `order:write` |
 | `/admin/products` · `/admin/products/[id]` | Catalogue, variants, stock, media              | `product:write`              |
 | `/admin/coupons`                           | Discount codes                                 | `coupon:write`               |
@@ -70,7 +70,7 @@ ROUTE_RULES, enforced again by `requirePermission` in every service.
 | `/admin/inquiries`                         | Contact-form inbox                             | `inquiry:read`               |
 | `/admin/settings`                          | Shipping rates, thresholds, banner copy        | `setting:write`              |
 
-## 5. API — `app/api/`
+## 5. API - `app/api/`
 
 ```
 api/products/route.ts                   GET list
@@ -94,8 +94,8 @@ api/admin/orders/[id]/refund/route.ts   POST
 api/public/track/route.ts               POST  order-id + email, rate-limited
 api/public/contact/route.ts             POST  rate-limited + API-key free
 api/public/webhooks/payment/route.ts    POST  gateway callback, signature-verified
-api/cron/abandoned-cart/route.ts        assertCron — nudge email at T+4h
-api/cron/review-request/route.ts        assertCron — T+7d after delivery
+api/cron/abandoned-cart/route.ts        assertCron - nudge email at T+4h
+api/cron/review-request/route.ts        assertCron - T+7d after delivery
 api/health/route.ts                     { ok, db, version }
 ```
 

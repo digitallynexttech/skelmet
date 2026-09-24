@@ -90,7 +90,7 @@ export const PAGE_SIZE = 20
  *
  * The console asks for a whole window rather than a page of twenty, so
  * that sorting and exporting cover the entire filtered set instead of
- * whichever twenty happened to load — a spreadsheet that silently holds
+ * whichever twenty happened to load - a spreadsheet that silently holds
  * one page is worse than no export at all. Bounded, because "all rows"
  * stops being a safe request once the shop has years of orders.
  */

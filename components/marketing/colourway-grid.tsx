@@ -62,7 +62,7 @@ export async function ColourwayGrid() {
               />
               {c.bestSeller ? (
                 // Above the hero skull (z-30) when it docks here, as the badge
-                // is above the photo — on a phone the skull reaches this
+                // is above the photo - on a phone the skull reaches this
                 // corner. Click-through, so the card link under it still works.
                 <Badge variant="solid" className="pointer-events-none absolute top-4 left-4 z-[35]">
                   Best seller
@@ -73,7 +73,7 @@ export async function ColourwayGrid() {
             <div className="border-t border-white/[0.07] p-6">
               {/* The colourway is the eyebrow and the product is the heading,
                   matching the section header idiom above. The swatch sits with
-                  the colour name because that is what it labels — against the
+                  the colour name because that is what it labels - against the
                   product name it read as decoration. */}
               <div className="mb-2 flex items-center gap-2.5">
                 <span

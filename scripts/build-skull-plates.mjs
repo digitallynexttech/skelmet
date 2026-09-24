@@ -8,7 +8,7 @@
  * photograph, sized and placed to cover it. Covering is not enough on its own:
  * the mesh follows the cursor and can be spun, and the moment it turns, the
  * photographed skull shows round its edges and there are two of them. So each
- * docking photo gets a plate — the same photo with the skull taken out — laid
+ * docking photo gets a plate - the same photo with the skull taken out - laid
  * over it and faded in as the mesh arrives. The mesh then reads as landing on
  * the empty bracket rather than doubling up on a picture of itself.
  *
@@ -125,7 +125,7 @@ function blur(src, W, H, r) {
 
 /**
  * The largest 4-connected blob in the mask. Drops the odd saturated speck in
- * the backdrop grain, which would otherwise stretch the skull's box — the
+ * the backdrop grain, which would otherwise stretch the skull's box - the
  * flatlay has one a hundred pixels right of the cranium.
  */
 function largestBlob(mask, W, H) {
@@ -166,7 +166,7 @@ function largestBlob(mask, W, H) {
  * Grows the skull out into the colour it spills onto its surroundings, so
  * the hole takes the glow with it and the fill is sampled from clean set.
  *
- * Only warm pixels count — red clearly ahead of green — which is what keeps
+ * Only warm pixels count - red clearly ahead of green - which is what keeps
  * it out of the olive print beside the orange one, whose red and green run
  * level. It is also held within `reach` of the skull, so a faint glow cannot
  * creep across the whole backdrop through the grain.
@@ -199,7 +199,7 @@ function growSpill(skull, rgb, chroma, W, H, { key, reach }) {
  * to the bottom of the frame.
  *
  * The contact line is the narrowest row in the blob's lower third, provided
- * everything below it is markedly less saturated than everything above — a
+ * everything below it is markedly less saturated than everything above - a
  * reflection is a dimmed copy, so it runs at under half the chroma of the
  * print. Returns that row, or `y1` when there is no floor. The plate still
  * takes the reflection out with the skull; only the dock box stops here.
@@ -242,7 +242,7 @@ function floorLine(skull, chroma, W, y0, y1) {
  * left of it to the backdrop just right of it, then the rows are smoothed into
  * each other so edge noise cannot streak.
  *
- * Rows, because both backdrops are banded horizontally — a studio sweep with
+ * Rows, because both backdrops are banded horizontally - a studio sweep with
  * its lit horizon, and a flat surface under a soft top light. A fill that also
  * reaches up and down (a pyramid or a harmonic fill) drags the bright horizon
  * band into the dark wall above it and leaves a grey column where the skull
@@ -282,8 +282,8 @@ function fillRows(rgb, hole, W, H) {
       let l = left ?? right
       let r = right ?? left
       if (!l || !r) continue
-      // A span with backdrop on one side and something lit on the other —
-      // the mount's arm running up into the skull — is backdrop: whatever the
+      // A span with backdrop on one side and something lit on the other -
+      // the mount's arm running up into the skull - is backdrop: whatever the
       // skull hid of that object is gone. Blending the two smears a bright
       // bar across the hole, so the darker side fills it alone.
       const lumL = 0.299 * l[0] + 0.587 * l[1] + 0.114 * l[2]

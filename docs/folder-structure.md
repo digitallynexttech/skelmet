@@ -1,4 +1,4 @@
-# SKELMET — Folder Structure
+# SKELMET - Folder Structure
 
 Concrete realisation of `docs/dn-nextjs-standard.md` §2–§4 for this store.
 No `src/`. `@/*` → `./*`. `app/` is routing only; logic lives in `features/`.
@@ -28,7 +28,7 @@ app/
     register/page.tsx
     forgot-password/page.tsx
     reset-password/page.tsx
-  (portal)/                             customer account — kind === "CUSTOMER"
+  (portal)/                             customer account - kind === "CUSTOMER"
     layout.tsx                          shell + session gate (NO db queries)
     account/{layout,page,loading,error}.tsx
     account/orders/{layout,page,loading,error}.tsx
@@ -36,7 +36,7 @@ app/
     account/addresses/{layout,page,loading}.tsx
     account/referrals/{layout,page,loading}.tsx
     account/profile/{layout,page,loading}.tsx
-  (app)/                                admin console — kind === "STAFF"
+  (app)/                                admin console - kind === "STAFF"
     layout.tsx                          shell + session gate
     admin/{layout,page,loading,error}.tsx
     admin/orders/{layout,page,loading,error}.tsx
@@ -67,7 +67,7 @@ features/
     components/{cart-drawer,cart-line-item,cart-summary,qty-stepper,coupon-field}.tsx
     hooks/use-cart.ts
     server/cart.service.ts
-    server/cart-pricing.ts              subtotal, discount, shipping, tax — pure
+    server/cart-pricing.ts              subtotal, discount, shipping, tax - pure
     schemas/cart-item.schema.ts
   checkout/
     index.ts
@@ -75,14 +75,14 @@ features/
                 order-summary-rail,pincode-field}.tsx
     hooks/use-checkout.ts
     server/checkout.service.ts
-    server/payment-gateway.ts           IO client — signature verify, order create
+    server/payment-gateway.ts           IO client - signature verify, order create
     schemas/checkout.schema.ts
   orders/
     index.ts
     components/{order-table,order-timeline,order-detail-card,invoice-button}.tsx
     hooks/use-orders.ts
     server/orders.service.ts
-    server/order-access.ts              guard — a customer sees only their own
+    server/order-access.ts              guard - a customer sees only their own
     server/abandoned-cart.service.ts    job (cron)
     server/review-request.service.ts    job (cron)
     schemas/order.schema.ts
@@ -110,7 +110,7 @@ features/
     index.ts
     hooks/use-shipping.ts
     server/shipping.service.ts
-    server/serviceability.ts            IO client — courier pincode API
+    server/serviceability.ts            IO client - courier pincode API
     schemas/address.schema.ts
   inquiries/
     index.ts
@@ -191,7 +191,7 @@ Inquiry(name, email, phone, subject, message, status)
 AuditLog(actorId?, action, module, entityId, meta, ip, userAgent)
 ```
 
-Order status is a workflow, never `PATCH { status }` — each transition is
+Order status is a workflow, never `PATCH { status }` - each transition is
 `POST /api/orders/[id]/<verb>` (or `/api/admin/orders/[id]/<verb>`) with the §5
 atomic `updateMany` claim:
 
@@ -202,7 +202,7 @@ PENDING → PAID → PACKED → SHIPPED → DELIVERED
 
 ## Permission scopes (`lib/constants.ts`)
 
-`<entity>:<verb>` — the module is the entity, never a department.
+`<entity>:<verb>` - the module is the entity, never a department.
 
 ```
 product:read   product:write
@@ -222,7 +222,7 @@ Adding a scope touches five places in one commit: `PERMISSIONS` →
 ## Build order
 
 1. `prisma/schema.prisma` + hand-written migration → `pnpm db:migrate` → `pnpm db:generate`
-2. `lib/constants.ts` — scopes, `PERMISSION_DEFINITIONS`, `ORDER_STATUS_LABELS/COLORS`
+2. `lib/constants.ts` - scopes, `PERMISSION_DEFINITIONS`, `ORDER_STATUS_LABELS/COLORS`
 3. `features/catalog` end to end (schema → service → routes → hook → components → barrel)
 4. `features/cart` → `features/checkout` → `features/orders` (the conversion spine)
 5. Storefront pages `(marketing)`, then `(portal)`, then `(app)` admin

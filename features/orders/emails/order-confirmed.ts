@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/money"
 
 /**
  * The receipt. With no customer accounts, this email is the ONLY record a
- * buyer keeps of their order number — and the number plus their email is the
+ * buyer keeps of their order number - and the number plus their email is the
  * whole credential for /track. So it leads with the number, repeats it in the
  * subject line where inbox search will find it, and says plainly what it is
  * for.
@@ -63,7 +63,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   const subject = `Order ${data.number} confirmed`
 
   const text = [
-    `Thanks — your order is in.`,
+    `Thanks - your order is in.`,
     ``,
     `Order number: ${data.number}`,
     ...lines,
@@ -76,7 +76,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
     `pincodes see it in ${siteConfig.promise.deliveryDays}.`,
     ``,
     `Track it any time at ${trackUrl}`,
-    `You will need this order number and this email address — there is no account to sign in to.`,
+    `You will need this order number and this email address - there is no account to sign in to.`,
     ``,
     `Questions: just reply to this email.`,
     `${siteConfig.name}`,
@@ -129,7 +129,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
             <td style="background:${C.carbon};border:1px solid ${C.line};border-radius:14px;padding:30px 28px;">
 
               <p style="margin:0 0 24px;font-family:${FONT};font-size:16px;line-height:1.5;color:${C.bone};">
-                Thanks — your order is in.
+                Thanks - your order is in.
               </p>
 
               <!-- order number -->
@@ -166,7 +166,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
                     : `
                 <tr>
                   <td colspan="2" style="padding:4px 0 0;font-family:${FONT};font-size:13px;color:${C.ash};">
-                    Cash on delivery — pay the courier at the door.
+                    Cash on delivery - pay the courier at the door.
                   </td>
                 </tr>`
                 }
@@ -202,7 +202,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
           <!-- footer -->
           <tr>
             <td style="padding:20px 4px 0;font-family:${FONT};font-size:12.5px;line-height:1.6;color:${C.dim};">
-              Questions? Just reply to this email — it reaches a person.<br>
+              Questions? Just reply to this email - it reaches a person.<br>
               <span style="color:${C.ash};">${escapeHtml(siteConfig.name)}</span>
             </td>
           </tr>

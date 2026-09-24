@@ -8,7 +8,7 @@ import { cookies } from "next/headers"
  * `SKM-YYYY-XXXX` is roughly a million numbers a year drawn from a 32-letter
  * alphabet, which makes an order number a short, guessable key rather than a
  * secret. The confirmation page shows an email address and a total, and its
- * visitors are usually guests with no session to check — so without this
+ * visitors are usually guests with no session to check - so without this
  * cookie, every customer's contact details would sit one lucky typo away.
  *
  * httpOnly so a script on the page cannot read it back out, and `lax` so it
@@ -25,7 +25,7 @@ export async function rememberOrder(number: string): Promise<void> {
     httpOnly: true,
     sameSite: "lax",
     // Keyed on the deployment's real scheme, NOT NODE_ENV. A Secure cookie is
-    // silently DROPPED by the browser on a plain-http origin — localhost is
+    // silently DROPPED by the browser on a plain-http origin - localhost is
     // exempt, so tying this to NODE_ENV works in dev and then breaks the
     // confirmation page the moment it ships to an http host. Flips itself back
     // on the day NEXT_PUBLIC_SITE_URL becomes https.

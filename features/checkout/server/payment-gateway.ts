@@ -5,7 +5,7 @@ import { createHmac, timingSafeEqual } from "node:crypto"
 import { AppError } from "@/lib/errors"
 
 /**
- * Razorpay, over their REST API directly — the SDK is a thin wrapper over these
+ * Razorpay, over their REST API directly - the SDK is a thin wrapper over these
  * three calls and adds a dependency we do not need.
  *
  * Money crosses this boundary in PAISE (integer). Everywhere else in the app it

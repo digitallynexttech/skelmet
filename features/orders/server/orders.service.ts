@@ -198,7 +198,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
 
 /**
  * Workflow transitions. Each is its own verb with an atomic `updateMany` claim,
- * never `PATCH { status }` — two operators clicking at once must not both
+ * never `PATCH { status }` - two operators clicking at once must not both
  * succeed (§5, §7).
  */
 async function transition(
@@ -318,7 +318,7 @@ export function cancelOrder(id: string) {
       if (items.length === 0) return
 
       // One batched transaction, not an update per line. Sequential awaits meant
-      // a round trip per item, and — worse — a partial restock: the order is
+      // a round trip per item, and - worse - a partial restock: the order is
       // already CANCELLED by the time this runs, so a failure halfway left stock
       // permanently short with nothing to replay it from.
       await db.$transaction(
@@ -385,7 +385,7 @@ export async function getDashboard(): Promise<ActionResult<unknown>> {
     await requirePermission(PERMISSIONS.DASHBOARD_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // Date.UTC, never new Date(y, m, d) — that is local midnight and shifts (§6).
+    // Date.UTC, never new Date(y, m, d) - that is local midnight and shifts (§6).
     const now = new Date()
     const startOfToday = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),

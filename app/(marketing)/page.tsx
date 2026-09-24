@@ -37,7 +37,7 @@ export const metadata: Metadata = {
  * prices. Left purely static they were baked at build: after a price change
  * the homepage advertised one figure while the product page and checkout used
  * another, which is the mismatch this page exists to avoid. Fully dynamic
- * would be the wrong trade for a marketing page carrying a 3D hero — a minute
+ * would be the wrong trade for a marketing page carrying a 3D hero - a minute
  * of staleness on a price an admin just edited is the cheaper side.
  */
 export const revalidate = 60
@@ -49,7 +49,7 @@ export default function HomePage() {
       <MarqueeTicker items={TICKER_ITEMS} />
       <TrustStrip />
       {/* The eyebrow number is passed here rather than baked into each
-          section, because it describes a position in THIS page's run — the
+          section, because it describes a position in THIS page's run - the
           same block is 05 here and 03 on the product page. Commenting a
           section out therefore only means deleting a line and closing the
           numbers up, with no component edited and no other page disturbed. */}
@@ -63,7 +63,7 @@ export default function HomePage() {
       <FaqSection />
       <DropList />
 
-      {/* Hidden, not deleted — all five still render on other routes and are
+      {/* Hidden, not deleted - all five still render on other routes and are
           one uncomment away from returning. Put a section back in its place in
           the run above and renumber from there. */}
       {/* <ThePoint /> */}

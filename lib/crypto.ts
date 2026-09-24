@@ -10,7 +10,7 @@ const scrypt = promisify(scryptCb) as (
 const KEYLEN = 64
 
 /**
- * scrypt from node:crypto rather than bcrypt/argon2 — no native dependency to
+ * scrypt from node:crypto rather than bcrypt/argon2 - no native dependency to
  * build on every platform, and it is the algorithm Node itself recommends.
  * Format: `scrypt$<saltHex>$<hashHex>`.
  */
@@ -20,7 +20,7 @@ export async function hashPassword(password: string): Promise<string> {
   return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`
 }
 
-/** Constant-time compare — never a plain `===` on a secret (§6). */
+/** Constant-time compare - never a plain `===` on a secret (§6). */
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [scheme, saltHex, hashHex] = stored.split("$")
   if (scheme !== "scrypt" || !saltHex || !hashHex) return false

@@ -84,7 +84,7 @@ export function InquiryInbox() {
         i.orderNumber ? (
           <span className="text-ember font-mono text-[11.5px]">{i.orderNumber}</span>
         ) : (
-          <span className="text-dim">—</span>
+          <span className="text-dim">-</span>
         ),
     },
     {
@@ -101,7 +101,7 @@ export function InquiryInbox() {
             {i.phone}
           </a>
         ) : (
-          <span className="text-dim">—</span>
+          <span className="text-dim">-</span>
         ),
     },
     {

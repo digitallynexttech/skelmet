@@ -3,7 +3,7 @@ import DOCKS from "@/components/marketing/skull-docks.json"
 /**
  * The hero skull's route down the page, as a pure function of scroll.
  *
- * The skull has a home — the hero stage — and a run of docks further down:
+ * The skull has a home - the hero stage - and a run of docks further down:
  * photographs of the skull, each marked with `data-skull-dock` by SkullDock.
  * Docked, the mesh sits exactly over the photographed skull, at its size, and
  * moves with the page as if it were part of the picture. Between two stops it
@@ -17,7 +17,7 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  *
  * Coordinates are document pixels throughout, because the flying element is
  * positioned in the document rather than fixed to the viewport. That is what
- * lets a docked skull scroll with its photo natively — a fixed element moved
+ * lets a docked skull scroll with its photo natively - a fixed element moved
  * from requestAnimationFrame trails threaded scrolling by a frame, and a skull
  * sliding against the bracket it is supposed to be sitting on is the one
  * artefact this cannot afford.
@@ -27,7 +27,7 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  * Where the mesh's silhouette falls in its canvas box: its height as a share
  * of the box height, and its middle as shares of the box width and height.
  * Every dock is matched against the silhouette, not the model's box, because
- * perspective makes the two differ — the jaw is nearer the camera than the
+ * perspective makes the two differ - the jaw is nearer the camera than the
  * crown, so it projects larger and lower. Sized from the bounding box (0.807
  * tall, lifted 1.9%), a docked skull came out a tenth oversize.
  *
@@ -70,7 +70,7 @@ export type Anchor = {
   cx: number
   cy: number
   h: number
-  /** The photo's box — a docked skull is cropped by it, as the photo is. */
+  /** The photo's box - a docked skull is cropped by it, as the photo is. */
   clip: Box | null
 }
 
@@ -156,7 +156,7 @@ const smoothstep = (lo: number, hi: number, v: number) => {
  * Linear through the middle, with rounded ends of width `r`. Used for the
  * vertical path: zero slope at both ends means the skull leaves and joins a
  * dock moving exactly with the page, and the straight middle keeps it
- * floating in view however long the flight — a full ease would carry a long
+ * floating in view however long the flight - a full ease would carry a long
  * flight off the top of the screen and back.
  */
 function ramp(t: number, r: number) {

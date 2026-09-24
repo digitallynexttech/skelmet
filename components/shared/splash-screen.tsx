@@ -10,19 +10,19 @@ import { cn } from "@/lib/utils"
 /**
  * The curtain: two brand-orange halves that part once the page is ready.
  *
- * Built to the Digitally Next preloader — a solid field of the brand colour
+ * Built to the Digitally Next preloader - a solid field of the brand colour
  * split down the middle, the wordmark filling left to right as the page loads,
  * and the count sitting opposite the tagline on one baseline. The wordmark is
  * the progress bar; there is no second one.
  *
  * Server-rendered on purpose. A splash mounted only after hydration would let a
  * frame of the real page through first, which is the exact flash it exists to
- * hide — so the markup ships in the HTML and the client's only job is to take
+ * hide - so the markup ships in the HTML and the client's only job is to take
  * it away again.
  *
  * Shown once per page load: it lives in a layout, and layouts survive
  * client-side navigation, so moving around the site never replays it. Only a
- * reload does. `splashCompleted` covers the one case that slips through —
+ * reload does. `splashCompleted` covers the one case that slips through -
  * bouncing out to /admin and back remounts this layout.
  *
  * Dismissal is bounded at both ends. MIN_HOLD stops a warm cache flashing the
@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils"
  *
  * Above-the-fold work can ask for more time through `splash-gate`: the hero
  * takes a hold while the 3D model downloads, so the swap happens behind the
- * curtain. MAX_HOLD still wins, so a slow model costs the visitor nothing — the
+ * curtain. MAX_HOLD still wins, so a slow model costs the visitor nothing - the
  * curtain opens on time onto the hero poster and the model arrives when it does.
  */
 
@@ -91,7 +91,7 @@ export function SplashScreen() {
   //
   // Reduced motion skips the intro outright rather than holding a still frame
   // of it. Every element here arrives on a delayed animation, so a motionless
-  // version is a flat orange rectangle with nothing on it — and the splash is
+  // version is a flat orange rectangle with nothing on it - and the splash is
   // pure decoration over a page that is already mounted underneath. Same call
   // the hero makes when it declines to ship three.js to these visitors.
   //
@@ -102,7 +102,7 @@ export function SplashScreen() {
   }, [])
 
   // The whole intro: loading signals, the fill ramp, and the two clocks that
-  // decide when the curtain opens. One effect, because they are one sequence —
+  // decide when the curtain opens. One effect, because they are one sequence -
   // splitting them would mean sharing `loaded` through a ref for no gain.
   React.useEffect(() => {
     if (phase !== "intro") return
@@ -134,8 +134,8 @@ export function SplashScreen() {
     void Promise.all(signals).then(markLoaded, markLoaded)
 
     // Driven straight into the DOM rather than through state. This runs during
-    // the busiest part of the page load — hydration and the three.js chunk are
-    // competing for the same main thread — and a clip write costs no React
+    // the busiest part of the page load - hydration and the three.js chunk are
+    // competing for the same main thread - and a clip write costs no React
     // render and no layout.
     let value = 0
     let frame = 0
@@ -160,7 +160,7 @@ export function SplashScreen() {
         readoutRef.current.textContent = percent
       }
 
-      // Being full already implies settled — the target is only ever 1 then.
+      // Being full already implies settled - the target is only ever 1 then.
       if (value >= 1 && elapsed >= MIN_HOLD_MS) {
         setPhase("exit")
         return
@@ -214,7 +214,7 @@ export function SplashScreen() {
       data-splash=""
       // Purely decorative, and the real page is already mounted underneath, so
       // assistive tech is better served reading straight through it. Nothing
-      // in here is focusable, which keeps that honest — the first Tab lands on
+      // in here is focusable, which keeps that honest - the first Tab lands on
       // the page and dismisses the splash on the way.
       aria-hidden="true"
       className={cn(
@@ -255,7 +255,7 @@ export function SplashScreen() {
       >
         {/* The wordmark is the progress bar. A dimmed copy underneath, the solid
             one clipped over it from the left, so the brand fills in as the page
-            actually loads — the reference's outline-and-fill mechanic, with the
+            actually loads - the reference's outline-and-fill mechanic, with the
             real lockup standing in for its outlined type. */}
         <div className="relative w-[min(560px,82vw)]">
           <Image

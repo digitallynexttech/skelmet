@@ -32,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // that trades a guess for an account was not. Keyed on the address
         // rather than the email so cycling addresses does not reset the
         // budget, and rateLimit throws a 429 AppError, which Auth.js turns
-        // into the same opaque failure as a wrong password — a blocked
+        // into the same opaque failure as a wrong password - a blocked
         // attacker learns nothing a wrong guess would not have told them.
         try {
           rateLimit(`login:${clientIp(request.headers)}`, 10, 10 * 60_000)
@@ -41,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         // passwordHash is omitted by default in server/db.ts, so opt back in
-        // here — the one place it is genuinely needed (§6).
+        // here - the one place it is genuinely needed (§6).
         const user = await db.user.findUnique({
           where: { email },
           // select overrides the global omit in server/db.ts, which is the

@@ -17,19 +17,19 @@ import { cn } from "@/lib/utils"
  *
  * The ellipse follows the skull. The render loop in skull-canvas projects the
  * skull's pose into `halo` every frame, and this turns that into mask
- * coordinates — so turning the skull sweeps the burn across the letters it
+ * coordinates - so turning the skull sweeps the burn across the letters it
  * faces, turning it to profile widens it, and flinging it flares it. On the
  * poster path nothing writes the halo, and the burn simply rests on the skull.
  *
  * The halo is measured against the canvas box, which the render loop
- * publishes as `box` wherever the skull has flown — so as it lifts off on
+ * publishes as `box` wherever the skull has flown - so as it lifts off on
  * scroll, the burn goes with it and the line heals behind it. On the poster
  * path there is no box, and the canvas is taken to be this element's parent,
  * the hero stage: the headline has to be rendered inside it.
  *
  * Only the first copy is the heading. The other three are aria-hidden and
- * outside the h1, so the heading's text — what a screen reader announces and a
- * crawler indexes — is still the line once.
+ * outside the h1, so the heading's text - what a screen reader announces and a
+ * crawler indexes - is still the line once.
  */
 
 /**
@@ -61,7 +61,7 @@ export function HeroHeadline({ className, children }: { className?: string; chil
     const frame = el?.parentElement
     if (!el || !frame) return
 
-    // The headline and the hero stage in document pixels — after the
+    // The headline and the hero stage in document pixels - after the
     // headline's own translate and scale, which the mask percentages are
     // blind to. A percentage of the transformed box is the same percentage of
     // the untransformed one, since both axes scale independently.
@@ -108,7 +108,7 @@ export function HeroHeadline({ className, children }: { className?: string; chil
       const hollow = (HOLLOW.skull * skull + HOLLOW.line * box.height) * reach
       const solid = (SOLID.skull * skull + SOLID.line * box.height) * reach
 
-      // The halo is centred on the skull, which can sit well below the line —
+      // The halo is centred on the skull, which can sit well below the line -
       // on a phone the type only grazes the top of the dome. Size the ellipse
       // so its stops still cross the middle of the line at `hollow` and
       // `solid`, rather than losing that distance to the vertical offset.
@@ -117,8 +117,8 @@ export function HeroHeadline({ className, children }: { className?: string; chil
       const inner = (Math.hypot(hollow, offset) / outer) * 100
 
       // Once the skull has flown clear, the halo no longer reaches the line.
-      // Park it — a zero-size gradient paints its last stop everywhere, which
-      // is full paint and no outline — and stop repainting four layers of
+      // Park it - a zero-size gradient paints its last stop everywhere, which
+      // is full paint and no outline - and stop repainting four layers of
       // type every frame of the flight for no visible change.
       const clear =
         centreX + outer < 0 ||

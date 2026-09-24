@@ -24,7 +24,7 @@ describe("trackOrderSchema", () => {
     expect(out.orderNumber).toBe("SKM-2026-WJMR")
   })
 
-  it("requires both halves — a number alone is not a credential", () => {
+  it("requires both halves - a number alone is not a credential", () => {
     expect(trackOrderSchema.safeParse({ orderNumber: "SKM-2026-WJMR" }).success).toBe(false)
     expect(trackOrderSchema.safeParse({ email: "rider@example.com" }).success).toBe(false)
   })

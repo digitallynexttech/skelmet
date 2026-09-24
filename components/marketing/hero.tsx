@@ -8,8 +8,8 @@ import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
- * Centred hero. The canvas is transparent, so the skull's silhouette — not its
- * bounding box — is what occludes the type. That is the whole effect: the
+ * Centred hero. The canvas is transparent, so the skull's silhouette - not its
+ * bounding box - is what occludes the type. That is the whole effect: the
  * object stands in front of the words rather than on top of a rectangle.
  *
  * Two layouts, switched at `xl`:
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
  * - At xl they are lifted out of flow to flank the model, which hands the
  *   entire remaining height back to the artwork. That needs roughly 350px of
  *   clear space either side of the *visible* skull, which only exists from
- *   1280px up — hence xl rather than lg.
+ *   1280px up - hence xl rather than lg.
  *
  * `--stage` is the canvas height and drives the headline with it, so their
  * ratio survives any resize. `--hw` caps the headline against viewport width,
@@ -54,7 +54,7 @@ export function Hero() {
           )}
         >
           {/* The headline is measured against the canvas, not the outer
-              wrapper — below xl the wrapper also holds the stacked pitch and
+              wrapper - below xl the wrapper also holds the stacked pitch and
               CTA, and a percentage of that taller box dropped the line onto the
               skull's widest point. */}
           <div
@@ -71,7 +71,7 @@ export function Hero() {
 
                 Sized to run out to the viewport edges, which a display face at
                 its natural width cannot do without growing taller than the
-                space under the header — so at xl the cap height is bought back
+                space under the header - so at xl the cap height is bought back
                 with `scale-x`. The cranium is a solid mass several glyphs
                 wide, so a line this size and a skull this size cannot be
                 disjoint; it swallows the middle word, which is the effect. */}
@@ -123,7 +123,7 @@ export function Hero() {
           </span>
 
           {/* Pitch: bottom left of the model. The flanks are anchored to the
-              container edges and clear the *visible* skull, not the canvas —
+              container edges and clear the *visible* skull, not the canvas -
               the canvas is mostly transparent, so overlapping it is free. They
               outrank it on z so the buttons stay clickable. */}
           <div className="mt-6 flex flex-col items-center xl:absolute xl:bottom-0 xl:left-0 xl:z-30 xl:mt-0 xl:items-start">

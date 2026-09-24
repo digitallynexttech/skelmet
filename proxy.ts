@@ -8,7 +8,7 @@ import { getToken } from "next-auth/jwt"
  * the service guard are the enforcement (§6).
  *
  * There is exactly one population behind this fence: staff. Customers do not
- * get accounts — they buy as guests, get a confirmation email, and look an
+ * get accounts - they buy as guests, get a confirmation email, and look an
  * order up by number and email at /track, which is public and needs no
  * session. The /account rules that used to sit here fenced routes that were
  * never built and now never will be.

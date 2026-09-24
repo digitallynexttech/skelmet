@@ -49,7 +49,7 @@ async function main() {
   //
   // This is not the same thing as UserKind. `kind: STAFF` is what lets
   // someone reach the console at all, and it is checked in proxy.ts and
-  // requireStaff before any permission is looked at — customers have rows
+  // requireStaff before any permission is looked at - customers have rows
   // in this same table and must never pass that gate. The role is only
   // about what a member of staff may do once inside.
   //

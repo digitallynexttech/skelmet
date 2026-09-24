@@ -47,14 +47,14 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
  *
  * Reading it opted the whole route into dynamic rendering, and that one line
  * cost three separate things: the page answered
- * `private, no-cache, no-store` so no CDN could ever hold it — on the busiest
+ * `private, no-cache, no-store` so no CDN could ever hold it - on the busiest
  * page of a shop; it shipped no markup, so crawlers saw an empty shell with no
  * <h1>; and notFound() in a dynamic route returns HTTP 200, so every dead
  * product URL told Google it was fine.
  *
  * ?colour= is read on the client instead, by the picker that already owns that
  * state. The cost is that a shared ?colour=ghost link paints the default
- * swatch for one frame before switching — which is cheap next to the page
+ * swatch for one frame before switching - which is cheap next to the page
  * being uncacheable.
  */
 /**
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
  * route that still renders unknown params on demand answers HTTP 200, so every
  * mistyped or dead product URL was telling crawlers the page was fine.
  *
- * The catalogue lives in code, so a new product already needs a deploy — this
+ * The catalogue lives in code, so a new product already needs a deploy - this
  * takes nothing away today. It would need revisiting alongside ISR the day
  * products come from the database and can appear between builds.
  */

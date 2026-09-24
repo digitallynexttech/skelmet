@@ -3,7 +3,7 @@ import "server-only"
 import { COD_FEE } from "@/lib/constants"
 
 /**
- * Pure pricing. The browser's copy in `use-cart.ts` is a preview only — this is
+ * Pure pricing. The browser's copy in `use-cart.ts` is a preview only - this is
  * the authority, and checkout recomputes from the database rather than trusting
  * anything the client sends.
  */

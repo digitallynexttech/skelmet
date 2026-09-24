@@ -3,8 +3,8 @@ import { siteConfig } from "@/config/site"
 /**
  * When a parcel should land.
  *
- * Shared because two screens quote it — the confirmation page and the order
- * tracker — and a customer who sees one date on the receipt and a different
+ * Shared because two screens quote it - the confirmation page and the order
+ * tracker - and a customer who sees one date on the receipt and a different
  * one on /track has been told the shop does not know. It lived only on the
  * confirmation page; the tracker, which is the page people open *to find out
  * when it arrives*, did not show a date at all.
@@ -26,7 +26,7 @@ export function deliveryEta(placedIso: string): Date {
   )
 }
 
-/** `TUE, 30 SEP` — short enough to sit beside a label without wrapping. */
+/** `TUE, 30 SEP` - short enough to sit beside a label without wrapping. */
 export function formatEta(placedIso: string): string {
   return deliveryEta(placedIso)
     .toLocaleDateString("en-IN", {

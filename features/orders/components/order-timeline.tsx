@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
  * "Paid" cannot tell whether that is one step from done or four.
  *
  * Only the forward flow is drawn. Cancelled, returned and refunded orders
- * leave it — a rail implies motion toward delivery, and drawing one under a
+ * leave it - a rail implies motion toward delivery, and drawing one under a
  * refund would promise a parcel that is not coming. The caller renders those.
  */
 const FLOW = ["PAID", "PACKED", "SHIPPED", "DELIVERED"] as const
@@ -38,7 +38,7 @@ function formatDay(iso: string | null): string | null {
 }
 
 export function OrderTimeline({ status, dates }: { status: OrderStatus; dates: TimelineDates }) {
-  // PENDING sits before the rail entirely — nothing has happened yet.
+  // PENDING sits before the rail entirely - nothing has happened yet.
   const reached = (FLOW as readonly string[]).indexOf(status)
 
   // Only PACKED has no timestamp of its own on the order, so it borrows the
@@ -96,7 +96,7 @@ export function OrderTimeline({ status, dates }: { status: OrderStatus; dates: T
                 {LABELS[step]}
               </span>
               <span className="text-dim shrink-0 font-mono text-[11px] tracking-[0.04em]">
-                {day ?? "—"}
+                {day ?? "-"}
               </span>
             </div>
           </li>

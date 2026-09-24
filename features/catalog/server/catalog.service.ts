@@ -8,14 +8,14 @@ import { db } from "@/server/db"
 /**
  * Reads the catalogue.
  *
- * A hybrid, deliberately. The editorial half — copy, gallery, specs, swatch
- * colours — stays in the client-safe registry, because none of it is in the
+ * A hybrid, deliberately. The editorial half - copy, gallery, specs, swatch
+ * colours - stays in the client-safe registry, because none of it is in the
  * schema and putting it there would buy nothing. The half that CHANGES on its
  * own is read from the database: price, because an admin edits it without a
  * deploy, and stock, because every order moves it.
  *
  * Before this, the product page showed the registry's price while the database
- * said something else — blaze was listed at ₹3,499 on screen and ₹3,599 in the
+ * said something else - blaze was listed at ₹3,499 on screen and ₹3,599 in the
  * variant row, and checkout charges the database. The page was quoting a price
  * the server would not honour.
  *
@@ -49,8 +49,8 @@ async function withLive(product: Product): Promise<Product> {
     return { ...c, price: row.price, stock: row.stock, inStock: row.stock > 0 }
   })
 
-  // The product-level price is what surfaces outside the picker — cards, the
-  // hero, the sticky bar — so it tracks the default colourway.
+  // The product-level price is what surfaces outside the picker - cards, the
+  // hero, the sticky bar - so it tracks the default colourway.
   const lead = colourways[0]
 
   return {

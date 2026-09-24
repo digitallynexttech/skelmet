@@ -120,7 +120,7 @@ export const COMPARISON_ROWS = [
 /**
  * The case for owning one, in two halves: what goes wrong without it, then
  * what it does beyond holding a helmet. Copy supplied by the client and kept
- * verbatim — the only additions are the short kickers on WHY_CARE, which are
+ * verbatim - the only additions are the short kickers on WHY_CARE, which are
  * drawn from the sentence each one sits above so the list can be scanned.
  */
 export const WHY_CARE = [

@@ -13,7 +13,7 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  *
  * The plate starts invisible. As the flying skull closes on this photo the
  * render loop raises `--skull-dock` on this element toward 1, fading the
- * photographed skull out from under the mesh as the mesh covers it — and back
+ * photographed skull out from under the mesh as the mesh covers it - and back
  * in as it leaves. On the poster path nothing ever sets it, so the photo shows
  * exactly as it always has.
  *

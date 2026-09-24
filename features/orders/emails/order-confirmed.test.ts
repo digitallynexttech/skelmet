@@ -4,7 +4,7 @@ import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
 
 /**
  * With no customer accounts, this email is the only record a buyer keeps of
- * their order number — and that number plus their email is the whole
+ * their order number - and that number plus their email is the whole
  * credential for /track. So these tests are mostly about the number being
  * impossible to miss.
  */

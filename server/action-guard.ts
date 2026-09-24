@@ -20,7 +20,7 @@ export async function requireSession(): Promise<Session> {
 export async function requireStaff(): Promise<Session> {
   const session = await requireSession()
   if (session.user.kind !== "STAFF") {
-    // 404, not 403 — a customer must not be able to probe what exists (§6).
+    // 404, not 403 - a customer must not be able to probe what exists (§6).
     throw new ForbiddenError("Not found.")
   }
   return session

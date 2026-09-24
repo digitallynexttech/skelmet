@@ -7,7 +7,7 @@ import { db } from "@/server/db"
 
 /**
  * Public order lookup, for the customer who is not signed in and is not on the
- * browser that placed the order — which is most people chasing a delivery.
+ * browser that placed the order - which is most people chasing a delivery.
  *
  * Deliberately has no `requirePermission`: this is the one order read a
  * stranger is allowed to make, and the number plus the email it was placed
@@ -18,7 +18,7 @@ import { db } from "@/server/db"
  *    same answer, so this cannot be used to discover which numbers are real.
  *  - The email is compared, never returned. Nothing here echoes a field the
  *    caller did not already supply.
- *  - No address, no phone, no payment identifiers — a courier status is all
+ *  - No address, no phone, no payment identifiers - a courier status is all
  *    anyone needs from this screen.
  */
 export type TrackedOrder = {

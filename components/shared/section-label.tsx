@@ -11,7 +11,7 @@ const TONES = {
  * The mono eyebrow on every section: `01 / THE LINEUP`.
  *
  * The number is NOT passed in. It used to be, and every component carried a
- * default left over from the homepage running order — so the product page
+ * default left over from the homepage running order - so the product page
  * showed 03, 04, 05, 07, 06, 10, 09, 13: gapped AND out of order, because a
  * component cannot know where a page chose to put it.
  *

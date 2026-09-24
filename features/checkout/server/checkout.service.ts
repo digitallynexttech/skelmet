@@ -23,7 +23,7 @@ export type StartedCheckout = {
   orderId: string
   orderNumber: string
   total: string
-  /** Null for COD — nothing to hand the gateway. */
+  /** Null for COD - nothing to hand the gateway. */
   gatewayOrderId: string | null
   gatewayKeyId: string | null
   paymentMethod: "ONLINE" | "COD"
@@ -49,7 +49,7 @@ function isDuplicateNumber(err: unknown): boolean {
  * be started.
  *
  * The status claim goes first and is conditional on PENDING, so two concurrent
- * releases cannot both restock the same lines — whoever flips it wins and the
+ * releases cannot both restock the same lines - whoever flips it wins and the
  * loser returns having done nothing. All of it rides one transaction because a
  * half-undo is worse than none: stock back while the order is still PENDING
  * would let it be paid for goods that have already been re-sold.
@@ -227,7 +227,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           select: { id: true, number: true, total: true },
         })
 
-        // Atomic claim per line — a concurrent order cannot oversell (§5).
+        // Atomic claim per line - a concurrent order cannot oversell (§5).
         for (const line of lines) {
           const claimed = await tx.variant.updateMany({
             where: { id: line.variant.id, stock: { gte: line.qty } },
@@ -250,7 +250,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // SKM-YYYY-XXXX draws 4 characters from a 32-letter alphabet, so a year's
     // numbers collide with each other at about a one-in-a-million chance per
-    // pair — rare, and `number` is @unique, so the loser used to get a raw
+    // pair - rare, and `number` is @unique, so the loser used to get a raw
     // P2002 rendered as "Something went wrong" after their card was already
     // charged. A fresh number costs nothing; only a genuine duplicate retries,
     // and an out-of-stock throw still aborts on the first attempt.
@@ -268,11 +268,11 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // ── open the gateway order ─────────────────────────────
     //
     // The transaction above has already committed, so a failure here cannot be
-    // rolled back — it has to be compensated. The isGatewayConfigured() check
+    // rolled back - it has to be compensated. The isGatewayConfigured() check
     // further up only proves the keys are PRESENT; Razorpay can still refuse
     // the call itself, and does: rejected credentials answer 401, and an
     // outage or a dropped connection never answers at all. Every one of those
-    // used to leave exactly the orphan that check was written to prevent — a
+    // used to leave exactly the orphan that check was written to prevent - a
     // PENDING order nobody can pay, sitting on claimed stock and on a coupon
     // redemption nobody used.
     let gatewayOrderId: string | null = null
@@ -313,7 +313,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     await rememberOrder(order.number)
 
     // No receipt from here any more. With cash on delivery withdrawn, placing
-    // an order is no longer a commitment to anything — an order is real when
+    // an order is no longer a commitment to anything - an order is real when
     // its payment clears, so confirmPayment and the webhook own the email.
     // Sending one here would confirm an abandoned payment page.
 
@@ -350,7 +350,7 @@ export async function confirmPayment(
       return fail("We could not verify that payment.", undefined, 422)
     }
 
-    // Atomic claim — the webhook may have got here first, and marking an order
+    // Atomic claim - the webhook may have got here first, and marking an order
     // PAID twice must not double-fire anything downstream (§5).
     const claimed = await db.order.updateMany({
       where: { id: input.orderId, status: "PENDING" },
@@ -467,7 +467,7 @@ export async function applyPaymentWebhook(event: {
       // A customer whose first card is declined and whose second succeeds
       // generates BOTH events, and Razorpay does not promise the order they
       // arrive in. An unconditional write here let a late failure land on a
-      // row that had already been captured — flipping a paid order's payment
+      // row that had already been captured - flipping a paid order's payment
       // to FAILED and, worse, overwriting the gatewayPaymentId with the
       // declined attempt's, which is the id a refund would later resolve by.
       const claimed = await db.payment.updateMany({
@@ -506,7 +506,7 @@ export type Confirmation = {
  *
  * Authorised by the cookie `placeOrder` set, or by owning the order when
  * signed in. A wrong number, someone else's number and a number that never
- * existed all answer the same 404 — anything else turns this into an oracle
+ * existed all answer the same 404 - anything else turns this into an oracle
  * for which order numbers are real.
  */
 export async function getConfirmation(rawNumber: string): Promise<ActionResult<Confirmation>> {

@@ -21,7 +21,7 @@ const ITEMS = [
  * width to spare; below that the cell is full-width and centring would fight
  * the left-aligned rhythm of every other section.
  *
- * Three columns are held back to md so the narrowest cell is ~180px of text —
+ * Three columns are held back to md so the narrowest cell is ~180px of text -
  * enough for the longest line here to sit on one line at 12.5px.
  */
 export function TrustStrip() {

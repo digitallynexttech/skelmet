@@ -42,7 +42,7 @@ export type SkullInteraction = {
 
 /**
  * The halo at rest, facing the camera. The poster path never loads the canvas,
- * so nothing ever overwrites this — it has to be where the mesh would put it,
+ * so nothing ever overwrites this - it has to be where the mesh would put it,
  * or the burn would sit off the skull for every visitor on the fallback.
  *
  * Derived from skull-canvas: the crown anchor (0, 0.45, 1.1) lifted by

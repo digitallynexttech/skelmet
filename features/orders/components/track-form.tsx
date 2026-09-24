@@ -14,7 +14,7 @@ import type { OrderStatus } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 /**
- * The lookup this page has always displayed but never performed — the form was
+ * The lookup this page has always displayed but never performed - the form was
  * markup with no handler, so "Track it" reloaded the page and nothing else.
  *
  * Form and result sit side by side once there is room for both: the result is
@@ -133,7 +133,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
   const arrival = OFF_PATH.has(order.status as OrderStatus)
     ? null
     : order.deliveredAt
-      ? { label: "Delivered on", value: formatDay(order.deliveredAt) ?? "—", done: true }
+      ? { label: "Delivered on", value: formatDay(order.deliveredAt) ?? "-", done: true }
       : order.placedAt
         ? { label: "Arriving by", value: formatEta(order.placedAt), done: false }
         : null
@@ -165,7 +165,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
       {/* The date is the question. Delivered orders show the day it actually
           landed; anything still moving shows the far end of the published
           window, because quoting the optimistic end turns a normal delivery
-          into a late one. Cancelled and returned orders get neither — there
+          into a late one. Cancelled and returned orders get neither - there
           is nothing coming. */}
       {arrival ? (
         <div

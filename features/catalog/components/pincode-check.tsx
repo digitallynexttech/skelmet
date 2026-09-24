@@ -8,11 +8,11 @@ import { cn } from "@/lib/utils"
 
 /**
  * Delivery check. Previously an input with no state and a CHECK button that
- * did nothing — it accepted "dsvf" and answered nothing at all.
+ * did nothing - it accepted "dsvf" and answered nothing at all.
  *
  * We ship anywhere in India, so there is no serviceability list to consult:
  * the only question is whether what was typed is a real pincode. Six digits,
- * never starting with zero — 0 is not an allocated postal circle.
+ * never starting with zero - 0 is not an allocated postal circle.
  *
  * The field is digits-only at the source rather than validated after the
  * fact, so letters simply cannot be typed into it.
@@ -28,7 +28,7 @@ export function PincodeCheck({ className }: { className?: string }) {
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     // Strip on the way in: paste, autofill and keypress all land here.
     setPin(event.target.value.replace(/\D/g, "").slice(0, 6))
-    // Clearing in the handler, not an effect — a stale answer beside a
+    // Clearing in the handler, not an effect - a stale answer beside a
     // half-edited pincode is worse than no answer.
     setResult(null)
   }
@@ -87,7 +87,7 @@ export function PincodeCheck({ className }: { className?: string }) {
             <>
               <Check className="mt-[3px] size-3.5 shrink-0" strokeWidth={2.6} />
               <span>
-                <span className="font-mono tracking-[0.06em]">{result.pin}</span> — free delivery,
+                <span className="font-mono tracking-[0.06em]">{result.pin}</span> - free delivery,
                 dispatched in {siteConfig.promise.dispatchHours} hrs, arrives in{" "}
                 {siteConfig.promise.deliveryDays}.
               </span>

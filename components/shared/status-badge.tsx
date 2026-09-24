@@ -8,7 +8,7 @@ const TONE = {
   danger: "border-magenta/40 text-magenta",
 } as const
 
-/** Tone keys map to tokens here — never an ad-hoc colour at the call site (§7). */
+/** Tone keys map to tokens here - never an ad-hoc colour at the call site (§7). */
 export function StatusBadge({ status, className }: { status: OrderStatus; className?: string }) {
   return (
     <span

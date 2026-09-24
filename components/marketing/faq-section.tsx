@@ -10,7 +10,7 @@ export function FaqSection() {
   // Carbon, like rider-wall. The homepage has only one other darker band, so
   // without this one its last three sections run flat into each other. It is
   // also the only
-  // section that can take it without losing anything — every other candidate
+  // section that can take it without losing anything - every other candidate
   // builds its cards out of bg-carbon, which would have dissolved them into
   // the panel behind.
   return (

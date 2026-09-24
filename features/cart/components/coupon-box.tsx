@@ -37,7 +37,7 @@ export function CouponBox({
   // items can fall under its minimum when one is removed, and the customer
   // should not reach checkout still believing it applies.
   React.useEffect(() => {
-    // No synchronous clear here — with no code there is simply nothing to
+    // No synchronous clear here - with no code there is simply nothing to
     // check, and `shown` below derives the empty state instead. Writing it
     // back through setState would schedule a second render for a fact already
     // visible in the store.

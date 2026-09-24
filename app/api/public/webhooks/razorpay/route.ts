@@ -22,6 +22,6 @@ export const POST = withErrorHandler(async (req) => {
   const event = JSON.parse(raw) as Parameters<typeof applyPaymentWebhook>[0]
   await applyPaymentWebhook(event)
 
-  // Always 200 once verified — a non-2xx makes Razorpay retry forever.
+  // Always 200 once verified - a non-2xx makes Razorpay retry forever.
   return NextResponse.json({ success: true })
 })
