@@ -43,13 +43,7 @@ const NAV = [
   },
 ] as const
 
-export function AdminSidebar({
-  permissions,
-  user,
-}: {
-  permissions: Permission[]
-  user: { name: string | null; email: string }
-}) {
+export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
   const [openedOn, setOpenedOn] = React.useState(pathname)
@@ -95,12 +89,6 @@ export function AdminSidebar({
       </nav>
 
       <div className="border-t border-white/[0.07] p-3">
-        <div className="mb-2 px-3.5 py-2">
-          <div className="text-bone truncate text-[13.5px] font-semibold">
-            {user.name ?? "Staff"}
-          </div>
-          <div className="text-dim truncate font-mono text-[10.5px]">{user.email}</div>
-        </div>
         <button
           type="button"
           onClick={() => setConfirmingSignOut(true)}

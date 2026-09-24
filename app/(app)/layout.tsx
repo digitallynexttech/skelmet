@@ -24,10 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <QueryProvider>
       <div className="bg-void flex min-h-dvh">
-        <AdminSidebar
-          permissions={session.user.permissions}
-          user={{ name: session.user.name ?? null, email: session.user.email ?? "" }}
-        />
+        <AdminSidebar permissions={session.user.permissions} />
         <div className="min-w-0 flex-1">
           <main className="px-5 pt-20 pb-16 sm:px-8 lg:pt-10 xl:px-10">{children}</main>
         </div>
