@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ChevronDown, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
 import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
 import {
   ORDER_STATUS_COLORS,
@@ -179,8 +180,10 @@ export function OrderTable() {
 
       {/* The board. Every status is here whether or not it has anything in
           it, and each tile is also the filter — the dropdown and these set
-          the same thing, so whichever you reach for the other follows. */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
+          the same thing, so whichever you reach for the other follows.
+          Five across at most: nine in a row left each tile too narrow for
+          its own label, so this runs 5 + 4 over two rows instead. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatusTile
           label="All"
           count={data?.allCount ?? 0}
@@ -215,27 +218,20 @@ export function OrderTable() {
           />
         </div>
 
-        <div className="relative w-full sm:w-[220px]">
-          <select
-            value={status}
-            onChange={(e) => setState({ status: e.target.value as OrderStatus | "ALL" })}
-            aria-label="Filter by status"
-            className="rounded-field bg-void text-bone focus:border-blaze focus:ring-blaze/[0.16] h-[52px] w-full appearance-none border border-white/[0.14] pr-10 pl-4 text-[14px] outline-none transition-colors focus:ring-[3px]"
-          >
-            {FILTERS.map((f) => (
-              <option key={f.value} value={f.value} className="bg-carbon">
-                {f.label}
-                {f.value === "ALL"
-                  ? ` (${data?.allCount ?? 0})`
-                  : ` (${data?.counts?.[f.value as OrderStatus] ?? 0})`}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="text-dim pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2"
-            strokeWidth={2}
-          />
-        </div>
+        <Select
+          label="Filter by status"
+          value={status}
+          onChange={(next) => setState({ status: next })}
+          className="w-full sm:w-[260px]"
+          options={FILTERS.map((f) => ({
+            value: f.value,
+            label: f.label,
+            hint:
+              f.value === "ALL"
+                ? (data?.allCount ?? 0)
+                : (data?.counts?.[f.value as OrderStatus] ?? 0),
+          }))}
+        />
       </div>
 
       {isError ? (
