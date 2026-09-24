@@ -55,6 +55,14 @@ const SWING = 0.7
 /** How much smaller the skull gets mid-flight, as if pulled back in depth. */
 const DIP = 0.14
 
+/**
+ * Phones, as Tailwind's `sm` breakpoint draws the line. Here the route is cut
+ * short: the skull flies from the hero to the docks marked `phone` (see
+ * SkullDock) and stays there, rather than following the reader down a page
+ * that is several screens longer on a phone than on a desktop.
+ */
+const PHONE = "(width < 40rem)"
+
 type Dock = { plate: string; width: number; height: number; skull: number[] }
 const docks = DOCKS as Record<string, Dock>
 
@@ -66,6 +74,8 @@ export type Anchor = {
   home: boolean
   /** How far the photographed skull is turned from facing the camera, radians. */
   turn: number
+  /** The photo's own skull stays hidden for the whole route, not just the landing. */
+  hideOwn: boolean
   /** The photographed skull's centre and height, document px. */
   cx: number
   cy: number
@@ -98,7 +108,11 @@ export type Pose = {
  */
 export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
   const anchors: Anchor[] = []
-  const els = document.querySelectorAll<HTMLElement>("[data-skull-home], [data-skull-dock]")
+  // On a phone, only the docks marked for it are stops.
+  const docksOnRoute = window.matchMedia(PHONE).matches
+    ? "[data-skull-dock][data-skull-phone]"
+    : "[data-skull-dock]"
+  const els = document.querySelectorAll<HTMLElement>(`[data-skull-home], ${docksOnRoute}`)
 
   for (const el of els) {
     const rect = el.getBoundingClientRect()
@@ -111,6 +125,7 @@ export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
         el,
         home: true,
         turn: 0,
+        hideOwn: false,
         cx: left + rect.width * rest.centreX,
         cy: top + rect.height * rest.centreY,
         h: rect.height * rest.height,
@@ -131,6 +146,7 @@ export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
       el,
       home: false,
       turn: Number(el.dataset.skullTurn) || 0,
+      hideOwn: el.hasAttribute("data-skull-hide-own"),
       cx: left + offsetX + ((x0 + x1) / 2) * scale,
       cy: top + offsetY + ((y0 + y1) / 2) * scale,
       h: (y1 - y0) * scale,
@@ -241,7 +257,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
   for (const a of anchors) {
     if (a.home || !a.clip) continue
     const w = proximity(cx, cy, a)
-    plates.set(a.el, w)
+    plates.set(a.el, a.hideOwn ? 1 : w)
     if (w > nearest) {
       nearest = w
       // Relaxed away from the photo's edges as the skull leaves, so the crop

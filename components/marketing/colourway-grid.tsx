@@ -35,6 +35,11 @@ export async function ColourwayGrid() {
             key={c.id}
             className={cn(
               "rounded-card bg-carbon group relative overflow-hidden border transition-colors",
+              // On a phone the whole card fits on one screen under the 75px
+              // header, with 12px clear above and below. svh, so it still fits
+              // with the browser's toolbars showing. The photo gives up the
+              // height; the details under it never shrink.
+              "max-sm:flex max-sm:max-h-[calc(100svh-99px)] max-sm:flex-col",
               c.bestSeller
                 ? "border-blaze/35 hover:border-blaze/60"
                 : "border-white/[0.09] hover:border-white/25",
@@ -46,7 +51,12 @@ export async function ColourwayGrid() {
               className="focus-visible:ring-blaze/70 absolute inset-0 z-10 rounded-[inherit] focus-visible:ring-2 focus-visible:outline-none"
             />
 
-            <div className="relative aspect-4/3 lg:aspect-square">
+            {/* 4:5 on phones is the photos' own shape, so nothing is cropped and
+                the skull - and the hero skull that lands on it - sits clear of
+                the edges. 4:3 there cut through the crown and the jaw. On a
+                short phone it shrinks toward square to keep the card on one
+                screen, which still clears the skull. */}
+            <div className="relative aspect-4/5 max-sm:min-h-0 sm:aspect-4/3 lg:aspect-square">
               <Image
                 src={c.image}
                 alt={`${product.name} in ${c.name}`}
@@ -54,11 +64,15 @@ export async function ColourwayGrid() {
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
                 className="object-cover"
               />
-              {/* The hero skull lands here on its way down the page. Only the
-                  blaze plate has a dock; the others render nothing. */}
+              {/* The hero skull lands here on its way down the page, and on a
+                  phone this is where it stops. The photo's own skull is kept
+                  hidden throughout, so the card only ever shows the 3D one.
+                  Only the blaze plate has a dock; the others render nothing. */}
               <SkullDock
                 src={c.image}
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
+                phone
+                hideOwnSkull
               />
               {c.bestSeller ? (
                 // Above the hero skull (z-30) when it docks here, as the badge
@@ -70,7 +84,7 @@ export async function ColourwayGrid() {
               ) : null}
             </div>
 
-            <div className="border-t border-white/[0.07] p-6">
+            <div className="border-t border-white/[0.07] p-6 max-sm:shrink-0">
               {/* The colourway is the eyebrow and the product is the heading,
                   matching the section header idiom above. The swatch sits with
                   the colour name because that is what it labels - against the

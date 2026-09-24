@@ -309,6 +309,13 @@ export function SkullCanvas({
     const measure = () => {
       silhouettes.clear()
       anchors = measureAnchors(silhouette(0))
+      // A photo that has dropped off the route - resized down to a phone,
+      // where the route is shorter - gets its own skull back.
+      for (const el of plates.keys()) {
+        if (anchors.some((a) => a.el === el)) continue
+        el.style.removeProperty("--skull-dock")
+        plates.delete(el)
+      }
       const home = anchors[0]
       const flight = flightRef.current
       if (!home || !flight) return
