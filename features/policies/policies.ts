@@ -8,6 +8,8 @@
  * why each page renders a visible banner saying so.
  */
 
+import { siteConfig } from "@/config/site"
+
 export type PolicyBlock =
   | { type: "p"; text: string }
   | { type: "list"; items: string[] }
@@ -363,10 +365,9 @@ const TERMS: Policy = {
         {
           type: "list",
           items: [
-            "We dispatch within [48] hours of payment clearing, on working days.",
-            "Typical delivery is [3–6] working days depending on pincode.",
-            "Shipping is free across India on all orders.",
-            "Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within [48] hours.",
+            "We dispatch within 48 hours of payment clearing, on working days.",
+            "Typical delivery is 3–6 working days depending on pincode.",
+            "Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within 24 hours.",
             "Three failed delivery attempts return the parcel to us; we will refund minus the actual return freight.",
           ],
         },
@@ -406,7 +407,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "We warrant the mount against cracking, deformation or bracket failure in normal indoor domestic use for [12] months from delivery. If that happens, send us a photo and we will replace it.",
+          text: `We warrant the mount against cracking, deformation or bracket failure in normal indoor domestic use for ${siteConfig.promise.warrantyMonths} months from delivery. If that happens, send us a photo and we will replace it.`,
         },
         {
           type: "p",
@@ -666,7 +667,7 @@ const RETURNS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "If it arrives cracked, warped, in the wrong colourway, or missing parts, send us a photo. We ship a replacement straight away and you keep or bin the original, whichever is less hassle. This is separate from the 7-day window and is not time-limited beyond the [12]-month warranty.",
+          text: `If it arrives cracked, warped, in the wrong colourway, or missing parts, send us a photo. We ship a replacement straight away and you keep or bin the original, whichever is less hassle. This is separate from the 7-day window and is not time-limited beyond the ${siteConfig.promise.warrantyMonths}-month warranty.`,
         },
       ],
     },

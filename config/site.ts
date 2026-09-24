@@ -29,7 +29,7 @@ export const siteConfig = {
     dispatchHours: 48,
     returnDays: 7,
     deliveryDays: "3–6 working days",
-    warrantyMonths: 12,
+    warrantyMonths: 6,
   },
 } as const
 
