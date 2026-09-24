@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     openGraph: {
       title: product.name,
       description: product.strapline,
-      images: [{ url: product.gallery[0]!.src }],
+      // Blaze is the canonical finish for sharing: metadata is per slug,
+        // not per selected colourway.
+        images: [{ url: product.gallery[0]!.src.blaze }],
     },
   }
 }

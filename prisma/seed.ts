@@ -81,7 +81,7 @@ async function main() {
   })
 
   for (const c of COLOURWAYS) {
-    await db.variant.create({
+    const variant = await db.variant.create({
       data: {
         productId: product.id,
         colourway: c.id,
@@ -89,17 +89,22 @@ async function main() {
         price: FLAME_SKULL_MOUNT.price,
         stock: 25,
       },
+      select: { id: true },
+    })
+
+    // Media hangs off the variant, not the product: every gallery slot exists
+    // in all three finishes, and a single product-level list could only ever
+    // hold one of them.
+    await db.mediaAsset.createMany({
+      data: FLAME_SKULL_MOUNT.gallery.map((g, i) => ({
+        productId: product.id,
+        variantId: variant.id,
+        key: g.src[c.id].replace(/^\//, ""),
+        alt: `${c.name} — ${g.alt}`,
+        sort: i,
+      })),
     })
   }
-
-  await db.mediaAsset.createMany({
-    data: FLAME_SKULL_MOUNT.gallery.map((g, i) => ({
-      productId: product.id,
-      key: g.src.replace(/^\//, ""),
-      alt: g.alt,
-      sort: i,
-    })),
-  })
 
   // ── staff login ────────────────────────────────────────────
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@skelmet.in"

@@ -68,13 +68,15 @@ export function ProductDetail({
 
   const colourway = product.colourways.find((c) => c.id === colourwayId) ?? product.colourways[0]!
 
-  // The first gallery slot always shows the selected colourway; the rest are
-  // shared context shots.
+  // Every slot follows the swatch, not just the first. It used to swap the
+  // front shot alone and keep four shared "context" shots, which meant picking
+  // Militia Olive showed one olive skull and then four orange ones.
   const gallery = React.useMemo(
-    () => [
-      { src: colourway.image, alt: `${colourway.name} SKELMET mount` },
-      ...product.gallery.slice(1),
-    ],
+    () =>
+      product.gallery.map((shot) => ({
+        src: shot.src[colourway.id],
+        alt: `${colourway.name} — ${shot.alt}`,
+      })),
     [colourway, product.gallery],
   )
   const active = gallery[Math.min(shot, gallery.length - 1)]!

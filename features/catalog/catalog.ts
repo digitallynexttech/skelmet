@@ -43,9 +43,25 @@ export type Product = {
   reviewCount: number
   unitsLeft: number
   colourways: Colourway[]
-  gallery: Array<{ src: string; alt: string }>
+  gallery: GalleryShot[]
   specs: Array<{ label: string; value: string; pending?: boolean }>
   inTheBox: string[]
+}
+
+/**
+ * One gallery slot, in all three finishes.
+ *
+ * The file per colourway is a Record rather than an optional override, so a
+ * finish cannot be left out: only the first slot used to follow the swatch,
+ * and picking Militia Olive left four orange photographs behind it. A missing
+ * finish is now a type error rather than something you find on the page.
+ *
+ * All three files share framing and dimensions, so `object-cover` crops them
+ * identically and switching colourway does not shift the image.
+ */
+export type GalleryShot = {
+  alt: string
+  src: Record<ColourwayId, string>
 }
 
 export const COLOURWAYS: Colourway[] = [
@@ -96,11 +112,46 @@ export const FLAME_SKULL_MOUNT: Product = {
   unitsLeft: 12,
   colourways: COLOURWAYS,
   gallery: [
-    { src: "/product/product-front.jpg", alt: "Blaze Orange flame skull mount, front elevation" },
-    { src: "/product/product-profile.jpg", alt: "Side profile showing the mount arm" },
-    { src: "/product/lifestyle-concrete.jpg", alt: "A matte black helmet resting on the mount" },
-    { src: "/product/lifestyle-gloves.jpg", alt: "Gloves hanging from the hook under the jaw" },
-    { src: "/product/detail-flame.jpg", alt: "Macro detail of the carved flame relief" },
+    {
+      alt: "Flame skull mount, front elevation",
+      src: {
+        blaze: "/product/product-front.jpg",
+        olive: "/product/colourway-olive.jpg",
+        ghost: "/product/colourway-ghost.jpg",
+      },
+    },
+    {
+      alt: "Side profile showing the mount arm",
+      src: {
+        blaze: "/product/product-profile.jpg",
+        olive: "/product/product-profile-olive.jpg",
+        ghost: "/product/product-profile-ghost.jpg",
+      },
+    },
+    {
+      alt: "A matte black helmet resting on the mount",
+      src: {
+        blaze: "/product/lifestyle-concrete.jpg",
+        olive: "/product/lifestyle-concrete-olive.jpg",
+        ghost: "/product/lifestyle-concrete-ghost.jpg",
+      },
+    },
+    {
+      alt: "Gloves hanging from the hook under the jaw",
+      src: {
+        blaze: "/product/lifestyle-gloves.jpg",
+        olive: "/product/lifestyle-gloves-olive.jpg",
+        ghost: "/product/lifestyle-gloves-ghost.jpg",
+      },
+    },
+    {
+      alt: "Macro detail of the carved flame relief",
+      src: {
+        blaze: "/product/detail-flame.jpg",
+        olive: "/product/detail-flame-olive.jpg",
+        ghost: "/product/detail-flame-ghost.jpg",
+      },
+    },
   ],
   specs: [
     { label: "Material", value: "PLA+ · matte" },
