@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { Wordmark } from "@/components/shared/wordmark"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
@@ -52,6 +53,10 @@ export function AdminSidebar({
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
   const [openedOn, setOpenedOn] = React.useState(pathname)
+  const [confirmingSignOut, setConfirmingSignOut] = React.useState(false)
+  // signOut navigates away, so this never has to be unset — it keeps the
+  // button from being pressed twice while the redirect is in flight.
+  const [signingOut, setSigningOut] = React.useState(false)
 
   if (open && openedOn !== pathname) setOpen(false)
 
@@ -98,8 +103,8 @@ export function AdminSidebar({
         </div>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-ash hover:text-magenta flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors hover:bg-white/[0.04]"
+          onClick={() => setConfirmingSignOut(true)}
+          className="text-ash hover:text-magenta flex min-h-11 w-full items-center gap-3 rounded-md px-3.5 text-[14px] transition-colors hover:bg-white/[0.04]"
         >
           <LogOut className="text-dim size-[18px] shrink-0" strokeWidth={1.8} />
           Sign out
@@ -158,6 +163,22 @@ export function AdminSidebar({
           {body}
         </div>
       </div>
+
+      {/* Mounted once, outside both copies of `body`, or the drawer and the
+          desktop rail would each render their own dialog. */}
+      <ConfirmDialog
+        open={confirmingSignOut}
+        title="Sign out?"
+        body="You will need your email and password to get back into the console."
+        confirmLabel="Sign out"
+        tone="danger"
+        pending={signingOut}
+        onConfirm={() => {
+          setSigningOut(true)
+          void signOut({ callbackUrl: "/login" })
+        }}
+        onClose={() => setConfirmingSignOut(false)}
+      />
     </>
   )
 }

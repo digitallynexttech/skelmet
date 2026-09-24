@@ -5,6 +5,9 @@ node_modules/
 
 # next
 .next/
+# Deploys alternate between two build directories so the live one is never
+# overwritten while it is being served.
+.next-*
 out/
 build/
 next-env.d.ts
