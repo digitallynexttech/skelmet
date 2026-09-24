@@ -73,7 +73,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
       : `Due on delivery: ${formatMoney(data.total)} (cash on delivery)`,
     ``,
     `We dispatch within ${siteConfig.promise.dispatchHours} hours on working days, and most`,
-    `pincodes see it in ${siteConfig.promise.deliveryDays}.`,
+    `pincodes see it within ${siteConfig.promise.deliveryDays}.`,
     ``,
     `Track it any time at ${trackUrl}`,
     `You will need this order number and this email address - there is no account to sign in to.`,
@@ -176,7 +176,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;">
                 <tr>
                   <td style="border-top:1px solid ${C.line};padding:20px 0 0;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ash};">
-                    We dispatch within <span style="color:${C.bone};">${siteConfig.promise.dispatchHours} hours</span> on working days, and most pincodes see it in <span style="color:${C.bone};">${siteConfig.promise.deliveryDays}</span>.
+                    We dispatch within <span style="color:${C.bone};">${siteConfig.promise.dispatchHours} hours</span> on working days, and most pincodes see it within <span style="color:${C.bone};">${siteConfig.promise.deliveryDays}</span>.
                   </td>
                 </tr>
               </table>

@@ -346,7 +346,7 @@ const TERMS: Policy = {
           type: "list",
           items: [
             "We dispatch within 48 hours of payment clearing, on working days.",
-            "Typical delivery is 3–6 working days depending on pincode.",
+            "Typical delivery is within 7 working days, depending on pincode.",
             "Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within 24 hours.",
             "Three failed delivery attempts return the parcel to us; we will refund minus the actual return freight.",
           ],
@@ -487,7 +487,7 @@ const SHIPPING: Policy = {
   title: "Shipping policy",
   intro: "When it leaves, how it travels, and what happens if it goes wrong.",
   readingTime: "~4 min read",
-  shortVersion: "Free everywhere in India. Out in 48 hours, usually with you in 3–6 working days.",
+  shortVersion: "Free everywhere in India. Out in 48 hours, usually with you within 7 working days.",
   accent: "acid",
   sections: [
     {

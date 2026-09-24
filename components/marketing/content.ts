@@ -38,7 +38,7 @@ export const FAQ_ITEMS = [
   {
     question: "How long does delivery take?",
     answer:
-      "We dispatch within 48 hours on working days, and most pincodes see it in three to six working days. Tracking lands by email and WhatsApp.",
+      "We dispatch within 48 hours on working days, and most pincodes see it within seven working days. Tracking lands by email and WhatsApp.",
   },
   {
     question: "Do you do bulk orders for clubs?",

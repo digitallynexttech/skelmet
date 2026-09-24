@@ -88,7 +88,7 @@ export function PincodeCheck({ className }: { className?: string }) {
               <Check className="mt-[3px] size-3.5 shrink-0" strokeWidth={2.6} />
               <span>
                 <span className="font-mono tracking-[0.06em]">{result.pin}</span> - free delivery,
-                dispatched in {siteConfig.promise.dispatchHours} hrs, arrives in{" "}
+                dispatched in {siteConfig.promise.dispatchHours} hrs, arrives within{" "}
                 {siteConfig.promise.deliveryDays}.
               </span>
             </>

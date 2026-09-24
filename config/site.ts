@@ -28,7 +28,7 @@ export const siteConfig = {
   promise: {
     dispatchHours: 48,
     returnDays: 7,
-    deliveryDays: "3–6 working days",
+    deliveryDays: "7 working days",
     warrantyMonths: 6,
   },
 } as const

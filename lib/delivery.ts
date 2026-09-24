@@ -9,11 +9,11 @@ import { siteConfig } from "@/config/site"
  * confirmation page; the tracker, which is the page people open *to find out
  * when it arrives*, did not show a date at all.
  *
- * The upper bound of the published promise, not the middle: quoting the
- * optimistic end of "3–6 working days" turns a normal delivery into a late
+ * The published promise, "7 working days". Kept to its upper bound when it
+ * was a range: quoting the optimistic end turns a normal delivery into a late
  * one.
  */
-const DELIVERY_DAYS = 6
+const DELIVERY_DAYS = 7
 
 /**
  * Date.UTC rather than `new Date(y, m, d)`. The server runs UTC, and local
