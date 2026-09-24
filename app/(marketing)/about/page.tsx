@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
-import { ArrowRight, Ban, Eye, Trash2 } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { Anatomy } from "@/components/marketing/anatomy"
 import { RiderWall } from "@/components/marketing/rider-wall"
-import { Section, SectionHeading } from "@/components/marketing/section"
 import { SplitFeature } from "@/components/marketing/split-feature"
 import { Texture } from "@/components/marketing/texture"
 import { TrustStrip } from "@/components/marketing/trust-strip"
@@ -26,8 +25,7 @@ export const metadata: Metadata = {
  *
  * This used to read "Mounts shipped [N]" and "Cities delivered to [N]".
  * Both are counts of a track record, and filling them in with a figure
- * nobody has earned yet would be a claim a customer cannot check - on the
- * page that promises, a screen further down, not to invent numbers. They
+ * nobody has earned yet would be a claim a customer cannot check. They
  * are spec instead, which needs no volume to be impressive and no edit to
  * stay honest. Swap the counts back in once they are worth printing.
  */
@@ -35,24 +33,6 @@ const NUMBERS = [
   { value: "10 kg", label: "Load rated" },
   { value: siteConfig.promise.deliveryDays.replace(" working days", ""), label: "Working days to deliver" },
   { value: "4.9", label: "Average rating" },
-]
-
-const WONT_DO = [
-  {
-    Icon: Ban,
-    title: "Fake urgency",
-    body: "No countdown timers that reset when you reload. When we say 12 are left, there are 12 left.",
-  },
-  {
-    Icon: Trash2,
-    title: "Throwaway quality",
-    body: "If it cracks in normal use, we replace it. A wall mount should outlast the helmet sitting on it.",
-  },
-  {
-    Icon: Eye,
-    title: "Selling your data",
-    body: "Your address is for the courier. That's the entire list of people who get it.",
-  },
 ]
 
 export default function AboutPage() {
@@ -63,17 +43,20 @@ export default function AboutPage() {
         <div className="relative z-10 max-w-[900px]">
           <SectionLabel className="mb-5">About us</SectionLabel>
           <h1 className="font-display text-bone mb-7 text-[52px] leading-[1.0] uppercase sm:text-[76px] xl:text-[104px]">
-            We started with
+            All your gear
             <br />
-            one annoyed
-            <br />
-            <span className="text-blaze">rider</span>
+            <span className="text-blaze">One place</span>
           </h1>
+          <p className="text-ash mb-5 max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[19px]">
+            Every ride ended the same way. The helmet went on a chair, the floor, or wherever there
+            was space, waiting to get knocked over and scratched. The gloves ended up on the shoe
+            rack, the jacket over a chair, and the keys wherever they landed. Then the next ride
+            started with hunting for all of it again.
+          </p>
           <p className="text-ash max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[19px]">
-            Every helmet hook on the market was either a bent steel hook that scratched the shell,
-            or a plastic blob that looked like it came free with a magazine. So we designed the
-            thing we actually wanted on our own wall, printed it, and people kept asking where to
-            buy one.
+            So we built one place for everything. SKELMET holds your helmet, gloves, jacket and keys
+            on a single wall mount, so your gear stays together, stays safe, and is ready when you
+            are.
           </p>
         </div>
       </div>
@@ -105,17 +88,18 @@ export default function AboutPage() {
           The design
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
-          Why a skull
+          Built to hold
+          <br />
+          Made to stand out
         </h2>
         <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          Because a helmet on a shelf is storage, and a helmet on a skull is a statement. The cradle
-          shape happens to be the right shape too, a rounded dome supports the shell from inside so
-          the padding never takes the weight and the liner gets air all night.
+          The shape is built around the inside of your helmet. It spreads the weight evenly, so no
+          single spot of the padding gets pressed out of shape, and it keeps the helmet open so the
+          liner can dry out between rides.
         </p>
         <p className="text-ash max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          The flames aren&apos;t decoration either. They&apos;re what gives the print its grip and
-          its texture, and they&apos;re why it reads properly from across a room instead of turning
-          into an orange lump.
+          And it doesn&apos;t look like a piece of furniture you bolted to the wall. It looks like a
+          piece of art, the kind people notice from across the room and can&apos;t stop looking at.
         </p>
       </SplitFeature>
 
@@ -128,18 +112,19 @@ export default function AboutPage() {
           The making
         </SectionLabel>
         <h2 className="font-display text-bone mb-5 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
-          Made here,
+          Made by riders,
           <br />
-          not imported
+          for riders
         </h2>
         <p className="text-ash mb-5 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          Every mount comes off our own printers in {siteConfig.city}, hand-checked and packed
-          the same week. Nothing sits in a container for three months and nothing arrives with a
-          mould seam down the middle of its face.
+          You clean your chain after the rain. You check the tyre pressure before a long ride.
+          You&apos;ve spent more hours picking the right helmet than most people spend picking a
+          phone.
         </p>
         <p className="text-ash mb-7 max-w-[480px] text-[16px] leading-[1.66] text-pretty sm:text-[16.5px]">
-          It also means we can change things fast. Three of the tweaks in the current version came
-          straight out of customer emails.
+          That is the rider&apos;s spirit. Riding isn&apos;t just how we get somewhere. It&apos;s
+          who we are. So the gear that protects us deserves more than a corner of the room. It
+          deserves a place that respects it, the way you respect every ride.
         </p>
         <div className="flex flex-wrap gap-2.5">
           <Badge variant="acid">Hand-finished</Badge>
@@ -151,27 +136,6 @@ export default function AboutPage() {
       <Texture />
       <TrustStrip />
 
-      <Section>
-        <SectionLabel numbered tone="magenta" className="mb-3.5">
-          Our line in the sand
-        </SectionLabel>
-        <SectionHeading className="mb-10">What we won&apos;t do</SectionHeading>
-        <div className="grid gap-5 lg:grid-cols-3">
-          {WONT_DO.map(({ Icon, title, body }) => (
-            <article
-              key={title}
-              className="rounded-card bg-carbon border border-white/[0.09] p-7 sm:p-8"
-            >
-              <Icon className="text-blaze mb-6 size-7" strokeWidth={1.6} />
-              <h3 className="font-display text-bone mb-3 text-[24px] leading-[1.08] uppercase sm:text-[26px]">
-                {title}
-              </h3>
-              <p className="text-ash text-[15px] leading-[1.6]">{body}</p>
-            </article>
-          ))}
-        </div>
-      </Section>
-
       <RiderWall />
 
       <section className="grain relative overflow-hidden bg-[linear-gradient(100deg,var(--color-blaze),var(--color-ember)_66%,var(--color-flare))] px-5 py-14 sm:px-8 sm:py-18 xl:px-14">
@@ -180,9 +144,8 @@ export default function AboutPage() {
             <h2 className="font-display text-void mb-3 text-[38px] leading-[1.0] uppercase sm:text-[52px] xl:text-[60px]">
               Enough about us
             </h2>
-            <p className="text-void/80 max-w-[480px] text-[16px] leading-[1.56] sm:text-[17px]">
-              Go look at the thing. It&apos;s better in person, and the return window means you can
-              find that out risk-free.
+            <p className="text-void/80 max-w-[480px] text-[16px] leading-[1.56] text-pretty sm:text-[17px]">
+              Get the throne of your riding gear. It looks much better in person.
             </p>
           </div>
           <ButtonLink
@@ -191,7 +154,7 @@ export default function AboutPage() {
             size="lg"
             className="bg-void text-bone hover:bg-graphite shrink-0"
           >
-            Shop the mount
+            Get yours
             <ArrowRight className="size-4" strokeWidth={2.4} />
           </ButtonLink>
         </div>

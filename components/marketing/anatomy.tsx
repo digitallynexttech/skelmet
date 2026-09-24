@@ -34,7 +34,7 @@ export function Anatomy() {
             The build
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[40px] leading-[1.0] uppercase sm:text-[52px] xl:text-[62px]">
-            Simple yet Solid.
+            Simple yet Solid
           </h2>
           <p className="text-ash mb-8 max-w-[460px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
             The Mount Arm is affixed to the wall with 3 screws. The skull is shaped to fit into any
