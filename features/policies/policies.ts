@@ -211,16 +211,6 @@ const PRIVACY: Policy = {
     },
     {
       n: "12",
-      title: "Children",
-      blocks: [
-        {
-          type: "p",
-          text: "SKELMET is not sold to anyone under 18. We do not knowingly collect data from children, and we do not do behavioural advertising or tracking directed at them. If you believe a child has given us data, write to the grievance officer and we will delete it.",
-        },
-      ],
-    },
-    {
-      n: "13",
       title: "Security",
       blocks: [
         {
@@ -234,17 +224,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "14",
-      title: "Transfers outside India",
-      blocks: [
-        {
-          type: "p",
-          text: "Some processors store data outside India. Where they do, we rely on contractual protections with that provider and only use providers in countries not restricted by the Central Government. The current list of hosting regions is [REGIONS].",
-        },
-      ],
-    },
-    {
-      n: "15",
+      n: "13",
       title: "Changes to this policy",
       blocks: [
         {
@@ -254,7 +234,7 @@ const PRIVACY: Policy = {
       ],
     },
     {
-      n: "16",
+      n: "14",
       title: "Grievance officer",
       blocks: [
         {
@@ -586,7 +566,7 @@ const SHIPPING: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Photograph the parcel before you open it further and send it to us within [48] hours of delivery. We ship a replacement immediately and we do not ask for the damaged one back.",
+          text: "Photograph the parcel before you open it further and send it to us within 24 hours of delivery. We ship a replacement immediately and we do not ask for the damaged one back.",
         },
       ],
     },
@@ -653,10 +633,14 @@ const RETURNS: Policy = {
         {
           type: "table",
           head: ["Paid with", "Refund lands in"],
+          // One figure for every method until there is real data to split
+          // them by. Quoting the outer edge is the safe direction: a refund
+          // that lands early is a good surprise, one that lands late is a
+          // complaint.
           rows: [
-            ["UPI", "[1–3] working days"],
-            ["Card", "[5–7] working days"],
-            ["Netbanking", "[3–5] working days"],
+            ["UPI", "Up to 7 working days"],
+            ["Card", "Up to 7 working days"],
+            ["Netbanking", "Up to 7 working days"],
           ],
         },
       ],

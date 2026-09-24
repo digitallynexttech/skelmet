@@ -18,8 +18,7 @@ export function SiteFooter() {
         <div>
           <Wordmark className="mb-5" />
           <p className="text-ash mb-6 max-w-[300px] text-[14.5px] leading-[1.6]">
-            Helmet furniture for people who don&apos;t own furniture. Designed, made and shipped
-            from {siteConfig.city}.
+            Somewhere proper to put your helmet. Designed, made and shipped from {siteConfig.city}.
           </p>
           <div className="flex gap-2.5">
             {SOCIALS.map(({ href, label, Icon }) => (
