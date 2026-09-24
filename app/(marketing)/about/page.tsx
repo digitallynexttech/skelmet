@@ -21,11 +21,21 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
 }
 
+/**
+ * Four things that are true on the day the shop opens.
+ *
+ * This used to read "Mounts shipped [N]" and "Cities delivered to [N]".
+ * Both are counts of a track record, and filling them in with a figure
+ * nobody has earned yet would be a claim a customer cannot check - on the
+ * page that promises, a screen further down, not to invent numbers. They
+ * are spec instead, which needs no volume to be impressive and no edit to
+ * stay honest. Swap the counts back in once they are worth printing.
+ */
 const NUMBERS = [
-  { value: "[N]", label: "Mounts shipped" },
-  { value: "[N]", label: "Cities delivered to" },
+  { value: "10 kg", label: "Load rated" },
+  { value: siteConfig.promise.deliveryDays.replace(" working days", ""), label: "Working days to deliver" },
   { value: "4.9", label: "Average rating" },
-  { value: "[N]", label: "Printers running" },
+  { value: `${siteConfig.promise.warrantyMonths} mo`, label: "Warranty" },
 ]
 
 const WONT_DO = [
