@@ -11,6 +11,10 @@ const buttonVariants = cva(
       variant: {
         primary:
           "bg-gradient-to-r from-blaze to-ember text-void shadow-[0_14px_40px_rgb(255_90_31_/_0.34)] hover:shadow-[0_16px_48px_rgb(255_90_31_/_0.46)]",
+        // Primary's gradient and glow in whatever colour an ancestor sets as
+        // --tint and --tint-to: the lineup cards each dress it in their own
+        // colourway.
+        tint: "bg-gradient-to-r from-(--tint) to-(--tint-to) text-void shadow-[0_14px_40px_color-mix(in_oklab,var(--tint)_34%,transparent)] hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--tint)_46%,transparent)]",
         accent: "bg-acid text-void hover:bg-[#e2ff6a]",
         violet: "bg-violet text-bone hover:bg-[#8f74ff]",
         light: "bg-bone text-void hover:bg-white",

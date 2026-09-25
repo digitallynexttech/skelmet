@@ -5,6 +5,7 @@ import {
   ACESFilmicToneMapping,
   AmbientLight,
   Box3,
+  Color,
   DirectionalLight,
   Group,
   Matrix4,
@@ -107,6 +108,43 @@ const HALO_FLARE_MAX = 0.35
 const BANK_GAIN = 0.0003
 const BANK_MAX = 0.3
 
+/**
+ * Two lighting rigs, blended by how seated the skull is in a photo.
+ *
+ * Stage is the hero's, built for a black page: a hot orange kicker and a violet
+ * rim keep the silhouette alive against nothing. Carried into a product card
+ * it made the landed skull glossier and more saturated than the photographed
+ * ones beside it, with violet pooling in the eye sockets and teeth, and the
+ * other two cards read as dull by comparison. Studio is what the photos were
+ * shot under - one soft key from the upper left, a neutral fill, no coloured
+ * edges - so the skull that lands reads as the same object as the rest.
+ */
+const STAGE = {
+  key: 5.6,
+  kicker: 85,
+  rim: 45,
+  bounce: 9,
+  ambient: 0.07,
+  environment: 0.14,
+  exposure: 1.08,
+  roughness: 0.58,
+}
+const STUDIO = {
+  key: 4.8,
+  kicker: 0,
+  rim: 0,
+  bounce: 4,
+  ambient: 0.085,
+  environment: 0.17,
+  exposure: 0.83,
+  roughness: 0.8,
+}
+/** The key's warmth flatters the hero and oversaturates a skull beside neutral-lit photos. */
+const STAGE_KEY = new Color("#ffeedd")
+const STUDIO_KEY = new Color("#ffffff")
+const STAGE_AMBIENT = new Color("#3a3a52")
+const STUDIO_AMBIENT = new Color("#e6e1d8")
+
 export function SkullCanvas({
   flightRef,
   onReady,
@@ -157,7 +195,7 @@ export function SkullCanvas({
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.08
+    renderer.toneMappingExposure = STAGE.exposure
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = PCFShadowMap
     // Shader diagnostics cost a synchronous GPU round trip on first use: three
@@ -174,7 +212,7 @@ export function SkullCanvas({
     const scene = new Scene()
     // The procedural room is for soft shading only; at full strength it washes
     // the orange toward cream.
-    scene.environmentIntensity = 0.14
+    scene.environmentIntensity = STAGE.environment
 
     const camera = new PerspectiveCamera(32, 1, 0.1, 1000)
     camera.position.set(0, 0, 5.4)
@@ -194,7 +232,7 @@ export function SkullCanvas({
     // Hard key, high and to the left, as in the product photography. It is the
     // only shadow caster: one decisive light source is what gives the skull its
     // contrast.
-    const key = new DirectionalLight("#ffeedd", 5.6)
+    const key = new DirectionalLight(STAGE_KEY.clone(), STAGE.key)
     key.position.set(-3.4, 4.4, 1.9)
     key.castShadow = true
     key.shadow.mapSize.set(2048, 2048)
@@ -212,22 +250,40 @@ export function SkullCanvas({
 
     // Hot blaze kicker raking the right edge, so the silhouette stays lit
     // against a black page even when the face turns away.
-    const kicker = new PointLight("#ff5a1f", 85, 22)
+    const kicker = new PointLight("#ff5a1f", STAGE.kicker, 22)
     kicker.position.set(3.6, 0.5, -1.2)
 
     // Cool counter-rim on the opposite edge, separating skull from ground.
-    const rim = new PointLight("#7c5cff", 45, 22)
+    const rim = new PointLight("#7c5cff", STAGE.rim, 22)
     rim.position.set(-3.4, 1.6, -2.4)
 
     // Weak warm bounce under the jaw, so the teeth do not fall to black.
-    const bounce = new PointLight("#ff8a4a", 9, 14)
+    const bounce = new PointLight("#ff8a4a", STAGE.bounce, 14)
     bounce.position.set(0.4, -2.8, 2.2)
 
     // Dim, cool bounce so the shadow side keeps detail without going grey.
     // Ambient is the single biggest cause of a flat, plastic-toy look.
-    const ambient = new AmbientLight("#3a3a52", 0.07)
+    const ambient = new AmbientLight(STAGE_AMBIENT.clone(), STAGE.ambient)
 
     scene.add(key, kicker, rim, bounce, ambient)
+
+    /** The skull's own surfaces, filled when the model loads, for the rig's roughness. */
+    const materials: MeshStandardMaterial[] = []
+
+    /** Lights, exposure and surface, `s` of the way from stage to studio. */
+    const rig = (s: number) => {
+      const mix = (stage: number, studio: number) => stage + (studio - stage) * s
+      key.intensity = mix(STAGE.key, STUDIO.key)
+      key.color.lerpColors(STAGE_KEY, STUDIO_KEY, s)
+      kicker.intensity = mix(STAGE.kicker, STUDIO.kicker)
+      rim.intensity = mix(STAGE.rim, STUDIO.rim)
+      bounce.intensity = mix(STAGE.bounce, STUDIO.bounce)
+      ambient.intensity = mix(STAGE.ambient, STUDIO.ambient)
+      ambient.color.lerpColors(STAGE_AMBIENT, STUDIO_AMBIENT, s)
+      scene.environmentIntensity = mix(STAGE.environment, STUDIO.environment)
+      renderer.toneMappingExposure = mix(STAGE.exposure, STUDIO.exposure)
+      for (const m of materials) m.roughness = mix(STAGE.roughness, STUDIO.roughness)
+    }
 
     // Pivot the animation drives, with the model parented inside it already
     // centred and normalised - so rotation happens about the skull, not about
@@ -355,7 +411,7 @@ export function SkullCanvas({
     let bank = 0
     let lastCx = NaN
     /** The pose last submitted to the GPU, so an idle skull costs no draws. */
-    const drawn = { x: NaN, y: NaN, z: NaN, lift: NaN, width: 0, height: 0 }
+    const drawn = { x: NaN, y: NaN, z: NaN, lift: NaN, width: 0, height: 0, studio: NaN }
     /** The model's scaled width and depth, for the halo's silhouette width. */
     const extent = new Vector3()
     const haloPoint = new Vector3()
@@ -466,8 +522,13 @@ export function SkullCanvas({
       pivot.position.y =
         OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045 * pose.bob
 
+      // Stage light in the hero and in flight, studio light once seated in a
+      // photo. Quantised, so a skull hovering at the edge of a dock does not
+      // relight and redraw on every sub-pixel of scroll.
+      const studio = Math.round(pose.docked * 200) / 200
       const size = renderer.domElement
       if (
+        studio !== drawn.studio ||
         Math.abs(pivot.rotation.x - drawn.x) > 1e-5 ||
         Math.abs(pivot.rotation.y - drawn.y) > 1e-5 ||
         Math.abs(pivot.rotation.z - drawn.z) > 1e-5 ||
@@ -475,7 +536,9 @@ export function SkullCanvas({
         size.width !== drawn.width ||
         size.height !== drawn.height
       ) {
+        if (studio !== drawn.studio) rig(studio)
         renderer.render(scene, camera)
+        drawn.studio = studio
         drawn.x = pivot.rotation.x
         drawn.y = pivot.rotation.y
         drawn.z = pivot.rotation.z
@@ -557,12 +620,13 @@ export function SkullCanvas({
           // toy plastic. The normal map stays: that is where the flame relief
           // and layer lines live.
           material.roughnessMap = null
-          material.roughness = 0.58
+          material.roughness = STAGE.roughness
           material.envMapIntensity = 0.3
 
           // Self-shadowing is what carves the eye sockets and the flame
           // grooves. Without it the form is only shaded by lambert falloff,
           // which is flat.
+          materials.push(material)
           mesh.castShadow = true
           mesh.receiveShadow = true
         })
@@ -586,6 +650,7 @@ export function SkullCanvas({
         lastRot.x = follow.x
         lastRot.y = follow.y
         model = scaled
+        drawn.studio = NaN
 
         // Sample the surface into pivot space for the silhouette. About forty
         // thousand points pins the outline to well under a pixel, and a new

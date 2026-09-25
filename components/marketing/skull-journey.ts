@@ -99,6 +99,12 @@ export type Pose = {
   clip: Box | null
   /** How far each photo's own skull should be hidden, 0..1. */
   plates: Map<HTMLElement, number>
+  /**
+   * How seated the skull is in its nearest photo: 0 in the hero or mid-flight,
+   * 1 at a dock. The canvas moves its lighting from stage to studio by this,
+   * so a skull sitting in a product card is lit like the photos beside it.
+   */
+  docked: number
 }
 
 /**
@@ -272,5 +278,5 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     }
   }
 
-  return { cx, cy, h, bob, spin, turn, clip, plates }
+  return { cx, cy, h, bob, spin, turn, clip, plates, docked: nearest }
 }

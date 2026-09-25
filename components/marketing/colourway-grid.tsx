@@ -6,10 +6,23 @@ import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
 import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
+
+/**
+ * Each card wears its own colourway - border, hover and add-to-cart button -
+ * where only the best seller used to be dressed and the other two sat in
+ * neutral grey. The swatch hex is the base; this is the far stop of the
+ * button's gradient, which a single swatch cannot give. Blaze runs to ember,
+ * exactly as the site's primary button always has.
+ */
+const TINT_TO: Record<ColourwayId, string> = {
+  blaze: "#ff8a00",
+  olive: "#aab872",
+  ghost: "#edf0f4",
+}
 
 export async function ColourwayGrid() {
   const live = await getProductBySlug(FLAME_SKULL_MOUNT.slug)
@@ -33,6 +46,7 @@ export async function ColourwayGrid() {
         {product.colourways.map((c) => (
           <article
             key={c.id}
+            style={{ "--tint": c.hex, "--tint-to": TINT_TO[c.id] } as React.CSSProperties}
             className={cn(
               "rounded-card bg-carbon group relative overflow-hidden border transition-colors",
               // On a phone the whole card fits on one screen under the 75px
@@ -40,9 +54,7 @@ export async function ColourwayGrid() {
               // with the browser's toolbars showing. The photo gives up the
               // height; the details under it never shrink.
               "max-sm:flex max-sm:max-h-[calc(100svh-99px)] max-sm:flex-col",
-              c.bestSeller
-                ? "border-blaze/35 hover:border-blaze/60"
-                : "border-white/[0.09] hover:border-white/25",
+              "border-(--tint)/35 hover:border-(--tint)/60",
             )}
           >
             <Link
@@ -119,11 +131,7 @@ export async function ColourwayGrid() {
                 {/* Lifted above the card-wide link so it adds to the cart
                     instead of navigating away from it. */}
                 <div className="relative z-20 shrink-0">
-                  <AddToCartButton
-                    colourway={c.id}
-                    variant={c.bestSeller ? "primary" : "ghost"}
-                    size="sm"
-                  />
+                  <AddToCartButton colourway={c.id} variant="tint" size="sm" />
                 </div>
               </div>
             </div>
