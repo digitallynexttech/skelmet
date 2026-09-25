@@ -29,7 +29,7 @@ export function MoreThanMount() {
               className="rounded-tile bg-carbon flex flex-col gap-4 border border-white/[0.08] p-6 sm:p-7"
             >
               <span className="border-acid/25 bg-acid/[0.08] grid size-10 place-items-center rounded-full border">
-                <Icon className="text-ember size-[18px]" strokeWidth={1.8} />
+                <Icon className="text-acid size-[18px]" strokeWidth={1.8} />
               </span>
               <div>
                 <h3 className="font-display text-bone mb-2.5 text-[20px] leading-[1.15] uppercase">

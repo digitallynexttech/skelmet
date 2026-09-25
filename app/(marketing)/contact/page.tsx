@@ -55,7 +55,7 @@ export default function ContactPage() {
               className="rounded-tile border-acid/30 bg-carbon hover:border-acid/50 border bg-[linear-gradient(160deg,rgb(212_255_61_/_0.07),transparent_56%)] p-6 transition-colors"
             >
               <div className="mb-3.5 flex items-center gap-3">
-                <WhatsappIcon className="text-ember size-5" />
+                <WhatsappIcon className="text-acid size-5" />
                 <span className="font-display text-bone text-[22px] leading-[1.08] uppercase">
                   WhatsApp
                 </span>

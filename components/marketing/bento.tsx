@@ -41,7 +41,7 @@ export function Bento() {
         </article>
 
         <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 sm:p-6">
-          <Wrench className="text-ember size-[26px]" strokeWidth={1.6} />
+          <Wrench className="text-acid size-[26px]" strokeWidth={1.6} />
           <div>
             <h3 className="font-display text-bone mb-2 text-[20px] leading-[1.08] uppercase sm:text-[23px]">
               Simple installation
@@ -53,7 +53,7 @@ export function Bento() {
         </article>
 
         <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 sm:p-6">
-          <ShieldCheck className="text-ember size-[26px]" strokeWidth={1.6} />
+          <ShieldCheck className="text-violet size-[26px]" strokeWidth={1.6} />
           <div>
             <h3 className="font-display text-bone mb-2 text-[20px] leading-[1.08] uppercase sm:text-[23px]">
               Safeguard your equipment
@@ -89,7 +89,7 @@ export function Bento() {
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(7_6_10_/_0.94)_4%,rgb(7_6_10_/_0.55)_52%,rgb(7_6_10_/_0.05)_100%)]" />
           <div className="absolute inset-y-0 left-0 flex w-[68%] flex-col justify-center gap-2 p-5 sm:p-7 lg:w-[52%]">
             <div className="flex items-center gap-2.5">
-              <Boxes className="text-ember size-[22px] shrink-0" strokeWidth={1.6} />
+              <Boxes className="text-magenta size-[22px] shrink-0" strokeWidth={1.6} />
               <h3 className="font-display text-bone text-[20px] leading-[1.08] uppercase sm:text-[24px]">
                 The accessories station
               </h3>

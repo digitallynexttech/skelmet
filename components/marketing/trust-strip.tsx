@@ -1,10 +1,11 @@
 import { CreditCard, ShieldCheck, Truck } from "lucide-react"
 
 const ITEMS = [
-  { Icon: Truck, title: "Ships in 48 hours", body: "Free, pan-India, tracked" },
-  { Icon: ShieldCheck, title: "7-day returns", body: "We pay the pickup" },
+  { Icon: Truck, tone: "text-ember", title: "Ships in 48 hours", body: "Free, pan-India, tracked" },
+  { Icon: ShieldCheck, tone: "text-acid", title: "7-day returns", body: "We pay the pickup" },
   {
     Icon: CreditCard,
+    tone: "text-violet",
     title: "UPI · Cards · Netbanking",
     body: "Secure checkout",
   },
@@ -26,12 +27,12 @@ const ITEMS = [
 export function TrustStrip() {
   return (
     <div className="grid grid-cols-1 border-y border-white/[0.07] md:grid-cols-3">
-      {ITEMS.map(({ Icon, title, body }) => (
+      {ITEMS.map(({ Icon, tone, title, body }) => (
         <div
           key={title}
           className="flex items-center gap-4 border-b md:justify-center border-white/[0.07] px-5 py-6 last:border-b-0 sm:px-8 sm:py-7 md:border-r md:border-b-0 md:last:border-r-0 xl:px-10"
         >
-          <Icon className="text-ember size-6 shrink-0" strokeWidth={1.6} />
+          <Icon className={`size-6 shrink-0 ${tone}`} strokeWidth={1.6} />
           {/* min-w-0 is load-bearing: a grid item's min-width defaults to auto,
               so without it a cell whose text is wider than its share of the row
               pushes the track open and overlaps its neighbour instead of

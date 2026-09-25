@@ -263,7 +263,7 @@ export function ProductDetail({
               key={label}
               className="bg-carbon flex items-center gap-2.5 rounded-xl border border-white/[0.08] p-3.5"
             >
-              <Icon className="text-ember size-4 shrink-0" strokeWidth={1.7} />
+              <Icon className="text-acid size-4 shrink-0" strokeWidth={1.7} />
               <span className="text-bone text-[12.5px]">{label}</span>
             </div>
           ))}
@@ -277,7 +277,7 @@ export function ProductDetail({
           <ul className="flex flex-col gap-2.5">
             {product.inTheBox.map((item) => (
               <li key={item} className="text-ash flex items-center gap-2.5 text-[14px]">
-                <Check className="text-ember size-4 shrink-0" strokeWidth={2.4} />
+                <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
                 {item}
               </li>
             ))}
