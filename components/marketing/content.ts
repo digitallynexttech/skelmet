@@ -118,7 +118,7 @@ export const COMPARISON_ROWS = [
     us: "No, soft cradle inside",
   },
   { label: "Airs out the liner", floor: "Never", hook: "Partly", us: "Fully, open all night" },
-  { label: "Holds your gloves", floor: "No", hook: "No", us: "Hook under the jaw" },
+  { label: "Holds your gloves", floor: "No", hook: "No", us: "Hooks on the mount" },
   { label: "Looks like", floor: "A mess", hook: "A coat hook", us: "A flaming skull" },
 ]
 

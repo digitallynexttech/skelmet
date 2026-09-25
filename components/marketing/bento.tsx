@@ -81,7 +81,7 @@ export function Bento() {
         <article className="rounded-card relative col-span-2 min-h-[200px] overflow-hidden border border-white/[0.09] lg:col-span-4">
           <Image
             src="/product/lifestyle-gloves.jpg"
-            alt="Riding gloves hanging from the hook under the mount"
+            alt="Riding gloves hanging from the hooks on the mount"
             fill
             sizes="100vw"
             className="object-cover"

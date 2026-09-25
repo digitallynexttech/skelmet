@@ -9,7 +9,7 @@ export function TheHook() {
   return (
     <SplitFeature
       image="/product/lifestyle-gloves.jpg"
-      alt="Gloves and keys hanging from the hook under the skull's jaw"
+      alt="Gloves and keys hanging from the hooks on the mount"
       reverse
       minHeight="min-h-[380px] lg:min-h-[500px]"
     >

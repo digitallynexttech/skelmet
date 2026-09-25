@@ -137,7 +137,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       },
     },
     {
-      alt: "Gloves hanging from the hook under the jaw",
+      alt: "Gloves hanging from the hooks on the mount",
       src: {
         blaze: "/product/lifestyle-gloves.jpg",
         olive: "/product/lifestyle-gloves-olive.jpg",
