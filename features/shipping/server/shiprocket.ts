@@ -1,7 +1,12 @@
 import "server-only"
 
-import { getEnv } from "@/lib/env"
+import { createHash } from "node:crypto"
+
 import { AppError } from "@/lib/errors"
+import {
+  shiprocketConfig,
+  type ShiprocketConfig,
+} from "@/features/settings/server/runtime-settings"
 import { parseShiprocketDate } from "@/features/shipping/server/shiprocket-mapping"
 
 /**
@@ -9,7 +14,8 @@ import { parseShiprocketDate } from "@/features/shipping/server/shiprocket-mappi
  * payment-gateway.ts talks to Razorpay.
  *
  * Server-only, always: the login is an API user's email and password, and the
- * token it returns can book couriers against the shop's wallet.
+ * token it returns can book couriers against the shop's wallet. Both come from
+ * the console's Settings, falling back to .env (runtime-settings.ts).
  *
  * The token lasts 240 hours. It is cached in memory and reused until a day
  * before that, and one 401 - a token revoked early, or a password changed in
@@ -40,39 +46,76 @@ const TOKEN_TTL_MS = 9 * 24 * 60 * 60_000
  * lock. Nothing here used to remember a refusal, so every paid order and every
  * pincode check tried again: a wrong password locked the account, and ordinary
  * shopping kept it locked. One refusal now pauses logins for this long. A
- * restart, which is what picks up a corrected .env, clears it.
+ * different login - a new user or password saved in Settings, or a restart
+ * picking up a corrected .env - is not held by it.
  *
  * Only a refusal counts. Shiprocket failing to answer, or answering with its
  * own 5xx, says nothing about the password and is retried as before.
  */
 const REFUSED_PAUSE_MS = 15 * 60_000
 
-export function isShiprocketConfigured(): boolean {
-  const env = getEnv()
-  return Boolean(env.SHIPROCKET_EMAIL?.trim() && env.SHIPROCKET_PASSWORD)
+export async function isShiprocketConfigured(): Promise<boolean> {
+  const config = await shiprocketConfig()
+  return Boolean(config.email && config.password)
 }
 
 /**
  * The pickup address's name as configured. Orders cannot be created without
  * one; pickupAddress() resolves it against Shiprocket.
  */
-export function pickupLocation(): string | null {
-  return getEnv().SHIPROCKET_PICKUP_LOCATION?.trim() || null
+export async function pickupLocation(): Promise<string | null> {
+  return (await shiprocketConfig()).pickupLocation
 }
 
-function baseUrl(): string {
-  return `${getEnv().SHIPROCKET_API_URL.replace(/\/+$/, "")}/v1/external`
+function baseUrl(config: ShiprocketConfig): string {
+  return `${config.apiUrl.replace(/\/+$/, "")}/v1/external`
 }
 
-/** A token is only good for the account and environment that issued it. */
-function tokenKey(): string {
-  const env = getEnv()
-  return `${env.SHIPROCKET_API_URL}|${env.SHIPROCKET_EMAIL}`
+/**
+ * A token is only good for the account and environment that issued it, and a
+ * refusal only for the password that earned it - so the password is part of
+ * the key, as a hash. A corrected password is then tried at once instead of
+ * waiting out the pause the wrong one caused.
+ */
+function tokenKey(config: ShiprocketConfig): string {
+  const password = createHash("sha256")
+    .update(config.password ?? "")
+    .digest("hex")
+    .slice(0, 16)
+  return `${config.apiUrl}|${config.email}|${password}`
 }
 
-let token: { value: string; expiresAt: number; key: string } | null = null
-let loggingIn: Promise<string> | null = null
-let refused: { message: string; until: number; key: string } | null = null
+/**
+ * The token, a refusal's pause and the pickup address, held on globalThis as
+ * the Prisma client is. Next can load this module more than once in a process
+ * - a copy per route bundle - and the pause only protects the account if every
+ * copy sees it: one refused login has to stop the pincode checks, the paid
+ * orders and the console alike, not just the route that got refused.
+ */
+type Session = {
+  token: { value: string; expiresAt: number; key: string } | null
+  loggingIn: { promise: Promise<string>; key: string } | null
+  refused: { message: string; until: number; key: string } | null
+  pickup: { configured: string; name: string; pincode: string; expiresAt: number } | null
+}
+const shared = globalThis as unknown as { skelmetShiprocket?: Session }
+const session = (shared.skelmetShiprocket ??= {
+  token: null,
+  loggingIn: null,
+  refused: null,
+  pickup: null,
+})
+
+/**
+ * Forgets the token, any pause and the pickup address - for when Settings
+ * changes the login, so the next call starts from the new one.
+ */
+export function resetShiprocketSession(): void {
+  session.token = null
+  session.refused = null
+  session.loggingIn = null
+  session.pickup = null
+}
 
 async function readJson(res: Response): Promise<Record<string, unknown> | null> {
   try {
@@ -94,17 +137,14 @@ function describe(body: Record<string, unknown> | null, status: number): string 
   return message
 }
 
-async function login(): Promise<string> {
-  const env = getEnv()
+async function login(config: ShiprocketConfig): Promise<string> {
+  const key = tokenKey(config)
   let res: Response
   try {
-    res = await fetch(`${baseUrl()}/auth/login`, {
+    res = await fetch(`${baseUrl(config)}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        email: env.SHIPROCKET_EMAIL?.trim(),
-        password: env.SHIPROCKET_PASSWORD,
-      }),
+      body: JSON.stringify({ email: config.email, password: config.password }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",
     })
@@ -117,27 +157,48 @@ async function login(): Promise<string> {
   }
   if (!res.ok || typeof body?.token !== "string") {
     const message = `Shiprocket refused the login: ${describe(body, res.status)}`
-    refused = { message, until: Date.now() + REFUSED_PAUSE_MS, key: tokenKey() }
+    session.refused = { message, until: Date.now() + REFUSED_PAUSE_MS, key }
     throw new ShippingError(message)
   }
-  refused = null
-  token = { value: body.token, expiresAt: Date.now() + TOKEN_TTL_MS, key: tokenKey() }
+  session.refused = null
+  session.token = { value: body.token, expiresAt: Date.now() + TOKEN_TTL_MS, key }
   return body.token
 }
 
-async function currentToken(): Promise<string> {
-  if (token && token.key === tokenKey() && token.expiresAt > Date.now()) return token.value
-  if (refused && refused.key === tokenKey() && refused.until > Date.now()) {
+async function currentToken(config: ShiprocketConfig): Promise<string> {
+  const key = tokenKey(config)
+  const { token, refused } = session
+  if (token && token.key === key && token.expiresAt > Date.now()) return token.value
+  if (refused && refused.key === key && refused.until > Date.now()) {
     const minutes = Math.ceil((refused.until - Date.now()) / 60_000)
     throw new ShippingError(
       `${refused.message} Not trying again for ${minutes} min, so repeated attempts do not keep the account locked.`,
       503,
     )
   }
-  loggingIn ??= login().finally(() => {
-    loggingIn = null
-  })
-  return loggingIn
+  // Concurrent callers share one login - but only for the same login.
+  if (session.loggingIn?.key === key) return session.loggingIn.promise
+  const attempt = {
+    key,
+    promise: login(config).finally(() => {
+      if (session.loggingIn === attempt) session.loggingIn = null
+    }),
+  }
+  session.loggingIn = attempt
+  return attempt.promise
+}
+
+/**
+ * Logs in with the details in use, for Settings' "Test connection". Holds to
+ * the same pause as everything else, so testing a login that was just
+ * refused does not ask Shiprocket again.
+ */
+export async function checkLogin(): Promise<void> {
+  const config = await shiprocketConfig()
+  if (!config.email || !config.password) {
+    throw new ShippingError("Add the API user's email and password first.", 422)
+  }
+  await currentToken(config)
 }
 
 async function call<T extends Record<string, unknown>>(
@@ -145,11 +206,12 @@ async function call<T extends Record<string, unknown>>(
   path: string,
   options: { body?: unknown; query?: Record<string, string | number | undefined> } = {},
 ): Promise<T> {
-  if (!isShiprocketConfigured()) {
+  const config = await shiprocketConfig()
+  if (!config.email || !config.password) {
     throw new ShippingError("Shiprocket is not set up on this server.", 503)
   }
 
-  const url = new URL(`${baseUrl()}${path}`)
+  const url = new URL(`${baseUrl(config)}${path}`)
   for (const [k, v] of Object.entries(options.query ?? {})) {
     if (v !== undefined) url.searchParams.set(k, String(v))
   }
@@ -169,10 +231,10 @@ async function call<T extends Record<string, unknown>>(
 
   let res: Response
   try {
-    res = await send(await currentToken())
+    res = await send(await currentToken(config))
     if (res.status === 401) {
-      token = null
-      res = await send(await currentToken())
+      session.token = null
+      res = await send(await currentToken(config))
     }
   } catch (err) {
     if (err instanceof ShippingError) throw err
@@ -321,8 +383,6 @@ export function trackAwb(awb: string): Promise<Record<string, unknown>> {
 }
 
 const PICKUP_TTL_MS = 6 * 60 * 60_000
-let pickupCache: { configured: string; name: string; pincode: string; expiresAt: number } | null =
-  null
 
 /**
  * The configured pickup address, as Shiprocket holds it: its exact name, for
@@ -334,10 +394,11 @@ let pickupCache: { configured: string; name: string; pincode: string; expiresAt:
  * in Shiprocket, since every order would then be refused.
  */
 export async function pickupAddress(): Promise<{ name: string; pincode: string } | null> {
-  const configured = pickupLocation()
+  const configured = await pickupLocation()
   if (!configured) return null
-  if (pickupCache?.configured === configured && pickupCache.expiresAt > Date.now()) {
-    return { name: pickupCache.name, pincode: pickupCache.pincode }
+  const cached = session.pickup
+  if (cached?.configured === configured && cached.expiresAt > Date.now()) {
+    return { name: cached.name, pincode: cached.pincode }
   }
 
   const r = await call<{
@@ -348,16 +409,16 @@ export async function pickupAddress(): Promise<{ name: string; pincode: string }
   )
   if (!match?.pickup_location || !match.pin_code) {
     throw new ShippingError(
-      `Shiprocket has no pickup address named "${configured}". Check SHIPROCKET_PICKUP_LOCATION against Settings > Pickup Addresses.`,
+      `Shiprocket has no pickup address named "${configured}". Check the pickup location in the console's Settings against Shiprocket's Settings > Pickup Addresses.`,
       503,
     )
   }
 
-  pickupCache = {
+  session.pickup = {
     configured,
     name: match.pickup_location.trim(),
     pincode: String(match.pin_code),
     expiresAt: Date.now() + PICKUP_TTL_MS,
   }
-  return { name: pickupCache.name, pincode: pickupCache.pincode }
+  return { name: session.pickup.name, pincode: session.pickup.pincode }
 }

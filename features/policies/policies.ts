@@ -12,9 +12,27 @@ import { shippingConfig } from "@/config/shipping"
 import { siteConfig } from "@/config/site"
 import { formatMoney } from "@/lib/money"
 
-// The shipping rule, as the policy states it, from the config checkout charges by.
-const SHIPPING_FREE_UP_TO = formatMoney(shippingConfig.fee.aboveRupees)
-const SHIPPING_FEE = formatMoney(shippingConfig.fee.feeRupees)
+/**
+ * The shipping charge, as the policy states it. Checkout charges by the rule in
+ * the console's Settings, so the page is handed that same rule (getPolicy)
+ * rather than stating config/shipping.ts's default.
+ */
+type ShippingRule = { aboveRupees: number; feeRupees: number }
+
+function shippingTerms(rule: ShippingRule): { short: string; cost: string } {
+  if (rule.feeRupees <= 0) {
+    return {
+      short: "Free to every pincode we deliver to.",
+      cost: "Nothing. Shipping is free to every pincode we deliver to, whatever the courier charges us. Checkout confirms we deliver to yours as soon as you enter your pincode, before you pay.",
+    }
+  }
+  const upTo = formatMoney(rule.aboveRupees)
+  const fee = formatMoney(rule.feeRupees)
+  return {
+    short: `Free where delivery costs us ${upTo} or less, a flat ${fee} elsewhere.`,
+    cost: `It depends on where it is going. If couriers charge us ${upTo} or less to reach your pincode, shipping is free. If they charge more, you pay a flat ${fee} per order, whatever the courier actually costs us. Checkout shows which applies as soon as you enter your pincode, before you pay.`,
+  }
+}
 
 export type PolicyBlock =
   | { type: "p"; text: string }
@@ -488,12 +506,12 @@ const TERMS: Policy = {
   ],
 }
 
-const SHIPPING: Policy = {
+const shippingPolicy = (rule: ShippingRule): Policy => ({
   slug: "shipping",
   title: "Shipping policy",
   intro: "When it leaves, how it travels, and what happens if it goes wrong.",
   readingTime: "~4 min read",
-  shortVersion: `Free where delivery costs us ${SHIPPING_FREE_UP_TO} or less, a flat ${SHIPPING_FEE} elsewhere. Out in 48 hours, usually with you within 7 working days.`,
+  shortVersion: `${shippingTerms(rule).short} Out in 48 hours, usually with you within 7 working days.`,
   accent: "acid",
   sections: [
     {
@@ -512,7 +530,7 @@ const SHIPPING: Policy = {
       blocks: [
         {
           type: "p",
-          text: `It depends on where it is going. If couriers charge us ${SHIPPING_FREE_UP_TO} or less to reach your pincode, shipping is free. If they charge more, you pay a flat ${SHIPPING_FEE} per order, whatever the courier actually costs us. Checkout shows which applies as soon as you enter your pincode, before you pay.`,
+          text: shippingTerms(rule).cost,
         },
       ],
     },
@@ -582,7 +600,9 @@ const SHIPPING: Policy = {
       blocks: [{ type: "contact" }],
     },
   ],
-}
+})
+
+const SHIPPING = shippingPolicy(shippingConfig.fee)
 
 const RETURNS: Policy = {
   slug: "returns",
@@ -695,6 +715,11 @@ const RETURNS: Policy = {
 
 export const POLICIES: Policy[] = [PRIVACY, TERMS, SHIPPING, RETURNS]
 
-export function getPolicy(slug: string): Policy | undefined {
+/** The policy, with the shipping policy stating `rule` - the charge checkout applies. */
+export function getPolicy(
+  slug: string,
+  rule: ShippingRule = shippingConfig.fee,
+): Policy | undefined {
+  if (slug === SHIPPING.slug) return shippingPolicy(rule)
   return POLICIES.find((p) => p.slug === slug)
 }

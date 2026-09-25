@@ -14,6 +14,7 @@ import {
   type RoleRow,
   type StaffRow,
 } from "@/features/settings/hooks/use-settings"
+import { useConfirm, type Ask } from "@/hooks/use-confirm"
 
 function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void }) {
   const { create } = useStaffMutations()
@@ -107,7 +108,7 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
   )
 }
 
-function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
+function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[]; ask: Ask }) {
   const { setRoles, resetPassword, revoke } = useStaffMutations()
   const [resetting, setResetting] = React.useState(false)
   const busy = setRoles.isPending || resetPassword.isPending || revoke.isPending
@@ -143,7 +144,15 @@ function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
             size="sm"
             className="px-3"
             disabled={busy}
-            onClick={() => revoke.mutate(member.id)}
+            onClick={() =>
+              ask({
+                title: `Revoke ${member.name ?? member.email}?`,
+                body: "They are signed out and can no longer reach the console. Adding them again later needs a new temporary password.",
+                confirmLabel: "Revoke access",
+                tone: "danger",
+                run: (done) => revoke.mutate(member.id, { onSettled: done }),
+              })
+            }
           >
             <ShieldOff className="size-3.5" strokeWidth={1.9} />
             Revoke
@@ -205,9 +214,14 @@ function StaffCard({ member, roles }: { member: StaffRow; roles: RoleRow[] }) {
   )
 }
 
-export function StaffSettings() {
+/**
+ * Staff and roles. `embedded` when it is a tab of Settings, which has the
+ * page's heading already.
+ */
+export function StaffSettings({ embedded = false }: { embedded?: boolean }) {
   const { data, isLoading, isError, error } = useStaff()
   const [adding, setAdding] = React.useState(false)
+  const { ask, dialog } = useConfirm()
 
   if (isLoading) {
     return (
@@ -230,27 +244,42 @@ export function StaffSettings() {
   const staff = data?.staff ?? []
   const roles = data?.roles ?? []
 
+  const addButton = !adding ? (
+    <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
+      <UserPlus className="size-4" strokeWidth={1.9} />
+      Add employee
+    </Button>
+  ) : null
+  const description =
+    "Who can sign in, and what each of them can do. A role is a bundle of permissions, so access is granted by job rather than one checkbox at a time."
+
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader
-        eyebrow="Console"
-        title="Staff and roles"
-        description="Who can sign in, and what each of them can do. A role is a bundle of permissions, so access is granted by job rather than one checkbox at a time."
-        actions={
-          !adding ? (
-            <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
-              <UserPlus className="size-4" strokeWidth={1.9} />
-              Add employee
-            </Button>
-          ) : null
-        }
-      />
+      {dialog}
+      {embedded ? (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-display text-bone text-[22px] leading-[1.08] uppercase">
+              Staff and roles
+            </h2>
+            <p className="text-ash mt-2 max-w-[560px] text-[13.5px] leading-[1.6]">{description}</p>
+          </div>
+          {addButton}
+        </div>
+      ) : (
+        <PageHeader
+          eyebrow="Console"
+          title="Staff and roles"
+          description={description}
+          actions={addButton}
+        />
+      )}
 
       {adding ? <AddStaffForm roles={roles} onDone={() => setAdding(false)} /> : null}
 
       <div className="flex flex-col gap-4">
         {staff.map((m) => (
-          <StaffCard key={m.id} member={m} roles={roles} />
+          <StaffCard key={m.id} member={m} roles={roles} ask={ask} />
         ))}
       </div>
 

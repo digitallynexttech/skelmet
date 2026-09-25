@@ -24,8 +24,9 @@ import {
   type ShippableOrder,
   type TrackingEvent,
 } from "@/features/shipping/server/shiprocket-mapping"
+import { shippingCharge, shiprocketConfig } from "@/features/settings/server/runtime-settings"
 import { PERMISSIONS } from "@/lib/constants"
-import { getEnv, hasDatabase } from "@/lib/env"
+import { hasDatabase } from "@/lib/env"
 import { AppError } from "@/lib/errors"
 import { sendMail } from "@/lib/mailer"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
@@ -58,12 +59,13 @@ import { db } from "@/server/db"
  * reaches the order: its first tracking update names the Shiprocket order,
  * and the shipment is adopted from there.
  *
- * Without SHIPROCKET_* configured, none of this runs: the console keeps the
- * hand-typed courier and AWB, and the pincode check keeps its static promise.
+ * Without a Shiprocket login - in the console's Settings, or SHIPROCKET_* in
+ * .env - none of this runs: the console keeps the hand-typed courier and AWB,
+ * and the pincode check keeps its static promise.
  */
 
 const NOT_SET_UP =
-  "Shiprocket is not set up on this server. Add the SHIPROCKET_* settings, or enter the courier and AWB by hand."
+  "Shiprocket is not set up. Add its login in Settings > Shiprocket, or enter the courier and AWB by hand."
 
 const SHIPMENT_SELECT = {
   id: true,
@@ -162,7 +164,7 @@ async function ensureShiprocketOrder(
   const pickup = await shiprocket.pickupAddress()
   if (!pickup) {
     throw new ShippingError(
-      "No pickup address is set. Add one in Shiprocket (Settings > Pickup Addresses) and put its name in SHIPROCKET_PICKUP_LOCATION.",
+      "No pickup address is set. Add one in Shiprocket (Settings > Pickup Addresses) and put its name in the console's Settings > Shiprocket.",
       503,
     )
   }
@@ -224,8 +226,12 @@ function later(task: () => Promise<void>): void {
  * staff book the courier instead.
  */
 export function queueShiprocketOrder(orderId: string): void {
-  if (!shiprocket.isShiprocketConfigured() || !shiprocket.pickupLocation()) return
   later(async () => {
+    // Checked in here, after the response: the settings read is async, and
+    // nothing about it should hold up the payment.
+    if (!(await shiprocket.isShiprocketConfigured()) || !(await shiprocket.pickupLocation())) {
+      return
+    }
     try {
       const ids = await ensureShiprocketOrder(orderId)
       await createAuditLog(null, {
@@ -255,7 +261,7 @@ export async function getCourierOptions(
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_FULFIL)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
-    if (!shiprocket.isShiprocketConfigured()) return fail(NOT_SET_UP, undefined, 503)
+    if (!(await shiprocket.isShiprocketConfigured())) return fail(NOT_SET_UP, undefined, 503)
 
     const order = await loadShippable(id)
     if (!order) return fail("Order not found.", undefined, 404)
@@ -306,7 +312,7 @@ export async function bookShipment(
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.ORDER_FULFIL)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
-    if (!shiprocket.isShiprocketConfigured()) return fail(NOT_SET_UP, undefined, 503)
+    if (!(await shiprocket.isShiprocketConfigured())) return fail(NOT_SET_UP, undefined, 503)
     const input = bookShipmentSchema.parse(raw ?? {})
 
     const order = await db.order.findUnique({
@@ -446,7 +452,7 @@ export async function refreshTracking(
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.ORDER_FULFIL)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
-    if (!shiprocket.isShiprocketConfigured()) return fail(NOT_SET_UP, undefined, 503)
+    if (!(await shiprocket.isShiprocketConfigured())) return fail(NOT_SET_UP, undefined, 503)
 
     const shipment = await db.shipment.findUnique({
       where: { orderId: id },
@@ -594,7 +600,7 @@ export async function applyShippingWebhook(
   token: string | null,
   rawBody: string,
 ): Promise<ActionResult<{ handled: boolean }>> {
-  const expected = getEnv().SHIPROCKET_WEBHOOK_TOKEN
+  const expected = (await shiprocketConfig()).webhookToken
   if (!expected || !token || !safeEqual(token, expected)) {
     console.warn("[SHIPPING] tracking webhook without a valid token ignored")
     return ok({ handled: false })
@@ -652,7 +658,7 @@ export async function cancelShiprocketOrder(
   orderId: string,
   session: Session | null,
 ): Promise<void> {
-  if (!shiprocket.isShiprocketConfigured()) return
+  if (!(await shiprocket.isShiprocketConfigured())) return
   const order = await db.order.findUnique({
     where: { id: orderId },
     select: { shiprocketOrderId: true, shipment: { select: { awb: true, provider: true } } },
@@ -699,22 +705,49 @@ export type PincodeAnswer = {
   city: string | null
   state: string | null
   /**
-   * What the buyer pays for shipping, rupees: 0, or shippingConfig.fee's flat
-   * fee when reaching this pincode costs the shop more than its threshold.
-   * Always 0 when Shiprocket could not be asked.
+   * What the buyer pays for shipping, rupees: 0, or the shipping charge's flat
+   * fee when reaching this pincode costs the shop more than its threshold (see
+   * shippingCharge()). Always 0 when Shiprocket could not be asked.
    */
   shippingFee: number
 }
 
-const PINCODE_TTL_MS = 6 * 60 * 60_000
-const pincodeCache = new Map<string, { answer: PincodeAnswer; expiresAt: number }>()
+/** An answer as cached: everything but the fee, and the quotes the fee comes from. */
+type Reach = { answer: Omit<PincodeAnswer, "shippingFee">; options: CourierOption[] }
 
-function remember(key: string, answer: PincodeAnswer, now: number): PincodeAnswer {
+const PINCODE_TTL_MS = 6 * 60 * 60_000
+// On globalThis, so a save in Settings clears it for every route (as the
+// Shiprocket session in shiprocket.ts).
+const sharedCache = globalThis as unknown as {
+  skelmetPincodes?: Map<string, { reach: Reach; expiresAt: number }>
+}
+const pincodeCache = (sharedCache.skelmetPincodes ??= new Map())
+
+function remember(key: string, reach: Reach, now: number): Reach {
   if (pincodeCache.size > 5_000) {
     for (const [k, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(k)
   }
-  pincodeCache.set(key, { answer, expiresAt: now + PINCODE_TTL_MS })
-  return answer
+  pincodeCache.set(key, { reach, expiresAt: now + PINCODE_TTL_MS })
+  return reach
+}
+
+/**
+ * Drops every cached pincode answer - for when Settings changes the
+ * Shiprocket account or pickup address, which change the couriers and their
+ * rates. A new shipping charge needs nothing: the fee is worked out afresh on
+ * every read, from the cached quotes.
+ */
+export function forgetPincodeChecks(): void {
+  pincodeCache.clear()
+}
+
+/** The fee for a cached or fresh answer, under the shipping charge in force now. */
+async function priced(reach: Reach): Promise<PincodeAnswer> {
+  const charge = await shippingCharge()
+  return {
+    ...reach.answer,
+    shippingFee: shippingFeeFor(shipmentCost(reach.options, charge.basis), charge),
+  }
 }
 
 /**
@@ -746,12 +779,15 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
       state: null,
       shippingFee: 0,
     }
-    if (!shiprocket.isShiprocketConfigured()) return ok(offline)
+    const account = await shiprocketConfig()
+    if (!account.email || !account.password) return ok(offline)
 
-    const key = `${pincode}:${units}`
+    // Rates depend on the account and where it collects from, so an answer
+    // from before either changed is never reused.
+    const key = `${account.email}|${account.pickupLocation ?? ""}|${pincode}:${units}`
     const now = Date.now()
     const hit = pincodeCache.get(key)
-    if (hit && hit.expiresAt > now) return ok(hit.answer)
+    if (hit && hit.expiresAt > now) return ok(await priced(hit.reach))
 
     const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
     const [reach, place] = await Promise.allSettled([
@@ -777,21 +813,18 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
 
     // Not a real pincode. That does not change, so it is remembered like any answer.
     if (where === null) {
-      return ok(
-        remember(
-          key,
-          {
-            live: true,
-            serviceable: false,
-            days: null,
-            found: false,
-            city: null,
-            state: null,
-            shippingFee: 0,
-          },
-          now,
-        ),
-      )
+      const nowhere: Reach = {
+        answer: {
+          live: true,
+          serviceable: false,
+          days: null,
+          found: false,
+          city: null,
+          state: null,
+        },
+        options: [],
+      }
+      return ok(await priced(remember(key, nowhere, now)))
     }
 
     if (reach.status === "rejected") {
@@ -804,16 +837,18 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
 
     const { options } = courierOptions(reach.value)
     const best = deliveryEstimate(options)
-    const answer: PincodeAnswer = {
-      live: true,
-      serviceable: options.length > 0,
-      days: best?.days ?? null,
-      found: true,
-      city: where?.city ?? null,
-      state: where?.state ?? null,
-      shippingFee: shippingFeeFor(shipmentCost(options, shippingConfig.fee.basis)),
+    const found: Reach = {
+      answer: {
+        live: true,
+        serviceable: options.length > 0,
+        days: best?.days ?? null,
+        found: true,
+        city: where?.city ?? null,
+        state: where?.state ?? null,
+      },
+      options,
     }
     // Without the place, not remembered: the next check can still fill it in.
-    return ok(where ? remember(key, answer, now) : answer)
+    return ok(await priced(where ? remember(key, found, now) : found))
   })
 }

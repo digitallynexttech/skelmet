@@ -21,7 +21,6 @@ import { Money } from "@/components/shared/money"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Field, Input } from "@/components/ui/input"
 import {
   useCourierOptions,
@@ -29,25 +28,10 @@ import {
   useOrderAction,
   type OrderDetail,
 } from "@/features/orders/hooks/use-orders"
+import { useConfirm, type Ask } from "@/hooks/use-confirm"
 import type { OrderStatus } from "@/lib/constants"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
-
-/**
- * A question put before anything that moves an order along, charges the
- * courier wallet or sends money back. Each of those is one click, and a
- * mistaken one - a refund, a packed order that is not packed - is hard or
- * impossible to take back.
- */
-type Confirmation = {
-  title: string
-  body: React.ReactNode
-  confirmLabel: string
-  tone?: "primary" | "danger"
-  /** Runs the action and calls `done` once it has settled, which closes the dialog. */
-  run: (done: () => void) => void
-}
-type Ask = (confirmation: Confirmation) => void
 
 const TIMELINE: Array<{ status: OrderStatus; label: string; Icon: typeof Truck }> = [
   { status: "PAID", label: "Paid", Icon: CreditCard },
@@ -357,10 +341,9 @@ export function OrderDetailView({ id }: { id: string }) {
   const { data: order, isLoading, isError, error } = useOrder(id)
   const actions = useOrderAction(id)
 
-  // One dialog for the page, asked by whichever action wants confirming.
-  const [confirmation, setConfirmation] = React.useState<Confirmation | null>(null)
-  const [confirming, setConfirming] = React.useState(false)
-  const ask: Ask = setConfirmation
+  // Everything that moves the order along, charges the courier wallet or
+  // sends money back asks first: one mistaken click is hard to take back.
+  const { ask, dialog } = useConfirm()
 
   if (isLoading) {
     return (
@@ -396,23 +379,7 @@ export function OrderDetailView({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <ConfirmDialog
-        open={confirmation !== null}
-        title={confirmation?.title ?? ""}
-        body={confirmation?.body}
-        confirmLabel={confirmation?.confirmLabel}
-        tone={confirmation?.tone}
-        pending={confirming}
-        onClose={() => setConfirmation(null)}
-        onConfirm={() => {
-          if (!confirmation) return
-          setConfirming(true)
-          confirmation.run(() => {
-            setConfirming(false)
-            setConfirmation(null)
-          })
-        }}
-      />
+      {dialog}
       <div>
         <Link
           href="/admin/orders"
@@ -680,7 +647,11 @@ export function OrderDetailView({ id }: { id: string }) {
                 {order.payments.map((p) => (
                   <li key={p.gatewayOrderId} className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-bone text-[13.5px] capitalize">{p.gateway}</span>
+                      <span className="text-bone flex items-center gap-2 text-[13.5px] capitalize">
+                        {p.gateway}
+                        {/* Test money never arrives, so say so once live payments exist beside it. */}
+                        {p.mode === "test" ? <Badge variant="violet">Test mode</Badge> : null}
+                      </span>
                       <Badge variant={p.status === "CAPTURED" ? "acid" : "muted"}>{p.status}</Badge>
                     </div>
                     <span className="text-dim font-mono text-[11px] break-all">

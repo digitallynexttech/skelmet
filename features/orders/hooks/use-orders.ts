@@ -51,6 +51,8 @@ export type OrderDetail = {
     gatewayPaymentId: string | null
     status: string
     amount: string
+    /** Which Razorpay account took it. */
+    mode: "test" | "live" | null
     createdAt: string
   }>
   shipment: {

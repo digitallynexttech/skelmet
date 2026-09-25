@@ -18,6 +18,7 @@ import { StickyBuyBar } from "@/components/layout/sticky-buy-bar"
 import { ProductDetail } from "@/features/catalog/components/product-detail"
 import { PRODUCTS, getProduct } from "@/features/catalog/catalog"
 import { getProductBySlug } from "@/features/catalog/server/catalog.service"
+import { shippingCharge } from "@/features/settings/server/runtime-settings"
 
 type Params = { slug: string }
 
@@ -78,7 +79,7 @@ export const revalidate = 60
 
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
-  const result = await getProductBySlug(slug)
+  const [result, charge] = await Promise.all([getProductBySlug(slug), shippingCharge()])
   const product = result.ok ? result.data : null
   if (!product) notFound()
 
@@ -95,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail product={product} />
+      <ProductDetail product={product} shippingFee={charge.feeRupees} />
 
       <TrustStrip />
 

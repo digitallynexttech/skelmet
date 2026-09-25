@@ -313,6 +313,10 @@ model Payment {
   gatewayPaymentId String?       @map("gateway_payment_id")
   status           PaymentStatus @default(CREATED)
   amount           Decimal       @db.Decimal(12, 2)
+  /// "test" or "live": which Razorpay account took it, so verifying and
+  /// refunding it use that account's keys after the console switches. Null
+  /// for payments from before the switch existed, all made with the .env keys.
+  mode             String?
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
 
@@ -407,6 +411,20 @@ model Inquiry {
   @@index([status, createdAt])
   @@index([email])
   @@map("inquiries")
+}
+
+/// What the console can change without a deploy: the Razorpay keys, the
+/// Shiprocket login, the shipping charge. One row per section, read through
+/// features/settings/server/runtime-settings.ts, which falls back to .env for
+/// anything not saved here. Secrets inside `value` are sealed with AES-256-GCM
+/// (features/settings/server/secret-box.ts), never stored readable.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  @@map("settings")
 }
 
 model AuditLog {

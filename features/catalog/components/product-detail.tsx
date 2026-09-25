@@ -9,7 +9,6 @@ import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { shippingConfig } from "@/config/shipping"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
@@ -27,9 +26,12 @@ const MAX_QTY = 9
 
 export function ProductDetail({
   product,
+  shippingFee,
   initialColourway,
 }: {
   product: Product
+  /** The most shipping can cost, rupees: the shipping charge's flat fee (Settings). */
+  shippingFee: number
   /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
@@ -156,8 +158,10 @@ export function ProductDetail({
             </Badge>
           </div>
           <p className="text-dim mt-1.5 text-[12.5px]">
-            Inclusive of all taxes · Shipping by pincode, up to{" "}
-            {formatMoney(shippingConfig.fee.feeRupees)}
+            Inclusive of all taxes ·{" "}
+            {shippingFee > 0
+              ? `Shipping by pincode, up to ${formatMoney(shippingFee)}`
+              : "Free shipping"}
           </p>
         </div>
 

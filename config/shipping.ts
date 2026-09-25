@@ -21,7 +21,8 @@ import { siteConfig } from "@/config/site"
  * `defaultPackedWeightGrams` when it is set.
  */
 /** Which courier price stands for what a shipment costs - see `fee` below. */
-export type FeeBasis = "twoCheapest" | "average" | "cheapest" | "recommended"
+export const FEE_BASES = ["twoCheapest", "average", "cheapest", "recommended"] as const
+export type FeeBasis = (typeof FEE_BASES)[number]
 
 export const shippingConfig = {
   /** Outer carton for one mount, cm. Measured. More than one unit stacks on the 13 cm side. */
@@ -57,6 +58,9 @@ export const shippingConfig = {
    *
    * When Shiprocket cannot be asked, shipping is free: an outage must not
    * charge anyone, as it must not refuse anyone.
+   *
+   * These are the defaults. The console's Settings > Shipping charge replaces
+   * all three without a deploy (shippingCharge() in runtime-settings.ts).
    */
   fee: { aboveRupees: 300, feeRupees: 350, basis: "twoCheapest" as FeeBasis },
 } as const

@@ -34,10 +34,15 @@ const refusedLogin = () =>
   json(400, { message: "User blocked due to too many failed login attempts." })
 const goodLogin = () => json(200, { token: "t0k3n" })
 
-/** A fresh copy, so the token, the pause and the env cache start empty. */
+/**
+ * A fresh copy, so the env cache starts empty - and a reset session, since the
+ * token and the pause live on globalThis and outlast the module.
+ */
 async function client() {
   vi.resetModules()
-  return import("@/features/shipping/server/shiprocket")
+  const sr = await import("@/features/shipping/server/shiprocket")
+  sr.resetShiprocketSession()
+  return sr
 }
 
 const logins = (fetchMock: ReturnType<typeof shiprocket>) =>
@@ -97,6 +102,34 @@ describe("logging in to Shiprocket", () => {
     await expect(sr.trackAwb("123")).resolves.toEqual({ tracking_data: {} })
 
     expect(logins(fetchMock)).toBe(2)
+  })
+
+  it("tries a password corrected in Settings at once, without waiting out the old one's pause", async () => {
+    // The settings as saved in the console, changed underneath the client
+    // the way a save changes them.
+    const login = { email: "api-user@example.com", password: "wrong" }
+    vi.resetModules()
+    vi.doMock("@/features/settings/server/runtime-settings", () => ({
+      shiprocketConfig: async () => ({
+        apiUrl: "https://apiv2.shiprocket.in",
+        ...login,
+        pickupLocation: null,
+        webhookToken: null,
+      }),
+    }))
+    const fetchMock = shiprocket(refusedLogin, goodLogin)
+    vi.stubGlobal("fetch", fetchMock)
+    const sr = await import("@/features/shipping/server/shiprocket")
+    sr.resetShiprocketSession()
+
+    await expect(sr.trackAwb("123")).rejects.toThrow(/User blocked/)
+    await expect(sr.trackAwb("123")).rejects.toThrow(/Not trying again/)
+
+    login.password = "right"
+    await expect(sr.trackAwb("123")).resolves.toEqual({ tracking_data: {} })
+    expect(logins(fetchMock)).toBe(2)
+
+    vi.doUnmock("@/features/settings/server/runtime-settings")
   })
 })
 

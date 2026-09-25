@@ -1,7 +1,8 @@
 import "server-only"
 
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
-import { refundPayment } from "@/features/checkout/server/payment-gateway"
+import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
+import { paymentConfig } from "@/features/settings/server/runtime-settings"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
 import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
 import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
@@ -197,6 +198,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
             gatewayPaymentId: true,
             status: true,
             amount: true,
+            mode: true,
             createdAt: true,
           },
           orderBy: { createdAt: "desc" },
@@ -222,6 +224,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
     })
 
     if (!order) return fail("Order not found.", undefined, 404)
+    const payments = await paymentConfig()
 
     return ok({
       ...order,
@@ -236,6 +239,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
       items: order.items.map((i) => ({ ...i, unitPrice: i.unitPrice.toString() })),
       payments: order.payments.map((p) => ({
         ...p,
+        mode: p.gateway === "razorpay" ? modeOfPayment(p.mode, payments) : null,
         amount: p.amount.toString(),
         createdAt: p.createdAt.toISOString(),
       })),
@@ -254,7 +258,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
           }
         : null,
       // Whether the console can book couriers here, or only take them typed in.
-      shiprocket: { configured: isShiprocketConfigured(), orderId: order.shiprocketOrderId },
+      shiprocket: { configured: await isShiprocketConfigured(), orderId: order.shiprocketOrderId },
     })
   })
 }
@@ -440,7 +444,7 @@ export async function refundOrder(
         items: { select: { variantId: true, qty: true } },
         payments: {
           where: { status: "CAPTURED" },
-          select: { gatewayPaymentId: true },
+          select: { gatewayPaymentId: true, mode: true },
           take: 1,
         },
       },
@@ -448,6 +452,8 @@ export async function refundOrder(
     if (!order) return fail("Order not found.", undefined, 404)
 
     const paymentId = order.payments[0]?.gatewayPaymentId ?? null
+    // Refunded from the account that took it, whichever is switched on now.
+    const paymentMode = modeOfPayment(order.payments[0]?.mode, await paymentConfig())
 
     // CANCELLED qualifies only while it still holds captured money: orders
     // cancelled while paid, before cancel stopped accepting them, and anything
@@ -475,7 +481,11 @@ export async function refundOrder(
 
     if (paymentId) {
       try {
-        await refundPayment({ gatewayPaymentId: paymentId, amountRupees: order.total.toString() })
+        await refundPayment({
+          gatewayPaymentId: paymentId,
+          amountRupees: order.total.toString(),
+          mode: paymentMode,
+        })
       } catch (err) {
         // The order was marked REFUNDED before the money moved, and a refusal
         // used to leave it there: refunded on screen, never refunded in fact,

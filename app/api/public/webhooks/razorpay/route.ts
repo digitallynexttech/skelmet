@@ -8,13 +8,13 @@ export const dynamic = "force-dynamic"
 
 /**
  * Signature is HMAC over the RAW body, so read text() and never re-serialise.
- * Fails closed when PAYMENT_WEBHOOK_SECRET is unset.
+ * Fails closed when no webhook secret is set, in Settings or .env.
  */
 export const POST = withErrorHandler(async (req) => {
   const raw = await req.text()
   const signature = req.headers.get("x-razorpay-signature")
 
-  if (!verifyWebhookSignature(raw, signature)) {
+  if (!(await verifyWebhookSignature(raw, signature))) {
     console.error("[WEBHOOK] razorpay signature rejected")
     return NextResponse.json({ success: false }, { status: 401 })
   }

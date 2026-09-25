@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Package,
   Percent,
+  Settings,
   ShoppingBag,
   Users,
   X,
@@ -40,6 +41,12 @@ const NAV = [
     href: "/admin/inquiries",
     icon: MessageSquare,
     scope: PERMISSIONS.INQUIRY_READ,
+  },
+  {
+    label: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
+    scope: PERMISSIONS.SETTING_READ,
   },
 ] as const
 

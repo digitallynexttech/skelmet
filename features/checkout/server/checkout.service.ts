@@ -5,9 +5,10 @@ import { placeOrderSchema, verifyPaymentSchema } from "@/features/checkout/schem
 import {
   createGatewayOrder,
   isGatewayConfigured,
-  publicKeyId,
+  modeOfPayment,
   verifyPaymentSignature,
 } from "@/features/checkout/server/payment-gateway"
+import { paymentConfig } from "@/features/settings/server/runtime-settings"
 import { attachCustomer } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
@@ -263,7 +264,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // Before the transaction, not after: failing here once the order exists
     // leaves an orphan holding stock nobody can buy.
-    if (input.paymentMethod === "ONLINE" && !isGatewayConfigured()) {
+    if (input.paymentMethod === "ONLINE" && !(await isGatewayConfigured())) {
       return fail("Payments are temporarily unavailable. Please try again shortly.", undefined, 503)
     }
 
@@ -362,6 +363,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // PENDING order nobody can pay, sitting on claimed stock and on a coupon
     // redemption nobody used.
     let gatewayOrderId: string | null = null
+    let gatewayKeyId: string | null = null
     if (input.paymentMethod === "ONLINE") {
       try {
         const gw = await createGatewayOrder({
@@ -369,15 +371,17 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           receipt: order.number,
           notes: { orderId: order.id, orderNumber: order.number },
         })
-        gatewayOrderId = gw.id
+        gatewayOrderId = gw.order.id
+        gatewayKeyId = gw.keyId
 
         await db.payment.create({
           data: {
             orderId: order.id,
             gateway: "razorpay",
-            gatewayOrderId: gw.id,
+            gatewayOrderId: gw.order.id,
             status: "CREATED",
             amount: priced.total,
+            mode: gw.mode,
           },
         })
       } catch (err) {
@@ -408,7 +412,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       orderNumber: order.number,
       total: order.total.toString(),
       gatewayOrderId,
-      gatewayKeyId: gatewayOrderId ? publicKeyId() : null,
+      gatewayKeyId,
       paymentMethod: input.paymentMethod,
     })
   })
@@ -550,7 +554,17 @@ export async function confirmPayment(
     const input = verifyPaymentSchema.parse(raw)
     if (!hasDatabase()) return fail("Checkout is not available yet.", undefined, 503)
 
-    if (!verifyPaymentSignature(input)) {
+    // Checked with the secret of the account the payment was opened on, which
+    // is not necessarily the one switched on now.
+    const opened = await db.payment.findUnique({
+      where: {
+        gateway_gatewayOrderId: { gateway: "razorpay", gatewayOrderId: input.gatewayOrderId },
+      },
+      select: { mode: true },
+    })
+    const mode = modeOfPayment(opened?.mode, await paymentConfig())
+
+    if (!(await verifyPaymentSignature(input, mode))) {
       await createAuditLog(null, {
         action: "payment:signature-invalid",
         module: "order",
