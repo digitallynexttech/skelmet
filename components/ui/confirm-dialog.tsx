@@ -37,6 +37,9 @@ export function ConfirmDialog({
   onClose: () => void
 }) {
   const ref = React.useRef<HTMLDialogElement>(null)
+  // The sidebar keeps one of these on every admin page, so a fixed id would
+  // label a second dialog with the first one's title.
+  const titleId = React.useId()
 
   React.useEffect(() => {
     const el = ref.current
@@ -57,14 +60,14 @@ export function ConfirmDialog({
         // A click on the backdrop lands on the dialog element itself.
         if (e.target === ref.current && !pending) onClose()
       }}
-      aria-labelledby="confirm-title"
+      aria-labelledby={titleId}
       className={cn(
-        "rounded-md bg-carbon text-bone m-auto w-[min(92vw,420px)] border border-white/[0.14] p-0",
+        "bg-carbon text-bone m-auto w-[min(92vw,420px)] rounded-md border border-white/[0.14] p-0",
         "backdrop:bg-black/70 backdrop:backdrop-blur-[2px]",
       )}
     >
       <div className="p-6">
-        <h2 id="confirm-title" className="font-display mb-2 text-[22px] uppercase">
+        <h2 id={titleId} className="font-display mb-2 text-[22px] uppercase">
           {title}
         </h2>
         {body ? <div className="text-ash text-[14px] leading-[1.6]">{body}</div> : null}

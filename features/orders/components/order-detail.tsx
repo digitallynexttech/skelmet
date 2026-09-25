@@ -21,6 +21,7 @@ import { Money } from "@/components/shared/money"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Field, Input } from "@/components/ui/input"
 import {
   useCourierOptions,
@@ -29,7 +30,24 @@ import {
   type OrderDetail,
 } from "@/features/orders/hooks/use-orders"
 import type { OrderStatus } from "@/lib/constants"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
+
+/**
+ * A question put before anything that moves an order along, charges the
+ * courier wallet or sends money back. Each of those is one click, and a
+ * mistaken one - a refund, a packed order that is not packed - is hard or
+ * impossible to take back.
+ */
+type Confirmation = {
+  title: string
+  body: React.ReactNode
+  confirmLabel: string
+  tone?: "primary" | "danger"
+  /** Runs the action and calls `done` once it has settled, which closes the dialog. */
+  run: (done: () => void) => void
+}
+type Ask = (confirmation: Confirmation) => void
 
 const TIMELINE: Array<{ status: OrderStatus; label: string; Icon: typeof Truck }> = [
   { status: "PAID", label: "Paid", Icon: CreditCard },
@@ -77,10 +95,12 @@ function BookCourier({
   order,
   actions,
   busy,
+  ask,
 }: {
   order: OrderDetail
   actions: ReturnType<typeof useOrderAction>
   busy: boolean
+  ask: Ask
 }) {
   const [asked, setAsked] = React.useState(false)
   const [manual, setManual] = React.useState(false)
@@ -95,7 +115,11 @@ function BookCourier({
 
   if (manual) {
     return (
-      <ShipDialog onShip={(v) => actions.ship.mutate(v)} pending={actions.ship.isPending}>
+      <ShipDialog
+        ask={ask}
+        onShip={(v, done) => actions.ship.mutate(v, { onSettled: done })}
+        pending={actions.ship.isPending}
+      >
         <button
           type="button"
           onClick={() => setManual(false)}
@@ -125,7 +149,21 @@ function BookCourier({
               variant="primary"
               size="sm"
               disabled={busy}
-              onClick={() => actions.book.mutate({})}
+              onClick={() =>
+                ask({
+                  title: "Finish booking?",
+                  body: (
+                    <>
+                      Schedules the pickup for {kept.courier}, AWB{" "}
+                      <span className="text-bone font-mono">{kept.awb}</span>. The AWB is kept, so
+                      the wallet is not charged again. The customer is emailed that the order has
+                      shipped.
+                    </>
+                  ),
+                  confirmLabel: "Finish booking",
+                  run: (done) => actions.book.mutate({}, { onSettled: done }),
+                })
+              }
             >
               <Truck className="size-4" strokeWidth={1.9} />
               Finish booking
@@ -138,7 +176,19 @@ function BookCourier({
             <Truck className="size-4" strokeWidth={1.9} />
             Show couriers &amp; rates
           </Button>
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => actions.book.mutate({})}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              ask({
+                title: "Book Shiprocket's pick?",
+                body: "Shiprocket chooses the courier from your account's courier settings and charges your wallet for it, without showing the price here first. It assigns a tracking number and schedules the pickup, and the customer is emailed that the order has shipped. To see the prices first, use Show couriers & rates.",
+                confirmLabel: "Book courier",
+                run: (done) => actions.book.mutate({}, { onSettled: done }),
+              })
+            }
+          >
             Book Shiprocket&apos;s pick
           </Button>
         </div>
@@ -199,7 +249,21 @@ function BookCourier({
               variant="primary"
               size="sm"
               disabled={busy || !pick}
-              onClick={() => pick && actions.book.mutate({ courierId: pick.id })}
+              onClick={() =>
+                pick &&
+                ask({
+                  title: `Book ${pick.name}?`,
+                  body: (
+                    <>
+                      Charges <span className="text-bone font-mono">{formatMoney(pick.rate)}</span>{" "}
+                      to your Shiprocket wallet, assigns a tracking number and schedules the pickup.
+                      The customer is emailed that the order has shipped.
+                    </>
+                  ),
+                  confirmLabel: `Book for ${formatMoney(pick.rate)}`,
+                  run: (done) => actions.book.mutate({ courierId: pick.id }, { onSettled: done }),
+                })
+              }
             >
               <Truck className="size-4" strokeWidth={1.9} />
               {pick ? `Book ${pick.name}` : "Book"}
@@ -224,10 +288,12 @@ function BookCourier({
 function ShipDialog({
   onShip,
   pending,
+  ask,
   children,
 }: {
-  onShip: (v: { courier: string; awb: string }) => void
+  onShip: (v: { courier: string; awb: string }, done: () => void) => void
   pending: boolean
+  ask: Ask
   children?: React.ReactNode
 }) {
   const [courier, setCourier] = React.useState("")
@@ -237,7 +303,20 @@ function ShipDialog({
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        if (courier.trim() && awb.trim()) onShip({ courier: courier.trim(), awb: awb.trim() })
+        const v = { courier: courier.trim(), awb: awb.trim() }
+        if (!v.courier || !v.awb) return
+        ask({
+          title: "Mark as shipped?",
+          body: (
+            <>
+              With {v.courier}, AWB <span className="text-bone font-mono">{v.awb}</span>. The order
+              moves to Shipped and the customer is emailed these tracking details, so check the AWB
+              first.
+            </>
+          ),
+          confirmLabel: "Mark shipped",
+          run: (done) => onShip(v, done),
+        })
       }}
       className="bg-void rounded-md border border-white/[0.09] p-5"
     >
@@ -278,6 +357,11 @@ export function OrderDetailView({ id }: { id: string }) {
   const { data: order, isLoading, isError, error } = useOrder(id)
   const actions = useOrderAction(id)
 
+  // One dialog for the page, asked by whichever action wants confirming.
+  const [confirmation, setConfirmation] = React.useState<Confirmation | null>(null)
+  const [confirming, setConfirming] = React.useState(false)
+  const ask: Ask = setConfirmation
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -305,9 +389,30 @@ export function OrderDetailView({ id }: { id: string }) {
   const stage = ORDER_OF(order.status)
   const dead = order.status === "CANCELLED" || order.status === "REFUNDED"
   const busy = Object.values(actions).some((a) => a.isPending)
+  const units = order.items.reduce((n, i) => n + i.qty, 0)
+  const unitsText = `${units} item${units === 1 ? "" : "s"}`
+  // Refund restocks what never left; the server makes the same call.
+  const unshipped = order.status === "PAID" || order.status === "PACKED"
 
   return (
     <div className="flex flex-col gap-7">
+      <ConfirmDialog
+        open={confirmation !== null}
+        title={confirmation?.title ?? ""}
+        body={confirmation?.body}
+        confirmLabel={confirmation?.confirmLabel}
+        tone={confirmation?.tone}
+        pending={confirming}
+        onClose={() => setConfirmation(null)}
+        onConfirm={() => {
+          if (!confirmation) return
+          setConfirming(true)
+          confirmation.run(() => {
+            setConfirming(false)
+            setConfirmation(null)
+          })
+        }}
+      />
       <div>
         <Link
           href="/admin/orders"
@@ -371,7 +476,14 @@ export function OrderDetailView({ id }: { id: string }) {
               variant="primary"
               size="sm"
               disabled={busy}
-              onClick={() => actions.pack.mutate()}
+              onClick={() =>
+                ask({
+                  title: "Mark as packed?",
+                  body: `${order.number} moves to Packed and is ready for a courier. Do this once all ${unitsText} are in the box.`,
+                  confirmLabel: "Mark packed",
+                  run: (done) => actions.pack.mutate(undefined, { onSettled: done }),
+                })
+              }
             >
               <PackageCheck className="size-4" strokeWidth={1.9} />
               Mark packed
@@ -382,7 +494,14 @@ export function OrderDetailView({ id }: { id: string }) {
               variant="primary"
               size="sm"
               disabled={busy}
-              onClick={() => actions.deliver.mutate()}
+              onClick={() =>
+                ask({
+                  title: "Mark as delivered?",
+                  body: `Only if you know ${order.number} has arrived. A Shiprocket shipment updates itself from the courier's tracking.`,
+                  confirmLabel: "Mark delivered",
+                  run: (done) => actions.deliver.mutate(undefined, { onSettled: done }),
+                })
+              }
             >
               <Home className="size-4" strokeWidth={1.9} />
               Mark delivered
@@ -395,7 +514,15 @@ export function OrderDetailView({ id }: { id: string }) {
               variant="ghost"
               size="sm"
               disabled={busy}
-              onClick={() => actions.cancel.mutate()}
+              onClick={() =>
+                ask({
+                  title: "Cancel this order?",
+                  body: `${order.number} was never paid, so there is nothing to refund. It is cancelled and its ${unitsText} go back into stock. This cannot be undone.`,
+                  confirmLabel: "Cancel order",
+                  tone: "danger",
+                  run: (done) => actions.cancel.mutate(undefined, { onSettled: done }),
+                })
+              }
             >
               <Ban className="size-4" strokeWidth={1.9} />
               Cancel &amp; restock
@@ -407,7 +534,26 @@ export function OrderDetailView({ id }: { id: string }) {
               variant="ghost"
               size="sm"
               disabled={busy}
-              onClick={() => actions.refund.mutate()}
+              onClick={() =>
+                ask({
+                  title: `Refund ${formatMoney(order.total)}?`,
+                  body: [
+                    order.payments.some((p) => p.status === "CAPTURED")
+                      ? `The full ${formatMoney(order.total)} goes back to the customer's original payment method through Razorpay.`
+                      : "No captured payment is on file, so no money moves through Razorpay. The order is only marked refunded.",
+                    unshipped ? `Its ${unitsText} go back into stock.` : "Stock is not changed.",
+                    unshipped && order.shiprocket.orderId
+                      ? "The order is cancelled in Shiprocket too."
+                      : "",
+                    "This cannot be undone.",
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                  confirmLabel: `Refund ${formatMoney(order.total)}`,
+                  tone: "danger",
+                  run: (done) => actions.refund.mutate(undefined, { onSettled: done }),
+                })
+              }
             >
               <RotateCcw className="size-4" strokeWidth={1.9} />
               Refund
@@ -417,9 +563,13 @@ export function OrderDetailView({ id }: { id: string }) {
 
         {order.status === "PACKED" ? (
           order.shiprocket.configured ? (
-            <BookCourier order={order} actions={actions} busy={busy} />
+            <BookCourier order={order} actions={actions} busy={busy} ask={ask} />
           ) : (
-            <ShipDialog onShip={(v) => actions.ship.mutate(v)} pending={actions.ship.isPending} />
+            <ShipDialog
+              ask={ask}
+              onShip={(v, done) => actions.ship.mutate(v, { onSettled: done })}
+              pending={actions.ship.isPending}
+            />
           )
         ) : null}
       </div>
