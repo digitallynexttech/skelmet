@@ -38,8 +38,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       title: product.name,
       description: product.strapline,
       // Blaze is the canonical finish for sharing: metadata is per slug,
-        // not per selected colourway.
-        images: [{ url: product.gallery[0]!.src.blaze }],
+      // not per selected colourway.
+      images: [{ url: product.gallery[0]!.src.blaze }],
     },
   }
 }
@@ -60,16 +60,21 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
  * being uncacheable.
  */
 /**
- * Only the slugs generateStaticParams knows are real routes; anything else is
- * a genuine 404 rather than a 200 carrying a not-found page. notFound() in a
- * route that still renders unknown params on demand answers HTTP 200, so every
- * mistyped or dead product URL was telling crawlers the page was fine.
+ * Rebuilt at most a minute after anything changes. The price and stock on
+ * this page come from the database, and without this the page kept the ones
+ * it was built with until the next deploy - the storefront showed one price
+ * while checkout charged another. Admin edits refresh it straight away
+ * (refreshStorefront); this also catches the stock that orders move.
  *
- * The catalogue lives in code, so a new product already needs a deploy - this
- * takes nothing away today. It would need revisiting alongside ISR the day
- * products come from the database and can appear between builds.
+ * An unknown slug never reaches this page: proxy.ts answers it with a real 404
+ * first. That used to be `dynamicParams = false`, which cannot live alongside
+ * an admin refresh - revalidatePath discards the cached page, and a route
+ * limited to its prerendered params then treats its own product as unknown
+ * and 404s on every visit. Left to the page, notFound() for an unknown slug
+ * answers HTTP 200, because the marketing loading boundary has already sent
+ * the shell.
  */
-export const dynamicParams = false
+export const revalidate = 60
 
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params

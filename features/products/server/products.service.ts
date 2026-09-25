@@ -5,6 +5,7 @@ import {
   updateProductSchema,
   updateVariantSchema,
 } from "@/features/products/schemas/product.schema"
+import { refreshStorefront } from "@/features/catalog/server/refresh-storefront"
 import { PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
@@ -134,6 +135,7 @@ export async function updateProduct(id: string, raw: unknown): Promise<ActionRes
       meta: input as Record<string, unknown>,
       ...(await getAuditMeta()),
     })
+    refreshStorefront()
 
     return ok(serialize(row))
   })
@@ -179,6 +181,7 @@ export async function updateVariant(id: string, raw: unknown): Promise<ActionRes
       },
       ...(await getAuditMeta()),
     })
+    refreshStorefront()
 
     return ok({
       id: row.id,
@@ -233,6 +236,7 @@ export async function adjustStock(id: string, raw: unknown): Promise<ActionResul
       meta: { sku: row.sku, delta: input.delta, to: row.stock, reason: input.reason ?? null },
       ...(await getAuditMeta()),
     })
+    refreshStorefront()
 
     return ok({
       id: row.id,
