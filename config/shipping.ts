@@ -21,7 +21,7 @@ import { siteConfig } from "@/config/site"
  * `defaultPackedWeightGrams` when it is set.
  */
 /** Which courier price stands for what a shipment costs - see `fee` below. */
-export type FeeBasis = "average" | "cheapest" | "recommended"
+export type FeeBasis = "twoCheapest" | "average" | "cheapest" | "recommended"
 
 export const shippingConfig = {
   /** Outer carton for one mount, cm. Measured. More than one unit stacks on the 13 cm side. */
@@ -42,17 +42,21 @@ export const shippingConfig = {
    *
    * `basis` is which courier price stands for "what it costs":
    *
-   *   "average"     - the mean of every courier offered. What the shop asked
-   *                   for. The premium air couriers Shiprocket always lists
-   *                   pull it up: every pincode measured, the shop's own Delhi
-   *                   included, averaged over Rs 300, so every order pays.
-   *   "cheapest"    - the lowest offer, which is what the shop books when it
-   *                   picks the courier itself. Nearby pincodes come out free
-   *                   and distant ones pay.
+   *   "twoCheapest" - the mean of the two lowest offers, or the only one when
+   *                   there is one. The shop's choice: close to what it books
+   *                   when it picks the courier itself, without letting one
+   *                   unusually cheap courier decide on its own. Measured for
+   *                   one mount from Delhi: Delhi, Gurugram, Jaipur and
+   *                   Lucknow free; Ghaziabad (Rs 226 and 455), Kolkata and
+   *                   every distant metro Rs 350.
+   *   "average"     - the mean of every courier offered. The premium air
+   *                   couriers Shiprocket always lists pull it over Rs 300
+   *                   everywhere, the shop's own Delhi included.
+   *   "cheapest"    - the lowest offer alone.
    *   "recommended" - Shiprocket's pick, often an air courier even locally.
    *
    * When Shiprocket cannot be asked, shipping is free: an outage must not
    * charge anyone, as it must not refuse anyone.
    */
-  fee: { aboveRupees: 300, feeRupees: 350, basis: "average" as FeeBasis },
+  fee: { aboveRupees: 300, feeRupees: 350, basis: "twoCheapest" as FeeBasis },
 } as const

@@ -384,6 +384,10 @@ export function deliveryEstimate(options: CourierOption[]): CourierOption | null
 export function shipmentCost(options: CourierOption[], basis: FeeBasis): number | null {
   const priced = options.filter((o) => o.rate > 0)
   if (priced.length === 0) return null
+  if (basis === "twoCheapest") {
+    const [first, second] = priced.map((o) => o.rate).sort((x, y) => x - y)
+    return second === undefined ? first! : round((first! + second) / 2, 2)
+  }
   if (basis === "cheapest") return Math.min(...priced.map((o) => o.rate))
   if (basis === "recommended") {
     return (priced.find((o) => o.recommended) ?? priced.reduce((a, b) => (b.rate < a.rate ? b : a)))

@@ -315,10 +315,20 @@ describe("what shipping costs, and what the buyer pays", () => {
   // couriers and the air couriers it always lists.
   const delhi = [161, 202, 208, 231, 344, 392, 414, 556, 635].map((r) => courier(r, r === 231))
 
-  it("reads the cost three ways", () => {
+  it("reads the cost four ways", () => {
+    expect(shipmentCost(delhi, "twoCheapest")).toBe(181.5)
     expect(shipmentCost(delhi, "average")).toBe(349.22)
     expect(shipmentCost(delhi, "cheapest")).toBe(161)
     expect(shipmentCost(delhi, "recommended")).toBe(231)
+  })
+
+  it("averages the two cheapest in any order, or takes the only one", () => {
+    // Ghaziabad as quoted: the second courier lifts it over the threshold.
+    const ghaziabad = [726, 226, 455].map((r) => courier(r))
+    expect(shipmentCost(ghaziabad, "twoCheapest")).toBe(340.5)
+    expect(shippingFeeFor(shipmentCost(ghaziabad, "twoCheapest"))).toBe(350)
+    expect(shipmentCost([courier(869)], "twoCheapest")).toBe(869)
+    expect(shippingFeeFor(shipmentCost(delhi, "twoCheapest"))).toBe(0)
   })
 
   it("falls back to the cheapest when Shiprocket recommends nothing", () => {
