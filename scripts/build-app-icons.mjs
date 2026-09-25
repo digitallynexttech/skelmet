@@ -4,18 +4,23 @@
  *   node scripts/build-app-icons.mjs [path-to-brand-folder]
  *
  * Source is the standalone mark, `Skelmet - Branding (3).png` - orange cranium
- * over a near-black jaw, on transparency. The jaw is repainted white on the way
- * through: browser chrome is dark for most people now, and against it the
- * near-black half simply disappeared, leaving an orange dome with no skull in
- * it. The orange is untouched.
+ * over a near-black jaw, on transparency. Every ink is repainted the mark's own
+ * orange on the way through, so the icon is one colour.
+ *
+ * A two-tone mark cannot survive a browser tab. Left as drawn, the near-black
+ * jaw vanished against dark chrome and only the orange dome showed; repainted
+ * white, it vanished against light chrome instead. Orange reads on both. The
+ * skull still reads as a skull because its features - the eye sockets, the
+ * slit through the cranium, the gaps around the teeth - are cut out of the
+ * shape as transparency, not drawn in the second ink.
  *
  * Outputs, all picked up by the App Router file conventions:
  *   app/favicon.ico     16 + 32 + 48, PNG-in-ICO, transparent
  *   app/icon.png        512, transparent
  *   app/apple-icon.png  180, on void - iOS composites the icon onto its own
  *                       background and a transparent one goes black on the home
- *                       screen. Void, not white, because the jaw is white now
- *                       and would vanish the other way.
+ *                       screen. Void rather than white because it is the site's
+ *                       own ground, and orange holds on it.
  *
  * Hand-rolled ICO container because there is no image dependency in the project
  * beyond the one Next already ships, and this runs once per brand drop.
@@ -42,10 +47,8 @@ const BRAND = process.argv[2] ?? "D:/DN/DN_WEB/SKELMET/FILES_SKELMET/logo"
 const SOURCE = path.join(BRAND, "Skelmet - Branding (3).png")
 const APP = path.join(ROOT, "app")
 
-/** The two inks in the source, and what the dark one becomes. */
+/** The mark's own orange, read off the source rather than the site palette. */
 const ORANGE = [241, 93, 34]
-const INK = [35, 31, 32]
-const WHITE = [255, 255, 255]
 
 /** Breathing room around the mark, as a share of the square. */
 const PADDING = 0.06
@@ -53,28 +56,23 @@ const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
 /** --color-void. */
 const APPLE_BACKGROUND = { r: 7, g: 6, b: 10, alpha: 1 }
 
-const distance = (px, i, c) =>
-  (px[i] - c[0]) ** 2 + (px[i + 1] - c[1]) ** 2 + (px[i + 2] - c[2]) ** 2
-
 /**
- * Repaint the dark ink white, leaving the orange alone.
+ * Repaint every pixel the mark's orange, keeping its alpha.
  *
- * Alpha is straight, not premultiplied, so an antialiased edge pixel carries
- * the full ink colour at a partial alpha - swapping RGB and leaving alpha be
- * keeps every edge clean. Classified by nearest of the two inks rather than by
- * luminance, which would also catch the darker shading inside the orange.
+ * Every pixel, not just the dark ones: where the cranium meets the jaw the
+ * antialiasing blends the two inks, and recolouring only the pixels nearest
+ * black would leave a brownish seam along that line. Alpha is straight, not
+ * premultiplied, so the edges stay exactly as soft as they were drawn.
  */
-async function whitenJaw() {
+async function allOrange() {
   const { data, info } = await sharp(SOURCE)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
   for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] === 0) continue
-    if (distance(data, i, INK) >= distance(data, i, ORANGE)) continue
-    data[i] = WHITE[0]
-    data[i + 1] = WHITE[1]
-    data[i + 2] = WHITE[2]
+    data[i] = ORANGE[0]
+    data[i + 1] = ORANGE[1]
+    data[i + 2] = ORANGE[2]
   }
   return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
     .png()
@@ -129,7 +127,7 @@ function ico(images) {
 
 if (!fs.existsSync(SOURCE)) throw new Error(`Mark not found at ${SOURCE}`)
 
-const artwork = await whitenJaw()
+const artwork = await allOrange()
 
 const rendered = await Promise.all(
   [16, 32, 48].map(async (size) => ({ size, data: await square(size, artwork) })),
