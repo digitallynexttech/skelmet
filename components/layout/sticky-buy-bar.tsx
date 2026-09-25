@@ -17,7 +17,8 @@ export function StickyBuyBar({ price, label = "Add to cart" }: { price: string; 
           SHIPPING BY PINCODE
         </div>
       </div>
-      <ButtonLink href="/cart" variant="primary" size="md" full className="flex-1">
+      {/* Tighter on the narrowest phones, which it otherwise overhangs. */}
+      <ButtonLink href="/cart" variant="primary" size="md" full className="flex-1 max-[359px]:px-4">
         {label}
         <ArrowRight className="size-4" strokeWidth={2.4} />
       </ButtonLink>

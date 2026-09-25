@@ -81,7 +81,7 @@ export function ProductDetail({
   return (
     <div
       id="buy"
-      className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14"
+      className="grid grid-cols-1 gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14"
     >
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
@@ -201,9 +201,13 @@ export function ProductDetail({
           </div>
         </div>
 
-        {/* qty + add + buy. One row from xl, stacked below it. */}
+        {/* qty + add + buy. One row from xl, stacked on phones. Stacked, the
+            stepper keeps its own width rather than stretching across, and
+            the buttons only share space once they sit side by side: flex-1
+            in a column sizes their HEIGHT from zero, which squashed them to
+            the height of their text. */}
         <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:max-w-[720px] xl:flex-nowrap">
-          <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
+          <div className="flex h-[58px] shrink-0 items-center gap-1 self-start rounded-full border border-white/[0.16] px-1.5 sm:self-auto">
             <button
               type="button"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -232,17 +236,22 @@ export function ProductDetail({
             variant="primary"
             size="lg"
             full
-            className="min-w-0 flex-1"
+            className="min-w-0 sm:flex-1"
             onClick={() => add(colourwayId, qty)}
           >
-            Add to cart · <Money value={lineTotal} />
+            {/* The price leaves the label on the narrowest phones, where it
+                would push the page sideways; it is right above, in large. */}
+            <span>
+              Add to cart<span className="max-[359px]:hidden"> ·</span>
+            </span>
+            <Money value={lineTotal} className="max-[359px]:hidden" />
           </Button>
 
           <Button
             variant="accent"
             size="lg"
             full
-            className="min-w-0 flex-1"
+            className="min-w-0 sm:flex-1"
             onClick={() => {
               // Add first, then navigate: checkout reads the cart on mount, and
               // arriving before the write lands shows the empty state.
