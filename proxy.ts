@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
-import { PRODUCTS } from "@/features/catalog/catalog"
-import { POLICIES } from "@/features/policies/policies"
+import { isUnknownPage } from "@/lib/known-pages"
 
 /**
  * Next 16 middleware, renamed to proxy.ts (§2).
@@ -28,34 +27,6 @@ export const ROUTE_RULES: RouteRule[] = [
 ]
 
 const AUTH_READY = Boolean(process.env.AUTH_SECRET)
-
-/** The pages that take a slug, and the slugs each one has. */
-const KNOWN_SLUGS = new Map<string, Set<string>>([
-  ["product", new Set(PRODUCTS.map((p) => p.slug))],
-  ["policies", new Set(POLICIES.map((p) => p.slug))],
-])
-
-/**
- * A product or policy URL that does not exist, answered 404 before it renders.
- *
- * Those pages cannot do this themselves. notFound() there answers HTTP 200,
- * because the marketing loading boundary has already sent the shell, and they
- * keep unknown slugs open (see their `revalidate`) so a change in the console
- * can rebuild them. Every such render would also be kept in the page cache,
- * so random slugs could fill the disk.
- */
-function isUnknownPage(pathname: string): boolean {
-  const [, section, slug] = pathname.split("/")
-  const known = section ? KNOWN_SLUGS.get(section) : undefined
-  if (!known || !slug) return false
-  let decoded = slug
-  try {
-    decoded = decodeURIComponent(slug)
-  } catch {
-    // A malformed escape is no page either.
-  }
-  return !known.has(decoded)
-}
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
