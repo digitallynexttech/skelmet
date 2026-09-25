@@ -169,8 +169,14 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // customer to disappoint. Only a definite no refuses - Shiprocket being
     // down or not set up must never stop a sale - and the answer is cached,
     // usually from the page's own check a moment ago.
+    //
+    // The same answer carries the shipping fee, asked for this order's own
+    // parcel - the page asks with the same count, so the fee it showed is the
+    // fee charged. No answer means no fee, as it means no refusal.
     const pin = input.address.pincode
-    const reach = await checkPincode({ pincode: pin })
+    const units = input.items.reduce((n, i) => n + i.qty, 0)
+    const reach = await checkPincode({ pincode: pin, units })
+    const shippingFee = reach.ok ? reach.data.shippingFee : 0
     if (reach.ok && reach.data.live && !reach.data.serviceable) {
       return fail(
         reach.data.found
@@ -263,7 +269,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // cod stays in priceCart for the orders already placed with it and for
     // the day it comes back; nothing reaching here can select it now.
-    const priced = priceCart(lines, { cod: false, couponOff })
+    const priced = priceCart(lines, { cod: false, couponOff, shippingFee })
 
     // ── write the order and claim stock in one transaction ──
     const writeOrder = (number: string) =>

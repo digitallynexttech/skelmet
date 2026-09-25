@@ -1,7 +1,7 @@
 import { CreditCard, ShieldCheck, Truck } from "lucide-react"
 
 const ITEMS = [
-  { Icon: Truck, tone: "text-ember", title: "Ships in 48 hours", body: "Free, pan-India, tracked" },
+  { Icon: Truck, tone: "text-ember", title: "Ships in 48 hours", body: "Pan-India, tracked" },
   { Icon: ShieldCheck, tone: "text-acid", title: "7-day returns", body: "We pay the pickup" },
   {
     Icon: CreditCard,
@@ -30,7 +30,7 @@ export function TrustStrip() {
       {ITEMS.map(({ Icon, tone, title, body }) => (
         <div
           key={title}
-          className="flex items-center gap-4 border-b md:justify-center border-white/[0.07] px-5 py-6 last:border-b-0 sm:px-8 sm:py-7 md:border-r md:border-b-0 md:last:border-r-0 xl:px-10"
+          className="flex items-center gap-4 border-b border-white/[0.07] px-5 py-6 last:border-b-0 sm:px-8 sm:py-7 md:justify-center md:border-r md:border-b-0 md:last:border-r-0 xl:px-10"
         >
           <Icon className={`size-6 shrink-0 ${tone}`} strokeWidth={1.6} />
           {/* min-w-0 is load-bearing: a grid item's min-width defaults to auto,

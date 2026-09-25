@@ -8,7 +8,13 @@
  * why each page renders a visible banner saying so.
  */
 
+import { shippingConfig } from "@/config/shipping"
 import { siteConfig } from "@/config/site"
+import { formatMoney } from "@/lib/money"
+
+// The shipping rule, as the policy states it, from the config checkout charges by.
+const SHIPPING_FREE_UP_TO = formatMoney(shippingConfig.fee.aboveRupees)
+const SHIPPING_FEE = formatMoney(shippingConfig.fee.feeRupees)
 
 export type PolicyBlock =
   | { type: "p"; text: string }
@@ -487,7 +493,7 @@ const SHIPPING: Policy = {
   title: "Shipping policy",
   intro: "When it leaves, how it travels, and what happens if it goes wrong.",
   readingTime: "~4 min read",
-  shortVersion: "Free everywhere in India. Out in 48 hours, usually with you within 7 working days.",
+  shortVersion: `Free where delivery costs us ${SHIPPING_FREE_UP_TO} or less, a flat ${SHIPPING_FEE} elsewhere. Out in 48 hours, usually with you within 7 working days.`,
   accent: "acid",
   sections: [
     {
@@ -506,7 +512,7 @@ const SHIPPING: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Nothing. Shipping is free on every order, to every serviceable pincode, with no minimum.",
+          text: `It depends on where it is going. If couriers charge us ${SHIPPING_FREE_UP_TO} or less to reach your pincode, shipping is free. If they charge more, you pay a flat ${SHIPPING_FEE} per order, whatever the courier actually costs us. Checkout shows which applies as soon as you enter your pincode, before you pay.`,
         },
       ],
     },

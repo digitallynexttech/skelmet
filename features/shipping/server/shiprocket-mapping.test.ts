@@ -9,10 +9,13 @@ import {
   istStamp,
   parcelFor,
   parseShiprocketDate,
+  shipmentCost,
+  shippingFeeFor,
   trackingSnapshot,
   trackingStage,
   trackingUrl,
   webhookEvent,
+  type CourierOption,
   type ShippableOrder,
 } from "@/features/shipping/server/shiprocket-mapping"
 
@@ -295,5 +298,51 @@ describe("courierOptions", () => {
   it("is empty, not broken, for an unserviceable pincode", () => {
     expect(courierOptions({ data: { available_courier_companies: [] } }).options).toEqual([])
     expect(courierOptions({ status: 404, message: "no couriers" }).options).toEqual([])
+  })
+})
+
+describe("what shipping costs, and what the buyer pays", () => {
+  const courier = (rate: number, recommended = false): CourierOption => ({
+    id: Math.round(rate),
+    name: `Courier ${rate}`,
+    rate,
+    etd: null,
+    days: 2,
+    rating: null,
+    recommended,
+  })
+  // Delhi to Delhi for one mount, as Shiprocket quoted it: a few cheap surface
+  // couriers and the air couriers it always lists.
+  const delhi = [161, 202, 208, 231, 344, 392, 414, 556, 635].map((r) => courier(r, r === 231))
+
+  it("reads the cost three ways", () => {
+    expect(shipmentCost(delhi, "average")).toBe(349.22)
+    expect(shipmentCost(delhi, "cheapest")).toBe(161)
+    expect(shipmentCost(delhi, "recommended")).toBe(231)
+  })
+
+  it("falls back to the cheapest when Shiprocket recommends nothing", () => {
+    expect(shipmentCost([courier(869), courier(400)], "recommended")).toBe(400)
+  })
+
+  it("leaves out a courier with no usable price rather than counting it free", () => {
+    expect(shipmentCost([courier(0), courier(300), courier(500)], "average")).toBe(400)
+    expect(shipmentCost([courier(0)], "average")).toBeNull()
+    expect(shipmentCost([], "cheapest")).toBeNull()
+  })
+
+  it("charges the flat fee only above the threshold", () => {
+    const rule = { aboveRupees: 300, feeRupees: 350 }
+    expect(shippingFeeFor(161, rule)).toBe(0)
+    expect(shippingFeeFor(300, rule)).toBe(0)
+    expect(shippingFeeFor(300.01, rule)).toBe(350)
+    expect(shippingFeeFor(964, rule)).toBe(350)
+    expect(shippingFeeFor(null, rule)).toBe(0)
+  })
+
+  it("uses the shop's configured rule by default", () => {
+    const { aboveRupees, feeRupees } = shippingConfig.fee
+    expect(shippingFeeFor(aboveRupees + 1)).toBe(feeRupees)
+    expect(shippingFeeFor(aboveRupees)).toBe(0)
   })
 })

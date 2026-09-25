@@ -146,7 +146,12 @@ export const useCart = create<CartState>()(
  * only - checkout recomputes from the database and can disagree, and when it
  * does the server wins.
  */
-export function calculateTotals(items: CartLine[], codSelected = false, couponOff = 0): CartTotals {
+export function calculateTotals(
+  items: CartLine[],
+  codSelected = false,
+  couponOff = 0,
+  shippingFee = 0,
+): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
   const subtotal = items.reduce((sum, line) => sum + Number(line.unitPrice) * line.qty, 0)
 
@@ -154,7 +159,8 @@ export function calculateTotals(items: CartLine[], codSelected = false, couponOf
   // Never past the subtotal, so a coupon cannot make an order negative.
   const discount = Math.min(subtotal, coupon)
 
-  const shipping = 0
+  // From the pincode check at checkout; 0 until a pincode has been checked.
+  const shipping = Math.max(0, Math.round(shippingFee))
   const codFee = codSelected ? COD_FEE : 0
 
   return {

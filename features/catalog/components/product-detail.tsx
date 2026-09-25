@@ -3,24 +3,17 @@
 import * as React from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import {
-  Check,
-  CreditCard,
-  Minus,
-  Package,
-  Plus,
-  ShieldCheck,
-  Truck,
-} from "lucide-react"
+import { Check, CreditCard, Minus, Package, Plus, ShieldCheck, Truck } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { shippingConfig } from "@/config/shipping"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
-import { discountPercent } from "@/lib/money"
+import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TRUST = [
@@ -84,7 +77,10 @@ export function ProductDetail({
   const lineTotal = Number(colourway.price) * qty
 
   return (
-    <div id="buy" className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14">
+    <div
+      id="buy"
+      className="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,calc(100dvh-19rem))_minmax(0,1fr)] lg:gap-14 lg:py-10 xl:px-14"
+    >
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
         {/* Fills its column. It used to be capped to a square the height of
@@ -160,7 +156,8 @@ export function ProductDetail({
             </Badge>
           </div>
           <p className="text-dim mt-1.5 text-[12.5px]">
-            Inclusive of all taxes · Free shipping pan-India
+            Inclusive of all taxes · Shipping by pincode, up to{" "}
+            {formatMoney(shippingConfig.fee.feeRupees)}
           </p>
         </div>
 
@@ -201,7 +198,7 @@ export function ProductDetail({
         </div>
 
         {/* qty + add + buy. One row from xl, stacked below it. */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:flex-nowrap xl:max-w-[720px]">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:max-w-[720px] xl:flex-nowrap">
           <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
             <button
               type="button"

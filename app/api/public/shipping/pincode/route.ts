@@ -6,10 +6,17 @@ import { withErrorHandler } from "@/server/api-handler"
 export const dynamic = "force-dynamic"
 
 /**
- * The product page's delivery check. Public, so rate-limited: each miss in the
+ * The product page's and checkout's delivery check, and checkout's shipping
+ * fee: `?pincode=110044&units=2`. Public, so rate-limited: each miss in the
  * cache is a call to Shiprocket on the shop's account.
  */
 export const GET = withErrorHandler(async (req) => {
   rateLimit(`pincode:${clientIp(req.headers)}`, 30, 10 * 60_000)
-  return respond(await checkPincode({ pincode: req.nextUrl.searchParams.get("pincode") ?? "" }))
+  const params = req.nextUrl.searchParams
+  return respond(
+    await checkPincode({
+      pincode: params.get("pincode") ?? "",
+      units: params.get("units") ?? undefined,
+    }),
+  )
 })

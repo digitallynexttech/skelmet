@@ -82,19 +82,28 @@ type PincodeAnswer = {
   found: boolean
   city: string | null
   state: string | null
+  shippingFee: number
 }
 
-/** Whether the pincode typed can be delivered to. */
+/** Whether the pincode typed can be delivered to, and what shipping there costs the buyer. */
 type Reach =
   | { status: "idle" }
   | { status: "checking"; pin: string }
-  | { status: "ok"; pin: string }
+  | { status: "ok"; pin: string; fee: number }
   | { status: "blocked"; pin: string; message: string }
   /**
-   * Shiprocket did not answer. Shown like "ok", as the product page does: the
-   * server checks again at payment, and an outage must not read as a refusal.
+   * Shiprocket did not answer. Shown like "ok" with free shipping, as the
+   * product page does and as the server will charge: it checks again at
+   * payment, and an outage must neither refuse nor charge anyone.
    */
   | { status: "unknown"; pin: string }
+
+/** Mounts in the cart: the parcel the pincode check prices. */
+const unitsIn = (lines: CartLine[]) =>
+  Math.max(
+    1,
+    lines.reduce((n, l) => n + l.qty, 0),
+  )
 
 function Lines({ items }: { items: CartLine[] }) {
   return (
@@ -146,11 +155,23 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
     return <span className="text-dim text-[12.5px] leading-[1.45]">Checking delivery…</span>
   }
   if ((reach.status === "ok" || reach.status === "unknown") && reach.pin === pin) {
+    const fee = reach.status === "ok" ? reach.fee : 0
     return (
-      <span className="text-acid flex items-start gap-1.5 text-[12.5px] leading-[1.45]">
-        <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
-        We deliver here - dispatched within {siteConfig.promise.dispatchHours} hours, delivered
-        within {siteConfig.promise.deliveryDays}.
+      <span className="flex flex-col gap-1 text-[12.5px] leading-[1.45]">
+        <span className="text-acid flex items-start gap-1.5">
+          <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
+          We deliver here - dispatched within {siteConfig.promise.dispatchHours} hours, delivered
+          within {siteConfig.promise.deliveryDays}.
+        </span>
+        <span className="text-ash pl-5">
+          {fee > 0 ? (
+            <>
+              Shipping to this pincode: <Money value={fee} className="text-bone font-mono" />
+            </>
+          ) : (
+            "Free shipping to this pincode."
+          )}
+        </span>
       </span>
     )
   }
@@ -202,12 +223,12 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
    * what is empty, so it never overwrites an address someone saved.
    */
   const lookUp = React.useCallback(
-    async (pin: string, fill: "replace" | "blanks") => {
+    async (pin: string, fill: "replace" | "blanks", units: number) => {
       const ticket = ++lookupTicket.current
       setReach({ status: "checking", pin })
       try {
         const answer = await apiFetch<PincodeAnswer>(
-          `/api/public/shipping/pincode?pincode=${encodeURIComponent(pin)}`,
+          `/api/public/shipping/pincode?pincode=${encodeURIComponent(pin)}&units=${units}`,
         )
         if (ticket !== lookupTicket.current) return
 
@@ -233,7 +254,11 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             message: `Couriers don't reach ${pin} yet, so we can't deliver there. Message us and we'll try to arrange it.`,
           })
         } else {
-          setReach(answer.live ? { status: "ok", pin } : { status: "unknown", pin })
+          setReach(
+            answer.live
+              ? { status: "ok", pin, fee: answer.shippingFee }
+              : { status: "unknown", pin },
+          )
         }
       } catch {
         // Rate-limited or offline. The city and state can still be typed, and
@@ -251,7 +276,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     pincodeTyped.current = pin
     setError("pincode", pin.length === 6 ? problem("pincode", pin) : null)
     if (PINCODE.test(pin)) {
-      void lookUp(pin, "replace")
+      void lookUp(pin, "replace", unitsIn(items))
     } else {
       lookupTicket.current++
       setReach({ status: "idle" })
@@ -293,7 +318,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         if (!pincodeTyped.current && PINCODE.test(savedPin)) {
           pincodeTyped.current = savedPin
           setPincode(savedPin)
-          void lookUp(savedPin, "blanks")
+          // Read from the store, not a render: this effect runs once, and must
+          // not run again each time the cart changes.
+          void lookUp(savedPin, "blanks", unitsIn(useCart.getState().items))
         }
         setPrefilled(true)
       } catch {
@@ -305,7 +332,13 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       cancelled = true
     }
   }, [lookUp])
-  const totals = calculateTotals(items, false, coupon?.discount ?? 0)
+
+  // Shipping is only known once this pincode has been checked; until then the
+  // summary says it comes from the pincode, and the total leaves it out.
+  const pincodeChecked =
+    (reach.status === "ok" || reach.status === "unknown") && reach.pin === pincode
+  const shippingFee = reach.status === "ok" && reach.pin === pincode ? reach.fee : 0
+  const totals = calculateTotals(items, false, coupon?.discount ?? 0, shippingFee)
 
   /** Focuses the first control inside a field, which also scrolls it into view. */
   function reveal(name: FieldName) {
@@ -682,7 +715,15 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               ) : null}
               <div className="flex justify-between text-sm">
                 <dt className="text-ash">Shipping</dt>
-                <dd className="text-acid font-mono">FREE</dd>
+                {!pincodeChecked ? (
+                  <dd className="text-dim text-[13px]">By pincode</dd>
+                ) : shippingFee > 0 ? (
+                  <dd className="text-bone font-mono">
+                    <Money value={shippingFee} />
+                  </dd>
+                ) : (
+                  <dd className="text-acid font-mono">FREE</dd>
+                )}
               </div>
             </dl>
 

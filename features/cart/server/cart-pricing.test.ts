@@ -50,6 +50,17 @@ describe("priceCart", () => {
     expect(p.total).toBe(0)
   })
 
+  it("adds the shipping fee after the coupon, which never reduces it", () => {
+    const p = priceCart([line("3499", 1)], { couponOff: 500, shippingFee: 350 })
+    expect(p.shipping).toBe(350)
+    expect(p.total).toBe(3499 - 500 + 350)
+  })
+
+  it("charges no shipping unless told to, and never a negative amount", () => {
+    expect(priceCart([line("3499", 1)]).shipping).toBe(0)
+    expect(priceCart([line("3499", 1)], { shippingFee: -350 }).total).toBe(3499)
+  })
+
   it("is empty-cart safe", () => {
     const p = priceCart([])
     expect(p).toMatchObject({ itemCount: 0, subtotal: 0, discount: 0, total: 0 })

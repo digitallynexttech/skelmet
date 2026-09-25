@@ -156,7 +156,6 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
             </article>
           ))}
 
-
           <Link
             href="/product/flame-skull-mount"
             className="text-dim hover:text-bone mt-2 inline-flex items-center gap-2.5 text-sm transition-colors"
@@ -173,11 +172,7 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
               Order summary
             </h2>
 
-            <CouponBox
-              subtotal={totals.subtotal}
-              applied={coupon}
-              onApplied={setCouponApplied}
-            />
+            <CouponBox subtotal={totals.subtotal} applied={coupon} onApplied={setCouponApplied} />
 
             <dl className="flex flex-col gap-3.5 border-b border-white/10 pb-5">
               <div className="flex justify-between text-[14.5px]">
@@ -194,21 +189,30 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
                   </dd>
                 </div>
               ) : null}
+              {/* Shipping depends on the delivery pincode (free, or a flat fee
+                  where couriers cost more), which the cart does not have yet.
+                  Checkout shows it as soon as the pincode is typed. */}
               <div className="flex justify-between text-[14.5px]">
                 <dt className="text-ash">Shipping</dt>
-                <dd className="text-acid font-mono">FREE</dd>
+                <dd className="text-dim text-[13.5px]">By pincode, at checkout</dd>
               </div>
             </dl>
 
             <div className="flex items-baseline justify-between py-5">
-              <span className="text-bone text-[15px] font-semibold">Total</span>
+              <span className="text-bone text-[15px] font-semibold">Total before shipping</span>
               <Money
                 value={totals.total}
                 className="font-display text-bone text-[36px] leading-[1.04] sm:text-[40px]"
               />
             </div>
 
-            <ButtonLink href="/checkout" variant="primary" size="lg" full className="bg-blaze bg-none shadow-none hover:shadow-none">
+            <ButtonLink
+              href="/checkout"
+              variant="primary"
+              size="lg"
+              full
+              className="bg-blaze bg-none shadow-none hover:shadow-none"
+            >
               Checkout
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </ButtonLink>

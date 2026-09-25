@@ -5,6 +5,7 @@ import { Check, MapPin, X } from "lucide-react"
 
 import { siteConfig } from "@/config/site"
 import { apiFetch } from "@/lib/api-fetch"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
@@ -29,9 +30,10 @@ import { cn } from "@/lib/utils"
  */
 const PINCODE = /^[1-9][0-9]{5}$/
 
-type Answer = { live: boolean; serviceable: boolean; found: boolean }
+type Answer = { live: boolean; serviceable: boolean; found: boolean; shippingFee: number }
 
-type Result = { ok: true; pin: string } | { ok: false; message: string }
+/** `fee` is for one mount, the parcel this page asks about; checkout prices the real cart. */
+type Result = { ok: true; pin: string; fee: number } | { ok: false; message: string }
 
 export function PincodeCheck({ className }: { className?: string }) {
   const [pin, setPin] = React.useState("")
@@ -69,11 +71,12 @@ export function PincodeCheck({ className }: { className?: string }) {
                 ok: false,
                 message: `Couriers don't reach ${asked} yet. Message us and we'll try to arrange it.`,
               }
-            : { ok: true, pin: asked },
+            : { ok: true, pin: asked, fee: answer.live ? answer.shippingFee : 0 },
       )
     } catch {
-      // Rate-limited, offline, Shiprocket down: the static promise still holds.
-      setResult({ ok: true, pin: asked })
+      // Rate-limited, offline, Shiprocket down: the static promise still holds,
+      // and so does free shipping - the server charges none without an answer.
+      setResult({ ok: true, pin: asked, fee: 0 })
     } finally {
       setChecking(false)
     }
@@ -123,7 +126,8 @@ export function PincodeCheck({ className }: { className?: string }) {
             <>
               <Check className="mt-[3px] size-3.5 shrink-0" strokeWidth={2.6} />
               <span>
-                <span className="font-mono tracking-[0.06em]">{result.pin}</span> - free delivery,
+                <span className="font-mono tracking-[0.06em]">{result.pin}</span> -{" "}
+                {result.fee > 0 ? `${formatMoney(result.fee)} shipping` : "free delivery"},
                 dispatched in {siteConfig.promise.dispatchHours} hrs, arrives within{" "}
                 {siteConfig.promise.deliveryDays}.
               </span>

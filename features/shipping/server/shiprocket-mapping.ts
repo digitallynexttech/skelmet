@@ -1,4 +1,4 @@
-import { shippingConfig } from "@/config/shipping"
+import { shippingConfig, type FeeBasis } from "@/config/shipping"
 
 /**
  * Translation between our orders and Shiprocket's API, as pure functions.
@@ -374,4 +374,28 @@ export function deliveryEstimate(options: CourierOption[]): CourierOption | null
     [...options].sort((x, y) => (x.days ?? Infinity) - (y.days ?? Infinity))[0] ??
     null
   )
+}
+
+/**
+ * What a shipment costs the shop, read by `basis` (see shippingConfig.fee).
+ * Null when no courier quoted a price, which is also when none delivers. A
+ * courier without a usable price is left out, not counted as free.
+ */
+export function shipmentCost(options: CourierOption[], basis: FeeBasis): number | null {
+  const priced = options.filter((o) => o.rate > 0)
+  if (priced.length === 0) return null
+  if (basis === "cheapest") return Math.min(...priced.map((o) => o.rate))
+  if (basis === "recommended") {
+    return (priced.find((o) => o.recommended) ?? priced.reduce((a, b) => (b.rate < a.rate ? b : a)))
+      .rate
+  }
+  return round(priced.reduce((sum, o) => sum + o.rate, 0) / priced.length, 2)
+}
+
+/** The buyer's shipping charge for a shipment that costs the shop `cost`. */
+export function shippingFeeFor(
+  cost: number | null,
+  rule: { aboveRupees: number; feeRupees: number } = shippingConfig.fee,
+): number {
+  return cost !== null && cost > rule.aboveRupees ? rule.feeRupees : 0
 }

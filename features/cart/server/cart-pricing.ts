@@ -20,17 +20,19 @@ export type Priced = {
 
 export function priceCart(
   lines: PriceableLine[],
-  opts: { cod?: boolean; couponOff?: number } = {},
+  opts: { cod?: boolean; couponOff?: number; shippingFee?: number } = {},
 ): Priced {
   const itemCount = lines.reduce((n, l) => n + l.qty, 0)
   const subtotal = lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0)
 
   const coupon = Math.max(0, Math.round(opts.couponOff ?? 0))
   // A coupon is the only discount now; never take it past the subtotal,
-  // which would make an order negative.
+  // which would make an order negative. It never touches shipping.
   const discount = Math.min(subtotal, coupon)
 
-  const shipping = 0
+  // Set by the delivery pincode (shippingConfig.fee). placeOrder passes the fee
+  // it worked out itself; nothing the browser sends reaches this.
+  const shipping = Math.max(0, Math.round(opts.shippingFee ?? 0))
   const codFee = opts.cod ? COD_FEE : 0
 
   return {

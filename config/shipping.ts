@@ -20,6 +20,9 @@ import { siteConfig } from "@/config/site"
  * A variant's own `weightGrams` (editable in the console) wins over
  * `defaultPackedWeightGrams` when it is set.
  */
+/** Which courier price stands for what a shipment costs - see `fee` below. */
+export type FeeBasis = "average" | "cheapest" | "recommended"
+
 export const shippingConfig = {
   /** Outer carton for one mount, cm. Measured. More than one unit stacks on the 13 cm side. */
   box: { lengthCm: 42.5, breadthCm: 34, heightCm: 13 },
@@ -31,4 +34,25 @@ export const shippingConfig = {
    * pincode is read from Shiprocket, since that is where the courier collects.
    */
   pickupPincode: siteConfig.address.pin,
+  /**
+   * What the buyer pays for shipping: nothing, unless reaching their pincode
+   * costs the shop more than `aboveRupees`, in which case a flat `feeRupees`
+   * per order. Worked out for the order's own parcel, from the couriers
+   * Shiprocket offers, and shown at checkout before payment.
+   *
+   * `basis` is which courier price stands for "what it costs":
+   *
+   *   "average"     - the mean of every courier offered. What the shop asked
+   *                   for. The premium air couriers Shiprocket always lists
+   *                   pull it up: every pincode measured, the shop's own Delhi
+   *                   included, averaged over Rs 300, so every order pays.
+   *   "cheapest"    - the lowest offer, which is what the shop books when it
+   *                   picks the courier itself. Nearby pincodes come out free
+   *                   and distant ones pay.
+   *   "recommended" - Shiprocket's pick, often an air courier even locally.
+   *
+   * When Shiprocket cannot be asked, shipping is free: an outage must not
+   * charge anyone, as it must not refuse anyone.
+   */
+  fee: { aboveRupees: 300, feeRupees: 350, basis: "average" as FeeBasis },
 } as const

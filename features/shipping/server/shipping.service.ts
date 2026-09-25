@@ -14,6 +14,8 @@ import {
   courierOptions,
   deliveryEstimate,
   parcelFor,
+  shipmentCost,
+  shippingFeeFor,
   trackingSnapshot,
   trackingStage,
   trackingUrl,
@@ -696,36 +698,45 @@ export type PincodeAnswer = {
   /** Where the pincode is, for filling in the checkout address. Null when not known. */
   city: string | null
   state: string | null
+  /**
+   * What the buyer pays for shipping, rupees: 0, or shippingConfig.fee's flat
+   * fee when reaching this pincode costs the shop more than its threshold.
+   * Always 0 when Shiprocket could not be asked.
+   */
+  shippingFee: number
 }
 
 const PINCODE_TTL_MS = 6 * 60 * 60_000
 const pincodeCache = new Map<string, { answer: PincodeAnswer; expiresAt: number }>()
 
-function remember(pincode: string, answer: PincodeAnswer, now: number): PincodeAnswer {
+function remember(key: string, answer: PincodeAnswer, now: number): PincodeAnswer {
   if (pincodeCache.size > 5_000) {
-    for (const [key, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(key)
+    for (const [k, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(k)
   }
-  pincodeCache.set(pincode, { answer, expiresAt: now + PINCODE_TTL_MS })
+  pincodeCache.set(key, { answer, expiresAt: now + PINCODE_TTL_MS })
   return answer
 }
 
 /**
- * Can we deliver here, how long does the courier take, and where is it.
+ * Can we deliver here, how long does the courier take, where is it, and what
+ * does the buyer pay for shipping.
  *
- * The product page asks the first two; checkout asks all three, filling the
- * city and state in from the pincode and refusing one no courier reaches.
- * The two Shiprocket calls go out together and fail independently, so a
- * pincode with no courier still fills the address, and one Shiprocket cannot
- * place still gets its couriers.
+ * The product page asks for one mount; checkout asks for the order's own
+ * parcel, since couriers price by the box and more mounts stack into a bigger
+ * one. placeOrder asks again with the same count, so the fee checkout showed
+ * is the fee charged - both from this one function, and usually from its
+ * cache. The two Shiprocket calls go out together and fail independently, so
+ * a pincode with no courier still fills the address, and one Shiprocket
+ * cannot place still gets its couriers.
  *
- * Cached per pincode for six hours: serviceability changes slowly, and the
- * product page should not spend a Shiprocket call on every CHECK. When
- * Shiprocket is unavailable the answer is `live: false`, and the page falls
- * back to the promise it made before this existed.
+ * Cached per pincode and parcel for six hours: serviceability and rates change
+ * slowly, and the product page should not spend a Shiprocket call on every
+ * CHECK. When Shiprocket is unavailable the answer is `live: false`, shipping
+ * is free, and the page falls back to the promise it made before this existed.
  */
 export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAnswer>> {
   return runAction(async () => {
-    const { pincode } = pincodeSchema.parse(raw)
+    const { pincode, units } = pincodeSchema.parse(raw)
     const offline: PincodeAnswer = {
       live: false,
       serviceable: true,
@@ -733,14 +744,16 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
       found: true,
       city: null,
       state: null,
+      shippingFee: 0,
     }
     if (!shiprocket.isShiprocketConfigured()) return ok(offline)
 
+    const key = `${pincode}:${units}`
     const now = Date.now()
-    const hit = pincodeCache.get(pincode)
+    const hit = pincodeCache.get(key)
     if (hit && hit.expiresAt > now) return ok(hit.answer)
 
-    const parcel = parcelFor([{ name: "", sku: "", qty: 1, unitPrice: 0, weightGrams: null }])
+    const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
     const [reach, place] = await Promise.allSettled([
       pickupPincode().then((pickup) =>
         shiprocket.serviceability({
@@ -766,8 +779,16 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
     if (where === null) {
       return ok(
         remember(
-          pincode,
-          { live: true, serviceable: false, days: null, found: false, city: null, state: null },
+          key,
+          {
+            live: true,
+            serviceable: false,
+            days: null,
+            found: false,
+            city: null,
+            state: null,
+            shippingFee: 0,
+          },
           now,
         ),
       )
@@ -790,8 +811,9 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
       found: true,
       city: where?.city ?? null,
       state: where?.state ?? null,
+      shippingFee: shippingFeeFor(shipmentCost(options, shippingConfig.fee.basis)),
     }
     // Without the place, not remembered: the next check can still fill it in.
-    return ok(where ? remember(pincode, answer, now) : answer)
+    return ok(where ? remember(key, answer, now) : answer)
   })
 }
