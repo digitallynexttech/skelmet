@@ -38,7 +38,7 @@ export async function ColourwayGrid() {
           <SectionHeading>Pick your poison</SectionHeading>
         </div>
         <p className="text-ash max-w-[340px] text-[15px] leading-[1.6] lg:pb-2 lg:text-right">
-          Same skull, same arm. Three finishes that read completely differently on a wall.
+          One Face, Three Moods. Pick the colour that speaks to you.
         </p>
       </div>
 
