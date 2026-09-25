@@ -266,6 +266,10 @@ model Order {
   tax             Decimal     @default(0) @db.Decimal(12, 2)
   total           Decimal     @db.Decimal(12, 2)
   couponId        String?     @map("coupon_id") @db.Uuid
+  /// Shiprocket's ids for this order, once it has been sent there. Text, not
+  /// int: they are Shiprocket's numbers and we only ever hand them back.
+  shiprocketOrderId    String? @unique @map("shiprocket_order_id")
+  shiprocketShipmentId String? @map("shiprocket_shipment_id")
   placedAt        DateTime?   @map("placed_at")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
@@ -325,7 +329,18 @@ model Shipment {
   orderId     String    @unique @map("order_id") @db.Uuid
   courier     String
   awb         String?
+  /// The courier's own words for where it is - "IN TRANSIT", "OUT FOR DELIVERY".
   status      String
+  /// "shiprocket" when booked through the API, "manual" when typed in.
+  provider    String    @default("manual")
+  labelUrl    String?   @map("label_url")
+  manifestUrl String?   @map("manifest_url")
+  pickupScheduledAt DateTime? @map("pickup_scheduled_at")
+  /// The courier's estimated delivery, when it has given one.
+  etd         DateTime?
+  /// When `status` was true. Tracking updates arrive out of order; an older
+  /// one never overwrites a newer one.
+  statusAt    DateTime? @map("status_at")
   shippedAt   DateTime? @map("shipped_at")
   deliveredAt DateTime? @map("delivered_at")
   createdAt   DateTime  @default(now()) @map("created_at")

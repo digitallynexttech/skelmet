@@ -1,6 +1,7 @@
 import "server-only"
 
 import { trackOrderSchema } from "@/features/orders/schemas/track.schema"
+import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
 import { hasDatabase } from "@/lib/env"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { db } from "@/server/db"
@@ -30,6 +31,12 @@ export type TrackedOrder = {
   items: { name: string; qty: number }[]
   courier: string | null
   awb: string | null
+  /** The courier's latest word - "IN TRANSIT", "OUT FOR DELIVERY". */
+  courierStatus: string | null
+  /** The courier's own delivery estimate, once it has given one. */
+  etd: string | null
+  /** The courier's live tracking page, for shipments booked through Shiprocket. */
+  trackingUrl: string | null
   shippedAt: string | null
   deliveredAt: string | null
 }
@@ -50,7 +57,15 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
         createdAt: true,
         items: { select: { nameSnapshot: true, qty: true } },
         shipment: {
-          select: { courier: true, awb: true, shippedAt: true, deliveredAt: true },
+          select: {
+            courier: true,
+            awb: true,
+            status: true,
+            provider: true,
+            etd: true,
+            shippedAt: true,
+            deliveredAt: true,
+          },
         },
       },
     })
@@ -70,6 +85,12 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
       items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
       courier: order.shipment?.courier ?? null,
       awb: order.shipment?.awb ?? null,
+      courierStatus: order.shipment?.status ?? null,
+      etd: order.shipment?.etd?.toISOString() ?? null,
+      trackingUrl:
+        order.shipment?.provider === "shiprocket" && order.shipment.awb
+          ? trackingUrl(order.shipment.awb)
+          : null,
       shippedAt: order.shipment?.shippedAt?.toISOString() ?? null,
       deliveredAt: order.shipment?.deliveredAt?.toISOString() ?? null,
     })

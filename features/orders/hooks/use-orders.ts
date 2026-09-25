@@ -57,11 +57,32 @@ export type OrderDetail = {
     courier: string
     awb: string | null
     status: string
+    provider: "shiprocket" | "manual" | string
+    labelUrl: string | null
+    manifestUrl: string | null
+    pickupScheduledAt: string | null
+    etd: string | null
+    statusAt: string | null
     shippedAt: string | null
     deliveredAt: string | null
+    trackingUrl: string | null
   } | null
   user: { id: string; name: string | null; email: string } | null
+  shiprocket: { configured: boolean; orderId: string | null }
 }
+
+/** A courier Shiprocket offers for an order. */
+export type CourierOption = {
+  id: number
+  name: string
+  rate: number
+  etd: string | null
+  days: number | null
+  rating: number | null
+  recommended: boolean
+}
+
+export type CourierOptions = { options: CourierOption[]; recommendedId: number | null }
 
 export type Dashboard = {
   todayCount: number
@@ -127,6 +148,20 @@ export function useOrder(id: string) {
   })
 }
 
+/**
+ * Shiprocket's couriers for an order. Only fetched when asked for: every call
+ * is a rate lookup on the shop's Shiprocket account.
+ */
+export function useCourierOptions(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["orders", id, "couriers"],
+    queryFn: () => apiFetch<CourierOptions>(`/api/admin/orders/${id}/couriers`),
+    enabled,
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+}
+
 // ── mutations ─────────────────────────────────────────────
 /** Invalidates: ["orders"], ["dashboard"] */
 export function useOrderAction(id: string) {
@@ -177,5 +212,23 @@ export function useOrderAction(id: string) {
     onSuccess: invalidate,
   })
 
-  return { pack, ship, deliver, cancel, refund }
+  // Invalidated on failure too: a booking that got its AWB but not its pickup
+  // has still changed the order, and the page has to show that AWB.
+  const book = useMutation({
+    mutationFn: mutationWithToast((input: { courierId?: number }) => postVerb(id, "book", input), {
+      loading: "Booking the courier…",
+      success: "Courier booked, pickup scheduled",
+    }),
+    onSettled: invalidate,
+  })
+
+  const refreshTracking = useMutation({
+    mutationFn: mutationWithToast(() => postVerb(id, "tracking"), {
+      loading: "Asking Shiprocket…",
+      success: "Tracking updated",
+    }),
+    onSuccess: invalidate,
+  })
+
+  return { pack, ship, deliver, cancel, refund, book, refreshTracking }
 }

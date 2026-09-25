@@ -89,6 +89,48 @@ delivery, which is when they start counting as revenue.
 The webhook fails closed: with no `PAYMENT_WEBHOOK_SECRET` it rejects
 everything rather than trusting an unsigned call.
 
+### Shipping (Shiprocket)
+
+`features/shipping/`, over Shiprocket's REST API directly (no SDK).
+
+1. **Payment captured**: the order is sent to Shiprocket in the background
+   (`queueShiprocketOrder`). Best effort; if it fails, step 2 sends it.
+2. **Staff pack, then book** on `/admin/orders/[id]`: pick a courier from
+   Shiprocket's rates, or take Shiprocket's pick. Booking assigns the AWB,
+   requests the pickup, generates the manifest and the label, and the order
+   becomes `SHIPPED` once the pickup is scheduled. It is resumable: an AWB is
+   saved the moment it arrives, so a failed pickup is retried without asking
+   for a second courier.
+3. **The courier moves it**: Shiprocket's webhook (or "Refresh tracking")
+   updates the shipment and moves the order to `DELIVERED`, or `RETURNED` for
+   an RTO. A courier booked in the Shiprocket panel is adopted from its first
+   tracking update.
+
+Refunding an order that has not left cancels its AWB and its Shiprocket
+order. The product page's pincode check asks Shiprocket which couriers reach
+the pincode, and falls back to the static promise when Shiprocket is not set
+up or not answering. "It has shipped" emails go out on every path.
+
+Setup, in Shiprocket:
+
+- **Settings > API > API Users**: create an API user. Its email must differ from
+  the main login. That email and password are `SHIPROCKET_EMAIL` and
+  `SHIPROCKET_PASSWORD`.
+- **Settings > Pickup Addresses**: add the workshop. Its name, exactly as
+  written, is `SHIPROCKET_PICKUP_LOCATION`. Orders cannot be created without it.
+- **Settings > API > Webhooks**: URL `https://<host>/api/public/webhooks/shipping`,
+  security token = `SHIPROCKET_WEBHOOK_TOKEN`. Shiprocket refuses URLs containing
+  "shiprocket", "kartrocket", "sr" or "kr", hence the name.
+- **Wallet**: booking a courier charges it, and fails while it is empty.
+
+Box size and packed weight live in `config/shipping.ts`; couriers bill on the
+larger of actual and volumetric weight, so they set the price of every
+shipment. The sandbox (Settings > Sandbox) is `SHIPROCKET_API_URL=https://api-sandbox.shiprocket.in`
+with the sandbox's own login.
+
+Without the `SHIPROCKET_*` settings the console falls back to typing the
+courier and AWB by hand.
+
 ---
 
 ## Database setup
@@ -140,6 +182,9 @@ Set these on the host, not just in `.env`:
 | `AUTH_URL` `NEXT_PUBLIC_SITE_URL`     | the real domain, never localhost                        |
 | `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET` | live keys, not test, when you go live                   |
 | `PAYMENT_WEBHOOK_SECRET`              | the webhook 401s everything until this is set           |
+| `SHIPROCKET_EMAIL` `SHIPROCKET_PASSWORD` | the API user, not the main Shiprocket login          |
+| `SHIPROCKET_PICKUP_LOCATION`          | the pickup address's name in Shiprocket                 |
+| `SHIPROCKET_WEBHOOK_TOKEN`            | tracking updates are ignored until this is set          |
 | `REQUIRE_BACKEND=1`                   | boot fails fast on a missing secret                     |
 
 Point the Razorpay dashboard webhook at

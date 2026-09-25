@@ -4,26 +4,36 @@ import * as React from "react"
 import { Check, MapPin, X } from "lucide-react"
 
 import { siteConfig } from "@/config/site"
+import { apiFetch } from "@/lib/api-fetch"
 import { cn } from "@/lib/utils"
 
 /**
- * Delivery check. Previously an input with no state and a CHECK button that
- * did nothing - it accepted "dsvf" and answered nothing at all.
+ * Delivery check.
  *
- * We ship anywhere in India, so there is no serviceability list to consult:
- * the only question is whether what was typed is a real pincode. Six digits,
- * never starting with zero - 0 is not an allocated postal circle.
+ * Two questions, in order. Is it a pincode at all - six digits, never starting
+ * with zero, since 0 is not an allocated postal circle - which is answered
+ * here without a request. Then, can a courier reach it, and roughly how long
+ * does the courier take: that one is Shiprocket's (via
+ * /api/public/shipping/pincode), and costs a request.
+ *
+ * Shiprocket is an improvement, never a dependency. When it is not set up,
+ * rate-limits us, or simply does not answer, the check falls back to the
+ * promise it made before Shiprocket existed rather than showing an error for a
+ * pincode that is almost certainly fine.
  *
  * The field is digits-only at the source rather than validated after the
  * fact, so letters simply cannot be typed into it.
  */
 const PINCODE = /^[1-9][0-9]{5}$/
 
-type Result = { ok: true; pin: string } | { ok: false; message: string }
+type Answer = { live: boolean; serviceable: boolean; days: number | null }
+
+type Result = { ok: true; pin: string; days: number | null } | { ok: false; message: string }
 
 export function PincodeCheck({ className }: { className?: string }) {
   const [pin, setPin] = React.useState("")
   const [result, setResult] = React.useState<Result | null>(null)
+  const [checking, setChecking] = React.useState(false)
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     // Strip on the way in: paste, autofill and keypress all land here.
@@ -33,15 +43,35 @@ export function PincodeCheck({ className }: { className?: string }) {
     setResult(null)
   }
 
-  function check() {
-    setResult(
-      PINCODE.test(pin)
-        ? { ok: true, pin }
-        : {
-            ok: false,
-            message: pin.length === 0 ? "Enter your pincode." : "That is not a valid pincode.",
-          },
-    )
+  async function check() {
+    if (!PINCODE.test(pin)) {
+      setResult({
+        ok: false,
+        message: pin.length === 0 ? "Enter your pincode." : "That is not a valid pincode.",
+      })
+      return
+    }
+
+    const asked = pin
+    setChecking(true)
+    try {
+      const answer = await apiFetch<Answer>(
+        `/api/public/shipping/pincode?pincode=${encodeURIComponent(asked)}`,
+      )
+      setResult(
+        answer.live && !answer.serviceable
+          ? {
+              ok: false,
+              message: `Couriers don't reach ${asked} yet. Message us and we'll try to arrange it.`,
+            }
+          : { ok: true, pin: asked, days: answer.live ? answer.days : null },
+      )
+    } catch {
+      // Rate-limited, offline, Shiprocket down: the static promise still holds.
+      setResult({ ok: true, pin: asked, days: null })
+    } finally {
+      setChecking(false)
+    }
   }
 
   return (
@@ -54,7 +84,7 @@ export function PincodeCheck({ className }: { className?: string }) {
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault()
-              check()
+              void check()
             }
           }}
           placeholder="Enter pincode"
@@ -68,10 +98,11 @@ export function PincodeCheck({ className }: { className?: string }) {
         />
         <button
           type="button"
-          onClick={check}
-          className="text-acid hover:text-bone shrink-0 font-mono text-[11px] font-bold tracking-[0.1em] transition-colors"
+          onClick={() => void check()}
+          disabled={checking}
+          className="text-acid hover:text-bone shrink-0 font-mono text-[11px] font-bold tracking-[0.1em] transition-colors disabled:opacity-60"
         >
-          CHECK
+          {checking ? "CHECKING" : "CHECK"}
         </button>
       </div>
 
@@ -88,8 +119,10 @@ export function PincodeCheck({ className }: { className?: string }) {
               <Check className="mt-[3px] size-3.5 shrink-0" strokeWidth={2.6} />
               <span>
                 <span className="font-mono tracking-[0.06em]">{result.pin}</span> - free delivery,
-                dispatched in {siteConfig.promise.dispatchHours} hrs, arrives within{" "}
-                {siteConfig.promise.deliveryDays}.
+                dispatched in {siteConfig.promise.dispatchHours} hrs,{" "}
+                {result.days
+                  ? `then about ${result.days} ${result.days === 1 ? "day" : "days"} with the courier.`
+                  : `arrives within ${siteConfig.promise.deliveryDays}.`}
               </span>
             </>
           ) : (

@@ -1,7 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowRight, Check, Copy, PackageSearch, Truck } from "lucide-react"
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Copy,
+  ExternalLink,
+  PackageSearch,
+  Truck,
+} from "lucide-react"
 
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
@@ -130,13 +138,28 @@ function OrderResult({ order }: { order: TrackedOrder }) {
   const status = order.status as OrderStatus
   const placed = formatDay(order.placedAt)
 
+  // The courier's own estimate wins once it has given one: it knows where the
+  // parcel is. Until then, the far end of the published window.
   const arrival = OFF_PATH.has(order.status as OrderStatus)
     ? null
     : order.deliveredAt
       ? { label: "Delivered on", value: formatDay(order.deliveredAt) ?? "-", done: true }
-      : order.placedAt
-        ? { label: "Arriving by", value: formatEta(order.placedAt), done: false }
-        : null
+      : order.etd
+        ? {
+            label: "Arriving by",
+            value: new Date(order.etd)
+              .toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                timeZone: "Asia/Kolkata",
+              })
+              .toUpperCase(),
+            done: false,
+          }
+        : order.placedAt
+          ? { label: "Arriving by", value: formatEta(order.placedAt), done: false }
+          : null
 
   async function copyAwb() {
     if (!order.awb) return
@@ -219,7 +242,16 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         <div className="mt-5 flex items-start gap-2.5 border-t border-white/[0.08] pt-5">
           <Truck className="text-ember mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
           <div className="min-w-0 flex-1">
-            <p className="text-bone text-[13.5px] leading-[1.5]">{order.courier}</p>
+            <p className="text-bone text-[13.5px] leading-[1.5]">
+              {order.courier}
+              {order.courierStatus && !order.deliveredAt ? (
+                <span className="text-ash">
+                  {" "}
+                  · {order.courierStatus.charAt(0)}
+                  {order.courierStatus.slice(1).toLowerCase()}
+                </span>
+              ) : null}
+            </p>
             {order.awb ? (
               <button
                 type="button"
@@ -234,6 +266,17 @@ function OrderResult({ order }: { order: TrackedOrder }) {
                   <Copy className="size-3.5 opacity-55" strokeWidth={2} />
                 )}
               </button>
+            ) : null}
+            {order.trackingUrl ? (
+              <a
+                href={order.trackingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-ember hover:text-bone mt-1.5 flex w-fit items-center gap-1.5 text-[12.5px] transition-colors"
+              >
+                Live tracking with the courier
+                <ExternalLink className="size-3.5" strokeWidth={2} />
+              </a>
             ) : null}
           </div>
         </div>

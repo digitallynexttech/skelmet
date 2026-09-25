@@ -1,6 +1,7 @@
 import "server-only"
 
 import { siteConfig } from "@/config/site"
+import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 import { formatMoney } from "@/lib/money"
 
 /**
@@ -31,25 +32,6 @@ export type OrderConfirmedData = {
   paymentMethod: "ONLINE" | "COD"
   items: { name: string; qty: number }[]
 }
-
-/* Brand palette, duplicated from globals.css on purpose: an email cannot read
-   CSS variables, and a colour that silently resolved to nothing would render
-   as black text on a black card. */
-const C = {
-  void: "#07060a",
-  carbon: "#14121b",
-  line: "#2a2733",
-  blaze: "#ff5a1f",
-  ember: "#ff8a00",
-  acid: "#d4ff3d",
-  bone: "#f7f4ed",
-  ash: "#a3a0b0",
-  dim: "#7c7989",
-} as const
-
-const FONT =
-  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-const MONO = "'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace"
 
 export function renderOrderConfirmed(data: OrderConfirmedData): {
   subject: string
@@ -215,13 +197,4 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
 </html>`
 
   return { subject, text, html }
-}
-
-/** Order numbers and product names are ours, but never interpolate unescaped. */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }

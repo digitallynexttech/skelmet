@@ -11,6 +11,7 @@ import {
 import { attachCustomer } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
+import { queueShiprocketOrder } from "@/features/shipping/server/shipping.service"
 import { sendMail } from "@/lib/mailer"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
@@ -493,6 +494,10 @@ async function capturePayment(input: {
       items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
     })
     await sendMail({ to: order.email, ...mail })
+
+    // Into Shiprocket after the response, so it is ready when staff book the
+    // courier. Best effort: booking sends it if this does not.
+    queueShiprocketOrder(payment.orderId)
   } else if (outcome === "untouched") {
     // Money captured against an order in a state nothing here should move -
     // refunded, say. Loud, so someone looks at it.

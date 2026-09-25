@@ -91,7 +91,12 @@ api/account/addresses/route.ts          GET · POST
 api/account/addresses/[id]/route.ts     PATCH · DELETE
 api/admin/orders/[id]/fulfil/route.ts   POST
 api/admin/orders/[id]/refund/route.ts   POST
+api/admin/orders/[id]/couriers/route.ts GET   Shiprocket rates for the order
+api/admin/orders/[id]/book/route.ts     POST  book courier: AWB, pickup, manifest, label
+api/admin/orders/[id]/tracking/route.ts POST  pull the latest tracking from Shiprocket
 api/public/track/route.ts               POST  order-id + email, rate-limited
+api/public/shipping/pincode/route.ts    GET   courier reach + transit days, rate-limited
+api/public/webhooks/shipping/route.ts   POST  Shiprocket tracking, x-api-key token
 api/public/contact/route.ts             POST  rate-limited + API-key free
 api/public/webhooks/razorpay/route.ts   POST  gateway callback, signature-verified
 api/cron/abandoned-cart/route.ts        assertCron - nudge email at T+4h

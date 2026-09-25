@@ -39,6 +39,14 @@ const schema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().default("SKELMET <hello@skelmet.in>"),
 
+  // Shiprocket. All optional: without them the console falls back to typing
+  // the courier and AWB by hand, and the pincode check to the static promise.
+  SHIPROCKET_API_URL: z.url().default("https://apiv2.shiprocket.in"),
+  SHIPROCKET_EMAIL: z.string().optional(),
+  SHIPROCKET_PASSWORD: z.string().optional(),
+  SHIPROCKET_PICKUP_LOCATION: z.string().optional(),
+  SHIPROCKET_WEBHOOK_TOKEN: z.string().optional(),
+
   CRON_SECRET: z.string().optional(),
   DISABLE_INLINE_SCHEDULER: z.string().optional(),
 })

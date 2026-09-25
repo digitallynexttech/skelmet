@@ -6,9 +6,12 @@ import {
   ArrowLeft,
   Ban,
   CreditCard,
+  ExternalLink,
+  FileText,
   MapPin,
   PackageCheck,
   Home,
+  RefreshCw,
   RotateCcw,
   Truck,
 } from "lucide-react"
@@ -19,8 +22,14 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
-import { useOrder, useOrderAction } from "@/features/orders/hooks/use-orders"
+import {
+  useCourierOptions,
+  useOrder,
+  useOrderAction,
+  type OrderDetail,
+} from "@/features/orders/hooks/use-orders"
 import type { OrderStatus } from "@/lib/constants"
+import { cn } from "@/lib/utils"
 
 const TIMELINE: Array<{ status: OrderStatus; label: string; Icon: typeof Truck }> = [
   { status: "PAID", label: "Paid", Icon: CreditCard },
@@ -40,12 +49,186 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
+/** "IN TRANSIT" -> "In transit". The courier's words, readable. */
+function readable(status: string): string {
+  const s = status.replace(/_/g, " ").trim().toLowerCase()
+  return s ? s[0]!.toUpperCase() + s.slice(1) : "-"
+}
+
+function when(iso: string | null, withTime = true): string {
+  if (!iso) return "-"
+  return new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    ...(withTime ? { hour: "numeric", minute: "2-digit" } : { year: "numeric" }),
+  })
+}
+
+/**
+ * Booking through Shiprocket, for a packed order.
+ *
+ * Rates are only fetched when asked for - each is a lookup on the shop's
+ * account - and Shiprocket's recommendation is preselected, which is also what
+ * "Book Shiprocket's pick" takes without looking. A booking that got its AWB
+ * but not its pickup comes back here as "Finish booking", which carries on
+ * from where it stopped rather than asking for a second courier.
+ */
+function BookCourier({
+  order,
+  actions,
+  busy,
+}: {
+  order: OrderDetail
+  actions: ReturnType<typeof useOrderAction>
+  busy: boolean
+}) {
+  const [asked, setAsked] = React.useState(false)
+  const [manual, setManual] = React.useState(false)
+  const [chosen, setChosen] = React.useState<number | null>(null)
+  const couriers = useCourierOptions(order.id, asked)
+
+  const kept =
+    order.shipment?.provider === "shiprocket" && order.shipment.awb ? order.shipment : null
+  const options = couriers.data?.options ?? []
+  const selected = chosen ?? couriers.data?.recommendedId ?? options[0]?.id ?? null
+  const pick = options.find((o) => o.id === selected)
+
+  if (manual) {
+    return (
+      <ShipDialog onShip={(v) => actions.ship.mutate(v)} pending={actions.ship.isPending}>
+        <button
+          type="button"
+          onClick={() => setManual(false)}
+          className="text-ash hover:text-bone text-[12.5px] underline-offset-4 hover:underline"
+        >
+          Book through Shiprocket instead
+        </button>
+      </ShipDialog>
+    )
+  }
+
+  return (
+    <div className="bg-void rounded-md border border-white/[0.09] p-5">
+      <div className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
+        Book courier · Shiprocket
+      </div>
+
+      {kept ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-ash text-[13.5px] leading-[1.55]">
+            <span className="text-bone">{kept.courier}</span> is booked with AWB{" "}
+            <span className="text-bone font-mono">{kept.awb}</span>, but the pickup is not scheduled
+            yet. Finishing carries on from there - it keeps this AWB.
+          </p>
+          <div>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={busy}
+              onClick={() => actions.book.mutate({})}
+            >
+              <Truck className="size-4" strokeWidth={1.9} />
+              Finish booking
+            </Button>
+          </div>
+        </div>
+      ) : !asked ? (
+        <div className="flex flex-wrap gap-2.5">
+          <Button variant="primary" size="sm" disabled={busy} onClick={() => setAsked(true)}>
+            <Truck className="size-4" strokeWidth={1.9} />
+            Show couriers &amp; rates
+          </Button>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={() => actions.book.mutate({})}>
+            Book Shiprocket&apos;s pick
+          </Button>
+        </div>
+      ) : couriers.isLoading ? (
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-12 animate-pulse rounded-md bg-white/5" />
+          ))}
+        </div>
+      ) : couriers.isError ? (
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-magenta text-[13.5px] leading-[1.5]">
+            {couriers.error instanceof Error ? couriers.error.message : "Could not load couriers."}
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => void couriers.refetch()}>
+            <RefreshCw className="size-4" strokeWidth={1.9} />
+            Try again
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <fieldset className="flex flex-col gap-2">
+            <legend className="sr-only">Courier</legend>
+            {options.map((o) => (
+              <label
+                key={o.id}
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors",
+                  o.id === selected
+                    ? "border-blaze/60 bg-blaze/[0.06]"
+                    : "border-white/[0.09] hover:border-white/20",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={`courier-${order.id}`}
+                  checked={o.id === selected}
+                  onChange={() => setChosen(o.id)}
+                  className="accent-blaze"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="text-bone flex flex-wrap items-center gap-2 text-[14px]">
+                    {o.name}
+                    {o.recommended ? <Badge variant="acid">Shiprocket&apos;s pick</Badge> : null}
+                  </span>
+                  <span className="text-dim block font-mono text-[11.5px]">
+                    {o.days ? `${o.days} day${o.days === 1 ? "" : "s"}` : "-"}
+                    {o.etd ? ` · by ${when(o.etd, false)}` : ""}
+                    {o.rating ? ` · rated ${o.rating.toFixed(1)}` : ""}
+                  </span>
+                </span>
+                <Money value={o.rate} className="text-bone font-mono text-[14px]" />
+              </label>
+            ))}
+          </fieldset>
+          <div>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={busy || !pick}
+              onClick={() => pick && actions.book.mutate({ courierId: pick.id })}
+            >
+              <Truck className="size-4" strokeWidth={1.9} />
+              {pick ? `Book ${pick.name}` : "Book"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!kept ? (
+        <button
+          type="button"
+          onClick={() => setManual(true)}
+          className="text-ash hover:text-bone mt-4 block text-[12.5px] underline-offset-4 hover:underline"
+        >
+          Enter a courier and AWB by hand instead
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 function ShipDialog({
   onShip,
   pending,
+  children,
 }: {
   onShip: (v: { courier: string; awb: string }) => void
   pending: boolean
+  children?: React.ReactNode
 }) {
   const [courier, setCourier] = React.useState("")
   const [awb, setAwb] = React.useState("")
@@ -80,10 +263,13 @@ function ShipDialog({
           />
         </Field>
       </div>
-      <Button type="submit" variant="primary" size="sm" disabled={pending}>
-        <Truck className="size-4" strokeWidth={1.9} />
-        Confirm shipped
-      </Button>
+      <div className="flex flex-wrap items-center gap-4">
+        <Button type="submit" variant="primary" size="sm" disabled={pending}>
+          <Truck className="size-4" strokeWidth={1.9} />
+          Confirm shipped
+        </Button>
+        {children}
+      </div>
     </form>
   )
 }
@@ -230,7 +416,11 @@ export function OrderDetailView({ id }: { id: string }) {
         </div>
 
         {order.status === "PACKED" ? (
-          <ShipDialog onShip={(v) => actions.ship.mutate(v)} pending={actions.ship.isPending} />
+          order.shiprocket.configured ? (
+            <BookCourier order={order} actions={actions} busy={busy} />
+          ) : (
+            <ShipDialog onShip={(v) => actions.ship.mutate(v)} pending={actions.ship.isPending} />
+          )
         ) : null}
       </div>
 
@@ -363,8 +553,89 @@ export function OrderDetailView({ id }: { id: string }) {
               <div className="flex flex-col gap-2 text-[13.5px]">
                 <Row label="Courier" value={order.shipment.courier} />
                 <Row label="AWB" value={order.shipment.awb ?? "-"} />
-                <Row label="Status" value={order.shipment.status} />
+                <Row label="Status" value={readable(order.shipment.status)} />
+                {order.shipment.statusAt ? (
+                  <Row label="As of" value={when(order.shipment.statusAt)} />
+                ) : null}
+                {order.shipment.pickupScheduledAt && !order.shipment.deliveredAt ? (
+                  <Row label="Pickup" value={when(order.shipment.pickupScheduledAt)} />
+                ) : null}
+                {order.shipment.etd && !order.shipment.deliveredAt ? (
+                  <Row label="Expected" value={when(order.shipment.etd, false)} />
+                ) : null}
+                {order.shipment.deliveredAt ? (
+                  <Row label="Delivered" value={when(order.shipment.deliveredAt)} />
+                ) : null}
+                <Row
+                  label="Booked"
+                  value={order.shipment.provider === "shiprocket" ? "Shiprocket" : "By hand"}
+                />
               </div>
+
+              {order.shipment.labelUrl ||
+              order.shipment.manifestUrl ||
+              order.shipment.trackingUrl ? (
+                <div className="mt-4 flex flex-col gap-2 border-t border-white/[0.07] pt-4 text-[13px]">
+                  {order.shipment.labelUrl ? (
+                    <a
+                      href={order.shipment.labelUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ember hover:text-bone inline-flex items-center gap-2"
+                    >
+                      <FileText className="size-4" strokeWidth={1.9} />
+                      Shipping label (PDF)
+                    </a>
+                  ) : null}
+                  {order.shipment.manifestUrl ? (
+                    <a
+                      href={order.shipment.manifestUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ember hover:text-bone inline-flex items-center gap-2"
+                    >
+                      <FileText className="size-4" strokeWidth={1.9} />
+                      Manifest (PDF)
+                    </a>
+                  ) : null}
+                  {order.shipment.trackingUrl ? (
+                    <a
+                      href={order.shipment.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ash hover:text-bone inline-flex items-center gap-2"
+                    >
+                      <ExternalLink className="size-4" strokeWidth={1.9} />
+                      Live tracking
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {order.shipment.provider === "shiprocket" && order.shipment.awb ? (
+                <div className="mt-4 flex flex-wrap gap-2.5 border-t border-white/[0.07] pt-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => actions.refreshTracking.mutate()}
+                  >
+                    <RefreshCw className="size-4" strokeWidth={1.9} />
+                    Refresh tracking
+                  </Button>
+                  {order.status === "SHIPPED" && !order.shipment.labelUrl ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => actions.book.mutate({})}
+                    >
+                      <FileText className="size-4" strokeWidth={1.9} />
+                      Get label
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
             </section>
           ) : null}
         </div>

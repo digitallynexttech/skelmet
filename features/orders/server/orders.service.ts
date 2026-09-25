@@ -2,6 +2,10 @@ import "server-only"
 
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { refundPayment } from "@/features/checkout/server/payment-gateway"
+import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
+import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
+import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
+import { cancelShiprocketOrder, notifyShipped } from "@/features/shipping/server/shipping.service"
 import { paginate } from "@/lib/api-response"
 import {
   MAX_PAGE_SIZE,
@@ -197,8 +201,21 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
           },
           orderBy: { createdAt: "desc" },
         },
+        shiprocketOrderId: true,
         shipment: {
-          select: { courier: true, awb: true, status: true, shippedAt: true, deliveredAt: true },
+          select: {
+            courier: true,
+            awb: true,
+            status: true,
+            provider: true,
+            labelUrl: true,
+            manifestUrl: true,
+            pickupScheduledAt: true,
+            etd: true,
+            statusAt: true,
+            shippedAt: true,
+            deliveredAt: true,
+          },
         },
         user: { select: { id: true, name: true, email: true } },
       },
@@ -225,10 +242,19 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
       shipment: order.shipment
         ? {
             ...order.shipment,
+            pickupScheduledAt: order.shipment.pickupScheduledAt?.toISOString() ?? null,
+            etd: order.shipment.etd?.toISOString() ?? null,
+            statusAt: order.shipment.statusAt?.toISOString() ?? null,
             shippedAt: order.shipment.shippedAt?.toISOString() ?? null,
             deliveredAt: order.shipment.deliveredAt?.toISOString() ?? null,
+            trackingUrl:
+              order.shipment.provider === "shiprocket" && order.shipment.awb
+                ? trackingUrl(order.shipment.awb)
+                : null,
           }
         : null,
+      // Whether the console can book couriers here, or only take them typed in.
+      shiprocket: { configured: isShiprocketConfigured(), orderId: order.shiprocketOrderId },
     })
   })
 }
@@ -292,28 +318,40 @@ export async function markPacked(id: string) {
   return transition(id, from, "PACKED", PERMISSIONS.ORDER_FULFIL, "order:pack")
 }
 
+/**
+ * Ships with a courier and AWB typed in by hand - for anything not booked
+ * through Shiprocket (see shipping.service for that). Validated before the
+ * claim, so a bad body can no longer leave the order SHIPPED with no shipment.
+ */
 export async function markShipped(
   id: string,
-  input: { courier: string; awb: string },
+  raw: unknown,
 ): Promise<ActionResult<{ id: string; status: OrderStatus }>> {
-  return transition(id, ["PACKED"], "SHIPPED", PERMISSIONS.ORDER_FULFIL, "order:ship", async () => {
-    await db.shipment.upsert({
-      where: { orderId: id },
-      create: {
-        orderId: id,
-        courier: input.courier,
-        awb: input.awb,
-        status: "IN_TRANSIT",
-        shippedAt: new Date(),
-      },
-      update: {
-        courier: input.courier,
-        awb: input.awb,
-        status: "IN_TRANSIT",
-        shippedAt: new Date(),
-      },
-    })
-  })
+  const input = manualShipmentSchema.parse(raw)
+  const shipment = {
+    provider: "manual",
+    courier: input.courier,
+    awb: input.awb,
+    status: "IN TRANSIT",
+    statusAt: new Date(),
+    shippedAt: new Date(),
+  }
+  const result = await transition(
+    id,
+    ["PACKED"],
+    "SHIPPED",
+    PERMISSIONS.ORDER_FULFIL,
+    "order:ship",
+    async () => {
+      await db.shipment.upsert({
+        where: { orderId: id },
+        create: { orderId: id, ...shipment },
+        update: shipment,
+      })
+    },
+  )
+  if (result.ok) notifyShipped(id)
+  return result
 }
 
 export function markDelivered(id: string) {
@@ -469,6 +507,9 @@ export async function refundOrder(
         ),
       )
     }
+
+    // Still on our shelf, so call off the courier and the Shiprocket order.
+    if (UNSHIPPED.includes(order.status)) await cancelShiprocketOrder(id, session)
 
     await createAuditLog(session, {
       action: "order:refund",
