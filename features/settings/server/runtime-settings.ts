@@ -207,10 +207,15 @@ export function savedShipping(stored: Partial<ShippingCharge> | undefined): Ship
   if (
     stored &&
     wholeRupees(stored.aboveRupees) &&
-    wholeRupees(stored.feeRupees) &&
+    wholeRupees(stored.sharePercent) &&
+    stored.sharePercent <= 100 &&
     FEE_BASES.some((b) => b === stored.basis)
   ) {
-    return { aboveRupees: stored.aboveRupees, feeRupees: stored.feeRupees, basis: stored.basis! }
+    return {
+      aboveRupees: stored.aboveRupees,
+      sharePercent: stored.sharePercent,
+      basis: stored.basis!,
+    }
   }
   return null
 }

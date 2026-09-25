@@ -37,24 +37,26 @@ const BASIS_DETAIL: Record<FeeBasis, string> = {
 
 /** The rule in one sentence, as a buyer would meet it. */
 function describe(charge: ShippingCharge): string {
-  if (charge.feeRupees === 0) return "Shipping is free to every pincode."
-  return `Free where couriers cost the shop ${formatMoney(charge.aboveRupees)} or less; ${formatMoney(charge.feeRupees)} per order where they cost more.`
+  if (charge.sharePercent === 0) return "Shipping is free to every pincode."
+  const example = charge.aboveRupees + 200
+  const fee = Math.round((200 * charge.sharePercent) / 100)
+  return `Free where couriers cost the shop ${formatMoney(charge.aboveRupees)} or less; above that the buyer pays ${charge.sharePercent}% of the difference - a ${formatMoney(example)} courier costs them ${formatMoney(fee)}.`
 }
 
 function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boolean; ask: Ask }) {
   const { saveShipping } = useRuntimeSettingsMutations()
-  const [feeRupees, setFeeRupees] = React.useState(String(data.feeRupees))
+  const [sharePercent, setSharePercent] = React.useState(String(data.sharePercent))
   const [aboveRupees, setAboveRupees] = React.useState(String(data.aboveRupees))
   const [basis, setBasis] = React.useState<FeeBasis>(data.basis)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
 
   const dirty =
-    feeRupees.trim() !== String(data.feeRupees) ||
+    sharePercent.trim() !== String(data.sharePercent) ||
     aboveRupees.trim() !== String(data.aboveRupees) ||
     basis !== data.basis
 
   const parsed = shippingChargeSchema.safeParse({
-    feeRupees: feeRupees.trim(),
+    sharePercent: sharePercent.trim(),
     aboveRupees: aboveRupees.trim(),
     basis,
   })
@@ -74,7 +76,7 @@ function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boole
         <ChangeList
           lines={[
             describe(charge),
-            ...(charge.feeRupees > 0
+            ...(charge.sharePercent > 0
               ? [`Courier cost read as: ${FEE_BASIS_LABEL[charge.basis]}`]
               : []),
           ]}
@@ -94,24 +96,8 @@ function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boole
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
       <div className="grid gap-5 md:grid-cols-2">
         <SettingField
-          id="ship-fee"
-          label="Charge the buyer, per order"
-          hint="0 makes shipping free everywhere."
-          error={errors.feeRupees}
-        >
-          <Input
-            id="ship-fee"
-            inputMode="numeric"
-            value={feeRupees}
-            onChange={(e) => setFeeRupees(e.target.value.replace(/[^\d]/g, ""))}
-            disabled={!canWrite}
-            aria-invalid={Boolean(errors.feeRupees) || undefined}
-            className="font-mono"
-          />
-        </SettingField>
-        <SettingField
           id="ship-above"
-          label="When couriers cost the shop more than"
+          label="Free while couriers cost the shop up to"
           hint="In rupees, for the order's own parcel and pincode."
           error={errors.aboveRupees}
         >
@@ -122,6 +108,22 @@ function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boole
             onChange={(e) => setAboveRupees(e.target.value.replace(/[^\d]/g, ""))}
             disabled={!canWrite}
             aria-invalid={Boolean(errors.aboveRupees) || undefined}
+            className="font-mono"
+          />
+        </SettingField>
+        <SettingField
+          id="ship-share"
+          label="Above that, the buyer pays (%)"
+          hint="Of the part above the limit. 50 halves it; 0 makes shipping free everywhere."
+          error={errors.sharePercent}
+        >
+          <Input
+            id="ship-share"
+            inputMode="numeric"
+            value={sharePercent}
+            onChange={(e) => setSharePercent(e.target.value.replace(/[^\d]/g, ""))}
+            disabled={!canWrite}
+            aria-invalid={Boolean(errors.sharePercent) || undefined}
             className="font-mono"
           />
         </SettingField>
@@ -145,7 +147,7 @@ function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boole
       </SettingField>
 
       <p className="rounded-tile bg-void text-bone border border-white/[0.09] px-4 py-3 text-[14px] leading-[1.55]">
-        {parsed.success ? describe(parsed.data) : "Enter whole rupees in both boxes."}
+        {parsed.success ? describe(parsed.data) : "Enter whole numbers in both boxes."}
         <span className="text-dim block text-[12.5px]">
           When Shiprocket cannot be asked, shipping is always free: an outage never charges anyone.
         </span>

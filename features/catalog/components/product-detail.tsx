@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
-import { discountPercent, formatMoney } from "@/lib/money"
+import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TRUST = [
@@ -26,12 +26,12 @@ const MAX_QTY = 9
 
 export function ProductDetail({
   product,
-  shippingFee,
+  freeShipping,
   initialColourway,
 }: {
   product: Product
-  /** The most shipping can cost, rupees: the shipping charge's flat fee (Settings). */
-  shippingFee: number
+  /** No shipping charge anywhere (Settings > Shipping charge at 0%). */
+  freeShipping: boolean
   /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
@@ -158,10 +158,7 @@ export function ProductDetail({
             </Badge>
           </div>
           <p className="text-dim mt-1.5 text-[12.5px]">
-            Inclusive of all taxes ·{" "}
-            {shippingFee > 0
-              ? `Shipping by pincode, up to ${formatMoney(shippingFee)}`
-              : "Free shipping"}
+            Inclusive of all taxes · {freeShipping ? "Free shipping" : "Shipping by pincode"}
           </p>
         </div>
 

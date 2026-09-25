@@ -37,9 +37,11 @@ export const shippingConfig = {
   pickupPincode: siteConfig.address.pin,
   /**
    * What the buyer pays for shipping: nothing, unless reaching their pincode
-   * costs the shop more than `aboveRupees`, in which case a flat `feeRupees`
-   * per order. Worked out for the order's own parcel, from the couriers
-   * Shiprocket offers, and shown at checkout before payment.
+   * costs the shop more than `aboveRupees` - and then `sharePercent` of the
+   * part above it, rounded to the rupee. At 300 and 50%: a Rs 500 courier
+   * costs the buyer Rs 100, a Rs 300 one nothing. Worked out for the order's
+   * own parcel, from the couriers Shiprocket offers, and shown at checkout
+   * before payment.
    *
    * `basis` is which courier price stands for "what it costs":
    *
@@ -48,8 +50,8 @@ export const shippingConfig = {
    *                   when it picks the courier itself, without letting one
    *                   unusually cheap courier decide on its own. Measured for
    *                   one mount from Delhi: Delhi, Gurugram, Jaipur and
-   *                   Lucknow free; Ghaziabad (Rs 226 and 455), Kolkata and
-   *                   every distant metro Rs 350.
+   *                   Lucknow free; Ghaziabad (Rs 226 and 455, so 340.5),
+   *                   Kolkata and the distant metros above Rs 300.
    *   "average"     - the mean of every courier offered. The premium air
    *                   couriers Shiprocket always lists pull it over Rs 300
    *                   everywhere, the shop's own Delhi included.
@@ -62,5 +64,5 @@ export const shippingConfig = {
    * These are the defaults. The console's Settings > Shipping charge replaces
    * all three without a deploy (shippingCharge() in runtime-settings.ts).
    */
-  fee: { aboveRupees: 300, feeRupees: 350, basis: "twoCheapest" as FeeBasis },
+  fee: { aboveRupees: 300, sharePercent: 50, basis: "twoCheapest" as FeeBasis },
 } as const

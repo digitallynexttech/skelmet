@@ -77,7 +77,11 @@ const rupees = (label: string) =>
 
 export const shippingChargeSchema = z.strictObject({
   aboveRupees: rupees("The courier cost"),
-  feeRupees: rupees("The charge"),
+  sharePercent: z.coerce
+    .number({ error: "Enter a percentage" })
+    .int("The share is a whole percentage")
+    .min(0, "The share cannot be negative")
+    .max(100, "The share is at most 100%"),
   basis: z.enum(FEE_BASES),
 })
 export type ShippingCharge = z.infer<typeof shippingChargeSchema>

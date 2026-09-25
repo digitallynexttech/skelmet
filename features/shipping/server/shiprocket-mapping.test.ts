@@ -326,7 +326,8 @@ describe("what shipping costs, and what the buyer pays", () => {
     // Ghaziabad as quoted: the second courier lifts it over the threshold.
     const ghaziabad = [726, 226, 455].map((r) => courier(r))
     expect(shipmentCost(ghaziabad, "twoCheapest")).toBe(340.5)
-    expect(shippingFeeFor(shipmentCost(ghaziabad, "twoCheapest"))).toBe(350)
+    // Half of the Rs 40.50 above Rs 300, to the rupee.
+    expect(shippingFeeFor(shipmentCost(ghaziabad, "twoCheapest"))).toBe(20)
     expect(shipmentCost([courier(869)], "twoCheapest")).toBe(869)
     expect(shippingFeeFor(shipmentCost(delhi, "twoCheapest"))).toBe(0)
   })
@@ -341,18 +342,21 @@ describe("what shipping costs, and what the buyer pays", () => {
     expect(shipmentCost([], "cheapest")).toBeNull()
   })
 
-  it("charges the flat fee only above the threshold", () => {
-    const rule = { aboveRupees: 300, feeRupees: 350 }
+  it("charges the buyer their share of what the courier costs above the threshold", () => {
+    const rule = { aboveRupees: 300, sharePercent: 50 }
     expect(shippingFeeFor(161, rule)).toBe(0)
     expect(shippingFeeFor(300, rule)).toBe(0)
-    expect(shippingFeeFor(300.01, rule)).toBe(350)
-    expect(shippingFeeFor(964, rule)).toBe(350)
+    expect(shippingFeeFor(500, rule)).toBe(100)
+    expect(shippingFeeFor(964, rule)).toBe(332)
+    expect(shippingFeeFor(301, rule)).toBe(1)
     expect(shippingFeeFor(null, rule)).toBe(0)
+    expect(shippingFeeFor(500, { aboveRupees: 300, sharePercent: 100 })).toBe(200)
+    expect(shippingFeeFor(500, { aboveRupees: 300, sharePercent: 0 })).toBe(0)
   })
 
-  it("uses the shop's configured rule by default", () => {
-    const { aboveRupees, feeRupees } = shippingConfig.fee
-    expect(shippingFeeFor(aboveRupees + 1)).toBe(feeRupees)
-    expect(shippingFeeFor(aboveRupees)).toBe(0)
+  it("uses the shop's configured rule by default: half of what is above Rs 300", () => {
+    expect(shippingConfig.fee).toMatchObject({ aboveRupees: 300, sharePercent: 50 })
+    expect(shippingFeeFor(500)).toBe(100)
+    expect(shippingFeeFor(300)).toBe(0)
   })
 })

@@ -17,20 +17,22 @@ import { formatMoney } from "@/lib/money"
  * the console's Settings, so the page is handed that same rule (getPolicy)
  * rather than stating config/shipping.ts's default.
  */
-type ShippingRule = { aboveRupees: number; feeRupees: number }
+type ShippingRule = { aboveRupees: number; sharePercent: number }
 
 function shippingTerms(rule: ShippingRule): { short: string; cost: string } {
-  if (rule.feeRupees <= 0) {
+  if (rule.sharePercent <= 0) {
     return {
       short: "Free to every pincode we deliver to.",
       cost: "Nothing. Shipping is free to every pincode we deliver to, whatever the courier charges us. Checkout confirms we deliver to yours as soon as you enter your pincode, before you pay.",
     }
   }
   const upTo = formatMoney(rule.aboveRupees)
-  const fee = formatMoney(rule.feeRupees)
+  const share = rule.sharePercent === 50 ? "half" : `${rule.sharePercent}%`
+  const example = rule.aboveRupees + 200
+  const exampleFee = formatMoney(Math.round((200 * rule.sharePercent) / 100))
   return {
-    short: `Free where delivery costs us ${upTo} or less, a flat ${fee} elsewhere.`,
-    cost: `It depends on where it is going. If couriers charge us ${upTo} or less to reach your pincode, shipping is free. If they charge more, you pay a flat ${fee} per order, whatever the courier actually costs us. Checkout shows which applies as soon as you enter your pincode, before you pay.`,
+    short: `Free where delivery costs us ${upTo} or less; beyond that you pay ${share} of the difference.`,
+    cost: `It depends on where it is going. If couriers charge us ${upTo} or less to reach your pincode, shipping is free. If they charge more, you pay ${share} of the amount above ${upTo} and we pay the rest - a courier costing ${formatMoney(example)} costs you ${exampleFee}. Checkout shows the exact charge as soon as you enter your pincode, before you pay.`,
   }
 }
 

@@ -399,7 +399,8 @@ export function shipmentCost(options: CourierOption[], basis: FeeBasis): number 
 /** The buyer's shipping charge for a shipment that costs the shop `cost`. */
 export function shippingFeeFor(
   cost: number | null,
-  rule: { aboveRupees: number; feeRupees: number } = shippingConfig.fee,
+  rule: { aboveRupees: number; sharePercent: number } = shippingConfig.fee,
 ): number {
-  return cost !== null && cost > rule.aboveRupees ? rule.feeRupees : 0
+  if (cost === null || cost <= rule.aboveRupees) return 0
+  return Math.round(((cost - rule.aboveRupees) * rule.sharePercent) / 100)
 }

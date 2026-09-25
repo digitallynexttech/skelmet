@@ -96,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail product={product} shippingFee={charge.feeRupees} />
+      <ProductDetail product={product} freeShipping={charge.sharePercent === 0} />
 
       <TrustStrip />
 

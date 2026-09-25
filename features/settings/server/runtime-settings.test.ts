@@ -183,15 +183,18 @@ describe("resolveShipping", () => {
   })
 
   it("is the saved charge once saved", () => {
-    const saved = { aboveRupees: 250, feeRupees: 199, basis: "cheapest" as const }
+    const saved = { aboveRupees: 250, sharePercent: 40, basis: "cheapest" as const }
     expect(resolveShipping(saved)).toEqual(saved)
   })
 
   it("ignores a saved charge that is not whole rupees or names no basis", () => {
     for (const bad of [
-      { aboveRupees: -1, feeRupees: 350, basis: "average" as const },
-      { aboveRupees: 300, feeRupees: 99.5, basis: "average" as const },
-      { aboveRupees: 300, feeRupees: 350, basis: "median" as never },
+      { aboveRupees: -1, sharePercent: 50, basis: "average" as const },
+      { aboveRupees: 300, sharePercent: 49.5, basis: "average" as const },
+      { aboveRupees: 300, sharePercent: 150, basis: "average" as const },
+      { aboveRupees: 300, sharePercent: 50, basis: "median" as never },
+      // A charge saved under the old flat-fee rule is not this rule.
+      { aboveRupees: 300, feeRupees: 350, basis: "twoCheapest" as const } as never,
       { aboveRupees: 300 },
     ]) {
       expect(resolveShipping(bad)).toEqual(shippingConfig.fee)
