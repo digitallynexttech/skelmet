@@ -14,7 +14,8 @@ import { parseShiprocketDate } from "@/features/shipping/server/shiprocket-mappi
  * The token lasts 240 hours. It is cached in memory and reused until a day
  * before that, and one 401 - a token revoked early, or a password changed in
  * the panel - logs in again and retries once. Concurrent callers share one
- * login rather than racing to make several.
+ * login rather than racing to make several, and a refused login pauses the
+ * next for REFUSED_PAUSE_MS.
  *
  * Every failure is a ShippingError carrying Shiprocket's own message, because
  * "Wallet balance is low" or "pickup location not found" is exactly what the
@@ -30,6 +31,21 @@ export class ShippingError extends AppError {
 const TIMEOUT_MS = 20_000
 /** Nine days: the token is good for ten. */
 const TOKEN_TTL_MS = 9 * 24 * 60 * 60_000
+
+/**
+ * How long to wait after Shiprocket refuses a login before asking again.
+ *
+ * Shiprocket locks the API user after a run of failed logins, and an attempt
+ * made while it is locked - even with the right password - can restart the
+ * lock. Nothing here used to remember a refusal, so every paid order and every
+ * pincode check tried again: a wrong password locked the account, and ordinary
+ * shopping kept it locked. One refusal now pauses logins for this long. A
+ * restart, which is what picks up a corrected .env, clears it.
+ *
+ * Only a refusal counts. Shiprocket failing to answer, or answering with its
+ * own 5xx, says nothing about the password and is retried as before.
+ */
+const REFUSED_PAUSE_MS = 15 * 60_000
 
 export function isShiprocketConfigured(): boolean {
   const env = getEnv()
@@ -56,6 +72,7 @@ function tokenKey(): string {
 
 let token: { value: string; expiresAt: number; key: string } | null = null
 let loggingIn: Promise<string> | null = null
+let refused: { message: string; until: number; key: string } | null = null
 
 async function readJson(res: Response): Promise<Record<string, unknown> | null> {
   try {
@@ -95,15 +112,28 @@ async function login(): Promise<string> {
     throw new ShippingError("Shiprocket did not answer. Try again in a moment.", 504)
   }
   const body = await readJson(res)
-  if (!res.ok || typeof body?.token !== "string") {
-    throw new ShippingError(`Shiprocket refused the login: ${describe(body, res.status)}`)
+  if (res.status >= 500) {
+    throw new ShippingError(`Shiprocket could not log in just now: ${describe(body, res.status)}`)
   }
+  if (!res.ok || typeof body?.token !== "string") {
+    const message = `Shiprocket refused the login: ${describe(body, res.status)}`
+    refused = { message, until: Date.now() + REFUSED_PAUSE_MS, key: tokenKey() }
+    throw new ShippingError(message)
+  }
+  refused = null
   token = { value: body.token, expiresAt: Date.now() + TOKEN_TTL_MS, key: tokenKey() }
   return body.token
 }
 
 async function currentToken(): Promise<string> {
   if (token && token.key === tokenKey() && token.expiresAt > Date.now()) return token.value
+  if (refused && refused.key === tokenKey() && refused.until > Date.now()) {
+    const minutes = Math.ceil((refused.until - Date.now()) / 60_000)
+    throw new ShippingError(
+      `${refused.message} Not trying again for ${minutes} min, so repeated attempts do not keep the account locked.`,
+      503,
+    )
+  }
   loggingIn ??= login().finally(() => {
     loggingIn = null
   })
