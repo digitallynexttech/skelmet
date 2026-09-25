@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { siteConfig } from "@/config/site"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
@@ -87,9 +88,12 @@ type PincodeAnswer = {
 type Reach =
   | { status: "idle" }
   | { status: "checking"; pin: string }
-  | { status: "ok"; pin: string; days: number | null }
+  | { status: "ok"; pin: string }
   | { status: "blocked"; pin: string; message: string }
-  /** Shiprocket did not answer. Nothing to say: the server decides at payment. */
+  /**
+   * Shiprocket did not answer. Shown like "ok", as the product page does: the
+   * server checks again at payment, and an outage must not read as a refusal.
+   */
   | { status: "unknown"; pin: string }
 
 function Lines({ items }: { items: CartLine[] }) {
@@ -129,18 +133,24 @@ function Lines({ items }: { items: CartLine[] }) {
   )
 }
 
-/** The line under the pincode while it is checked, and once it can be delivered to. */
+/**
+ * The line under the pincode while it is checked, and once it can be delivered to.
+ *
+ * Always the shop's own promise, never the courier's transit time. Shiprocket
+ * can say "2 days" for a nearby pincode, but that clock starts at pickup, and
+ * the shop takes its own time to pack and dispatch first - quoting the courier
+ * alone promised a delivery the shop cannot make.
+ */
 function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
   if (reach.status === "checking" && reach.pin === pin) {
     return <span className="text-dim text-[12.5px] leading-[1.45]">Checking delivery…</span>
   }
-  if (reach.status === "ok" && reach.pin === pin) {
+  if ((reach.status === "ok" || reach.status === "unknown") && reach.pin === pin) {
     return (
       <span className="text-acid flex items-start gap-1.5 text-[12.5px] leading-[1.45]">
         <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
-        {reach.days
-          ? `We deliver here - about ${reach.days} ${reach.days === 1 ? "day" : "days"} with the courier.`
-          : "We deliver here."}
+        We deliver here - dispatched within {siteConfig.promise.dispatchHours} hours, delivered
+        within {siteConfig.promise.deliveryDays}.
       </span>
     )
   }
@@ -223,9 +233,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             message: `Couriers don't reach ${pin} yet, so we can't deliver there. Message us and we'll try to arrange it.`,
           })
         } else {
-          setReach(
-            answer.live ? { status: "ok", pin, days: answer.days } : { status: "unknown", pin },
-          )
+          setReach(answer.live ? { status: "ok", pin } : { status: "unknown", pin })
         }
       } catch {
         // Rate-limited or offline. The city and state can still be typed, and

@@ -12,9 +12,12 @@ import { cn } from "@/lib/utils"
  *
  * Two questions, in order. Is it a pincode at all - six digits, never starting
  * with zero, since 0 is not an allocated postal circle - which is answered
- * here without a request. Then, can a courier reach it, and roughly how long
- * does the courier take: that one is Shiprocket's (via
- * /api/public/shipping/pincode), and costs a request.
+ * here without a request. Then, can a courier reach it: that one is
+ * Shiprocket's (via /api/public/shipping/pincode), and costs a request.
+ *
+ * The time it quotes is always the shop's own promise, the same one checkout
+ * shows. Shiprocket's transit days start at pickup, after the shop has packed
+ * and dispatched, so quoting them promised a delivery the shop cannot make.
  *
  * Shiprocket is an improvement, never a dependency. When it is not set up,
  * rate-limits us, or simply does not answer, the check falls back to the
@@ -26,9 +29,9 @@ import { cn } from "@/lib/utils"
  */
 const PINCODE = /^[1-9][0-9]{5}$/
 
-type Answer = { live: boolean; serviceable: boolean; days: number | null }
+type Answer = { live: boolean; serviceable: boolean; found: boolean }
 
-type Result = { ok: true; pin: string; days: number | null } | { ok: false; message: string }
+type Result = { ok: true; pin: string } | { ok: false; message: string }
 
 export function PincodeCheck({ className }: { className?: string }) {
   const [pin, setPin] = React.useState("")
@@ -59,16 +62,18 @@ export function PincodeCheck({ className }: { className?: string }) {
         `/api/public/shipping/pincode?pincode=${encodeURIComponent(asked)}`,
       )
       setResult(
-        answer.live && !answer.serviceable
-          ? {
-              ok: false,
-              message: `Couriers don't reach ${asked} yet. Message us and we'll try to arrange it.`,
-            }
-          : { ok: true, pin: asked, days: answer.live ? answer.days : null },
+        answer.live && !answer.found
+          ? { ok: false, message: `We couldn't find pincode ${asked}. Check the number.` }
+          : answer.live && !answer.serviceable
+            ? {
+                ok: false,
+                message: `Couriers don't reach ${asked} yet. Message us and we'll try to arrange it.`,
+              }
+            : { ok: true, pin: asked },
       )
     } catch {
       // Rate-limited, offline, Shiprocket down: the static promise still holds.
-      setResult({ ok: true, pin: asked, days: null })
+      setResult({ ok: true, pin: asked })
     } finally {
       setChecking(false)
     }
@@ -76,7 +81,7 @@ export function PincodeCheck({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="rounded-lg bg-carbon flex h-[54px] items-center gap-2.5 border border-white/10 px-4 focus-within:border-white/25">
+      <div className="bg-carbon flex h-[54px] items-center gap-2.5 rounded-lg border border-white/10 px-4 focus-within:border-white/25">
         <MapPin className="text-ember size-[17px] shrink-0" strokeWidth={1.7} />
         <input
           value={pin}
@@ -119,10 +124,8 @@ export function PincodeCheck({ className }: { className?: string }) {
               <Check className="mt-[3px] size-3.5 shrink-0" strokeWidth={2.6} />
               <span>
                 <span className="font-mono tracking-[0.06em]">{result.pin}</span> - free delivery,
-                dispatched in {siteConfig.promise.dispatchHours} hrs,{" "}
-                {result.days
-                  ? `then about ${result.days} ${result.days === 1 ? "day" : "days"} with the courier.`
-                  : `arrives within ${siteConfig.promise.deliveryDays}.`}
+                dispatched in {siteConfig.promise.dispatchHours} hrs, arrives within{" "}
+                {siteConfig.promise.deliveryDays}.
               </span>
             </>
           ) : (
