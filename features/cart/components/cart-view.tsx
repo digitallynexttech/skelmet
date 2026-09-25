@@ -50,8 +50,10 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
   // Persisted store: render nothing decision-shaped until it has rehydrated.
   const mounted = useHydrated()
 
-  const totals = calculateTotals(items)
   const [coupon, setCouponApplied] = React.useState<AppliedCoupon | null>(null)
+  // The coupon comes off the total here as it does at checkout and on the
+  // server. The cart used to list the discount and leave the total alone.
+  const totals = calculateTotals(items, false, coupon?.discount ?? 0)
 
   if (!mounted) {
     return <div className="min-h-[60vh]" aria-hidden />
@@ -181,11 +183,11 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
                   <Money value={totals.subtotal} />
                 </dd>
               </div>
-              {coupon ? (
+              {coupon && totals.couponOff > 0 ? (
                 <div className="flex justify-between text-[14.5px]">
                   <dt className="text-ash">{coupon.label}</dt>
                   <dd className="text-acid font-mono">
-                    − <Money value={coupon.discount} />
+                    − <Money value={totals.couponOff} />
                   </dd>
                 </div>
               ) : null}
