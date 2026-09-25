@@ -40,7 +40,7 @@ export function Comparison() {
               className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] border-b border-white/[0.07] last:border-b-0"
             >
               <div className="text-ash px-5 py-4 text-[14px]">{row.label}</div>
-              <div className="text-dim border-l border-white/[0.07] px-5 py-4 text-[14px]">
+              <div className="text-ash border-l border-white/[0.07] px-5 py-4 text-[14px]">
                 {row.floor}
               </div>
               <div className="text-ash border-l border-white/[0.07] px-5 py-4 text-[14px]">
