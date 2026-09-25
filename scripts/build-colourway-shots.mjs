@@ -41,8 +41,8 @@ const OUT_DIR = path.join(ROOT, "public/product")
 
 /** Each output matches the blaze original it sits beside in the gallery. */
 const SHOTS = [
-  { from: "profile-olive.png", to: "product-profile-olive.jpg", like: "product-profile.jpg" },
-  { from: "profile-ghost.png", to: "product-profile-ghost.jpg", like: "product-profile.jpg" },
+  { from: "profile-olive.png", to: "product-side-olive.jpg", like: "product-side.jpg" },
+  { from: "profile-ghost.png", to: "product-side-ghost.jpg", like: "product-side.jpg" },
   { from: "concrete-olive.png", to: "lifestyle-concrete-olive.jpg", like: "lifestyle-concrete.jpg" },
   { from: "concrete-ghost.png", to: "lifestyle-concrete-ghost.jpg", like: "lifestyle-concrete.jpg" },
   { from: "gloves-olive.png", to: "lifestyle-gloves-olive.jpg", like: "lifestyle-gloves.jpg" },
