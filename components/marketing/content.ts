@@ -90,18 +90,23 @@ export const RATING_BREAKDOWN = [
 export const INSTALL_STEPS = [
   {
     n: "01",
-    title: "Hold it up and mark",
-    body: "Hold the mount against the wall where you want it and mark through the holes in the arm.",
+    title: "Mark the holes",
+    body: "Place the template on the wall at your desired height and mark the centre of the 3 holes with a pencil.",
   },
   {
     n: "02",
-    title: "Drill and plug",
-    body: "Drill the holes, clear out any dust or debris in them, and push in the wall plugs from the box.",
+    title: "Drill",
+    body: "Drill the holes at the marked points using an appropriate drill bit (typically 6mm for standard wall plugs).",
   },
   {
     n: "03",
+    title: "Plug",
+    body: "Insert the wall plugs into the drilled holes until they are fully inside the wall.",
+  },
+  {
+    n: "04",
     title: "Screw it on",
-    body: "Line up the mount with the holes, screw it in with the screws from the box, and you're done.",
+    body: "Place the gear mount over the wall plugs and fix it using the provided screws. Make sure it is tight and secure.",
   },
 ]
 

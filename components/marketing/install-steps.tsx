@@ -39,7 +39,6 @@ export function InstallSteps() {
                   key={step.n}
                   className={cn(
                     "rounded-tile bg-void border p-5 sm:p-6",
-                    last && "sm:col-span-2",
                     last
                       ? "border-blaze/35 bg-[linear-gradient(150deg,rgb(255_90_31_/_0.12),transparent_62%)]"
                       : "border-white/[0.09]",
