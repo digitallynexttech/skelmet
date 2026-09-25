@@ -40,8 +40,10 @@ function EmptyCart() {
   )
 }
 
-export function CartView() {
+export function CartView({ prices }: { prices: Record<string, string> }) {
   const items = useCart((s) => s.items)
+  const syncPrices = useCart((s) => s.syncPrices)
+  React.useEffect(() => syncPrices(prices), [prices, syncPrices])
   const setQty = useCart((s) => s.setQty)
   const remove = useCart((s) => s.remove)
 

@@ -9,9 +9,9 @@ import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { db } from "@/server/db"
 
 /**
- * Auth.js v5, JWT sessions. Permissions ride the token so a request costs zero
- * database reads; a role change takes effect on the next `session.update()` or
- * re-login (§6).
+ * Auth.js v5, JWT sessions. The token carries identity and a snapshot of the
+ * roles for display; the service guards re-read permissions from the database,
+ * so a role change or a revoke takes effect on the next request (§6).
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
@@ -87,18 +87,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user, trigger, session }) {
+    // No `trigger === "update"` branch, on purpose. Auth.js lets any signed-in
+    // browser POST its own data to /api/auth/session and hands that data to this
+    // callback as `session`; copying roles or permissions from it let a staff
+    // member grant themselves every scope. Nothing here calls session.update(),
+    // and the guards re-read permissions from the database (action-guard.ts), so
+    // the token is only ever written from a verified login.
+    jwt({ token, user }) {
       if (user) {
         token.id = user.id as string
         token.kind = user.kind
         token.roles = user.roles
         token.permissions = user.permissions
         token.mustChangePassword = user.mustChangePassword
-      }
-      if (trigger === "update" && session?.user) {
-        token.roles = session.user.roles ?? token.roles
-        token.permissions = session.user.permissions ?? token.permissions
-        token.mustChangePassword = session.user.mustChangePassword ?? token.mustChangePassword
       }
       return token
     },

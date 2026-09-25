@@ -77,6 +77,25 @@ export async function getProductBySlug(slug: string): Promise<ActionResult<Produ
   })
 }
 
+/**
+ * Live price of every colourway, keyed by SKU, for the cart and checkout to
+ * correct the price a cart line was saved with. Registry prices when there is
+ * no database, or for a SKU it does not have.
+ */
+export async function getLivePrices(): Promise<Record<string, string>> {
+  const registry = Object.fromEntries(
+    PRODUCTS.flatMap((p) => p.colourways.map((c) => [c.sku, c.price] as const)),
+  )
+  if (!hasDatabase()) return registry
+  try {
+    const live = await liveBySku(Object.keys(registry))
+    return { ...registry, ...Object.fromEntries([...live].map(([sku, r]) => [sku, r.price])) }
+  } catch (err) {
+    console.error("[CATALOG] live prices unavailable", err)
+    return registry
+  }
+}
+
 export async function getFeaturedProduct(): Promise<ActionResult<Product>> {
   return runAction(async () => {
     if (!hasDatabase()) return ok(FLAME_SKULL_MOUNT)

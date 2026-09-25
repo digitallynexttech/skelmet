@@ -1,5 +1,6 @@
 import "server-only"
 
+import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paginate } from "@/lib/api-response"
 import {
@@ -97,6 +98,9 @@ export async function listOrders(params: {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    // So the list staff read never shows an abandoned checkout as live.
+    await releaseStaleOrders()
 
     const page = Math.max(1, params.page ?? 1)
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
@@ -336,35 +340,51 @@ export function markDelivered(id: string) {
 }
 
 export function cancelOrder(id: string) {
+  // Unpaid orders only. Cancelling a PAID one used to restock it and keep the
+  // customer's money, with no way to refund it afterwards - refund refused a
+  // CANCELLED order. A paid order is taken back with Refund, which returns the
+  // money and restocks what never shipped, and needs the refund permission
+  // that handing money back should need.
   return transition(
     id,
-    ["PENDING", "PAID"],
+    ["PENDING"],
     "CANCELLED",
     PERMISSIONS.ORDER_WRITE,
     "order:cancel",
     async () => {
-      // Put the stock back.
-      const items = await db.orderItem.findMany({
-        where: { orderId: id },
-        select: { variantId: true, qty: true },
+      const order = await db.order.findUnique({
+        where: { id },
+        select: { couponId: true, items: { select: { variantId: true, qty: true } } },
       })
-      if (items.length === 0) return
+      if (!order) return
 
       // One batched transaction, not an update per line. Sequential awaits meant
       // a round trip per item, and - worse - a partial restock: the order is
       // already CANCELLED by the time this runs, so a failure halfway left stock
       // permanently short with nothing to replay it from.
-      await db.$transaction(
-        items.map((item) =>
+      await db.$transaction([
+        ...order.items.map((item) =>
           db.variant.update({
             where: { id: item.variantId },
             data: { stock: { increment: item.qty } },
           }),
         ),
-      )
+        // The coupon use it claimed at checkout goes back too.
+        ...(order.couponId
+          ? [
+              db.coupon.updateMany({
+                where: { id: order.couponId, usedCount: { gt: 0 } },
+                data: { usedCount: { decrement: 1 } },
+              }),
+            ]
+          : []),
+      ])
     },
   )
 }
+
+/** Statuses whose goods never left the building, so a refund puts them back on sale. */
+const UNSHIPPED: OrderStatus[] = ["PAID", "PACKED"]
 
 export async function refundOrder(
   id: string,
@@ -379,6 +399,7 @@ export async function refundOrder(
         id: true,
         total: true,
         status: true,
+        items: { select: { variantId: true, qty: true } },
         payments: {
           where: { status: "CAPTURED" },
           select: { gatewayPaymentId: true },
@@ -388,23 +409,77 @@ export async function refundOrder(
     })
     if (!order) return fail("Order not found.", undefined, 404)
 
+    const paymentId = order.payments[0]?.gatewayPaymentId ?? null
+
+    // CANCELLED qualifies only while it still holds captured money: orders
+    // cancelled while paid, before cancel stopped accepting them, and anything
+    // a payment landed on after it was cancelled.
+    const refundable: OrderStatus[] = [
+      "PAID",
+      "PACKED",
+      "SHIPPED",
+      "DELIVERED",
+      "RETURNED",
+      ...(paymentId ? (["CANCELLED"] as OrderStatus[]) : []),
+    ]
+    if (!refundable.includes(order.status)) {
+      return fail("That order cannot be refunded.", undefined, 409)
+    }
+
+    // Claimed on the exact status read above, so the restock decision below
+    // is made on the state this refund actually moved the order out of.
     const claimed = await db.order.updateMany({
-      where: { id, status: { in: ["DELIVERED", "RETURNED", "PAID", "PACKED", "SHIPPED"] } },
+      where: { id, status: order.status },
       data: { status: "REFUNDED" },
     })
-    if (claimed.count === 0) return fail("That order cannot be refunded.", undefined, 409)
+    if (claimed.count === 0)
+      return fail("That order changed just now. Reload and try again.", undefined, 409)
 
-    const paymentId = order.payments[0]?.gatewayPaymentId
     if (paymentId) {
-      await refundPayment({ gatewayPaymentId: paymentId, amountRupees: order.total.toString() })
-      await db.payment.updateMany({ where: { orderId: id }, data: { status: "REFUNDED" } })
+      try {
+        await refundPayment({ gatewayPaymentId: paymentId, amountRupees: order.total.toString() })
+      } catch (err) {
+        // The order was marked REFUNDED before the money moved, and a refusal
+        // used to leave it there: refunded on screen, never refunded in fact,
+        // and no longer offering the button to try again. Put it back.
+        await db.order.updateMany({
+          where: { id, status: "REFUNDED" },
+          data: { status: order.status },
+        })
+        console.error("[REFUND] gateway refused", id, err)
+        return fail(
+          "Razorpay did not issue the refund, so the order is unchanged. Try again, or refund it from the Razorpay dashboard.",
+          undefined,
+          502,
+        )
+      }
+      await db.payment.updateMany({
+        where: { orderId: id, status: "CAPTURED" },
+        data: { status: "REFUNDED" },
+      })
+    }
+
+    if (UNSHIPPED.includes(order.status) && order.items.length > 0) {
+      await db.$transaction(
+        order.items.map((item) =>
+          db.variant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.qty } },
+          }),
+        ),
+      )
     }
 
     await createAuditLog(session, {
       action: "order:refund",
       module: "order",
       entityId: id,
-      meta: { amount: order.total.toString(), gateway: Boolean(paymentId) },
+      meta: {
+        amount: order.total.toString(),
+        gateway: Boolean(paymentId),
+        from: order.status,
+        restocked: UNSHIPPED.includes(order.status),
+      },
       ...(await getAuditMeta()),
     })
 

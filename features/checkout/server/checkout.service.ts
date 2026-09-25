@@ -58,14 +58,14 @@ async function releaseOrder(input: {
   orderId: string
   lines: { variant: { id: string }; qty: number }[]
   couponId: string | null
-}): Promise<void> {
+}): Promise<boolean> {
   try {
-    await db.$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
       const claimed = await tx.order.updateMany({
         where: { id: input.orderId, status: "PENDING" },
         data: { status: "CANCELLED" },
       })
-      if (claimed.count === 0) return
+      if (claimed.count === 0) return false
 
       for (const line of input.lines) {
         await tx.variant.update({
@@ -80,12 +80,74 @@ async function releaseOrder(input: {
           data: { usedCount: { decrement: 1 } },
         })
       }
+      return true
     })
   } catch (err) {
     // A cleanup that fails must not replace the gateway error the customer is
     // waiting on. The order stays PENDING and an admin can cancel it, which
     // restocks down this same path.
     console.error("[CHECKOUT] release failed for", input.orderId, err)
+    return false
+  }
+}
+
+/**
+ * How long an unpaid online order may hold its stock and coupon use.
+ *
+ * Long enough for any real payment to finish - a UPI collect request lives
+ * about fifteen minutes, a slow netbanking redirect a few more - and short
+ * enough that a closed payment window does not take a unit off sale for good.
+ * A payment that lands after this still counts: capturePayment revives the
+ * order rather than leaving the money on a cancelled one.
+ */
+const UNPAID_HOLD_MS = 60 * 60_000
+
+/**
+ * Hands back the stock and coupon uses of online orders that were never paid.
+ *
+ * Every checkout claims stock and a coupon use when the order is written, and
+ * only a gateway error on the spot used to release them - a customer who simply
+ * closed the payment window, or whose card was declined, left the order PENDING
+ * with its units held forever. There is no scheduler on this server, so this
+ * runs lazily: at the start of every checkout, which is exactly when held stock
+ * would turn a buyer away, and when staff open the orders list.
+ */
+export async function releaseStaleOrders(): Promise<void> {
+  if (!hasDatabase()) return
+  try {
+    const stale = await db.order.findMany({
+      where: {
+        status: "PENDING",
+        paymentMethod: "ONLINE",
+        createdAt: { lt: new Date(Date.now() - UNPAID_HOLD_MS) },
+      },
+      select: {
+        id: true,
+        number: true,
+        couponId: true,
+        items: { select: { variantId: true, qty: true } },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 50,
+    })
+    for (const order of stale) {
+      const released = await releaseOrder({
+        orderId: order.id,
+        lines: order.items.map((i) => ({ variant: { id: i.variantId }, qty: i.qty })),
+        couponId: order.couponId,
+      })
+      if (released) {
+        await createAuditLog(null, {
+          action: "order:expire",
+          module: "order",
+          entityId: order.id,
+          meta: { number: order.number, heldForMinutes: UNPAID_HOLD_MS / 60_000 },
+        })
+      }
+    }
+  } catch (err) {
+    // Housekeeping. It must never be the reason a checkout fails.
+    console.error("[CHECKOUT] releasing stale orders failed", err)
   }
 }
 
@@ -100,6 +162,10 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
   return runAction(async () => {
     const input = placeOrderSchema.parse(raw)
     if (!hasDatabase()) return fail("Checkout is not available yet.", undefined, 503)
+
+    // Before the stock check, so units held by abandoned orders are back on
+    // sale for this buyer.
+    await releaseStaleOrders()
 
     const session = await optionalSession()
 
@@ -174,11 +240,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // Before the transaction, not after: failing here once the order exists
     // leaves an orphan holding stock nobody can buy.
     if (input.paymentMethod === "ONLINE" && !isGatewayConfigured()) {
-      return fail(
-        "Payments are temporarily unavailable. Please try again shortly.",
-        undefined,
-        503,
-      )
+      return fail("Payments are temporarily unavailable. Please try again shortly.", undefined, 503)
     }
 
     // cod stays in priceCart for the orders already placed with it and for
@@ -329,9 +391,129 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 }
 
 /**
+ * Records a captured payment and marks its order paid - the one place both the
+ * browser's /verify and the Razorpay webhook do this.
+ *
+ * The order is found through the payment row for this Razorpay order, never
+ * through anything the caller names. /verify used to mark whichever `orderId`
+ * the browser sent once the signature checked out, and the signature only
+ * proves a payment for ONE Razorpay order: paying for a cheap order and sending
+ * an expensive order's id marked the expensive one paid.
+ *
+ * The payment row is the claim. The first capture to flip it from unpaid, by
+ * either path, does the work and sends the receipt; every later arrival - the
+ * other path, a webhook redelivery - finds it CAPTURED and does nothing. The
+ * claim and the order update share a transaction, so a crash between them
+ * cannot leave a captured payment on an unpaid order with nothing to retry.
+ *
+ * An order that was cancelled before its money arrived - released after sitting
+ * unpaid (`releaseStaleOrders`), or cancelled by hand - is revived rather than
+ * left cancelled with the customer's money held. Its stock is taken again
+ * without the usual floor: the customer has paid, so if the units were re-sold
+ * in the meantime the variant goes negative, which is the honest signal that
+ * the shop owes one more than it has.
+ */
+async function capturePayment(input: {
+  gatewayOrderId: string
+  gatewayPaymentId: string | null
+  source: "browser" | "webhook"
+}): Promise<{ orderId: string; number: string; status: string } | null> {
+  const payment = await db.payment.findFirst({
+    where: { gatewayOrderId: input.gatewayOrderId },
+    select: { id: true, orderId: true },
+  })
+  if (!payment) return null
+
+  const outcome = await db.$transaction(async (tx) => {
+    const first = await tx.payment.updateMany({
+      where: { id: payment.id, status: { in: ["CREATED", "AUTHORIZED", "FAILED"] } },
+      data: {
+        status: "CAPTURED",
+        ...(input.gatewayPaymentId ? { gatewayPaymentId: input.gatewayPaymentId } : {}),
+      },
+    })
+    if (first.count === 0) return "already" as const
+
+    const paid = await tx.order.updateMany({
+      where: { id: payment.orderId, status: "PENDING" },
+      data: { status: "PAID", placedAt: new Date() },
+    })
+    if (paid.count > 0) return "paid" as const
+
+    const order = await tx.order.findUnique({
+      where: { id: payment.orderId },
+      select: { status: true, couponId: true, items: { select: { variantId: true, qty: true } } },
+    })
+    if (order?.status !== "CANCELLED") return "untouched" as const
+
+    await tx.order.update({
+      where: { id: payment.orderId },
+      data: { status: "PAID", placedAt: new Date() },
+    })
+    for (const item of order.items) {
+      await tx.variant.update({
+        where: { id: item.variantId },
+        data: { stock: { decrement: item.qty } },
+      })
+    }
+    if (order.couponId) {
+      await tx.coupon.update({
+        where: { id: order.couponId },
+        data: { usedCount: { increment: 1 } },
+      })
+    }
+    return "revived" as const
+  })
+
+  const order = await db.order.findUnique({
+    where: { id: payment.orderId },
+    select: {
+      number: true,
+      status: true,
+      email: true,
+      total: true,
+      items: { select: { nameSnapshot: true, qty: true } },
+    },
+  })
+  if (!order) return null
+
+  if (outcome === "paid" || outcome === "revived") {
+    await createAuditLog(null, {
+      action: outcome === "revived" ? "order:revived-by-payment" : "order:paid",
+      module: "order",
+      entityId: payment.orderId,
+      meta: { gatewayPaymentId: input.gatewayPaymentId, source: input.source },
+    })
+
+    const mail = renderOrderConfirmed({
+      number: order.number,
+      email: order.email,
+      total: order.total.toString(),
+      paymentMethod: "ONLINE",
+      items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+    })
+    await sendMail({ to: order.email, ...mail })
+  } else if (outcome === "untouched") {
+    // Money captured against an order in a state nothing here should move -
+    // refunded, say. Loud, so someone looks at it.
+    console.error("[PAYMENT] captured against order in", order.status, payment.orderId)
+    await createAuditLog(null, {
+      action: "payment:captured-unexpected",
+      module: "order",
+      entityId: payment.orderId,
+      meta: { gatewayPaymentId: input.gatewayPaymentId, status: order.status },
+    })
+  }
+
+  return { orderId: payment.orderId, number: order.number, status: order.status }
+}
+
+/**
  * Called by the browser after Razorpay's handler fires. The webhook is the
  * source of truth; this exists so the customer sees confirmation immediately
  * instead of waiting on a server-to-server round trip.
+ *
+ * `orderId` in the body is not used to decide anything - see capturePayment.
  */
 export async function confirmPayment(
   raw: unknown,
@@ -350,53 +532,23 @@ export async function confirmPayment(
       return fail("We could not verify that payment.", undefined, 422)
     }
 
-    // Atomic claim - the webhook may have got here first, and marking an order
-    // PAID twice must not double-fire anything downstream (§5).
-    const claimed = await db.order.updateMany({
-      where: { id: input.orderId, status: "PENDING" },
-      data: { status: "PAID", placedAt: new Date() },
+    const captured = await capturePayment({
+      gatewayOrderId: input.gatewayOrderId,
+      gatewayPaymentId: input.gatewayPaymentId,
+      source: "browser",
     })
+    if (!captured) return fail("Order not found.", undefined, 404)
 
-    await db.payment.updateMany({
-      where: { orderId: input.orderId, gatewayOrderId: input.gatewayOrderId },
-      data: { gatewayPaymentId: input.gatewayPaymentId, status: "CAPTURED" },
-    })
-
-    const order = await db.order.findUnique({
-      where: { id: input.orderId },
-      select: {
-        number: true,
-        status: true,
-        email: true,
-        total: true,
-        items: { select: { nameSnapshot: true, qty: true } },
-      },
-    })
-    if (!order) return fail("Order not found.", undefined, 404)
-
-    // Everything in here hangs off the claim, which is what makes it
-    // exactly-once: this route and the webhook both try to flip PENDING, only
-    // one of them gets a row back, and the loser must not email a second
-    // receipt for the same payment.
-    if (claimed.count > 0) {
+    if (captured.orderId !== input.orderId) {
       await createAuditLog(null, {
-        action: "order:paid",
+        action: "payment:order-mismatch",
         module: "order",
         entityId: input.orderId,
-        meta: { gatewayPaymentId: input.gatewayPaymentId },
+        meta: { gatewayOrderId: input.gatewayOrderId, paidOrderId: captured.orderId },
       })
-
-      const mail = renderOrderConfirmed({
-        number: order.number,
-        email: order.email,
-        total: order.total.toString(),
-        paymentMethod: "ONLINE",
-        items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
-      })
-      await sendMail({ to: order.email, ...mail })
     }
 
-    return ok({ orderNumber: order.number, status: order.status })
+    return ok({ orderNumber: captured.number, status: captured.status })
   })
 }
 
@@ -413,53 +565,20 @@ export async function applyPaymentWebhook(event: {
     const gatewayPaymentId = entity?.id
     if (!gatewayOrderId) return ok({ handled: false })
 
+    if (event.event === "payment.captured") {
+      const captured = await capturePayment({
+        gatewayOrderId,
+        gatewayPaymentId: gatewayPaymentId ?? null,
+        source: "webhook",
+      })
+      return ok({ handled: Boolean(captured) })
+    }
+
     const payment = await db.payment.findFirst({
       where: { gatewayOrderId },
       select: { id: true, orderId: true },
     })
     if (!payment) return ok({ handled: false })
-
-    if (event.event === "payment.captured") {
-      const claimed = await db.order.updateMany({
-        where: { id: payment.orderId, status: "PENDING" },
-        data: { status: "PAID", placedAt: new Date() },
-      })
-      await db.payment.update({
-        where: { id: payment.id },
-        data: { status: "CAPTURED", gatewayPaymentId: gatewayPaymentId ?? null },
-      })
-      await createAuditLog(null, {
-        action: "order:paid-webhook",
-        module: "order",
-        entityId: payment.orderId,
-        meta: { gatewayPaymentId },
-      })
-
-      // Only when this delivery is what moved the order. A redelivery, or a
-      // browser that already confirmed, claims nothing and sends nothing.
-      if (claimed.count > 0) {
-        const order = await db.order.findUnique({
-          where: { id: payment.orderId },
-          select: {
-            number: true,
-            email: true,
-            total: true,
-            items: { select: { nameSnapshot: true, qty: true } },
-          },
-        })
-        if (order) {
-          const mail = renderOrderConfirmed({
-            number: order.number,
-            email: order.email,
-            total: order.total.toString(),
-            paymentMethod: "ONLINE",
-            items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
-          })
-          await sendMail({ to: order.email, ...mail })
-        }
-      }
-      return ok({ handled: true })
-    }
 
     if (event.event === "payment.failed") {
       // Conditional on CREATED, the same way the capture above claims PENDING.

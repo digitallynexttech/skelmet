@@ -59,8 +59,10 @@ function Lines({ items }: { items: CartLine[] }) {
   )
 }
 
-export function CheckoutView() {
+export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   const items = useCart((s) => s.items)
+  const syncPrices = useCart((s) => s.syncPrices)
+  React.useEffect(() => syncPrices(prices), [prices, syncPrices])
   const couponCode = useCart((s) => s.couponCode)
   const mounted = useHydrated()
   const { submit, pending, error } = useCheckout()

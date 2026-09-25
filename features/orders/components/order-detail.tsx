@@ -56,7 +56,7 @@ function ShipDialog({
         e.preventDefault()
         if (courier.trim() && awb.trim()) onShip({ courier: courier.trim(), awb: awb.trim() })
       }}
-      className="rounded-md bg-void border border-white/[0.09] p-5"
+      className="bg-void rounded-md border border-white/[0.09] p-5"
     >
       <div className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
         Mark shipped
@@ -96,7 +96,7 @@ export function OrderDetailView({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-4">
         <div className="h-14 w-64 animate-pulse rounded-md bg-white/5" />
-        <div className="rounded-md h-96 animate-pulse bg-white/5" />
+        <div className="h-96 animate-pulse rounded-md bg-white/5" />
       </div>
     )
   }
@@ -148,7 +148,7 @@ export function OrderDetailView({ id }: { id: string }) {
 
       {/* Fulfilment timeline */}
       {!dead ? (
-        <div className="rounded-md bg-carbon border border-white/[0.09] p-6">
+        <div className="bg-carbon rounded-md border border-white/[0.09] p-6">
           <ol className="grid gap-5 sm:grid-cols-4">
             {TIMELINE.map((step, i) => {
               const done = stage >= i && stage !== -1
@@ -202,7 +202,9 @@ export function OrderDetailView({ id }: { id: string }) {
               Mark delivered
             </Button>
           ) : null}
-          {["PENDING", "PAID"].includes(order.status) ? (
+          {/* Unpaid only - a paid order comes back through Refund, which
+              returns the money as well as the stock. */}
+          {order.status === "PENDING" ? (
             <Button
               variant="ghost"
               size="sm"
@@ -213,7 +215,8 @@ export function OrderDetailView({ id }: { id: string }) {
               Cancel &amp; restock
             </Button>
           ) : null}
-          {["PAID", "PACKED", "SHIPPED", "DELIVERED", "RETURNED"].includes(order.status) ? (
+          {["PAID", "PACKED", "SHIPPED", "DELIVERED", "RETURNED"].includes(order.status) ||
+          (order.status === "CANCELLED" && order.payments.some((p) => p.status === "CAPTURED")) ? (
             <Button
               variant="ghost"
               size="sm"
@@ -233,7 +236,7 @@ export function OrderDetailView({ id }: { id: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Items */}
-        <div className="rounded-md bg-carbon border border-white/[0.09]">
+        <div className="bg-carbon rounded-md border border-white/[0.09]">
           <div className="text-dim border-b border-white/[0.07] px-6 py-4 font-mono text-[10px] tracking-[0.16em] uppercase">
             Items
           </div>
@@ -288,7 +291,7 @@ export function OrderDetailView({ id }: { id: string }) {
 
         {/* Customer + payment + shipment */}
         <div className="flex flex-col gap-5">
-          <section className="rounded-md bg-carbon border border-white/[0.09] p-6">
+          <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
               <MapPin className="text-ember size-4" strokeWidth={1.9} />
               <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
@@ -320,7 +323,7 @@ export function OrderDetailView({ id }: { id: string }) {
             </div>
           </section>
 
-          <section className="rounded-md bg-carbon border border-white/[0.09] p-6">
+          <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
               <CreditCard className="text-violet size-4" strokeWidth={1.9} />
               <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
@@ -350,7 +353,7 @@ export function OrderDetailView({ id }: { id: string }) {
           </section>
 
           {order.shipment ? (
-            <section className="rounded-md bg-carbon border border-white/[0.09] p-6">
+            <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
               <div className="mb-4 flex items-center gap-2.5">
                 <Truck className="text-acid size-4" strokeWidth={1.9} />
                 <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">

@@ -93,7 +93,7 @@ api/admin/orders/[id]/fulfil/route.ts   POST
 api/admin/orders/[id]/refund/route.ts   POST
 api/public/track/route.ts               POST  order-id + email, rate-limited
 api/public/contact/route.ts             POST  rate-limited + API-key free
-api/public/webhooks/payment/route.ts    POST  gateway callback, signature-verified
+api/public/webhooks/razorpay/route.ts   POST  gateway callback, signature-verified
 api/cron/abandoned-cart/route.ts        assertCron - nudge email at T+4h
 api/cron/review-request/route.ts        assertCron - T+7d after delivery
 api/health/route.ts                     { ok, db, version }

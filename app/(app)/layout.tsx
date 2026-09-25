@@ -4,15 +4,18 @@ import { Toaster } from "sonner"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { auth } from "@/server/auth"
+import { staffSession } from "@/server/action-guard"
 
 /**
- * Shell + session gate. No database queries here (§2) - the session already
- * carries roles and permissions from the JWT.
+ * Shell + session gate. One query, for access that is current rather than
+ * whatever the week-old token remembers: a revoked staff member is sent away
+ * here on their next page load, and the sidebar only offers what they can
+ * still do.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
-  if (!session?.user) redirect("/login?next=/admin")
-  if (session.user.kind !== "STAFF") redirect("/")
+  if (!(await auth())?.user) redirect("/login?next=/admin")
+  const session = await staffSession()
+  if (!session || session.user.kind !== "STAFF") redirect("/")
 
   // The flag was set by createStaff and resetStaffPassword, carried onto the
   // JWT, typed on the session - and read by nothing, so a temporary password

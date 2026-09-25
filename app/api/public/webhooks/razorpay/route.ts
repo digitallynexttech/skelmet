@@ -20,8 +20,17 @@ export const POST = withErrorHandler(async (req) => {
   }
 
   const event = JSON.parse(raw) as Parameters<typeof applyPaymentWebhook>[0]
-  await applyPaymentWebhook(event)
+  const result = await applyPaymentWebhook(event)
 
-  // Always 200 once verified - a non-2xx makes Razorpay retry forever.
+  // A delivery we could not save answers 500, so Razorpay retries it - that
+  // retry is the only thing that recovers a capture lost to a database blip.
+  // It used to answer 200 regardless, telling Razorpay the payment was
+  // recorded when it was not. Safe to retry: capturePayment claims once, so a
+  // redelivery of something already saved does nothing and answers 200.
+  // Events we simply do not act on are ok({ handled: false }), still 200.
+  if (!result.ok) {
+    console.error("[WEBHOOK] could not apply", event.event, result.error)
+    return NextResponse.json({ success: false }, { status: 500 })
+  }
   return NextResponse.json({ success: true })
 })

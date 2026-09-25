@@ -55,6 +55,14 @@ type CartState = {
   setQty: (id: string, qty: number) => void
   remove: (id: string) => void
   setCoupon: (code: string | null) => void
+  /**
+   * Brings every line up to the live price, keyed by SKU. A line keeps the
+   * price it was added at, which is the registry's - and an admin can change
+   * the database price that checkout actually charges. The cart and checkout
+   * pages read the live prices on the server and hand them in here, so the
+   * total on screen is the total that gets charged.
+   */
+  syncPrices: (prices: Record<string, string>) => void
   clear: () => void
 }
 
@@ -110,6 +118,17 @@ export const useCart = create<CartState>()(
 
       setCoupon: (code) => set({ couponCode: code }),
 
+      syncPrices: (prices) =>
+        set((state) => {
+          const stale = state.items.some((l) => prices[l.sku] && prices[l.sku] !== l.unitPrice)
+          if (!stale) return state
+          return {
+            items: state.items.map((l) =>
+              prices[l.sku] ? { ...l, unitPrice: prices[l.sku] as string } : l,
+            ),
+          }
+        }),
+
       clear: () => set({ items: [], couponCode: null }),
     }),
     { name: "skelmet.cart", version: 2 },
@@ -127,11 +146,7 @@ export const useCart = create<CartState>()(
  * only - checkout recomputes from the database and can disagree, and when it
  * does the server wins.
  */
-export function calculateTotals(
-  items: CartLine[],
-  codSelected = false,
-  couponOff = 0,
-): CartTotals {
+export function calculateTotals(items: CartLine[], codSelected = false, couponOff = 0): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
   const subtotal = items.reduce((sum, line) => sum + Number(line.unitPrice) * line.qty, 0)
 

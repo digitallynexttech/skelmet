@@ -78,7 +78,7 @@ since that is a one-click way to lock every employee out for good.
    `PENDING` order, and creates the gateway order.
 2. The browser opens Razorpay Checkout.
 3. `POST /api/checkout/verify` checks the HMAC signature and marks the order paid.
-4. `POST /api/webhooks/razorpay` verifies its own signature over the **raw**
+4. `POST /api/public/webhooks/razorpay` verifies its own signature over the **raw**
    body and does the same. Either can land first, both are idempotent.
 
 Cash on delivery works with no Razorpay keys at all. With the keys blank an
@@ -143,7 +143,7 @@ Set these on the host, not just in `.env`:
 | `REQUIRE_BACKEND=1`                   | boot fails fast on a missing secret                     |
 
 Point the Razorpay dashboard webhook at
-`https://<host>/api/webhooks/razorpay` and subscribe to `payment.captured` and
+`https://<host>/api/public/webhooks/razorpay` and subscribe to `payment.captured` and
 `payment.failed`. Razorpay signs the raw body, so nothing in front of the app
 may rewrite or re-encode POST bodies on that route.
 

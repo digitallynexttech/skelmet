@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { getLivePrices } from "@/features/catalog/server/catalog.service"
 import { CheckoutView } from "@/features/checkout/components/checkout-view"
 
 export const metadata: Metadata = {
@@ -8,6 +9,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function CheckoutPage() {
-  return <CheckoutView />
+/** Live prices, so the cart can correct lines saved at an older price. */
+export const revalidate = 60
+
+export default async function CheckoutPage() {
+  return <CheckoutView prices={await getLivePrices()} />
 }
