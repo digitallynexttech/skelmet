@@ -34,7 +34,7 @@ export function FaqSection() {
           </p>
           <div className="rounded-tile relative hidden aspect-4/3 overflow-hidden border border-white/[0.08] lg:block">
             <Image
-              src="/product/product-side.jpg"
+              src="/product/mount-side.jpg"
               alt="Side profile of the SKELMET mount"
               fill
               sizes="360px"

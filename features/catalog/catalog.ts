@@ -123,9 +123,9 @@ export const FLAME_SKULL_MOUNT: Product = {
     {
       alt: "Side profile showing the mount arm",
       src: {
-        blaze: "/product/product-side.jpg",
-        olive: "/product/product-side-olive.jpg",
-        ghost: "/product/product-side-ghost.jpg",
+        blaze: "/product/mount-side.jpg",
+        olive: "/product/mount-side-olive.jpg",
+        ghost: "/product/mount-side-ghost.jpg",
       },
     },
     {

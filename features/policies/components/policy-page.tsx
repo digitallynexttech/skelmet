@@ -252,7 +252,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
         </div>
         <div className="relative order-first min-h-[240px] lg:order-last lg:min-h-[300px]">
           <Image
-            src="/product/product-side.jpg"
+            src="/product/mount-side.jpg"
             alt="Side profile of the SKELMET mount"
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
