@@ -322,7 +322,7 @@ export function OrderDetailView({ id }: { id: string }) {
 
           <section className="rounded-md bg-carbon border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
-              <CreditCard className="text-violet size-4" strokeWidth={1.9} />
+              <CreditCard className="text-ember size-4" strokeWidth={1.9} />
               <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
                 Payment
               </h2>
@@ -352,7 +352,7 @@ export function OrderDetailView({ id }: { id: string }) {
           {order.shipment ? (
             <section className="rounded-md bg-carbon border border-white/[0.09] p-6">
               <div className="mb-4 flex items-center gap-2.5">
-                <Truck className="text-acid size-4" strokeWidth={1.9} />
+                <Truck className="text-ember size-4" strokeWidth={1.9} />
                 <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
                   Shipment
                 </h2>

@@ -357,7 +357,7 @@ export function CheckoutView() {
           <ul className="rounded-tile bg-carbon flex flex-col gap-3 border border-white/[0.08] p-5">
             {PROMISES.map(({ Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
-                <Icon className="text-acid size-4 shrink-0" strokeWidth={1.8} />
+                <Icon className="text-ember size-4 shrink-0" strokeWidth={1.8} />
                 <span className="text-ash text-[13.5px]">{text}</span>
               </li>
             ))}

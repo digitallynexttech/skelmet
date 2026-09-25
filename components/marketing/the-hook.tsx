@@ -28,7 +28,7 @@ export function TheHook() {
       <ul className="flex flex-col gap-3">
         {USES.map((use) => (
           <li key={use} className="text-bone flex items-center gap-3 text-[15px]">
-            <Check className="text-acid size-[17px] shrink-0" strokeWidth={2.4} />
+            <Check className="text-ember size-[17px] shrink-0" strokeWidth={2.4} />
             {use}
           </li>
         ))}

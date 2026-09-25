@@ -30,7 +30,7 @@ export function WhyCare() {
               className="rounded-tile bg-void flex flex-col gap-4 border border-white/[0.08] p-6 sm:p-7"
             >
               <span className="border-magenta/25 bg-magenta/[0.08] grid size-10 place-items-center rounded-full border">
-                <Icon className="text-magenta size-[18px]" strokeWidth={1.8} />
+                <Icon className="text-ember size-[18px]" strokeWidth={1.8} />
               </span>
               <div>
                 <p className="text-magenta mb-2 font-mono text-[10.5px] tracking-[0.18em] uppercase">

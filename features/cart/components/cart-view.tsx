@@ -221,7 +221,7 @@ export function CartView() {
           </div>
 
           <div className="rounded-tile bg-carbon flex items-start gap-3 border border-white/[0.08] p-5">
-            <ShieldCheck className="text-acid mt-0.5 size-5 shrink-0" strokeWidth={1.7} />
+            <ShieldCheck className="text-ember mt-0.5 size-5 shrink-0" strokeWidth={1.7} />
             <p className="text-ash text-[13.5px] leading-[1.5]">
               Doesn&apos;t fit your wall? Send it back within 7 days, we pay the return pickup.
             </p>

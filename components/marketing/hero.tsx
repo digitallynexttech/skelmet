@@ -4,7 +4,6 @@ import { HeroHeadline } from "@/components/marketing/hero-headline"
 import { SkullStage } from "@/components/marketing/skull-stage"
 import { ButtonLink } from "@/components/ui/button"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
-import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
@@ -146,7 +145,7 @@ export function Hero() {
               size="lg"
               className="w-full sm:w-auto"
             >
-              Grab yours · {formatMoney(product.price)}
+              Grab yours
             </ButtonLink>
           </div>
         </div>

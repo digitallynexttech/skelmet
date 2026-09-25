@@ -15,19 +15,17 @@ function Tile({
   value,
   hint,
   Icon,
-  tone,
 }: {
   label: string
   value: React.ReactNode
   hint?: string
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
-  tone: string
 }) {
   return (
     <div className="rounded-md bg-carbon border border-white/[0.09] p-6">
       <div className="mb-5 flex items-center justify-between">
         <span className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">{label}</span>
-        <Icon className={cn("size-[18px]", tone)} strokeWidth={1.8} />
+        <Icon className="text-ember size-[18px]" strokeWidth={1.8} />
       </div>
       <div className="font-display text-bone text-[38px] leading-[1.04]">{value}</div>
       {hint ? <div className="text-dim mt-1.5 text-[12.5px]">{hint}</div> : null}
@@ -58,28 +56,24 @@ export function AdminDashboard() {
           label="Orders today"
           value={isLoading ? "-" : (data?.todayCount ?? 0)}
           Icon={ShoppingBag}
-          tone="text-ember"
         />
         <Tile
           label="Revenue, 7 days"
           value={isLoading ? "-" : <Money value={data?.weekRevenue ?? 0} />}
           hint="Excludes cancelled and refunded"
           Icon={IndianRupee}
-          tone="text-acid"
         />
         <Tile
           label="Awaiting fulfilment"
           value={isLoading ? "-" : (data?.awaiting ?? 0)}
           hint="Paid or packed"
           Icon={PackageCheck}
-          tone="text-violet"
         />
         <Tile
           label="Low stock"
           value={isLoading ? "-" : (data?.lowStock.length ?? 0)}
           hint="5 or fewer left"
           Icon={AlertTriangle}
-          tone="text-magenta"
         />
       </div>
 
