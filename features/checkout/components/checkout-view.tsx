@@ -2,18 +2,36 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { AlertTriangle, ArrowRight, Check, ChevronDown, CreditCard, ShieldCheck, Truck } from "lucide-react"
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  CreditCard,
+  ShieldCheck,
+  Truck,
+} from "lucide-react"
+import type { ZodType } from "zod"
 
 import { CheckoutSteps } from "@/components/shared/checkout-steps"
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
+import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
 import { apiFetch } from "@/lib/api-fetch"
+import {
+  INDIAN_STATES,
+  matchState,
+  normalizeMobileInput,
+  PINCODE,
+  type IndianState,
+} from "@/lib/india"
 import { useHydrated } from "@/hooks/use-hydrated"
 
 const PROMISES = [
@@ -21,6 +39,58 @@ const PROMISES = [
   { Icon: ShieldCheck, text: "7-day returns, pickup on us" },
   { Icon: Check, text: "No account needed to order" },
 ]
+
+const STATE_OPTIONS = INDIAN_STATES.map((s) => ({ value: s, label: s }))
+
+/** The form's fields, in the order the page shows them. */
+const FIELDS = [
+  "email",
+  "phone",
+  "firstName",
+  "lastName",
+  "line1",
+  "line2",
+  "pincode",
+  "city",
+  "state",
+] as const
+type FieldName = (typeof FIELDS)[number]
+
+/**
+ * Each field's rule, taken from the schema the server applies, so a field
+ * the page accepts is one the server accepts.
+ */
+const RULES: Record<FieldName, ZodType> = {
+  email: placeOrderSchema.shape.email,
+  phone: placeOrderSchema.shape.phone,
+  ...addressSchema.shape,
+}
+
+const isField = (name: string): name is FieldName => (FIELDS as readonly string[]).includes(name)
+
+function problem(name: FieldName, value: string): string | null {
+  const checked = RULES[name].safeParse(value)
+  return checked.success ? null : (checked.error.issues[0]?.message ?? "Check this")
+}
+
+/** What /api/public/shipping/pincode answers. */
+type PincodeAnswer = {
+  live: boolean
+  serviceable: boolean
+  days: number | null
+  found: boolean
+  city: string | null
+  state: string | null
+}
+
+/** Whether the pincode typed can be delivered to. */
+type Reach =
+  | { status: "idle" }
+  | { status: "checking"; pin: string }
+  | { status: "ok"; pin: string; days: number | null }
+  | { status: "blocked"; pin: string; message: string }
+  /** Shiprocket did not answer. Nothing to say: the server decides at payment. */
+  | { status: "unknown"; pin: string }
 
 function Lines({ items }: { items: CartLine[] }) {
   return (
@@ -59,6 +129,24 @@ function Lines({ items }: { items: CartLine[] }) {
   )
 }
 
+/** The line under the pincode while it is checked, and once it can be delivered to. */
+function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
+  if (reach.status === "checking" && reach.pin === pin) {
+    return <span className="text-dim text-[12.5px] leading-[1.45]">Checking delivery…</span>
+  }
+  if (reach.status === "ok" && reach.pin === pin) {
+    return (
+      <span className="text-acid flex items-start gap-1.5 text-[12.5px] leading-[1.45]">
+        <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
+        {reach.days
+          ? `We deliver here - about ${reach.days} ${reach.days === 1 ? "day" : "days"} with the courier.`
+          : "We deliver here."}
+      </span>
+    )
+  }
+  return null
+}
+
 export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   const items = useCart((s) => s.items)
   const syncPrices = useCart((s) => s.syncPrices)
@@ -70,6 +158,98 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   const formRef = React.useRef<HTMLFormElement>(null)
   const [prefilled, setPrefilled] = React.useState(false)
 
+  // One message per field, shown under it. Checked as each field is left and
+  // all together on submit, with the schema the server uses.
+  const [errors, setErrors] = React.useState<Partial<Record<FieldName, string>>>({})
+  const [formError, setFormError] = React.useState<string | null>(null)
+  const setError = React.useCallback((name: FieldName, message: string | null) => {
+    setErrors((prev) => {
+      if (message) return prev[name] === message ? prev : { ...prev, [name]: message }
+      if (!(name in prev)) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }, [])
+
+  // Controlled, unlike the rest of the form: the pincode drives a lookup, and
+  // the city and state are filled in from its answer.
+  const [pincode, setPincode] = React.useState("")
+  const [city, setCity] = React.useState("")
+  const [stateName, setStateName] = React.useState<IndianState | "">("")
+  const [reach, setReach] = React.useState<Reach>({ status: "idle" })
+  // Only the latest lookup may answer: a slow reply for a pincode that has
+  // since been edited must not fill in the wrong city.
+  const lookupTicket = React.useRef(0)
+  const pincodeTyped = React.useRef("")
+
+  /**
+   * Asks the server whether the pincode can be delivered to, and where it is.
+   *
+   * A pincode the buyer typed fills the city and state in, over whatever was
+   * there, since the pincode is the more reliable of the three; they can still
+   * change either afterwards. One restored from a previous order only fills
+   * what is empty, so it never overwrites an address someone saved.
+   */
+  const lookUp = React.useCallback(
+    async (pin: string, fill: "replace" | "blanks") => {
+      const ticket = ++lookupTicket.current
+      setReach({ status: "checking", pin })
+      try {
+        const answer = await apiFetch<PincodeAnswer>(
+          `/api/public/shipping/pincode?pincode=${encodeURIComponent(pin)}`,
+        )
+        if (ticket !== lookupTicket.current) return
+
+        const place = answer.city
+        const state = matchState(answer.state)
+        if (place) setCity((current) => (fill === "replace" || !current.trim() ? place : current))
+        if (state) setStateName((current) => (fill === "replace" || !current ? state : current))
+        if (fill === "replace") {
+          if (place) setError("city", null)
+          if (state) setError("state", null)
+        }
+
+        if (!answer.found) {
+          setReach({
+            status: "blocked",
+            pin,
+            message: `We couldn't find pincode ${pin}. Check the number.`,
+          })
+        } else if (answer.live && !answer.serviceable) {
+          setReach({
+            status: "blocked",
+            pin,
+            message: `Couriers don't reach ${pin} yet, so we can't deliver there. Message us and we'll try to arrange it.`,
+          })
+        } else {
+          setReach(
+            answer.live ? { status: "ok", pin, days: answer.days } : { status: "unknown", pin },
+          )
+        }
+      } catch {
+        // Rate-limited or offline. The city and state can still be typed, and
+        // the server checks the pincode again when the order is placed.
+        if (ticket === lookupTicket.current) setReach({ status: "unknown", pin })
+      }
+    },
+    [setError],
+  )
+
+  function handlePincode(event: React.ChangeEvent<HTMLInputElement>) {
+    // Digits only, at most six: paste, autofill and keypress all land here.
+    const pin = event.target.value.replace(/\D/g, "").slice(0, 6)
+    setPincode(pin)
+    pincodeTyped.current = pin
+    setError("pincode", pin.length === 6 ? problem("pincode", pin) : null)
+    if (PINCODE.test(pin)) {
+      void lookUp(pin, "replace")
+    } else {
+      lookupTicket.current++
+      setReach({ status: "idle" })
+    }
+  }
+
   // Fill in a returning buyer's details from their last order.
   //
   // Authorised entirely by the httpOnly cookie the server reads - nothing
@@ -78,8 +258,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   // email is not a secret, so it would hand anyone the home address of any
   // customer whose address they could guess.
   //
-  // Written straight into the DOM because these inputs are uncontrolled -
-  // defaultValue only applies on mount, and the answer arrives after it.
+  // The uncontrolled inputs are written straight into the DOM - defaultValue
+  // only applies on mount, and the answer arrives after it. The pincode, city
+  // and state are React state, so they are set as state.
   React.useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -93,8 +274,19 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
           if (field instanceof HTMLInputElement && !field.value) field.value = value
         }
         set("email", saved.email)
-        set("phone", saved.phone)
-        for (const [k, v] of Object.entries(saved.address)) set(k, v)
+        // Saved before the field took digits only, it may carry +91 or spaces.
+        set("phone", normalizeMobileInput(saved.phone))
+        const { pincode: savedPin, city: savedCity, state: savedState, ...rest } = saved.address
+        for (const [k, v] of Object.entries(rest)) set(k, v)
+        if (savedCity) setCity((current) => current || savedCity)
+        // A state saved as free text only comes back if it is a real one.
+        const state = matchState(savedState)
+        if (state) setStateName((current) => current || state)
+        if (!pincodeTyped.current && PINCODE.test(savedPin)) {
+          pincodeTyped.current = savedPin
+          setPincode(savedPin)
+          void lookUp(savedPin, "blanks")
+        }
         setPrefilled(true)
       } catch {
         // No saved order, or the lookup failed. An empty form is the same
@@ -104,15 +296,39 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [lookUp])
   const totals = calculateTotals(items, false, coupon?.discount ?? 0)
+
+  /** Focuses the first control inside a field, which also scrolls it into view. */
+  function reveal(name: FieldName) {
+    document
+      .getElementById(`field-${name}`)
+      ?.querySelector<HTMLElement>("input:not([type=hidden]), button")
+      ?.focus()
+  }
+
+  // A field is checked when it is left, once there is something in it: an
+  // empty field is for submit to point out, not for tabbing past.
+  function handleBlur(event: React.FocusEvent<HTMLFormElement>) {
+    const el = event.target
+    if (!(el instanceof HTMLInputElement) || !isField(el.name)) return
+    const value = el.value.trim()
+    if (value) setError(el.name, problem(el.name, value))
+  }
+
+  // Typing into a field clears its message; it is checked again on leaving.
+  function handleChange(event: React.ChangeEvent<HTMLFormElement>) {
+    const el = event.target as unknown as HTMLInputElement
+    if (el.name !== "pincode" && isField(el.name)) setError(el.name, null)
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const str = (k: string) => String(form.get(k) ?? "").trim()
+    setFormError(null)
 
-    await submit({
+    const parsed = placeOrderSchema.safeParse({
       email: str("email"),
       phone: str("phone"),
       address: {
@@ -120,9 +336,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         lastName: str("lastName"),
         line1: str("line1"),
         line2: str("line2"),
-        city: str("city"),
-        state: str("state"),
-        pincode: str("pincode"),
+        city: city.trim(),
+        state: stateName,
+        pincode,
       },
       // Only SKUs and quantities cross the wire; the server prices the order.
       items: items.map((l) => ({ sku: l.sku, qty: l.qty })),
@@ -136,6 +352,32 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       paymentMethod: "ONLINE",
       saveAddress: false,
     })
+
+    const found: Partial<Record<FieldName, string>> = {}
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path.at(-1) ?? "")
+        if (isField(key) && !found[key]) found[key] = issue.message
+      }
+    }
+    // Paying for a parcel no courier can bring is money to refund later.
+    if (reach.status === "blocked" && reach.pin === pincode && !found.pincode) {
+      found.pincode = reach.message
+    }
+
+    const first = FIELDS.find((name) => found[name])
+    if (first) {
+      setErrors(found)
+      reveal(first)
+      return
+    }
+    if (!parsed.success) {
+      // Not a field on this page - the cart or the coupon.
+      setFormError(parsed.error.issues[0]?.message ?? "Something in your order needs another look.")
+      return
+    }
+
+    await submit(parsed.data)
   }
 
   if (!mounted) return <div className="min-h-[60vh]" aria-hidden />
@@ -158,7 +400,16 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="pb-24">
+    // noValidate: the browser's own bubbles would fire before, and instead of,
+    // the messages under each field.
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      onBlur={handleBlur}
+      onChange={handleChange}
+      noValidate
+      className="pb-24"
+    >
       <details className="bg-carbon border-b border-white/[0.07] lg:hidden">
         <summary className="flex list-none items-center justify-between px-5 py-3.5">
           <span className="text-bone flex items-center gap-2.5 text-[13.5px]">
@@ -207,17 +458,34 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               </p>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Email">
+              <Field label="Email" id="field-email" error={errors.email}>
                 <Input
                   name="email"
                   type="email"
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
+                  aria-invalid={Boolean(errors.email)}
                 />
               </Field>
-              <Field label="Phone">
-                <Input name="phone" type="tel" required autoComplete="tel" placeholder="+91" />
+              <Field label="Phone" id="field-phone" error={errors.phone}>
+                {/* Digits only, ten at most, as it is typed or pasted: a
+                    pasted "+91 98765 43210" becomes 9876543210. No maxLength,
+                    which would cut that paste short before it is cleaned. */}
+                <Input
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  required
+                  autoComplete="tel-national"
+                  placeholder="10-digit mobile number"
+                  aria-invalid={Boolean(errors.phone)}
+                  onChange={(e) => {
+                    const clean = normalizeMobileInput(e.currentTarget.value)
+                    if (clean !== e.currentTarget.value) e.currentTarget.value = clean
+                  }}
+                  className="font-mono tracking-[0.06em]"
+                />
               </Field>
             </div>
           </section>
@@ -234,36 +502,97 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="First name">
-                <Input name="firstName" required autoComplete="given-name" />
-              </Field>
-              <Field label="Last name">
-                <Input name="lastName" required autoComplete="family-name" />
-              </Field>
-              <Field label="Address line 1" className="sm:col-span-2">
-                <Input name="line1" required autoComplete="address-line1" />
-              </Field>
-              <Field label="Address line 2 (optional)" className="sm:col-span-2">
-                <Input name="line2" autoComplete="address-line2" placeholder="Landmark, area" />
-              </Field>
-              <Field label="Pincode">
+              <Field label="First name" id="field-firstName" error={errors.firstName}>
                 <Input
-                  name="pincode"
+                  name="firstName"
                   required
-                  inputMode="numeric"
-                  pattern="[1-9][0-9]{5}"
-                  autoComplete="postal-code"
-                  className="font-mono tracking-[0.08em]"
+                  autoComplete="given-name"
+                  aria-invalid={Boolean(errors.firstName)}
                 />
               </Field>
-              <Field label="City">
-                <Input name="city" required autoComplete="address-level2" />
+              <Field label="Last name" id="field-lastName" error={errors.lastName}>
+                <Input
+                  name="lastName"
+                  required
+                  autoComplete="family-name"
+                  aria-invalid={Boolean(errors.lastName)}
+                />
               </Field>
-              <Field label="State" className="sm:col-span-2">
-                <Input name="state" required autoComplete="address-level1" />
+              <Field
+                label="Address line 1"
+                id="field-line1"
+                error={errors.line1}
+                className="sm:col-span-2"
+              >
+                <Input
+                  name="line1"
+                  required
+                  autoComplete="address-line1"
+                  placeholder="House number, street"
+                  aria-invalid={Boolean(errors.line1)}
+                />
+              </Field>
+              <Field
+                label="Address line 2 (optional)"
+                id="field-line2"
+                error={errors.line2}
+                className="sm:col-span-2"
+              >
+                <Input
+                  name="line2"
+                  autoComplete="address-line2"
+                  placeholder="Landmark, area"
+                  aria-invalid={Boolean(errors.line2)}
+                />
+              </Field>
+              <Field
+                label="Pincode"
+                id="field-pincode"
+                error={
+                  errors.pincode ??
+                  (reach.status === "blocked" && reach.pin === pincode ? reach.message : undefined)
+                }
+              >
+                <Input
+                  name="pincode"
+                  value={pincode}
+                  onChange={handlePincode}
+                  required
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  placeholder="6-digit pincode"
+                  aria-invalid={Boolean(
+                    errors.pincode || (reach.status === "blocked" && reach.pin === pincode),
+                  )}
+                  className="font-mono tracking-[0.08em]"
+                />
+                {errors.pincode ? null : <PincodeStatus reach={reach} pin={pincode} />}
+              </Field>
+              <Field label="City" id="field-city" error={errors.city}>
+                <Input
+                  name="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  autoComplete="address-level2"
+                  placeholder="Filled in from the pincode"
+                  aria-invalid={Boolean(errors.city)}
+                />
+              </Field>
+              <Field label="State" id="field-state" error={errors.state} className="sm:col-span-2">
+                <Select
+                  value={stateName}
+                  options={STATE_OPTIONS}
+                  onChange={(next) => {
+                    setStateName(next)
+                    setError("state", null)
+                  }}
+                  label="State"
+                  placeholder="Choose your state"
+                  invalid={Boolean(errors.state)}
+                />
               </Field>
             </div>
-
           </section>
 
           {/* 3 · payment */}
@@ -289,10 +618,10 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             </div>
           </section>
 
-          {error ? (
+          {formError || error ? (
             <div className="border-magenta/35 bg-magenta/[0.06] mt-5 flex items-start gap-3 rounded-xl border p-4">
               <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
-              <p className="text-bone text-[13.5px] leading-[1.5]">{error}</p>
+              <p className="text-bone text-[13.5px] leading-[1.5]">{formError ?? error}</p>
             </div>
           ) : null}
 
@@ -319,7 +648,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         {/* Sticky: the form beside this is long enough to scroll the total
             off screen, and the running total is the thing people check
             while they fill it in. top-[90px] clears the 74px sticky header plus a 16px gap. */}
-        <aside className="hidden flex-col gap-3.5 lg:flex lg:sticky lg:top-[90px] lg:self-start lg:max-h-[calc(100dvh-106px)] lg:overflow-y-auto">
+        <aside className="hidden flex-col gap-3.5 lg:sticky lg:top-[90px] lg:flex lg:max-h-[calc(100dvh-106px)] lg:self-start lg:overflow-y-auto">
           <div className="rounded-card bg-carbon border border-white/10 p-6">
             <h2 className="font-display text-bone mb-5 text-[24px] leading-[1.08] uppercase">
               Your order
@@ -353,7 +682,6 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               <span className="text-bone text-[15px] font-semibold">Total</span>
               <Money value={totals.total} className="font-display text-bone text-[38px]" />
             </div>
-
           </div>
 
           <ul className="rounded-tile bg-carbon flex flex-col gap-3 border border-white/[0.08] p-5">

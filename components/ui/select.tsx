@@ -30,6 +30,8 @@ export function Select<T extends string>({
   options,
   onChange,
   label,
+  placeholder,
+  invalid,
   className,
 }: {
   value: T
@@ -37,6 +39,14 @@ export function Select<T extends string>({
   onChange: (next: T) => void
   /** Accessible name for the trigger. */
   label: string
+  /**
+   * Shown while `value` matches no option. Without one, an unmatched value
+   * shows the first option, which is right for a filter that always has a
+   * choice and wrong for a form field nobody has answered yet.
+   */
+  placeholder?: string
+  /** Magenta border, as on an Input with aria-invalid. */
+  invalid?: boolean
   className?: string
 }) {
   const [open, setOpen] = React.useState(false)
@@ -46,7 +56,8 @@ export function Select<T extends string>({
   const list = React.useRef<HTMLDivElement>(null)
   const listId = React.useId()
 
-  const selected = options.find((o) => o.value === value) ?? options[0]
+  const selected =
+    options.find((o) => o.value === value) ?? (placeholder === undefined ? options[0] : undefined)
 
   React.useEffect(() => {
     if (!open) return
@@ -69,7 +80,12 @@ export function Select<T extends string>({
    * costs a second render every time the panel appears.
    */
   function show() {
-    setFocused(Math.max(0, options.findIndex((o) => o.value === value)))
+    setFocused(
+      Math.max(
+        0,
+        options.findIndex((o) => o.value === value),
+      ),
+    )
     setOpen(true)
   }
 
@@ -80,6 +96,24 @@ export function Select<T extends string>({
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
+    // Type-ahead, as a native select does: a letter moves to the next option
+    // starting with it. A long list - the 36 states at checkout - is otherwise
+    // a lot of arrowing.
+    if (e.key.length === 1 && e.key.trim() && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const letter = e.key.toLowerCase()
+      const from = open ? focused : options.findIndex((o) => o.value === value)
+      for (let step = 1; step <= options.length; step++) {
+        const i = (from + step + options.length) % options.length
+        if (options[i]?.label.toLowerCase().startsWith(letter)) {
+          e.preventDefault()
+          setFocused(i)
+          setOpen(true)
+          return
+        }
+      }
+      return
+    }
+
     if (!open) {
       if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
         e.preventDefault()
@@ -125,9 +159,13 @@ export function Select<T extends string>({
           "rounded-field bg-void text-bone flex h-[52px] w-full items-center justify-between gap-3 border border-white/[0.14] px-4 text-[14px] transition-colors",
           "focus:border-blaze focus:ring-blaze/[0.16] outline-none focus:ring-[3px]",
           open && "border-blaze",
+          invalid && !open && "border-magenta focus:ring-magenta/[0.16]",
         )}
+        aria-invalid={invalid || undefined}
       >
-        <span className="truncate">{selected?.label}</span>
+        <span className={cn("truncate", !selected && "text-dim")}>
+          {selected ? selected.label : placeholder}
+        </span>
         <span className="flex shrink-0 items-center gap-2">
           {selected?.hint != null ? (
             <span className="text-dim font-mono text-[12px]">{selected.hint}</span>
@@ -146,7 +184,7 @@ export function Select<T extends string>({
           role="listbox"
           aria-label={label}
           tabIndex={-1}
-          className="rounded-md bg-carbon absolute top-[calc(100%+6px)] right-0 left-0 z-50 max-h-[min(420px,60vh)] overflow-y-auto border border-white/[0.14] p-1.5 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]"
+          className="bg-carbon absolute top-[calc(100%+6px)] right-0 left-0 z-50 max-h-[min(420px,60vh)] overflow-y-auto rounded-md border border-white/[0.14] p-1.5 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]"
         >
           {options.map((o, i) => {
             const isSelected = o.value === value

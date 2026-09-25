@@ -99,3 +99,54 @@ describe("logging in to Shiprocket", () => {
     expect(logins(fetchMock)).toBe(2)
   })
 })
+
+describe("looking a pincode up", () => {
+  /** Logs in, and answers the postcode lookup with `answer`. */
+  function postcode(answer: () => Response) {
+    return vi.fn(async (url: string | URL) => {
+      if (String(url) === LOGIN) return goodLogin()
+      if (String(url).includes("/open/postcode/details?postcode=")) return answer()
+      throw new Error(`unexpected request: ${String(url)}`)
+    })
+  }
+
+  it("gives the city and state Shiprocket files the pincode under", async () => {
+    vi.stubGlobal(
+      "fetch",
+      postcode(() =>
+        json(200, {
+          success: true,
+          postcode_details: { postcode: "110044", city: "South Delhi", state: "Delhi" },
+        }),
+      ),
+    )
+    const sr = await client()
+
+    await expect(sr.postcodeDetails("110044")).resolves.toEqual({
+      city: "South Delhi",
+      state: "Delhi",
+    })
+  })
+
+  it("is null for a pincode Shiprocket does not know, which it reports as an error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      postcode(() =>
+        json(500, { message: "City/State not found for this pincode : 123456", code: 403 }),
+      ),
+    )
+    const sr = await client()
+
+    await expect(sr.postcodeDetails("123456")).resolves.toBeNull()
+  })
+
+  it("still fails when Shiprocket itself does", async () => {
+    vi.stubGlobal(
+      "fetch",
+      postcode(() => json(503, { message: "Service unavailable" })),
+    )
+    const sr = await client()
+
+    await expect(sr.postcodeDetails("110044")).rejects.toThrow(/Service unavailable/)
+  })
+})

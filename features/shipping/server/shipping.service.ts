@@ -691,13 +691,32 @@ export type PincodeAnswer = {
   serviceable: boolean
   /** Days in transit once handed over, from the courier Shiprocket would book. */
   days: number | null
+  /** False only when Shiprocket says there is no such pincode. */
+  found: boolean
+  /** Where the pincode is, for filling in the checkout address. Null when not known. */
+  city: string | null
+  state: string | null
 }
 
 const PINCODE_TTL_MS = 6 * 60 * 60_000
 const pincodeCache = new Map<string, { answer: PincodeAnswer; expiresAt: number }>()
 
+function remember(pincode: string, answer: PincodeAnswer, now: number): PincodeAnswer {
+  if (pincodeCache.size > 5_000) {
+    for (const [key, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(key)
+  }
+  pincodeCache.set(pincode, { answer, expiresAt: now + PINCODE_TTL_MS })
+  return answer
+}
+
 /**
- * Can we deliver here, and roughly how long does the courier take.
+ * Can we deliver here, how long does the courier take, and where is it.
+ *
+ * The product page asks the first two; checkout asks all three, filling the
+ * city and state in from the pincode and refusing one no courier reaches.
+ * The two Shiprocket calls go out together and fail independently, so a
+ * pincode with no courier still fills the address, and one Shiprocket cannot
+ * place still gets its couriers.
  *
  * Cached per pincode for six hours: serviceability changes slowly, and the
  * product page should not spend a Shiprocket call on every CHECK. When
@@ -707,18 +726,25 @@ const pincodeCache = new Map<string, { answer: PincodeAnswer; expiresAt: number 
 export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAnswer>> {
   return runAction(async () => {
     const { pincode } = pincodeSchema.parse(raw)
-    const offline: PincodeAnswer = { live: false, serviceable: true, days: null }
+    const offline: PincodeAnswer = {
+      live: false,
+      serviceable: true,
+      days: null,
+      found: true,
+      city: null,
+      state: null,
+    }
     if (!shiprocket.isShiprocketConfigured()) return ok(offline)
 
     const now = Date.now()
     const hit = pincodeCache.get(pincode)
     if (hit && hit.expiresAt > now) return ok(hit.answer)
 
-    try {
-      const parcel = parcelFor([{ name: "", sku: "", qty: 1, unitPrice: 0, weightGrams: null }])
-      const { options } = courierOptions(
-        await shiprocket.serviceability({
-          pickup_postcode: await pickupPincode(),
+    const parcel = parcelFor([{ name: "", sku: "", qty: 1, unitPrice: 0, weightGrams: null }])
+    const [reach, place] = await Promise.allSettled([
+      pickupPincode().then((pickup) =>
+        shiprocket.serviceability({
+          pickup_postcode: pickup,
           delivery_postcode: pincode,
           cod: 0,
           weight: parcel.weightKg,
@@ -726,23 +752,46 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
           breadth: parcel.breadthCm,
           height: parcel.heightCm,
         }),
-      )
-      const best = deliveryEstimate(options)
-      const answer: PincodeAnswer = {
-        live: true,
-        serviceable: options.length > 0,
-        days: best?.days ?? null,
-      }
+      ),
+      shiprocket.postcodeDetails(pincode),
+    ])
 
-      if (pincodeCache.size > 5_000) {
-        for (const [key, value] of pincodeCache)
-          if (value.expiresAt <= now) pincodeCache.delete(key)
-      }
-      pincodeCache.set(pincode, { answer, expiresAt: now + PINCODE_TTL_MS })
-      return ok(answer)
-    } catch (err) {
-      console.warn("[SHIPPING] pincode check fell back to the static promise", message(err))
-      return ok(offline)
+    // null: Shiprocket has no such pincode. undefined: the lookup itself failed.
+    const where = place.status === "fulfilled" ? place.value : undefined
+    if (place.status === "rejected") {
+      console.warn("[SHIPPING] postcode lookup failed", message(place.reason))
     }
+
+    // Not a real pincode. That does not change, so it is remembered like any answer.
+    if (where === null) {
+      return ok(
+        remember(
+          pincode,
+          { live: true, serviceable: false, days: null, found: false, city: null, state: null },
+          now,
+        ),
+      )
+    }
+
+    if (reach.status === "rejected") {
+      console.warn(
+        "[SHIPPING] pincode check fell back to the static promise",
+        message(reach.reason),
+      )
+      return ok({ ...offline, city: where?.city ?? null, state: where?.state ?? null })
+    }
+
+    const { options } = courierOptions(reach.value)
+    const best = deliveryEstimate(options)
+    const answer: PincodeAnswer = {
+      live: true,
+      serviceable: options.length > 0,
+      days: best?.days ?? null,
+      found: true,
+      city: where?.city ?? null,
+      state: where?.state ?? null,
+    }
+    // Without the place, not remembered: the next check can still fill it in.
+    return ok(where ? remember(pincode, answer, now) : answer)
   })
 }

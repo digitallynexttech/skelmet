@@ -218,6 +218,31 @@ export function serviceability(query: {
 }
 
 /**
+ * GET /open/postcode/details. The city and state Shiprocket files a pincode
+ * under, for filling in an address. Null when Shiprocket has no such pincode,
+ * which it reports as an error ("City/State not found for this pincode")
+ * rather than an empty answer.
+ */
+export async function postcodeDetails(
+  pincode: string,
+): Promise<{ city: string; state: string } | null> {
+  try {
+    const r = await call<{ postcode_details?: { city?: unknown; state?: unknown } }>(
+      "GET",
+      "/open/postcode/details",
+      { query: { postcode: pincode } },
+    )
+    const city = typeof r.postcode_details?.city === "string" ? r.postcode_details.city.trim() : ""
+    const state =
+      typeof r.postcode_details?.state === "string" ? r.postcode_details.state.trim() : ""
+    return city && state ? { city, state } : null
+  } catch (err) {
+    if (err instanceof ShippingError && /not found/i.test(err.message)) return null
+    throw err
+  }
+}
+
+/**
  * POST /courier/assign/awb. With no courier id, Shiprocket picks by the
  * account's courier priority settings. This is the call that charges the
  * wallet, and the one that fails when it is empty.

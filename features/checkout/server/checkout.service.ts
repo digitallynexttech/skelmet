@@ -11,7 +11,7 @@ import {
 import { attachCustomer } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
-import { queueShiprocketOrder } from "@/features/shipping/server/shipping.service"
+import { checkPincode, queueShiprocketOrder } from "@/features/shipping/server/shipping.service"
 import { sendMail } from "@/lib/mailer"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
@@ -163,6 +163,23 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
   return runAction(async () => {
     const input = placeOrderSchema.parse(raw)
     if (!hasDatabase()) return fail("Checkout is not available yet.", undefined, 503)
+
+    // The checkout page has already told the buyer this, but the page is only
+    // a courtesy: a paid order no courier can reach is money to refund and a
+    // customer to disappoint. Only a definite no refuses - Shiprocket being
+    // down or not set up must never stop a sale - and the answer is cached,
+    // usually from the page's own check a moment ago.
+    const pin = input.address.pincode
+    const reach = await checkPincode({ pincode: pin })
+    if (reach.ok && reach.data.live && !reach.data.serviceable) {
+      return fail(
+        reach.data.found
+          ? `Couriers don't reach pincode ${pin} yet, so we can't take this order. Message us and we'll try to arrange it.`
+          : `We couldn't find pincode ${pin}. Check the number and try again.`,
+        undefined,
+        422,
+      )
+    }
 
     // Before the stock check, so units held by abandoned orders are back on
     // sale for this buyer.

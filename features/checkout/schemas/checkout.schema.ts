@@ -1,24 +1,46 @@
 import { z } from "zod"
 
+import { INDIAN_STATES } from "@/lib/india"
+
+/**
+ * The form checks these as the buyer types and the server checks them again,
+ * from this one file, so the two cannot drift apart. Each rule that can fail
+ * for more than one reason is split, so the message names the actual problem.
+ */
 export const addressSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(60),
   lastName: z.string().trim().min(1, "Last name is required").max(60),
   line1: z.string().trim().min(4, "Address is required").max(160),
   line2: z.string().trim().max(160).optional().or(z.literal("")),
-  city: z.string().trim().min(2, "City is required").max(80),
-  state: z.string().trim().min(2, "State is required").max(80),
+  city: z
+    .string()
+    .trim()
+    .min(2, "City is required")
+    .max(80)
+    .regex(/^[\p{L}][\p{L} .'()&-]*$/u, "Use letters only for the city"),
+  state: z.enum(INDIAN_STATES, { error: "Choose your state" }),
+  // abort: a value that is not six digits gets that message alone, not a
+  // second one about its first digit as well.
   pincode: z
     .string()
     .trim()
-    .regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit pincode"),
+    .regex(/^\d{6}$/, { error: "Enter your 6-digit pincode", abort: true })
+    .regex(/^[1-9]/, "A pincode never starts with 0"),
 })
 
 export const placeOrderSchema = z.object({
   email: z.email("That email doesn't look right"),
+  // Exactly ten digits, as couriers dial it: no +91, no leading 0, no spaces.
+  // The field strips those as they are typed, so this only ever meets them
+  // from a hand-made request.
   phone: z
     .string()
     .trim()
-    .regex(/^(\+91[- ]?)?[6-9]\d{9}$/, "Enter a valid Indian mobile number"),
+    .regex(/^\d{10}$/, {
+      error: "Enter your 10-digit mobile number, without +91 or 0",
+      abort: true,
+    })
+    .regex(/^[6-9]/, "Indian mobile numbers start with 6, 7, 8 or 9"),
   address: addressSchema,
   items: z
     .array(
