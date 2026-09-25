@@ -77,9 +77,17 @@ export function useCheckout() {
   const [error, setError] = React.useState<string | null>(null)
 
   const submit = React.useCallback(
-    async (input: PlaceOrderInput) => {
+    /**
+     * `keepCart` for a Buy it now order: it never came from the cart, so
+     * paying for it leaves the cart as it was.
+     */
+    async (input: PlaceOrderInput, { keepCart = false }: { keepCart?: boolean } = {}) => {
       setPending(true)
       setError(null)
+      const done = (orderNumber: string) => {
+        if (!keepCart) clear()
+        router.push(`/checkout/thank-you?order=${orderNumber}`)
+      }
 
       try {
         const started = await apiFetch<StartedCheckout>("/api/checkout/session", {
@@ -89,8 +97,7 @@ export function useCheckout() {
 
         // Cash on delivery: the order already exists, nothing to pay now.
         if (started.paymentMethod === "COD" || !started.gatewayOrderId) {
-          clear()
-          router.push(`/checkout/thank-you?order=${started.orderNumber}`)
+          done(started.orderNumber)
           return
         }
 
@@ -128,8 +135,7 @@ export function useCheckout() {
                 // Payment succeeded at the gateway; the webhook will reconcile.
               })
               .finally(() => {
-                clear()
-                router.push(`/checkout/thank-you?order=${started.orderNumber}`)
+                done(started.orderNumber)
               })
           },
           modal: {

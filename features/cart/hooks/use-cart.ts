@@ -68,6 +68,26 @@ type CartState = {
 
 const MAX_QTY = 9
 
+/**
+ * A line for `qty` of one colourway, at the registry price - the cart's own
+ * lines, and the single line Buy it now checks out without touching the cart.
+ */
+export function lineFor(colourwayId: string, qty: number): CartLine | null {
+  const colourway = COLOURWAYS.find((c) => c.id === colourwayId)
+  if (!colourway || !Number.isInteger(qty) || qty < 1) return null
+  return {
+    id: `${FLAME_SKULL_MOUNT.slug}:${colourway.id}`,
+    productSlug: FLAME_SKULL_MOUNT.slug,
+    productName: FLAME_SKULL_MOUNT.name,
+    colourway: colourway.id,
+    colourwayName: colourway.name,
+    sku: colourway.sku,
+    image: colourway.image,
+    unitPrice: FLAME_SKULL_MOUNT.price,
+    qty: Math.min(MAX_QTY, qty),
+  }
+}
+
 export const useCart = create<CartState>()(
   persist(
     (set) => ({
@@ -76,30 +96,16 @@ export const useCart = create<CartState>()(
 
       add: (colourwayId, qty = 1) =>
         set((state) => {
-          const colourway = COLOURWAYS.find((c) => c.id === colourwayId)
-          if (!colourway) return state
+          const line = lineFor(colourwayId, qty)
+          if (!line) return state
 
-          const id = `${FLAME_SKULL_MOUNT.slug}:${colourway.id}`
-          const existing = state.items.find((line) => line.id === id)
-
+          const existing = state.items.find((l) => l.id === line.id)
           if (existing) {
             return {
-              items: state.items.map((line) =>
-                line.id === id ? { ...line, qty: Math.min(MAX_QTY, line.qty + qty) } : line,
+              items: state.items.map((l) =>
+                l.id === line.id ? { ...l, qty: Math.min(MAX_QTY, l.qty + qty) } : l,
               ),
             }
-          }
-
-          const line: CartLine = {
-            id,
-            productSlug: FLAME_SKULL_MOUNT.slug,
-            productName: FLAME_SKULL_MOUNT.name,
-            colourway: colourway.id,
-            colourwayName: colourway.name,
-            sku: colourway.sku,
-            image: colourway.image,
-            unitPrice: FLAME_SKULL_MOUNT.price,
-            qty: Math.min(MAX_QTY, qty),
           }
           return { items: [...state.items, line] }
         }),

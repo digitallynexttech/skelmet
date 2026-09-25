@@ -21,7 +21,7 @@ import { Field, Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { siteConfig } from "@/config/site"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
-import { calculateTotals, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
+import { calculateTotals, lineFor, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
@@ -178,12 +178,35 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
   return null
 }
 
+/**
+ * The one line from Buy it now - `/checkout?buy=<colourway>&qty=<n>` - at its
+ * live price, or null for an ordinary checkout of the cart. In the URL rather
+ * than the cart, so the cart is untouched and a reload keeps the order.
+ */
+function buyNowLine(search: string, prices: Record<string, string>): CartLine | null {
+  const params = new URLSearchParams(search)
+  const colourway = params.get("buy")
+  if (!colourway) return null
+  const line = lineFor(colourway, Number(params.get("qty") ?? "1"))
+  return line ? { ...line, unitPrice: prices[line.sku] ?? line.unitPrice } : null
+}
+
 export function CheckoutView({ prices }: { prices: Record<string, string> }) {
-  const items = useCart((s) => s.items)
+  const cartItems = useCart((s) => s.items)
   const syncPrices = useCart((s) => s.syncPrices)
   React.useEffect(() => syncPrices(prices), [prices, syncPrices])
   const couponCode = useCart((s) => s.couponCode)
   const mounted = useHydrated()
+  // Read once the page is on the client: the server render has no URL to read.
+  const buyNow = React.useMemo(
+    () => (mounted ? buyNowLine(window.location.search, prices) : null),
+    [mounted, prices],
+  )
+  const items = React.useMemo(() => (buyNow ? [buyNow] : cartItems), [buyNow, cartItems])
+  const itemsRef = React.useRef(items)
+  React.useEffect(() => {
+    itemsRef.current = items
+  }, [items])
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
   const formRef = React.useRef<HTMLFormElement>(null)
@@ -318,9 +341,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         if (!pincodeTyped.current && PINCODE.test(savedPin)) {
           pincodeTyped.current = savedPin
           setPincode(savedPin)
-          // Read from the store, not a render: this effect runs once, and must
+          // Read from a ref, not a render: this effect runs once, and must
           // not run again each time the cart changes.
-          void lookUp(savedPin, "blanks", unitsIn(useCart.getState().items))
+          void lookUp(savedPin, "blanks", unitsIn(itemsRef.current))
         }
         setPrefilled(true)
       } catch {
@@ -418,7 +441,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       return
     }
 
-    await submit(parsed.data)
+    await submit(parsed.data, { keepCart: buyNow !== null })
   }
 
   if (!mounted) return <div className="min-h-[60vh]" aria-hidden />
@@ -461,6 +484,11 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         </summary>
         <div className="border-t border-white/[0.07] px-5 py-4">
           <Lines items={items} />
+          {buyNow && cartItems.length > 0 ? (
+            <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
+              Buying just this. The {unitsIn(cartItems)} in your cart stay there for later.
+            </p>
+          ) : null}
         </div>
       </details>
 
@@ -695,6 +723,11 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               Your order
             </h2>
             <Lines items={items} />
+            {buyNow && cartItems.length > 0 ? (
+              <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
+                Buying just this. The {unitsIn(cartItems)} in your cart stay there for later.
+              </p>
+            ) : null}
 
             <CouponBox subtotal={totals.subtotal} applied={coupon} onApplied={setCoupon} />
 

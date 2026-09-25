@@ -249,12 +249,10 @@ export function ProductDetail({
             size="lg"
             full
             className="min-w-0 sm:flex-1"
-            onClick={() => {
-              // Add first, then navigate: checkout reads the cart on mount, and
-              // arriving before the write lands shows the empty state.
-              add(colourwayId, qty)
-              router.push("/checkout")
-            }}
+            onClick={() =>
+              // Straight to checkout with just this, leaving the cart as it is.
+              router.push(`/checkout?buy=${colourwayId}&qty=${qty}`)
+            }
           >
             Buy it now
           </Button>
