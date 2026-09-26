@@ -9,8 +9,6 @@ import { CartButton } from "@/components/layout/cart-button"
 import { Wordmark } from "@/components/shared/wordmark"
 import { ButtonLink } from "@/components/ui/button"
 import { primaryNav } from "@/config/nav"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
-import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
@@ -133,7 +131,7 @@ export function SiteHeader() {
 
           <div className="border-t border-white/[0.07] p-5">
             <ButtonLink href="/product/flame-skull-mount" variant="primary" size="md" full>
-              Grab yours · {formatMoney(FLAME_SKULL_MOUNT.price)}
+              Grab yours
             </ButtonLink>
           </div>
         </div>

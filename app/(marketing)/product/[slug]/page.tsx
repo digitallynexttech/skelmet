@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <RiderWall />
       <FaqSection />
 
-      <StickyBuyBar price={product.price} />
+      <StickyBuyBar price={product.price} defaultColourway={product.colourways[0]!.id} />
     </>
   )
 }

@@ -10,6 +10,7 @@ import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/features/cart/hooks/use-cart"
+import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-selection"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
 import { discountPercent } from "@/lib/money"
@@ -57,6 +58,9 @@ export function ProductDetail({
     if (match) setColourwayId(match.id)
   }, [product.colourways])
   const [qty, setQty] = React.useState(1)
+  // Shared with the phone's sticky bar, so its Buy now buys what is picked here.
+  const setSelection = useBuySelection((s) => s.set)
+  React.useEffect(() => setSelection(colourwayId, qty), [colourwayId, qty, setSelection])
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)
   const router = useRouter()
@@ -251,7 +255,7 @@ export function ProductDetail({
             className="min-w-0 sm:flex-1"
             onClick={() =>
               // Straight to checkout with just this, leaving the cart as it is.
-              router.push(`/checkout?buy=${colourwayId}&qty=${qty}`)
+              router.push(buyNowHref(colourwayId, qty))
             }
           >
             Buy it now
