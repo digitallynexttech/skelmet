@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { getLivePrices } from "@/features/catalog/server/catalog.service"
 import { CheckoutView } from "@/features/checkout/components/checkout-view"
@@ -13,5 +14,12 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function CheckoutPage() {
-  return <CheckoutView prices={await getLivePrices()} />
+  const prices = await getLivePrices()
+  return (
+    // CheckoutView reads the Buy now line from the search params, which a
+    // prerendered page can only do inside a Suspense boundary.
+    <Suspense fallback={<div className="min-h-[60vh]" aria-hidden />}>
+      <CheckoutView prices={prices} />
+    </Suspense>
+  )
 }

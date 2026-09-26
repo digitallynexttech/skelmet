@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
   ArrowRight,
@@ -183,8 +184,10 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
  * live price, or null for an ordinary checkout of the cart. In the URL rather
  * than the cart, so the cart is untouched and a reload keeps the order.
  */
-function buyNowLine(search: string, prices: Record<string, string>): CartLine | null {
-  const params = new URLSearchParams(search)
+function buyNowLine(
+  params: { get(name: string): string | null },
+  prices: Record<string, string>,
+): CartLine | null {
   const colourway = params.get("buy")
   if (!colourway) return null
   const line = lineFor(colourway, Number(params.get("qty") ?? "1"))
@@ -197,10 +200,14 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   React.useEffect(() => syncPrices(prices), [prices, syncPrices])
   const couponCode = useCart((s) => s.couponCode)
   const mounted = useHydrated()
-  // Read once the page is on the client: the server render has no URL to read.
+  // From Next's search params, not window.location: arriving by a click, the
+  // page renders before the browser's address changes, so window.location
+  // still said /product/... and Buy now opened an empty checkout until a
+  // reload.
+  const searchParams = useSearchParams()
   const buyNow = React.useMemo(
-    () => (mounted ? buyNowLine(window.location.search, prices) : null),
-    [mounted, prices],
+    () => (mounted ? buyNowLine(searchParams, prices) : null),
+    [mounted, searchParams, prices],
   )
   const items = React.useMemo(() => (buyNow ? [buyNow] : cartItems), [buyNow, cartItems])
   const itemsRef = React.useRef(items)
