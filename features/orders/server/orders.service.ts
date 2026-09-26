@@ -1,6 +1,7 @@
 import "server-only"
 
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
+import { queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paymentConfig } from "@/features/settings/server/runtime-settings"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
@@ -204,6 +205,9 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
           orderBy: { createdAt: "desc" },
         },
         shiprocketOrderId: true,
+        invoiceNumber: true,
+        invoicedAt: true,
+        invoiceEmailedAt: true,
         shipment: {
           select: {
             courier: true,
@@ -235,6 +239,8 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
       total: order.total.toString(),
       createdAt: order.createdAt.toISOString(),
       placedAt: order.placedAt?.toISOString() ?? null,
+      invoicedAt: order.invoicedAt?.toISOString() ?? null,
+      invoiceEmailedAt: order.invoiceEmailedAt?.toISOString() ?? null,
       coupon: order.coupon ? { ...order.coupon, value: order.coupon.value.toString() } : null,
       items: order.items.map((i) => ({ ...i, unitPrice: i.unitPrice.toString() })),
       payments: order.payments.map((p) => ({
@@ -358,8 +364,8 @@ export async function markShipped(
   return result
 }
 
-export function markDelivered(id: string) {
-  return transition(
+export async function markDelivered(id: string) {
+  const result = await transition(
     id,
     ["SHIPPED"],
     "DELIVERED",
@@ -379,6 +385,9 @@ export function markDelivered(id: string) {
       })
     },
   )
+  // The invoice goes to the customer once the parcel is in their hands.
+  if (result.ok) queueInvoiceEmail(id)
+  return result
 }
 
 export function cancelOrder(id: string) {

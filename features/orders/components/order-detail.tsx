@@ -2,13 +2,16 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft,
   Ban,
   CreditCard,
   ExternalLink,
   FileText,
+  Mail,
   MapPin,
+  Printer,
   PackageCheck,
   Home,
   RefreshCw,
@@ -20,7 +23,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import {
   useCourierOptions,
@@ -334,6 +337,93 @@ function ShipDialog({
         {children}
       </div>
     </form>
+  )
+}
+
+/** Paid for, or cash on delivery that has been packed - as the server decides. */
+const INVOICEABLE: OrderStatus[] = ["PAID", "PACKED", "SHIPPED", "DELIVERED"]
+
+function InvoiceSection({
+  order,
+  actions,
+  busy,
+  ask,
+}: {
+  order: OrderDetail
+  actions: ReturnType<typeof useOrderAction>
+  busy: boolean
+  ask: Ask
+}) {
+  const qc = useQueryClient()
+  const canIssue = INVOICEABLE.includes(order.status)
+  if (!order.invoiceNumber && !canIssue) return null
+  const href = `/api/admin/orders/${order.id}/invoice`
+
+  return (
+    <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
+      <div className="mb-4 flex items-center gap-2.5">
+        <FileText className="text-ember size-4" strokeWidth={1.9} />
+        <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">Invoice</h2>
+      </div>
+      <div className="flex flex-col gap-2 text-[13.5px]">
+        {order.invoiceNumber ? (
+          <>
+            <Row label="Number" value={<span className="font-mono">{order.invoiceNumber}</span>} />
+            <Row label="Dated" value={when(order.invoicedAt, false)} />
+          </>
+        ) : (
+          <p className="text-ash">
+            Opening it for the first time gives it the next invoice number and today&apos;s date.
+          </p>
+        )}
+        <Row
+          label="Emailed"
+          value={
+            order.invoiceEmailedAt
+              ? when(order.invoiceEmailedAt)
+              : order.status === "DELIVERED"
+                ? "Not yet"
+                : "On delivery"
+          }
+        />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2.5 border-t border-white/[0.07] pt-4">
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonVariants({ variant: "primary", size: "sm" })}
+          // The first open issues the number; show it once it has.
+          onClick={() =>
+            window.setTimeout(
+              () => void qc.invalidateQueries({ queryKey: ["orders", order.id] }),
+              2500,
+            )
+          }
+        >
+          <Printer className="size-4" strokeWidth={1.9} />
+          Print invoice
+        </a>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            ask({
+              title: order.invoiceEmailedAt ? "Email the invoice again?" : "Email the invoice?",
+              body: `The tax invoice for ${order.number} goes to ${order.email} as a PDF.${
+                order.invoiceEmailedAt ? " They already had it once." : ""
+              }`,
+              confirmLabel: "Email invoice",
+              run: (done) => actions.emailInvoice.mutate(undefined, { onSettled: done }),
+            })
+          }
+        >
+          <Mail className="size-4" strokeWidth={1.9} />
+          {order.invoiceEmailedAt ? "Email again" : "Email invoice"}
+        </Button>
+      </div>
+    </section>
   )
 }
 
@@ -662,6 +752,8 @@ export function OrderDetailView({ id }: { id: string }) {
               </ul>
             )}
           </section>
+
+          <InvoiceSection order={order} actions={actions} busy={busy} ask={ask} />
 
           {order.shipment ? (
             <section className="bg-carbon rounded-md border border-white/[0.09] p-6">

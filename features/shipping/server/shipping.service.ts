@@ -1,10 +1,10 @@
 import "server-only"
 
 import { timingSafeEqual } from "node:crypto"
-import { after } from "next/server"
 import type { Session } from "next-auth"
 
 import { shippingConfig } from "@/config/shipping"
+import { queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { renderOrderShipped } from "@/features/orders/emails/order-shipped"
 import { bookShipmentSchema, pincodeSchema } from "@/features/shipping/schemas/shipping.schema"
 import * as shiprocket from "@/features/shipping/server/shiprocket"
@@ -27,6 +27,7 @@ import {
 import { shippingCharge, shiprocketConfig } from "@/features/settings/server/runtime-settings"
 import { PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
+import { later } from "@/server/later"
 import { AppError } from "@/lib/errors"
 import { sendMail } from "@/lib/mailer"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
@@ -206,18 +207,6 @@ async function ensureShiprocketOrder(
  */
 async function pickupPincode(): Promise<string> {
   return (await shiprocket.pickupAddress())?.pincode ?? shippingConfig.pickupPincode
-}
-
-/**
- * Runs `task` once the response has gone out. Outside a request - a script,
- * a test - `after` throws, and the task simply runs now instead.
- */
-function later(task: () => Promise<void>): void {
-  try {
-    after(task)
-  } catch {
-    void task()
-  }
 }
 
 /**
@@ -562,6 +551,7 @@ async function applyTrackingEvent(
           data: { placedAt: at },
         })
         await audit("order:deliver", "DELIVERED")
+        queueInvoiceEmail(orderId)
       }
       break
     }

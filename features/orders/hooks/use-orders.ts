@@ -37,6 +37,11 @@ export type OrderDetail = {
   shippingAddress: Record<string, string | boolean>
   createdAt: string
   placedAt: string | null
+  /** The tax invoice, once issued: SKM/26-27/0001. */
+  invoiceNumber: string | null
+  invoicedAt: string | null
+  /** When it last went to the customer; sent by itself on delivery. */
+  invoiceEmailedAt: string | null
   coupon: { code: string; kind: string; value: string } | null
   items: Array<{
     id: string
@@ -232,5 +237,18 @@ export function useOrderAction(id: string) {
     onSuccess: invalidate,
   })
 
-  return { pack, ship, deliver, cancel, refund, book, refreshTracking }
+  const emailInvoice = useMutation({
+    mutationFn: mutationWithToast(
+      () =>
+        apiFetch<{ invoiceNumber: string; emailedAt: string; to: string }>(
+          `/api/admin/orders/${id}/invoice/email`,
+          { method: "POST" },
+        ),
+      { loading: "Emailing the invoice…", success: "Invoice emailed to the customer" },
+    ),
+    // Settled, not success: a failed send may still have issued the number.
+    onSettled: invalidate,
+  })
+
+  return { pack, ship, deliver, cancel, refund, book, refreshTracking, emailInvoice }
 }

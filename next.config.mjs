@@ -10,6 +10,9 @@ const nextConfig = {
   // and `next start` must be given the same value, because the chosen name
   // is recorded inside the build's own required-server-files.json.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // pdfkit reads its font metrics from files beside its own code, which
+  // bundling would move out from under it.
+  serverExternalPackages: ["pdfkit"],
   images: {
     formats: ["image/avif", "image/webp"],
   },

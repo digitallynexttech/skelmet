@@ -55,6 +55,22 @@ export function respond<T>(result: ActionResult<T>, successStatus = 200) {
   )
 }
 
+/**
+ * A file, for the few routes that answer with one rather than JSON. A failure
+ * is still the usual envelope. Private and never cached: invoices carry the
+ * customer's address.
+ */
+export function respondPdf(result: ActionResult<{ pdf: Buffer; filename: string }>) {
+  if (!result.ok) return respond(result)
+  return new NextResponse(new Uint8Array(result.data.pdf), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${result.data.filename}"`,
+      "Cache-Control": "private, no-store",
+    },
+  })
+}
+
 /** A paginated read is `ok({ data: rows, pagination })`, so hooks read `.data.data`. */
 export function paginate<T>(rows: T[], page: number, pageSize: number, total: number) {
   return {

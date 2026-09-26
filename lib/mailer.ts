@@ -28,7 +28,10 @@ export type MailInput = {
   text: string
   html?: string
   replyTo?: string
+  attachments?: MailAttachment[]
 }
+
+export type MailAttachment = { filename: string; content: Buffer; contentType: string }
 
 export function isMailConfigured(): boolean {
   return Boolean(getEnv().SMTP_HOST)
@@ -61,6 +64,7 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
       text: input.text,
       ...(input.html ? { html: input.html } : {}),
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     })
 
     return { ok: true, delivered: true, messageId: info.messageId ?? null }
