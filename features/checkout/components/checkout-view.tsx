@@ -17,13 +17,16 @@ import type { ZodType } from "zod"
 import { CheckoutSteps } from "@/components/shared/checkout-steps"
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
-import { Button, ButtonLink } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { siteConfig } from "@/config/site"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, lineFor, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
-import { CheckoutSkeleton } from "@/features/checkout/components/checkout-skeleton"
+import {
+  CheckoutSkeleton,
+  NothingToCheckOut,
+} from "@/features/checkout/components/checkout-skeleton"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
@@ -505,22 +508,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
 
   if (!mounted) return <CheckoutSkeleton />
 
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center px-5 py-24 text-center">
-        <h1 className="font-display text-bone mb-4 text-[40px] leading-[1.0] uppercase sm:text-[56px]">
-          Nothing to check out
-        </h1>
-        <p className="text-ash mb-8 max-w-[380px] text-[15.5px] leading-[1.6]">
-          Add a mount to your cart first and this page will have something to do.
-        </p>
-        <ButtonLink href="/product/flame-skull-mount" variant="primary" size="lg">
-          Shop the mount
-          <ArrowRight className="size-4" strokeWidth={2.4} />
-        </ButtonLink>
-      </div>
-    )
-  }
+  if (items.length === 0) return <NothingToCheckOut />
 
   return (
     // noValidate: the browser's own bubbles would fire before, and instead of,

@@ -34,11 +34,18 @@ const mono = JetBrains_Mono({
 })
 
 /**
- * Runs as <body> is parsed, before anything in it can paint: a page load later
- * in the same session skips the splash (see components/shared/splash-screen).
- * Set on <html> so the CSS rule can hide the curtain before React exists.
+ * Runs as <body> is parsed, before anything in it can paint, and marks <html>
+ * so CSS can decide before React exists:
+ * - data-splash-skip: a page load later in the same session skips the splash
+ *   (components/shared/splash-screen).
+ * - data-cart-empty: the saved cart (use-cart's persisted store) is empty and
+ *   this is not a Buy-now checkout, so /cart and /checkout hold the place of
+ *   their empty state rather than a full page that then collapses.
  */
-const SPLASH_SKIP = `try{if(sessionStorage.getItem("skm.splash")==="1")document.documentElement.setAttribute("data-splash-skip","")}catch(e){}`
+const BEFORE_PAINT = [
+  `try{if(sessionStorage.getItem("skm.splash")==="1")document.documentElement.setAttribute("data-splash-skip","")}catch(e){}`,
+  `try{var c=JSON.parse(localStorage.getItem("skelmet.cart")||"null");if(!/[?&]buy=/.test(location.search)&&!(c&&c.state&&c.state.items&&c.state.items.length))document.documentElement.setAttribute("data-cart-empty","")}catch(e){}`,
+].join("")
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -89,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="antialiased">
-        <script dangerouslySetInnerHTML={{ __html: SPLASH_SKIP }} />
+        <script dangerouslySetInnerHTML={{ __html: BEFORE_PAINT }} />
         {children}
       </body>
     </html>

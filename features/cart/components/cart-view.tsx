@@ -14,7 +14,8 @@ import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
 
-function EmptyCart() {
+function EmptyCart({ heading = true }: { heading?: boolean }) {
+  const Title = heading ? "h1" : "div"
   return (
     <div className="flex flex-col items-center px-5 py-24 text-center">
       <div className="relative mb-8 size-40 opacity-70">
@@ -26,9 +27,9 @@ function EmptyCart() {
           className="screen object-cover"
         />
       </div>
-      <h1 className="font-display text-bone mb-4 text-[44px] leading-[1.0] uppercase sm:text-[60px]">
+      <Title className="font-display text-bone mb-4 text-[44px] leading-[1.0] uppercase sm:text-[60px]">
         Nothing in here
-      </h1>
+      </Title>
       <p className="text-ash mb-8 max-w-[400px] text-[15.5px] leading-[1.6]">
         Your cart is as empty as the wall above your desk. Let&apos;s fix one of those.
       </p>
@@ -56,24 +57,30 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
   const totals = calculateTotals(items, false, coupon?.discount ?? 0)
 
   if (!mounted) {
-    // The page's own heading and blocks the size of a line and the summary,
-    // so the footer does not jump when the saved cart is read.
+    // The page's own heading and blocks the size of a line and the summary -
+    // or the empty state, when the saved cart is empty (data-when-cart in
+    // globals.css) - so the footer does not jump when the cart is read.
     return (
-      <div aria-hidden className="px-5 pb-24 sm:px-8 xl:px-14">
-        <div className="flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
-              Step 01 of 03
-            </div>
-            <div className="font-display text-bone text-[48px] leading-[1.0] uppercase sm:text-[64px] xl:text-[76px]">
-              Your stash
-            </div>
-          </div>
-          <CheckoutSteps current={1} />
+      <div aria-hidden>
+        <div data-when-cart="empty">
+          <EmptyCart heading={false} />
         </div>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="rounded-card bg-carbon h-[150px] border border-white/[0.09] sm:h-[190px]" />
-          <div className="rounded-card bg-carbon h-[520px] border border-white/10" />
+        <div data-when-cart="full" className="px-5 pb-24 sm:px-8 xl:px-14">
+          <div className="flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
+                Step 01 of 03
+              </div>
+              <div className="font-display text-bone text-[48px] leading-[1.0] uppercase sm:text-[64px] xl:text-[76px]">
+                Your stash
+              </div>
+            </div>
+            <CheckoutSteps current={1} />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="rounded-card bg-carbon h-[150px] border border-white/[0.09] sm:h-[190px]" />
+            <div className="rounded-card bg-carbon h-[520px] border border-white/10" />
+          </div>
         </div>
       </div>
     )

@@ -274,16 +274,18 @@ export function SplashScreen() {
             actually loads - the reference's outline-and-fill mechanic, with the
             real lockup standing in for its outlined type. */}
         <div className="relative w-[min(560px,82vw)]">
-          {/* Lazy and low priority: decoration, not the page's main image. On
-              a page load where the splash is skipped it is display:none, so a
-              lazy image is never fetched at all. */}
+          {/* Lazy, so on a page load where the splash is skipped (display:
+              none) it is never fetched at all. High priority once it is: while
+              the splash is up it is the largest thing on screen, and at low
+              priority it queued behind every script and held LCP to 2.5 s on
+              a phone. */}
           <Image
             src={LOCKUP.src}
             width={LOCKUP.width}
             height={LOCKUP.height}
             alt=""
             loading="lazy"
-            fetchPriority="low"
+            fetchPriority="high"
             sizes="(min-width: 640px) 560px, 82vw"
             className="h-auto w-full opacity-30"
           />
@@ -294,7 +296,7 @@ export function SplashScreen() {
               height={LOCKUP.height}
               alt=""
               loading="lazy"
-              fetchPriority="low"
+              fetchPriority="high"
               sizes="(min-width: 640px) 560px, 82vw"
               className="h-auto w-full"
             />
