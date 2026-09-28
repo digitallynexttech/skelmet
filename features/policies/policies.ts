@@ -65,7 +65,7 @@ const PRIVACY: Policy = {
     "What we collect, why we collect it, and how to make us delete it. Written to be read, not to be survived.",
   readingTime: "~8 min read",
   shortVersion:
-    "We collect what we need to ship you a skull and nothing else. We don't sell your data. Email us and we'll delete it.",
+    "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
   accent: "violet",
   sections: [
     {
@@ -91,10 +91,11 @@ const PRIVACY: Policy = {
           items: [
             "Identity and contact: name, email address, phone number.",
             "Delivery: shipping address, pincode, any delivery note you add.",
-            "Order: what you bought, colourway, quantity, price paid, any discount code used.",
+            "Order: what you bought, colourway, quantity, price paid, any discount code used - including an order you place and do not pay for.",
             "Payment: the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.",
             "Account: a hashed password and saved addresses, if you create an account.",
-            "Technical: IP address, browser and device type, pages viewed, referring site.",
+            "Technical, for every visit: pages viewed and the time spent on each, browser and device type, the city your connection comes from, the site or campaign that sent you, and what you put in your cart.",
+            "Technical, only if you accept cookies: your IP address, your device model, a cookie that recognises this device on later visits, and the email, phone, name and pincode you type at checkout, even if you do not place the order.",
             "Content you send us: support messages, review text, and any photo you submit to the rider wall.",
           ],
         },
@@ -106,7 +107,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Most of it you give us directly: at checkout, when you create an account, when you write to us or post a review. Technical data is collected automatically by our servers and by the cookies described in section 06. We do not buy personal data from third parties or scrape it.",
+          text: "Most of it you give us directly: at checkout, when you create an account, when you write to us or post a review. Technical data is collected automatically by our servers and by the visit counter and cookies described in section 06. We do not buy personal data from third parties or scrape it.",
         },
       ],
     },
@@ -123,6 +124,8 @@ const PRIVACY: Policy = {
             "To answer your support messages.",
             "To detect fraud and abuse of discount codes.",
             "To meet tax, accounting and consumer-law obligations.",
+            "To see which pages and products interest people and where they stop, so we can improve the shop.",
+            "If you accepted cookies, to remind you by email, phone or WhatsApp about a cart or a payment you did not finish.",
             "With your consent only, to send marketing about new drops.",
           ],
         },
@@ -142,18 +145,21 @@ const PRIVACY: Policy = {
       n: "06",
       title: "Cookies & tracking",
       blocks: [
-        { type: "p", text: "We use three kinds, and you can refuse all but the first:" },
+        {
+          type: "p",
+          text: "Every visit is counted. What we keep depends on whether you accept or decline cookies:",
+        },
         {
           type: "list",
           items: [
-            "Strictly necessary: keeping you signed in and remembering your cart. The site does not work without these.",
-            "Analytics: anonymous, aggregated page and conversion statistics.",
-            "Marketing: used to measure ad performance and show you a reminder if you abandon a cart.",
+            "Strictly necessary, always: your cart and your cookie choice, kept in your own browser, and a cookie that lets the confirmation page show the order you just placed. The site does not work without these.",
+            "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the city your connection comes from, the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate.",
+            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address, your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads.",
           ],
         },
         {
           type: "p",
-          text: "You can change your choice at any time from the cookie settings link in the footer, or block cookies in your browser.",
+          text: "You can change your choice at any time from Cookie settings at the foot of every page. If you take your consent back, the cookie is removed, and your IP address and the contact details you typed are deleted from our visit records; what remains is anonymous.",
         },
       ],
     },
@@ -183,7 +189,16 @@ const PRIVACY: Policy = {
             ["[COURIER]", "Delivering the parcel", "Name, address, phone"],
             ["[EMAIL PROVIDER]", "Order and support email", "Name, email"],
             ["[HOSTING]", "Running the site", "Technical data"],
-            ["[ANALYTICS]", "Aggregate statistics", "Anonymised usage"],
+            [
+              "Cloudflare",
+              "Delivering the site, and the city a visit comes from",
+              "Technical data, IP address",
+            ],
+            [
+              "Google (Analytics and Ads)",
+              "Visit statistics and ad measurement",
+              "Pages viewed, device, approximate location; cookies only if you accept",
+            ],
           ],
         },
       ],
@@ -198,7 +213,8 @@ const PRIVACY: Policy = {
             "Order and invoice records: [8] years, because tax law says so.",
             "Account data: until you delete the account, then [30] days in backups.",
             "Support messages: [24] months.",
-            "Abandoned carts: [90] days.",
+            "Abandoned carts: [90] days after they last changed.",
+            "Visit records, anonymous or not: [12] months after the visit.",
             "Marketing consent records: for as long as you are subscribed, plus [24] months as proof of consent.",
           ],
         },

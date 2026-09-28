@@ -1,8 +1,14 @@
+import { Suspense } from "react"
 import { Toaster } from "sonner"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SplashScreen } from "@/components/shared/splash-screen"
+import { siteConfig } from "@/config/site"
+import { ConsentBar } from "@/features/visitors/components/consent-bar"
+import { CookieSettingsButton } from "@/features/visitors/components/cookie-settings-button"
+import { GoogleAnalytics } from "@/features/visitors/components/google-analytics"
+import { VisitTracker } from "@/features/visitors/components/visit-tracker"
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,9 +17,21 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           it on the way into /admin. This layout survives navigation between
           storefront routes, so the intro plays once per reload and no more. */}
       <SplashScreen />
+      {/* Here for the same reason: it sees every storefront page, and none of
+          the console's. It reads the search params, which need a boundary of
+          their own or the whole storefront renders on the client. */}
+      <Suspense fallback={null}>
+        <VisitTracker />
+      </Suspense>
+      {/* Storefront only, and production builds only: the console and a
+          developer's laptop are not visitors. */}
+      {process.env.NODE_ENV === "production" ? (
+        <GoogleAnalytics id={siteConfig.googleAnalyticsId} />
+      ) : null}
       <SiteHeader />
       <main className="flex-1">{children}</main>
-      <SiteFooter />
+      <SiteFooter cookieSettings={<CookieSettingsButton />} />
+      <ConsentBar />
       <Toaster
         position="bottom-right"
         theme="dark"

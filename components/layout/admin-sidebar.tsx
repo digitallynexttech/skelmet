@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Users,
   X,
+  type LucideIcon,
 } from "lucide-react"
 
 import { Wordmark } from "@/components/shared/wordmark"
@@ -22,14 +23,45 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
-const NAV = [
+type NavChild = { label: string; href: string }
+
+type NavItem = {
+  label: string
+  href: string
+  icon: LucideIcon
+  scope: Permission
+  /** Pages of the section, listed under it. The first is the section's own page. */
+  children?: NavChild[]
+}
+
+const NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, scope: PERMISSIONS.DASHBOARD_READ },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBag, scope: PERMISSIONS.ORDER_READ },
+  {
+    label: "Orders",
+    href: "/admin/orders",
+    icon: ShoppingBag,
+    scope: PERMISSIONS.ORDER_READ,
+    children: [
+      { label: "All orders", href: "/admin/orders" },
+      { label: "Abandoned checkouts", href: "/admin/orders/abandoned" },
+    ],
+  },
   { label: "Products", href: "/admin/products", icon: Package, scope: PERMISSIONS.PRODUCT_WRITE },
   // Gated on ORDER_READ, not a scope of its own: a customer list is the
   // same personal data the orders screen already shows, just grouped by
   // person, so anyone who can read orders can already see all of it.
-  { label: "Customers", href: "/admin/customers", icon: Users, scope: PERMISSIONS.ORDER_READ },
+  // Visitors ride along: the same shop's shoppers, most of whom never got
+  // as far as an order.
+  {
+    label: "Customers",
+    href: "/admin/customers",
+    icon: Users,
+    scope: PERMISSIONS.ORDER_READ,
+    children: [
+      { label: "Buyers", href: "/admin/customers" },
+      { label: "Visitors", href: "/admin/customers/visitors" },
+    ],
+  },
   {
     label: "Offers & codes",
     href: "/admin/coupons",
@@ -48,7 +80,20 @@ const NAV = [
     icon: Settings,
     scope: PERMISSIONS.SETTING_READ,
   },
-] as const
+]
+
+const within = (pathname: string, href: string) =>
+  pathname === href || pathname.startsWith(`${href}/`)
+
+/**
+ * The child a page belongs to: the longest href it sits under, so an order's
+ * own page is still "All orders" while /admin/orders/abandoned is not.
+ */
+function currentChild(pathname: string, children: NavChild[]): NavChild | undefined {
+  return children
+    .filter((c) => within(pathname, c.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]
+}
 
 export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
   const pathname = usePathname()
@@ -73,24 +118,59 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {items.map((item) => {
           const active =
-            item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href)
+            item.href === "/admin" ? pathname === "/admin" : within(pathname, item.href)
+          const current =
+            item.children && active ? currentChild(pathname, item.children) : undefined
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors",
-                active
-                  ? "bg-blaze/12 text-bone font-semibold"
-                  : "text-ash hover:text-bone hover:bg-white/[0.04]",
-              )}
-            >
-              <item.icon
-                className={cn("size-[18px] shrink-0", active ? "text-blaze" : "text-dim")}
-                strokeWidth={1.8}
-              />
-              {item.label}
-            </Link>
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors",
+                  active
+                    ? "bg-blaze/12 text-bone font-semibold"
+                    : "text-ash hover:text-bone hover:bg-white/[0.04]",
+                )}
+              >
+                <item.icon
+                  className={cn("size-[18px] shrink-0", active ? "text-blaze" : "text-dim")}
+                  strokeWidth={1.8}
+                />
+                {item.label}
+              </Link>
+              {/* Always open: there are only two of each, and a menu that
+                  hides its pages until you are already in the section is a
+                  menu you have to learn. */}
+              {item.children ? (
+                <div className="my-1 ml-[25px] flex flex-col gap-0.5 border-l border-white/[0.09] pl-2.5">
+                  {item.children.map((child) => {
+                    const on = current?.href === child.href
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        aria-current={on ? "page" : undefined}
+                        className={cn(
+                          "flex min-h-9 items-center gap-2 rounded-lg px-3 text-[13px] transition-colors",
+                          on
+                            ? "text-bone bg-white/[0.05] font-semibold"
+                            : "text-dim hover:text-bone hover:bg-white/[0.04]",
+                        )}
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "size-1.5 shrink-0 rounded-full",
+                            on ? "bg-blaze" : "bg-white/15",
+                          )}
+                        />
+                        {child.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </div>
           )
         })}
       </nav>

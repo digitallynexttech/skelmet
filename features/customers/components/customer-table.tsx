@@ -17,10 +17,12 @@ type Payload = {
 }
 
 /**
- * Everyone who has ever bought. There are no customer accounts, so these rows
- * are written by checkout rather than by anyone signing up - which means this
- * list is the only place the shop's customers exist as people rather than as
- * a column on an order.
+ * Everyone who has ever paid for an order. There are no customer accounts, so
+ * these rows are written by checkout rather than by anyone signing up - which
+ * means this list is the only place the shop's customers exist as people
+ * rather than as a column on an order. People who placed an order and never
+ * paid are under Orders > Abandoned checkouts; everyone else who came by is
+ * under Customers > Visitors.
  */
 
 const day = (iso: string | null) =>
@@ -132,14 +134,14 @@ export function CustomerTable() {
     <div>
       <div className="mb-6">
         <div className="text-dim mb-2 font-mono text-[10.5px] tracking-[0.18em] uppercase">
-          Console
+          Customers
         </div>
         <h1 className="font-display text-bone mb-1 text-[38px] leading-[1.02] uppercase sm:text-[44px]">
-          Customers
+          Buyers
         </h1>
         <p className="text-ash text-[14.5px]">
-          {total} {total === 1 ? "person has" : "people have"} bought. No accounts - these are
-          written when an order is placed.
+          {total} {total === 1 ? "person has" : "people have"} paid for an order. No accounts -
+          these are written at checkout, and listed here once the payment lands.
         </p>
       </div>
 
@@ -165,7 +167,7 @@ export function CustomerTable() {
           exportName="customers"
           loading={loading}
           total={total}
-          empty={search ? "Nobody matches that." : "No customers yet. The first order creates one."}
+          empty={search ? "Nobody matches that." : "No buyers yet. The first paid order adds one."}
           exportColumns={[
             { header: "Name", value: (c) => c.name ?? "" },
             { header: "Email", value: (c) => c.email },

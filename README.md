@@ -49,17 +49,21 @@ service re-checks the permission itself, so an API call that skips the UI is
 refused the same way. A signed-in customer who guesses an admin URL gets a 404,
 not a 403, so the console never confirms it exists.
 
-| Route                | What an employee does there                                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `/admin`             | Today: revenue, order count, pending payments, low stock, recent orders                                           |
-| `/admin/orders`      | Search, filter by status, paginate                                                                                |
-| `/admin/orders/[id]` | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
-| `/admin/products`    | Prices, stock in and out, publish or unpublish                                                                    |
-| `/admin/coupons`     | Create, edit, activate, deactivate discount codes                                                                 |
-| `/admin/referrals`   | Credit a referrer, void a referral                                                                                |
-| `/admin/reviews`     | Moderation queue, publish or reject                                                                               |
-| `/admin/inquiries`   | Contact form inbox, pick up and resolve                                                                           |
-| `/admin/settings`    | Add employees, assign roles, reset passwords, revoke access                                                       |
+| Route                             | What an employee does there                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/admin`                          | Today: revenue, order count, pending payments, low stock, recent orders                                           |
+| `/admin/orders`                   | Search, filter by status, paginate                                                                                |
+| `/admin/orders/[id]`              | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
+| `/admin/orders/abandoned`         | Orders placed and never paid (and whether the buyer paid later), carts left behind; WhatsApp, call or email them  |
+| `/admin/customers`                | Buyers: everyone who has paid for an order                                                                        |
+| `/admin/customers/visitors`       | Everyone who browsed: device, city, source, pages, time on site, cart; IP and contact when they accepted cookies  |
+| `/admin/customers/visitors/[id]`  | One visitor, visit by visit, page by page                                                                         |
+| `/admin/products`                 | Prices, stock in and out, publish or unpublish                                                                    |
+| `/admin/coupons`                  | Create, edit, activate, deactivate discount codes                                                                 |
+| `/admin/referrals`                | Credit a referrer, void a referral                                                                                |
+| `/admin/reviews`                  | Moderation queue, publish or reject                                                                               |
+| `/admin/inquiries`                | Contact form inbox, pick up and resolve                                                                           |
+| `/admin/settings`                 | Add employees, assign roles, reset passwords, revoke access                                                       |
 
 Order transitions are atomic claims (`updateMany` with the expected status in
 the `where`), so two employees clicking "Mark packed" at the same moment cannot
@@ -130,6 +134,39 @@ with the sandbox's own login.
 
 Without the `SHIPROCKET_*` settings the console falls back to typing the
 courier and AWB by hand.
+
+### Visitors and abandoned checkouts
+
+`features/visitors/`. Every storefront page runs a small tracker
+(`lib/tracker.ts`) that posts to `POST /api/public/visits`: page views, the
+time actually spent on each page, the cart as it changes, the basket that
+reaches checkout, and the order it becomes. The server half is
+`server/tracking.service.ts`. What it keeps depends on the cookie bar:
+
+- **Accepted**: a year-long httpOnly cookie (`skm.vid`) recognises the device.
+  Its row holds the IP address, the phone model, where the visitor first came
+  from, and the email, phone, name and pincode typed at checkout, even when
+  no order is placed. The visitor is linked to their orders.
+- **Decline, or no answer yet**: the visit is still counted (pages,
+  time, device type, city, source, cart), but with no cookie and no IP
+  address, and it is never linked to a person or an order.
+- **Changed their mind** (Cookie settings in the footer): the cookie is
+  removed and the IP address and contact details are wiped from their record.
+
+Bots and signed-in staff are never counted, so to see yourself as a visitor,
+sign out of the console or use a private window.
+
+Unpaid orders are cancelled after an hour to put their stock back on sale, so
+most of the orders board's Cancelled column is abandoned payments.
+`/admin/orders/abandoned` separates those out, says whether the buyer came
+back and paid on a later order, and lists the carts nobody checked out.
+
+The city, region and pincode area come from Cloudflare. Switch on **Rules >
+Transform Rules > Managed Transforms > Add visitor location headers** for the
+site, or only the country is known. Visits are deleted a year after they
+happen and copied carts 90 days after they last changed, as the privacy policy
+says; with no scheduler on this server, that runs when staff open these
+screens.
 
 ---
 

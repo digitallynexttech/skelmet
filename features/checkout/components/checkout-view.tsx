@@ -26,6 +26,7 @@ import { calculateTotals, lineFor, useCart, type CartLine } from "@/features/car
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
+import { reportCheckout, reportContact } from "@/features/visitors/lib/tracker"
 import { apiFetch } from "@/lib/api-fetch"
 import {
   INDIAN_STATES,
@@ -214,6 +215,16 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   React.useEffect(() => {
     itemsRef.current = items
   }, [items])
+
+  // Tells the visit tracker this basket reached checkout - the cart, or the
+  // one line Buy it now sent - once per basket, however often this renders.
+  const basket = items.map((l) => `${l.sku}:${l.qty}`).join(",")
+  const reportedBasket = React.useRef("")
+  React.useEffect(() => {
+    if (!mounted || !basket || reportedBasket.current === basket) return
+    reportedBasket.current = basket
+    reportCheckout(itemsRef.current)
+  }, [mounted, basket])
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
   const formRef = React.useRef<HTMLFormElement>(null)
@@ -306,6 +317,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     pincodeTyped.current = pin
     setError("pincode", pin.length === 6 ? problem("pincode", pin) : null)
     if (PINCODE.test(pin)) {
+      reportContact({ pincode: pin })
       void lookUp(pin, "replace", unitsIn(items))
     } else {
       lookupTicket.current++
@@ -378,13 +390,35 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       ?.focus()
   }
 
+  /**
+   * Hands a finished contact field to the visit tracker, so a checkout left
+   * half-way can still be followed up. The tracker keeps it only for a
+   * visitor who accepted cookies, and drops it for everyone else.
+   */
+  function noteContact(name: FieldName, value: string) {
+    if (name === "email") reportContact({ email: value.toLowerCase() })
+    else if (name === "phone") reportContact({ phone: value })
+    else if (name === "firstName" || name === "lastName") {
+      const fields = formRef.current?.elements
+      const read = (n: string) => {
+        const field = fields?.namedItem(n)
+        return field instanceof HTMLInputElement ? field.value.trim() : ""
+      }
+      const full = `${read("firstName")} ${read("lastName")}`.trim()
+      if (full) reportContact({ name: full.slice(0, 120) })
+    }
+  }
+
   // A field is checked when it is left, once there is something in it: an
   // empty field is for submit to point out, not for tabbing past.
   function handleBlur(event: React.FocusEvent<HTMLFormElement>) {
     const el = event.target
     if (!(el instanceof HTMLInputElement) || !isField(el.name)) return
     const value = el.value.trim()
-    if (value) setError(el.name, problem(el.name, value))
+    if (!value) return
+    const message = problem(el.name, value)
+    setError(el.name, message)
+    if (!message) noteContact(el.name, value)
   }
 
   // Typing into a field clears its message; it is checked again on leaving.

@@ -25,6 +25,13 @@ export const siteConfig = {
     whatsapp: "https://wa.me/919818745945",
   },
 
+  /**
+   * Google Analytics 4. Public by nature - it is in every page's source - so
+   * it lives here rather than in the environment. Loaded by production builds
+   * only, so a laptop running `pnpm dev` never counts itself as a visitor.
+   */
+  googleAnalyticsId: "G-7VCRHFQV1R",
+
   promise: {
     dispatchHours: 48,
     returnDays: 7,

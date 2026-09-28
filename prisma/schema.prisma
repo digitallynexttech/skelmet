@@ -80,6 +80,7 @@ model User {
   carts         Cart[]
   reviews       Review[]
   auditLogs     AuditLog[]
+  visitors      Visitor[]
 
   @@index([kind])
   @@index([createdAt])
@@ -196,20 +197,30 @@ model MediaAsset {
   @@map("media_assets")
 }
 
+/// The cart lives in the browser (features/cart/hooks/use-cart.ts). This is
+/// its copy, written by the visit tracker as it changes, so the console can
+/// see what a visitor put in and never paid for. `updatedAt` is the last time
+/// the basket changed.
 model Cart {
   id          String   @id @default(uuid()) @db.Uuid
   userId      String?  @map("user_id") @db.Uuid
   anonymousId String?  @map("anonymous_id")
+  /// One basket per visitor: the browser's, not a history of them.
+  visitorId   String?  @unique @map("visitor_id") @db.Uuid
+  /// When this basket last reached the checkout page.
+  checkoutAt  DateTime? @map("checkout_at")
   expiresAt   DateTime @map("expires_at")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  user  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  items CartItem[]
+  user    User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  visitor Visitor?   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  items   CartItem[]
 
   @@index([userId])
   @@index([anonymousId])
   @@index([expiresAt])
+  @@index([updatedAt])
   @@map("carts")
 }
 
@@ -276,12 +287,16 @@ model Order {
   invoiceNumber    String?   @unique @map("invoice_number")
   invoicedAt       DateTime? @map("invoiced_at")
   invoiceEmailedAt DateTime? @map("invoice_emailed_at")
+  /// The visitor who placed it - only ever one who accepted cookies. A visit
+  /// made without that consent is never tied to the person behind an order.
+  visitorId       String?     @map("visitor_id") @db.Uuid
   placedAt        DateTime?   @map("placed_at")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
   user     User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   coupon   Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  visitor  Visitor?    @relation(fields: [visitorId], references: [id], onDelete: SetNull)
   items    OrderItem[]
   payments Payment[]
   shipment Shipment?
@@ -290,6 +305,7 @@ model Order {
   @@index([status, createdAt])
   @@index([email])
   @@index([couponId])
+  @@index([visitorId])
   @@map("orders")
 }
 
@@ -459,4 +475,132 @@ model AuditLog {
   @@index([module, createdAt])
   @@index([entityId])
   @@map("audit_logs")
+}
+
+/// Someone browsing the storefront, written by the visit tracker
+/// (features/visitors). Two kinds, and the difference is consent:
+///
+/// - Accepted cookies: `anonymous` is false and the row is this device for a
+///   year - a cookie (`skm.vid`) finds it again on every visit. It holds the
+///   IP address, the device, where they came from, and whatever they typed
+///   at checkout, and is linked to their orders.
+/// - Refused, or not yet asked: `anonymous` is true and the row is ONE visit,
+///   found by the tab's own key (`anonKey`). No cookie, no IP address, no
+///   contact details, and never linked to an order or a person.
+model Visitor {
+  id             String    @id @default(uuid()) @db.Uuid
+  anonymous      Boolean   @default(true)
+  /// The visit an anonymous row belongs to. Null once it is not anonymous.
+  anonKey        String?   @unique @map("anon_key") @db.Uuid
+  /// When they tapped Accept: the record of their consent.
+  consentAt      DateTime? @map("consent_at")
+  firstSeenAt    DateTime  @default(now()) @map("first_seen_at")
+  lastSeenAt     DateTime  @default(now()) @map("last_seen_at")
+  visitCount     Int       @default(0) @map("visit_count")
+  pageviews      Int       @default(0)
+  /// Time with the page open, in front of them, and in use - not merely open.
+  engagedSeconds Int       @default(0) @map("engaged_seconds")
+
+  // Where they are, from their latest visit. The place comes from Cloudflare,
+  // which works it out from the IP address; the pincode is one they typed.
+  ip             String?
+  country        String?
+  region         String?
+  city           String?
+  postalCode     String?   @map("postal_code")
+  pincode        String?
+
+  // What they browse on, from their latest visit.
+  userAgent      String?   @map("user_agent")
+  deviceType     String?   @map("device_type")
+  deviceModel    String?   @map("device_model")
+  os             String?
+  browser        String?
+  screen         String?
+  language       String?
+  timezone       String?
+
+  // How they first found the shop.
+  referrer       String?
+  source         String?
+  medium         String?
+  campaign       String?
+  landingPage    String?   @map("landing_page")
+
+  // Who they are, once they say: typed at checkout, or on an order.
+  email          String?
+  phone          String?
+  name           String?
+  userId         String?   @map("user_id") @db.Uuid
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user     User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessions VisitorSession[]
+  events   VisitorEvent[]
+  cart     Cart?
+  orders   Order[]
+
+  @@index([lastSeenAt])
+  @@index([userId])
+  @@index([email])
+  @@index([phone])
+  @@map("visitors")
+}
+
+/// One visit: from arriving until thirty minutes pass without a page.
+model VisitorSession {
+  id             String   @id @default(uuid()) @db.Uuid
+  visitorId      String   @map("visitor_id") @db.Uuid
+  /// The browser tab's own name for this visit, kept in sessionStorage.
+  key            String   @db.Uuid
+  startedAt      DateTime @default(now()) @map("started_at")
+  lastSeenAt     DateTime @default(now()) @map("last_seen_at")
+  pageviews      Int      @default(0)
+  engagedSeconds Int      @default(0) @map("engaged_seconds")
+  landingPage    String?  @map("landing_page")
+  exitPage       String?  @map("exit_page")
+  referrer       String?
+  source         String?
+  medium         String?
+  campaign       String?
+  ip             String?
+  city           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  visitor Visitor        @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  events  VisitorEvent[]
+
+  @@unique([visitorId, key])
+  @@index([visitorId, startedAt])
+  @@index([startedAt])
+  @@map("visitor_sessions")
+}
+
+/// What happened on a visit: a page seen (and for how long), the cart
+/// changing, checkout reached, details typed, an order placed.
+model VisitorEvent {
+  /// A page view's id is the tracker's own, so the time spent there can be
+  /// added to it later; every other event takes a fresh one.
+  id        String   @id @default(uuid()) @db.Uuid
+  visitorId String   @map("visitor_id") @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  /// view · cart · checkout · contact · placed · consent
+  type      String
+  path      String?
+  /// For a view, the time spent on that page.
+  seconds   Int      @default(0)
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  visitor Visitor        @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  session VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([visitorId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([type, createdAt])
+  @@map("visitor_events")
 }

@@ -96,10 +96,16 @@ export type CustomerRow = {
 }
 
 /**
- * The admin customer list. Staff accounts are excluded: they are colleagues
- * with console logins, not people who bought a skull, and mixing them into a
- * customer list is how someone ends up emailing a marketing blast to the
- * owner's own admin address.
+ * The admin customer list: people who have paid for at least one order.
+ *
+ * Checkout writes a customer row the moment an order is placed, before any
+ * payment, so without that condition everyone who closed the payment window
+ * was listed as a customer with nothing bought. They are in Abandoned
+ * checkouts instead, where they can be followed up.
+ *
+ * Staff accounts are excluded: they are colleagues with console logins, not
+ * people who bought a skull, and mixing them into a customer list is how
+ * someone ends up emailing a marketing blast to the owner's own admin address.
  */
 export async function listCustomers(
   params: { page?: number; pageSize?: number; search?: string } = {},
@@ -114,6 +120,8 @@ export async function listCustomers(
 
     const where: Prisma.UserWhereInput = {
       kind: "CUSTOMER",
+      // Paid for, even if later refunded or returned: they bought.
+      orders: { some: { status: { notIn: ["PENDING", "CANCELLED"] } } },
       ...(search
         ? {
             OR: [

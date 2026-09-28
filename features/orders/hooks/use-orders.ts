@@ -110,8 +110,43 @@ type Paginated<T> = {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
+/** An online order that was placed and never paid for. */
+export type UnpaidOrderRow = {
+  id: string
+  number: string
+  /**
+   * open: still within its hour, and can yet be paid. expired: the hour ran
+   * out and its stock went back on sale. cancelled: a person called it off.
+   */
+  state: "open" | "expired" | "cancelled"
+  /** failed: a payment was tried and declined. closed: the payment window opened and was left. none: it never opened. */
+  payment: "failed" | "closed" | "none"
+  customer: string
+  firstName: string
+  email: string
+  phone: string
+  city: string
+  items: Array<{ name: string; qty: number }>
+  itemCount: number
+  total: string
+  createdAt: string
+  /** A later order by the same email or phone that was paid for. */
+  recoveredBy: { id: string; number: string } | null
+  visitorId: string | null
+  source: string | null
+  deviceType: string | null
+}
+
+export type UnpaidOrdersPayload = {
+  data: UnpaidOrderRow[]
+  /** lost: past its hour and not paid for on any order since. */
+  summary: { open: number; lost: number; recovered: number; lostValue: string }
+}
+
 // ── fetchers ──────────────────────────────────────────────
 const getDashboard = () => apiFetch<Dashboard>("/api/admin/dashboard")
+
+const getUnpaidOrders = () => apiFetch<UnpaidOrdersPayload>("/api/admin/orders/abandoned")
 
 const getOrders = (params: { page: number; status: OrderStatus | "ALL"; q: string }) => {
   const search = new URLSearchParams({
@@ -136,6 +171,16 @@ const postVerb = (id: string, verb: string, body?: unknown) =>
 // ── queries ───────────────────────────────────────────────
 export function useDashboard() {
   return useQuery({ queryKey: ["dashboard"], queryFn: getDashboard, staleTime: 30_000 })
+}
+
+/** Unpaid orders for the abandoned checkouts screen. */
+export function useUnpaidOrders() {
+  return useQuery({
+    queryKey: ["unpaid-orders"],
+    queryFn: getUnpaidOrders,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  })
 }
 
 export function useOrders(params: { page: number; status: OrderStatus | "ALL"; q: string }) {
@@ -170,12 +215,13 @@ export function useCourierOptions(id: string, enabled: boolean) {
 }
 
 // ── mutations ─────────────────────────────────────────────
-/** Invalidates: ["orders"], ["dashboard"] */
+/** Invalidates: ["orders"], ["unpaid-orders"], ["dashboard"] */
 export function useOrderAction(id: string) {
   const qc = useQueryClient()
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["orders"] })
+    void qc.invalidateQueries({ queryKey: ["unpaid-orders"] })
     void qc.invalidateQueries({ queryKey: ["dashboard"] })
   }
 

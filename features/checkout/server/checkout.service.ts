@@ -13,6 +13,7 @@ import { attachCustomer } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
 import { checkPincode, queueShiprocketOrder } from "@/features/shipping/server/shipping.service"
+import { attachOrderToVisitor } from "@/features/visitors/server/tracking.service"
 import { sendMail } from "@/lib/mailer"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
@@ -401,6 +402,15 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // The one moment we know for certain this browser owns this order.
     await rememberOrder(order.number)
+
+    // And which visitor it was, when they accepted cookies. Best effort: it
+    // swallows its own failures, so it can never cost the sale.
+    await attachOrderToVisitor({
+      orderId: order.id,
+      email: input.email,
+      phone: input.phone,
+      name: `${input.address.firstName} ${input.address.lastName}`.trim(),
+    })
 
     // No receipt from here any more. With cash on delivery withdrawn, placing
     // an order is no longer a commitment to anything - an order is real when

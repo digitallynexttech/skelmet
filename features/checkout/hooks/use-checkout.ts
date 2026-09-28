@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { apiFetch } from "@/lib/api-fetch"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import type { PlaceOrderInput } from "@/features/checkout/schemas/checkout.schema"
+import { reportPlaced } from "@/features/visitors/lib/tracker"
 
 type StartedCheckout = {
   orderId: string
@@ -94,6 +95,8 @@ export function useCheckout() {
           method: "POST",
           body: JSON.stringify(input),
         })
+        // The basket is an order now, paid or not, so it was not left behind.
+        reportPlaced(started.orderNumber)
 
         // Cash on delivery: the order already exists, nothing to pay now.
         if (started.paymentMethod === "COD" || !started.gatewayOrderId) {

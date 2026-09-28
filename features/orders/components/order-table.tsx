@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
 
+import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
@@ -20,7 +21,6 @@ import {
 } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
-import { cn } from "@/lib/utils"
 
 const FILTERS: Array<{ label: string; value: OrderStatus | "ALL" }> = [
   { label: "All orders", value: "ALL" },
@@ -33,47 +33,6 @@ const TILE_TONE: Record<"neutral" | "accent" | "success" | "danger", string> = {
   accent: "text-ember",
   success: "text-acid",
   danger: "text-magenta",
-}
-
-function StatusTile({
-  label,
-  count,
-  tone,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  tone: string
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "rounded-md border px-4 py-3.5 text-left transition-colors",
-        active
-          ? "border-blaze/60 bg-blaze/[0.07]"
-          : "bg-carbon border-white/[0.09] hover:border-white/25",
-        // A status with nothing in it stays on the board but steps back, so
-        // the eye lands on the queues that actually need working.
-        count === 0 && !active && "opacity-45",
-      )}
-    >
-      {/* Two lines' worth of room whether or not the label needs it: only
-          "Awaiting payment" wraps, and without this its number sat lower
-          than the eight beside it. */}
-      <div className="text-dim mb-2 flex min-h-[2.4em] items-start font-mono text-[9.5px] leading-[1.2] tracking-[0.14em] uppercase">
-        {label}
-      </div>
-      <div className={cn("font-display text-[26px] leading-none", count > 0 ? tone : "text-dim")}>
-        {count}
-      </div>
-    </button>
-  )
 }
 
 function fmtDate(iso: string) {
@@ -184,18 +143,19 @@ export function OrderTable() {
           Five across at most: nine in a row left each tile too narrow for
           its own label, so this runs 5 + 4 over two rows instead. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatusTile
+        <BoardTile
           label="All"
-          count={data?.allCount ?? 0}
-          tone="text-bone"
+          value={data?.allCount ?? 0}
+          empty={!data?.allCount}
           active={status === "ALL"}
           onClick={() => setState({ status: "ALL" })}
         />
         {ORDER_STATUSES.map((s) => (
-          <StatusTile
+          <BoardTile
             key={s}
             label={ORDER_STATUS_LABELS[s]}
-            count={data?.counts?.[s] ?? 0}
+            value={data?.counts?.[s] ?? 0}
+            empty={!data?.counts?.[s]}
             tone={TILE_TONE[ORDER_STATUS_COLORS[s]]}
             active={status === s}
             onClick={() => setState({ status: s })}

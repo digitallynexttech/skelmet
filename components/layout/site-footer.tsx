@@ -11,7 +11,12 @@ const SOCIALS = [
   { href: siteConfig.social.whatsapp, label: "WhatsApp", Icon: WhatsappIcon },
 ]
 
-export function SiteFooter() {
+/**
+ * `cookieSettings` is handed in by the storefront layout rather than imported
+ * here: the control belongs to the visitors feature, and components/ never
+ * reaches into features/.
+ */
+export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNode }) {
   return (
     <footer className="bg-carbon relative overflow-hidden border-t border-white/[0.07] px-5 pt-16 sm:px-8 xl:px-14">
       <div className="grid gap-12 pb-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
@@ -58,7 +63,10 @@ export function SiteFooter() {
         <span>
           © {new Date().getFullYear()} SKELMET · {siteConfig.legalEntity} · GSTIN {siteConfig.gstin}
         </span>
-        <span>MADE &amp; PACKED IN INDIA</span>
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {cookieSettings}
+          <span>MADE &amp; PACKED IN INDIA</span>
+        </span>
       </div>
 
       {/* Oversized outline wordmark sitting on the footer edge.
