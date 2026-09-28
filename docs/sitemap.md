@@ -1,116 +1,103 @@
-# SKELMET - Sitemap & Information Architecture
+# SKELMET - Sitemap
 
-Product: a 3D-printed flame-skull helmet wall mount. One hero SKU, three colourways
-(Blaze Orange · Militia Olive · Ghost Grey), sold direct-to-consumer in India.
+Product: a 3D-printed flame-skull helmet wall mount. One product, three colourways
+(Blaze Orange · Militia Olive · Ghost Grey), sold direct to consumers in India.
 
-Route groups follow `docs/dn-nextjs-standard.md` §2. Route groups `(x)` do **not**
-appear in the URL - the URL column is what the visitor actually sees.
+Route groups `(x)` do **not** appear in the URL; the URL column is what the visitor
+sees. This lists what exists. Anything not here is not built.
 
 ---
 
 ## 1. Storefront - `app/(marketing)/` · public, no session
 
-| URL                   | Page              | Purpose                            | Key sections                                                                                                             |
-| --------------------- | ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `/`                   | Home              | Convert cold traffic in one scroll | 3D hero · ticker · colourway picker · anatomy/spec · lifestyle · bento features · reel · rider wall · refer teaser · FAQ |
-| `/shop`               | Collection        | All colourways + bundles           | Filter chips (colour, bundle), product cards, sticky "compare" bar                                                       |
-| `/product/[slug]`     | Product detail    | The money page                     | Gallery + 3D spin · colourway switcher · price/qty · trust row · specs accordion · what's in the box · reviews · related |
-| `/cart`               | Cart              | Review & upsell                    | Line items, qty steppers, coupon field, order summary, "add a second mount" upsell                                       |
-| `/checkout`           | Checkout          | Single-page, 3 collapsible steps   | Contact → Delivery (pincode check) → Payment. Sticky order summary                                                       |
-| `/checkout/thank-you` | Thank you         | Post-order confirmation            | Order id, ETA, what happens next, share-to-earn referral hook, track button                                              |
-| `/track`              | Track order       | Order-id + email lookup, no login  | Status timeline                                                                                                          |
-| `/about`              | About us          | Founder story, why 3D printing     | Origin, the print farm, materials, sustainability                                                                        |
-| `/contact`            | Contact us        | Support + wholesale                | Form, WhatsApp/email, response-time promise, FAQ deflection                                                              |
-| `/refer`              | Refer & Earn      | Referral programme landing         | How it works (3 steps), reward tiers, share panel, T&C                                                                   |
-| `/riders`             | Rider wall        | UGC / social proof gallery         | Grid of customer photos, submit-yours CTA                                                                                |
-| `/faq`                | FAQ               | Long-form support                  | Grouped accordions: shipping, fitment, install, returns                                                                  |
-| `/policies/shipping`  | Shipping policy   | Legal / trust                      | -                                                                                                                        |
-| `/policies/returns`   | Returns & refunds | Legal / trust                      | -                                                                                                                        |
-| `/policies/privacy`   | Privacy policy    | Legal / trust                      | -                                                                                                                        |
-| `/policies/terms`     | Terms of service  | Legal / trust                      | -                                                                                                                        |
+| URL                   | Page        | What is on it                                                                                                               |
+| --------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/`                   | Home        | 3D hero · ticker · trust strip · lineup · features · anatomy · finish · comparison · rider wall · reviews · FAQ · drop list |
+| `/product/[slug]`     | Product     | Gallery · colourway switcher · price and qty · pincode check · Buy now · product information · the sections below           |
+| `/cart`               | Cart        | Lines, quantity, coupon, summary                                                                                            |
+| `/checkout`           | Checkout    | Contact → delivery (pincode) → payment (Razorpay). `?buy=<colourway>&qty=<n>` buys one line, cart untouched                 |
+| `/checkout/thank-you` | Thank you   | The order as it stands: paid, payment processing, or cancelled                                                              |
+| `/track`              | Track order | Order number + email, no login                                                                                              |
+| `/about`              | About       | Why the mount exists, how it is made                                                                                        |
+| `/contact`            | Contact     | The business (legal name, address, GSTIN), form with `?topic=` preselect, email, phone                                      |
+| `/riders`             | Rider wall  | Photos of the mount in use                                                                                                  |
+| `/faq`                | FAQ         | Fitment, drilling, shipping, returns, payment                                                                               |
+| `/policies/[slug]`    | Policies    | `privacy`, `terms`, `shipping`, `returns` (returns, refunds and cancellation)                                               |
 
-Plus route files: `app/sitemap.ts`, `app/robots.ts`, `app/not-found.tsx`.
+`/shop` redirects to the product page. Route files: `app/sitemap.ts`,
+`app/robots.ts`, `app/not-found.tsx`, `app/error.tsx`.
 
 ## 2. Auth - `app/(auth)/`
 
-| URL                | Page                                                           |
-| ------------------ | -------------------------------------------------------------- |
-| `/login`           | Email + password / OTP sign-in (customers and staff, one form) |
-| `/register`        | Create account (optional - guest checkout is the default path) |
-| `/forgot-password` | Request reset link                                             |
-| `/reset-password`  | Consume reset token                                            |
+| URL                | Page                                                               |
+| ------------------ | ------------------------------------------------------------------ |
+| `/login`           | Staff sign-in. There are no customer accounts                      |
+| `/change-password` | Forced after a temporary password; also reachable from the console |
 
-## 3. Customer account - `app/(portal)/` · `session.user.kind === "CUSTOMER"`
+## 3. Admin console - `app/(app)/` · staff only
 
-The standard's §6 "second population" pattern. The prefix is `/account*` rather than
-`/portal*`; `proxy.ts` fences `/account*` and `/api/account*` in both directions.
+Fenced at `/admin*` and `/api/admin*` by `proxy.ts`, enforced again by
+`requirePermission` in every service. A visitor without the permission gets a 404.
 
-| URL                    | Page                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `/account`             | Overview - latest order, referral balance, saved address |
-| `/account/orders`      | Order list                                               |
-| `/account/orders/[id]` | Order detail - timeline, invoice, reorder                |
-| `/account/addresses`   | Address book                                             |
-| `/account/referrals`   | Referral code, invite log, earnings, payout request      |
-| `/account/profile`     | Name, phone, password, marketing prefs                   |
+| URL                                  | Page                                                            |
+| ------------------------------------ | --------------------------------------------------------------- |
+| `/admin`                             | Dashboard: today's revenue and orders, low stock, recent        |
+| `/admin/orders`                      | Paid orders and every stage after                               |
+| `/admin/orders/all`                  | Every order, paid or not                                        |
+| `/admin/orders/abandoned`            | Unpaid orders and carts left behind                             |
+| `/admin/orders/[id]`                 | One order: pack, book a courier, ship, deliver, refund, invoice |
+| `/admin/customers` · `[id]`          | Buyers                                                          |
+| `/admin/customers/visitors` · `[id]` | Visits, page by page                                            |
+| `/admin/products`                    | Prices, stock, publish                                          |
+| `/admin/coupons`                     | Discount codes                                                  |
+| `/admin/reviews`                     | Review moderation                                               |
+| `/admin/inquiries`                   | Contact form and drop-list inbox                                |
+| `/admin/settings`                    | Staff and roles, payment keys, shipping, Shiprocket             |
 
-## 4. Admin console - `app/(app)/` · `session.user.kind === "STAFF"`
-
-The authenticated product. Fenced at `/admin*` and `/api/admin*` by `proxy.ts`
-ROUTE_RULES, enforced again by `requirePermission` in every service.
-
-| URL                                        | Page                                           | Scope                        |
-| ------------------------------------------ | ---------------------------------------------- | ---------------------------- |
-| `/admin`                                   | Dashboard - today's orders, revenue, low stock | `dashboard:read`             |
-| `/admin/orders` · `/admin/orders/[id]`     | Order queue, fulfilment, refunds               | `order:read` / `order:write` |
-| `/admin/products` · `/admin/products/[id]` | Catalogue, variants, stock, media              | `product:write`              |
-| `/admin/coupons`                           | Discount codes                                 | `coupon:write`               |
-| `/admin/referrals`                         | Referral ledger, payout approvals              | `referral:approve`           |
-| `/admin/reviews`                           | Moderate reviews & UGC                         | `review:moderate`            |
-| `/admin/inquiries`                         | Contact-form inbox                             | `inquiry:read`               |
-| `/admin/settings`                          | Shipping rates, thresholds, banner copy        | `setting:write`              |
-
-## 5. API - `app/api/`
+## 4. API - `app/api/`
 
 ```
-api/products/route.ts                   GET list
-api/products/[id]/route.ts              GET one
-api/cart/route.ts                       GET · DELETE (clear)
-api/cart/items/route.ts                 POST add
-api/cart/items/[id]/route.ts            PATCH qty · DELETE
-api/coupons/validate/route.ts           POST
-api/shipping/serviceability/route.ts    POST pincode -> ETA + rate
-api/checkout/session/route.ts           POST create payment order
-api/orders/route.ts                     GET list (own) · POST place
-api/orders/[id]/route.ts                GET one
-api/orders/[id]/cancel/route.ts         POST  (atomic claim, §5)
-api/referrals/route.ts                  GET own code + ledger
-api/referrals/redeem/route.ts           POST apply a code
-api/reviews/route.ts                    GET list · POST create
-api/account/addresses/route.ts          GET · POST
-api/account/addresses/[id]/route.ts     PATCH · DELETE
-api/admin/orders/[id]/fulfil/route.ts   POST
-api/admin/orders/[id]/refund/route.ts   POST
-api/admin/orders/[id]/couriers/route.ts GET   Shiprocket rates for the order
-api/admin/orders/[id]/book/route.ts     POST  book courier: AWB, pickup, manifest, label
-api/admin/orders/[id]/tracking/route.ts POST  pull the latest tracking from Shiprocket
-api/public/track/route.ts               POST  order-id + email, rate-limited
-api/public/shipping/pincode/route.ts    GET   courier reach + transit days, rate-limited
-api/public/webhooks/shipping/route.ts   POST  Shiprocket tracking, x-api-key token
-api/public/contact/route.ts             POST  rate-limited + API-key free
-api/public/webhooks/razorpay/route.ts   POST  gateway callback, signature-verified
-api/cron/abandoned-cart/route.ts        assertCron - nudge email at T+4h
-api/cron/review-request/route.ts        assertCron - T+7d after delivery
-api/health/route.ts                     { ok, db, version }
+health/route.ts                          GET  { ok, db }
+auth/[...nextauth]/route.ts              Auth.js
+me/password/route.ts                     POST change own password
+
+products/route.ts · products/[slug]      GET  catalogue with live price and stock
+coupons/validate/route.ts                POST preview a code, rate-limited
+checkout/session/route.ts                POST price, claim stock, open the order and the gateway order
+checkout/verify/route.ts                 POST confirm a Razorpay payment, rate-limited
+
+public/checkout/prefill/route.ts         GET  last address on this device, rate-limited
+public/contact/route.ts                  POST contact form and drop list, rate-limited
+public/shipping/pincode/route.ts         GET  reach and fee for a pincode, rate-limited
+public/track/route.ts                    POST order number + email, rate-limited
+public/visits/route.ts                   POST visit tracker
+public/webhooks/razorpay/route.ts        POST payment events, signature-verified
+public/webhooks/shipping/route.ts        POST Shiprocket tracking, token-checked
+
+admin/dashboard/route.ts                 GET
+admin/orders/route.ts · [id]             GET
+admin/orders/[id]/pack|ship|deliver|cancel|refund   POST  atomic status claims
+admin/orders/[id]/couriers               GET  Shiprocket rates
+admin/orders/[id]/book                   POST AWB, pickup, manifest, label
+admin/orders/[id]/tracking               POST pull the latest tracking
+admin/orders/[id]/invoice                GET  tax invoice PDF
+admin/orders/[id]/invoice/email          POST email it to the buyer
+admin/orders/abandoned · admin/carts     GET
+admin/customers · [id]                   GET
+admin/visitors · [id]                    GET
+admin/products · [id]                    GET · PATCH
+admin/variants/[id] · [id]/stock         PATCH · POST stock in/out
+admin/coupons · [id]                     GET · POST · PATCH
+admin/reviews · [id]/publish|reject      GET · POST
+admin/inquiries · [id]                   GET · PATCH
+admin/staff · [id] · [id]/password       GET · POST · PATCH · DELETE
+admin/settings · payment · shipping · shiprocket (+ /test)   GET · PATCH · POST
 ```
 
-## 6. Primary conversion path
+## 5. Conversion path
 
 ```
-/  ──▶  /product/skelmet-flame-mount  ──▶  /cart  ──▶  /checkout  ──▶  /checkout/thank-you
-                    │                                                          │
-                    └── colourway switch (no navigation)                        └──▶ /refer  (share-to-earn hook)
+/  ──▶  /product/flame-skull-mount  ──▶  /cart  ──▶  /checkout  ──▶  /checkout/thank-you
+                  │                                      ▲
+                  └── Buy now ───────────────────────────┘  (one line, cart untouched)
 ```
-
-Secondary loops: `/riders` → `/product/[slug]` (social proof → PDP) and
-`/checkout/thank-you` → `/account/referrals` (post-purchase advocacy).
