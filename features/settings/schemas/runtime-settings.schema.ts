@@ -29,6 +29,9 @@ export const FEE_BASIS_LABEL: Record<FeeBasis, string> = {
 
 const secret = z.string().trim().max(500)
 
+/** The shortest Shiprocket webhook token the console accepts. */
+export const WEBHOOK_TOKEN_MIN = 32
+
 const keySetSchema = z.strictObject({
   keyId: z.string().trim().max(100).optional(),
   keySecret: secret.optional(),
@@ -64,7 +67,14 @@ export const shiprocketSettingsSchema = z.strictObject({
     .optional(),
   password: secret.optional(),
   pickupLocation: z.string().trim().max(100).optional(),
-  webhookToken: secret.optional(),
+  // The token is the only thing standing between a forged tracking update
+  // and an order marked delivered, so it has to be too long to guess. An
+  // empty string still clears it.
+  webhookToken: secret
+    .refine((v) => v === "" || v.length >= WEBHOOK_TOKEN_MIN, {
+      message: `Use at least ${WEBHOOK_TOKEN_MIN} characters - openssl rand -hex 24 makes one`,
+    })
+    .optional(),
 })
 export type ShiprocketSettingsInput = z.infer<typeof shiprocketSettingsSchema>
 
@@ -129,5 +139,13 @@ export type RuntimeSettingsView = {
     ready: boolean
   }
   shipping: ShippingCharge & { source: "saved" | "default" }
+  /**
+   * When each section was last saved (null: never). A save sends its
+   * section's back as `version`, and is refused if someone else has saved
+   * since, rather than quietly undoing their change.
+   */
+  versions: SettingVersions
   canWrite: boolean
 }
+
+export type SettingVersions = Record<"payment" | "shiprocket" | "shipping", string | null>
