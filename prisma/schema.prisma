@@ -522,6 +522,10 @@ model Visitor {
   district       String?
   postalCode     String?   @map("postal_code")
   pincode        String?
+  /// Cloudflare's point for the connection: approximate, often the
+  /// network's hub rather than the street. Only with consent, like the IP.
+  latitude       Float?
+  longitude      Float?
 
   // What they browse on, from their latest visit.
   userAgent      String?   @map("user_agent")

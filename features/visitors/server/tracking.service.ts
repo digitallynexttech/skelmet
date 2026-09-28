@@ -63,8 +63,17 @@ type Facts = {
   /** From the pincode, when it has been looked up before (district.ts). */
   district: string | null
   postalCode: string | null
+  latitude: number | null
+  longitude: number | null
   userAgent: string
   host: string | null
+}
+
+/** A coordinate header as a number, or null when absent or out of range. */
+function coordinate(raw: string | null, limit: number): number | null {
+  if (!raw) return null
+  const n = Number(raw)
+  return Number.isFinite(n) && Math.abs(n) <= limit ? n : null
 }
 
 async function requestFacts(): Promise<Facts> {
@@ -84,6 +93,8 @@ async function requestFacts(): Promise<Facts> {
     city: value("cf-ipcity"),
     district: null,
     postalCode: value("cf-postal-code"),
+    latitude: coordinate(value("cf-iplatitude"), 90),
+    longitude: coordinate(value("cf-iplongitude"), 180),
     userAgent: (h.get("user-agent") ?? "").slice(0, 500),
     host: value("x-forwarded-host") ?? value("host"),
   }
@@ -118,6 +129,8 @@ function profile(agent: Agent, facts: Facts, device: Device, identified: boolean
       ? {
           ip: keep(facts.ip),
           postalCode: keep(facts.postalCode),
+          latitude: keep(facts.latitude),
+          longitude: keep(facts.longitude),
           deviceModel: keep(agent.deviceModel),
           userAgent: keep(facts.userAgent || null),
         }
@@ -426,6 +439,8 @@ async function forgetDevice(): Promise<void> {
         ip: null,
         postalCode: null,
         pincode: null,
+        latitude: null,
+        longitude: null,
         userAgent: null,
         deviceModel: null,
         email: null,

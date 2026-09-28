@@ -84,7 +84,7 @@ const PRIVACY: Policy = {
     "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
   accent: "violet",
   updated: "2026-09-28",
-  version: "1.0",
+  version: "1.1",
   sections: [
     {
       n: "01",
@@ -112,7 +112,7 @@ const PRIVACY: Policy = {
             "Order: what you bought, colourway, quantity, price paid, any discount code used - including an order you place and do not pay for.",
             "Payment: the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.",
             "Technical, for every visit: pages viewed and the time spent on each, browser and device type, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart.",
-            "Technical, only if you accept cookies: your IP address, your device model, a cookie that recognises this device on later visits, and the email, phone, name and pincode you type at checkout, even if you do not place the order.",
+            "Technical, only if you accept cookies: your IP address and the approximate point on a map it places your connection at, your device model, a cookie that recognises this device on later visits, and the email, phone, name and pincode you type at checkout, even if you do not place the order.",
             "Content you send us: support messages, review text, and any photo you tag us in and agree to let us show.",
             "If you ask to hear about new drops: your email address, and when you asked.",
           ],
@@ -172,12 +172,12 @@ const PRIVACY: Policy = {
           items: [
             "Strictly necessary, always: your cart and your cookie choice, kept in your own browser, and a cookie that lets the confirmation page show the order you just placed. The site does not work without these.",
             "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate, and Microsoft Clarity records how each page is used - clicks, taps and scrolling - also without cookies. Clarity's recordings hide anything you type into a form and the pages showing your name, address or order.",
-            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address, your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads, and Microsoft Clarity's, which connect the pages of one visit into one recording.",
+            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address and the approximate map point it gives (usually your network's area, not your street), your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. Each browser keeps its own cookie, so we show our staff visits as probably one person's when they share the email or phone you typed, or the same connection and kind of device within a few hours, and only among visitors who accepted. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads, and Microsoft Clarity's, which connect the pages of one visit into one recording.",
           ],
         },
         {
           type: "p",
-          text: "You can change your choice at any time from Cookie settings at the foot of every page. If you take your consent back, the cookie is removed, and your IP address and the contact details you typed are deleted from our visit records; what remains is anonymous.",
+          text: "You can change your choice at any time from Cookie settings at the foot of every page. If you take your consent back, the cookie is removed, and your IP address, its map point and the contact details you typed are deleted from our visit records; what remains is anonymous.",
         },
       ],
     },

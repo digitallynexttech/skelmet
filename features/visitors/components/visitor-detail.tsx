@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Compass,
   Eye,
+  Link2,
   MapPin,
   MousePointerClick,
   ShoppingBag,
@@ -71,7 +72,7 @@ function Fact({
   mono = false,
 }: {
   label: string
-  value: string | null
+  value: React.ReactNode
   mono?: boolean
 }) {
   if (!value) return null
@@ -261,8 +262,24 @@ function Body({ v }: { v: VisitorDetail }) {
             <Fact label="State" value={v.region} />
             <Fact label="Region" value={regionOf(v.region)} />
             <Fact label="Country" value={v.country} mono />
-            <Fact label="Postal area" value={v.postalCode} mono />
+            <Fact label="Postal area (from IP)" value={v.postalCode} mono />
             <Fact label="Pincode typed" value={v.pincode} mono />
+            <Fact
+              label="Map point (from IP)"
+              value={
+                v.latitude != null && v.longitude != null ? (
+                  <a
+                    href={`https://www.google.com/maps?q=${v.latitude},${v.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-acid hover:text-bone underline-offset-2 hover:underline"
+                  >
+                    {v.latitude.toFixed(4)}, {v.longitude.toFixed(4)}
+                  </a>
+                ) : null
+              }
+              mono
+            />
             <Fact label="IP address" value={v.ip} mono />
           </dl>
           {v.anonymous ? (
@@ -270,7 +287,13 @@ function Body({ v }: { v: VisitorDetail }) {
               A visitor who did not accept cookies keeps their city, district and state, but no IP
               address or pincode.
             </p>
-          ) : null}
+          ) : (
+            <p className="text-dim mt-3 text-[12px] leading-[1.5]">
+              Everything marked &quot;from IP&quot; is Cloudflare&apos;s estimate for the
+              connection, often the network&apos;s hub rather than the street: a mobile in South
+              Delhi can read as 110001. The pincode typed at checkout is the real one.
+            </p>
+          )}
         </Card>
 
         <Card
@@ -285,6 +308,45 @@ function Body({ v }: { v: VisitorDetail }) {
           </dl>
         </Card>
       </div>
+
+      {v.linked.length ? (
+        <Card
+          title="Probably the same person"
+          icon={<Link2 className="text-ember size-3.5" strokeWidth={1.9} />}
+        >
+          <p className="text-dim mb-3 text-[12px] leading-[1.5]">
+            Each browser keeps its own cookie, so the same phone in Chrome and in Brave arrives as
+            two visitors. These share an email or phone typed at checkout, or the same connection
+            and kind of device within a few hours. Only visitors who accepted cookies are matched.
+          </p>
+          <ul className="flex flex-col">
+            {v.linked.map((l) => (
+              <li
+                key={l.id}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-white/[0.06] py-2.5 first:border-t-0 first:pt-0"
+              >
+                <span className="flex min-w-0 items-baseline gap-2.5">
+                  <Badge variant={l.reason === "contact" ? "acid" : "muted"}>
+                    {l.reason === "contact" ? "Same person" : "Likely"}
+                  </Badge>
+                  <Link
+                    href={`/admin/customers/visitors/${l.id}`}
+                    className="text-bone hover:text-blaze text-[13.5px] font-medium transition-colors"
+                  >
+                    {visitorName({ ...l, anonymous: false })}
+                  </Link>
+                  <span className="text-dim text-[12.5px]">
+                    {[l.deviceModel ?? l.os, l.browser].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+                <span className="text-ash text-[12.5px]">
+                  {l.because} · last seen {when(l.lastSeenAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       {v.cart || v.orders.length ? (
         <div className="grid gap-5 lg:grid-cols-2">

@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api-fetch"
+import type { LinkedVisitor } from "@/features/visitors/server/linked-visitors"
 
 // ── wire types ────────────────────────────────────────────
 /** The tiles on the Visitors board, each also a filter. */
@@ -92,6 +93,11 @@ export type VisitorDetail = Omit<VisitorRow, "orders" | "spent" | "cartItems" | 
   postalCode: string | null
   /** Typed at checkout, which beats the one worked out from the IP. */
   pincode: string | null
+  /** Cloudflare's approximate point for the connection; with consent only. */
+  latitude: number | null
+  longitude: number | null
+  /** Other records that are probably this person (linked-visitors.ts). */
+  linked: LinkedVisitor[]
   customer: { id: string; name: string | null; email: string } | null
   cart: {
     updatedAt: string

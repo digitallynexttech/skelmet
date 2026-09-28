@@ -17,6 +17,7 @@ import { hasDatabase } from "@/lib/env"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
+import { findLinkedVisitors } from "@/features/visitors/server/linked-visitors"
 
 /**
  * The console's view of storefront visitors: who came, on what, from where,
@@ -230,6 +231,8 @@ export async function getVisitor(id: string): Promise<ActionResult<VisitorDetail
         country: true,
         postalCode: true,
         pincode: true,
+        latitude: true,
+        longitude: true,
         userAgent: true,
         deviceType: true,
         deviceModel: true,
@@ -296,6 +299,8 @@ export async function getVisitor(id: string): Promise<ActionResult<VisitorDetail
 
     const { user, cart, orders, sessions, ...rest } = v
     const lines = cart ? cartLines(cart.items) : []
+    // Only a visitor who accepted has the details a match needs.
+    const linked = v.anonymous ? [] : await findLinkedVisitors(v)
 
     return ok({
       ...rest,
@@ -303,6 +308,7 @@ export async function getVisitor(id: string): Promise<ActionResult<VisitorDetail
       firstSeenAt: v.firstSeenAt.toISOString(),
       lastSeenAt: v.lastSeenAt.toISOString(),
       customer: user,
+      linked,
       cart:
         cart && lines.length
           ? {
