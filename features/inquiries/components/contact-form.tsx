@@ -72,7 +72,9 @@ export function ContactForm() {
   }
 
   return (
+    // Hidden from Microsoft Clarity's recordings: a name, email, phone and message.
     <form
+      data-clarity-mask="true"
       onSubmit={handleSubmit}
       className="rounded-card bg-carbon relative border border-white/10 p-6 sm:p-8 xl:p-10"
     >

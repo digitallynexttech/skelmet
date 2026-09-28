@@ -74,7 +74,11 @@ export function TrackForm() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+    // Hidden from Microsoft Clarity's recordings: an email, an order and where it is going.
+    <div
+      data-clarity-mask="true"
+      className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8"
+    >
       <form
         onSubmit={handleSubmit}
         className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7"

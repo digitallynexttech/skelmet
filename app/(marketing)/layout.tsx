@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site"
 import { ConsentBar } from "@/features/visitors/components/consent-bar"
 import { CookieSettingsButton } from "@/features/visitors/components/cookie-settings-button"
 import { GoogleAnalytics } from "@/features/visitors/components/google-analytics"
+import { MicrosoftClarity } from "@/features/visitors/components/microsoft-clarity"
 import { VisitTracker } from "@/features/visitors/components/visit-tracker"
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -24,9 +25,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <VisitTracker />
       </Suspense>
       {/* Storefront only, and production builds only: the console and a
-          developer's laptop are not visitors. */}
+          developer's laptop are not visitors - and a recording of the console
+          would be a recording of customers' orders. */}
       {process.env.NODE_ENV === "production" ? (
-        <GoogleAnalytics id={siteConfig.googleAnalyticsId} />
+        <>
+          <GoogleAnalytics id={siteConfig.googleAnalyticsId} />
+          <MicrosoftClarity id={siteConfig.clarityProjectId} />
+        </>
       ) : null}
       <SiteHeader />
       <main className="flex-1">{children}</main>

@@ -506,8 +506,10 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
 
   return (
     // noValidate: the browser's own bubbles would fire before, and instead of,
-    // the messages under each field.
+    // the messages under each field. data-clarity-mask hides the whole form -
+    // name, phone, email, address - from Microsoft Clarity's recordings.
     <form
+      data-clarity-mask="true"
       ref={formRef}
       onSubmit={handleSubmit}
       onBlur={handleBlur}

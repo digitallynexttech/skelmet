@@ -32,6 +32,9 @@ export const siteConfig = {
    */
   googleAnalyticsId: "G-7VCRHFQV1R",
 
+  /** Microsoft Clarity (heatmaps and session recordings). Public, like the GA id. */
+  clarityProjectId: "ypbnwozfgy",
+
   promise: {
     dispatchHours: 48,
     returnDays: 7,

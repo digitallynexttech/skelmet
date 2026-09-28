@@ -153,8 +153,8 @@ const PRIVACY: Policy = {
           type: "list",
           items: [
             "Strictly necessary, always: your cart and your cookie choice, kept in your own browser, and a cookie that lets the confirmation page show the order you just placed. The site does not work without these.",
-            "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate.",
-            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address, your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads.",
+            "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate, and Microsoft Clarity records how each page is used - clicks, taps and scrolling - also without cookies. Clarity's recordings hide anything you type into a form and the pages showing your name, address or order.",
+            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address, your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads, and Microsoft Clarity's, which connect the pages of one visit into one recording.",
           ],
         },
         {
@@ -193,6 +193,11 @@ const PRIVACY: Policy = {
               "Cloudflare",
               "Delivering the site, and the area a visit comes from",
               "Technical data, IP address",
+            ],
+            [
+              "Microsoft (Clarity)",
+              "How pages are used: clicks, scrolling, heatmaps and session recordings",
+              "Pages viewed, device, approximate location, on-page actions (form entries hidden); cookies only if you accept",
             ],
             [
               "Google (Analytics and Ads)",
