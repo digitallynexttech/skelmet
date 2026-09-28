@@ -70,9 +70,12 @@ try {
 gtag('js', new Date());
 gtag('config', ${JSON.stringify(id)});`}
       </Script>
+      {/* The library itself waits for the page to finish loading: the stub
+          above queues every call into dataLayer until it arrives, so nothing
+          is lost, and 90 KB of analytics no longer competes with the hero. */}
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
     </>
   )

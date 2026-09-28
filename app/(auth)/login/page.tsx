@@ -56,6 +56,8 @@ export default async function LoginPage({
         </div>
       </div>
 
+      {/* Lazy, not preloaded: it is hidden below lg, and a preload would
+          fetch it on every phone that never shows it. */}
       <div className="relative hidden lg:block">
         <Image
           src="/product/lifestyle-garage.jpg"
@@ -63,7 +65,6 @@ export default async function LoginPage({
           fill
           sizes="50vw"
           className="object-cover"
-          priority
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-void)_0%,rgb(7_6_10_/_0.4)_40%,rgb(7_6_10_/_0.15)_100%)]" />
       </div>

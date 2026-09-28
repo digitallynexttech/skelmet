@@ -10,6 +10,7 @@ import {
   Download,
   FileSpreadsheet,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { downloadCsv, downloadXlsx, type ExportColumn } from "@/lib/export"
 import { cn } from "@/lib/utils"
@@ -155,19 +156,22 @@ export function DataTable<T>({
 
   // Selection wins when there is one: an admin who ticked four rows and hit
   // Export meant those four, not the page they happen to be on.
-  const exportRows = picked.size > 0 ? sorted.filter((r) => picked.has(rowId(r))) : sorted
+  // Counted over the rows still listed: a ticked row that a filter or a
+  // search has since hidden is neither shown as selected nor exported.
+  const pickedRows = picked.size > 0 ? sorted.filter((r) => picked.has(rowId(r))) : []
+  const exportRows = pickedRows.length > 0 ? pickedRows : sorted
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="text-dim font-mono text-[11px] tracking-[0.1em]">
-          {picked.size > 0 ? (
+          {pickedRows.length > 0 ? (
             <button
               type="button"
               onClick={() => setPicked(new Set())}
               className="text-acid hover:text-bone transition-colors"
             >
-              {picked.size} selected · clear
+              {pickedRows.length} selected · clear
             </button>
           ) : (
             <span>
@@ -183,16 +187,22 @@ export function DataTable<T>({
             type="button"
             onClick={() => downloadCsv(exportRows, exportCols, exportName)}
             disabled={exportRows.length === 0}
-            className="text-ash hover:text-bone hover:border-white/25 flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors disabled:opacity-40"
+            className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
           >
             <Download className="size-3.5" strokeWidth={2} />
             CSV
           </button>
           <button
             type="button"
-            onClick={() => void downloadXlsx(exportRows, exportCols, exportName)}
+            onClick={() =>
+              // The spreadsheet library is fetched on first use, so a dropped
+              // connection fails here - say so rather than doing nothing.
+              void downloadXlsx(exportRows, exportCols, exportName).catch(() =>
+                toast.error("Could not build the Excel file. Try again, or export as CSV."),
+              )
+            }
             disabled={exportRows.length === 0}
-            className="text-ash hover:text-bone hover:border-white/25 flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors disabled:opacity-40"
+            className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
           >
             <FileSpreadsheet className="size-3.5" strokeWidth={2} />
             Excel
@@ -260,65 +270,70 @@ export function DataTable<T>({
                 const id = rowId(row)
                 return (
                   <React.Fragment key={id}>
-                  <tr
-                    className={cn(
-                      "border-t border-white/[0.07] transition-colors",
-                      picked.has(id) ? "bg-blaze/[0.06]" : "hover:bg-white/[0.02]",
-                    )}
-                  >
-                    <td className="px-3 py-3.5">
-                      <input
-                        type="checkbox"
-                        aria-label={`Select row ${start + i + 1}`}
-                        checked={picked.has(id)}
-                        onChange={() => toggleOne(id)}
-                        className="accent-blaze size-3.5 align-middle"
-                      />
-                    </td>
-                    <td className="text-dim px-2 py-3.5 font-mono text-[12px]">{start + i + 1}</td>
-                    {expandable ? (
-                      <td className="px-1 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpen((o) => {
-                              const next = new Set(o)
-                              if (next.has(id)) next.delete(id)
-                              else next.add(id)
-                              return next
-                            })
-                          }
-                          aria-expanded={open.has(id)}
-                          aria-label={open.has(id) ? "Hide detail" : "Show detail"}
-                          className="text-dim hover:text-bone transition-colors"
+                    <tr
+                      className={cn(
+                        "border-t border-white/[0.07] transition-colors",
+                        picked.has(id) ? "bg-blaze/[0.06]" : "hover:bg-white/[0.02]",
+                      )}
+                    >
+                      <td className="px-3 py-3.5">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select row ${start + i + 1}`}
+                          checked={picked.has(id)}
+                          onChange={() => toggleOne(id)}
+                          className="accent-blaze size-3.5 align-middle"
+                        />
+                      </td>
+                      <td className="text-dim px-2 py-3.5 font-mono text-[12px]">
+                        {start + i + 1}
+                      </td>
+                      {expandable ? (
+                        <td className="px-1 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpen((o) => {
+                                const next = new Set(o)
+                                if (next.has(id)) next.delete(id)
+                                else next.add(id)
+                                return next
+                              })
+                            }
+                            aria-expanded={open.has(id)}
+                            aria-label={open.has(id) ? "Hide detail" : "Show detail"}
+                            className="text-dim hover:text-bone transition-colors"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "size-4 transition-transform",
+                                !open.has(id) && "-rotate-90",
+                              )}
+                              strokeWidth={2}
+                            />
+                          </button>
+                        </td>
+                      ) : null}
+                      {columns.map((c) => (
+                        <td
+                          key={c.key}
+                          className={cn(
+                            "px-4 py-3.5 align-middle",
+                            c.align === "right" && "text-right",
+                            c.className,
+                          )}
                         >
-                          <ChevronDown
-                            className={cn("size-4 transition-transform", !open.has(id) && "-rotate-90")}
-                            strokeWidth={2}
-                          />
-                        </button>
-                      </td>
-                    ) : null}
-                    {columns.map((c) => (
-                      <td
-                        key={c.key}
-                        className={cn(
-                          "px-4 py-3.5 align-middle",
-                          c.align === "right" && "text-right",
-                          c.className,
-                        )}
-                      >
-                        {c.cell ? c.cell(row) : (c.value?.(row) ?? "-")}
-                      </td>
-                    ))}
-                  </tr>
-                  {expandable && open.has(id) ? (
-                    <tr className="border-t border-white/[0.05]">
-                      <td colSpan={columns.length + 3} className="px-4 pb-5">
-                        {expandable(row)}
-                      </td>
+                          {c.cell ? c.cell(row) : (c.value?.(row) ?? "-")}
+                        </td>
+                      ))}
                     </tr>
-                  ) : null}
+                    {expandable && open.has(id) ? (
+                      <tr className="border-t border-white/[0.05]">
+                        <td colSpan={columns.length + 3} className="px-4 pb-5">
+                          {expandable(row)}
+                        </td>
+                      </tr>
+                    ) : null}
                   </React.Fragment>
                 )
               })}
@@ -337,8 +352,8 @@ export function DataTable<T>({
 
       {truncated ? (
         <p className="text-ember mt-3 text-[12px] leading-[1.5]">
-          Showing the first {rows.length} of {total}. Sorting and export cover these
-          rows only - narrow the search to reach the rest.
+          Showing the first {rows.length} of {total}. Sorting and export cover these rows only -
+          narrow the search to reach the rest.
         </p>
       ) : null}
 
@@ -353,7 +368,7 @@ export function DataTable<T>({
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={current === 1}
               aria-label="Previous page"
-              className="text-ash hover:text-bone hover:border-white/25 flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors disabled:opacity-30"
+              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
             >
               <ChevronLeft className="size-4" strokeWidth={2} />
             </button>
@@ -365,7 +380,7 @@ export function DataTable<T>({
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={current === totalPages}
               aria-label="Next page"
-              className="text-ash hover:text-bone hover:border-white/25 flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors disabled:opacity-30"
+              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
             >
               <ChevronRight className="size-4" strokeWidth={2} />
             </button>
