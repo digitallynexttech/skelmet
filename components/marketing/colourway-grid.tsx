@@ -25,8 +25,13 @@ const TINT_TO: Record<ColourwayId, string> = {
 }
 
 export async function ColourwayGrid() {
-  const live = await getProductBySlug(FLAME_SKULL_MOUNT.slug)
-  const product = live.ok && live.data ? live.data : FLAME_SKULL_MOUNT
+  // The registry's figures if the live read fails: cards with a price beat a
+  // broken home page. (The product page itself throws instead - see
+  // getProductBySlug.)
+  const product = await getProductBySlug(FLAME_SKULL_MOUNT.slug).then(
+    (live) => (live.ok && live.data ? live.data : FLAME_SKULL_MOUNT),
+    () => FLAME_SKULL_MOUNT,
+  )
 
   return (
     <Section id="colourways">

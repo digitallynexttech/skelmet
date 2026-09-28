@@ -68,13 +68,19 @@ export async function listProducts(): Promise<ActionResult<Product[]>> {
   })
 }
 
+/**
+ * Not wrapped in runAction, on purpose: a failed live read must THROW. Turned
+ * into a failure it read as "no such product", the page called notFound(), and
+ * ISR cached "Nothing mounted here" with a 200 as the shop's only product page
+ * - for as long as the next rebuild took. Thrown, a regeneration that fails
+ * keeps serving the last good page, and a build with no database fails loudly
+ * instead of shipping one. `null` still means a slug that does not exist.
+ */
 export async function getProductBySlug(slug: string): Promise<ActionResult<Product | null>> {
-  return runAction(async () => {
-    const found = PRODUCTS.find((p) => p.slug === slug) ?? null
-    if (!found) return ok(null)
-    if (!hasDatabase()) return ok(found)
-    return ok(await withLive(found))
-  })
+  const found = PRODUCTS.find((p) => p.slug === slug) ?? null
+  if (!found) return ok(null)
+  if (!hasDatabase()) return ok(found)
+  return ok(await withLive(found))
 }
 
 /**

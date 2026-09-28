@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Check, CreditCard, Minus, Package, Plus, ShieldCheck, Truck } from "lucide-react"
+import { toast } from "sonner"
 
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
@@ -13,14 +14,15 @@ import { useCart } from "@/features/cart/hooks/use-cart"
 import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-selection"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
+import { siteConfig } from "@/config/site"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TRUST = [
   { Icon: ShieldCheck, label: "7-day returns" },
-  { Icon: Truck, label: "Ships in 48 hrs" },
+  { Icon: Truck, label: "Ships in 48 hours" },
   { Icon: Package, label: "Made in India" },
-  { Icon: CreditCard, label: "UPI · Card · Netbanking" },
+  { Icon: CreditCard, label: "UPI · Cards · Netbanking" },
 ]
 
 const MAX_QTY = 9
@@ -58,9 +60,14 @@ export function ProductDetail({
     if (match) setColourwayId(match.id)
   }, [product.colourways])
   const [qty, setQty] = React.useState(1)
-  // Shared with the phone's sticky bar, so its Buy now buys what is picked here.
+  // Shared with the phone's sticky bar, so its Buy now buys - and its price
+  // quotes - what is picked here.
   const setSelection = useBuySelection((s) => s.set)
-  React.useEffect(() => setSelection(colourwayId, qty), [colourwayId, qty, setSelection])
+  const pickedPrice = product.colourways.find((c) => c.id === colourwayId)?.price ?? product.price
+  React.useEffect(
+    () => setSelection(colourwayId, qty, pickedPrice, freeShipping),
+    [colourwayId, qty, pickedPrice, freeShipping, setSelection],
+  )
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)
   const router = useRouter()
@@ -81,6 +88,16 @@ export function ProductDetail({
   const active = gallery[Math.min(shot, gallery.length - 1)]!
 
   const lineTotal = Number(colourway.price) * qty
+  // Checkout refuses a sold-out colourway anyway; say so before anyone tries.
+  const soldOut = !colourway.inStock
+
+  // "Added to cart" on the button for a moment after a tap.
+  const [added, setAdded] = React.useState(false)
+  React.useEffect(() => {
+    if (!added) return
+    const timer = window.setTimeout(() => setAdded(false), 1800)
+    return () => window.clearTimeout(timer)
+  }, [added])
 
   return (
     <div
@@ -96,13 +113,18 @@ export function ProductDetail({
             Still square, because the colourway shots are 1:1 and a 4:5 box was
             scaling them up 25% and cutting the sides off. */}
         <div className="grain rounded-card bg-carbon relative aspect-square w-full overflow-hidden border border-white/[0.08]">
+          {/* The page's main image: preloaded and first in the queue. Its
+              column is capped at the viewport height less the header and buy
+              row on desktop, so it is never 55vw wide there - sizes says so,
+              or desktop downloads 2-4x the pixels it shows. */}
           <Image
             key={active.src}
             src={active.src}
             alt={active.alt}
             fill
-            priority
-            sizes="(min-width: 1024px) 55vw, 92vw"
+            preload
+            fetchPriority="high"
+            sizes="(min-width: 1024px) min(55vw, calc(100vh - 19rem)), 92vw"
             className="object-cover"
           />
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">
@@ -134,10 +156,19 @@ export function ProductDetail({
       {/* ── Buy panel ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-5">
         <div>
-          <div className="text-acid mb-3.5 flex items-center gap-2.5 font-mono text-[10px] tracking-[0.18em] uppercase">
-            <span className="animate-blink bg-acid size-1.5 rounded-full" />
-            {colourway.stock} left in this colourway
-          </div>
+          {/* The count only when it is a real number: with no database the
+              registry has no stock figure, and "0 left" beside "In stock" was
+              both. */}
+          {!colourway.inStock ? (
+            <div className="text-magenta mb-3.5 font-mono text-[11px] tracking-[0.18em] uppercase">
+              Sold out in this colourway
+            </div>
+          ) : colourway.stock > 0 ? (
+            <div className="text-acid mb-3.5 flex items-center gap-2.5 font-mono text-[11px] tracking-[0.18em] uppercase">
+              <span className="animate-blink bg-acid size-1.5 rounded-full" />
+              {colourway.stock} left in this colourway
+            </div>
+          ) : null}
           <h1 className="font-display text-bone mb-3 text-[38px] leading-[1.04] uppercase sm:text-[46px] lg:text-[40px] xl:text-[54px]">
             {product.name}
           </h1>
@@ -238,14 +269,34 @@ export function ProductDetail({
             size="lg"
             full
             className="min-w-0 sm:flex-1"
-            onClick={() => add(colourwayId, qty)}
+            disabled={soldOut}
+            onClick={() => {
+              add(colourwayId, qty)
+              // The header's count was the only sign anything happened, and on
+              // a phone it is easy to miss. Say so, with the way to the cart.
+              setAdded(true)
+              toast.success(`${qty} × ${colourway.name} added to your cart`, {
+                action: { label: "View cart", onClick: () => router.push("/cart") },
+              })
+            }}
           >
-            {/* The price leaves the label on the narrowest phones, where it
-                would push the page sideways; it is right above, in large. */}
-            <span>
-              Add to cart<span className="max-[359px]:hidden"> ·</span>
-            </span>
-            <Money value={lineTotal} className="max-[359px]:hidden" />
+            {soldOut ? (
+              "Sold out"
+            ) : added ? (
+              <span className="inline-flex items-center gap-2">
+                <Check className="size-4" strokeWidth={2.6} />
+                Added to cart
+              </span>
+            ) : (
+              <>
+                {/* The price leaves the label on the narrowest phones, where it
+                    would push the page sideways; it is right above, in large. */}
+                <span>
+                  Add to cart<span className="max-[359px]:hidden"> ·</span>
+                </span>
+                <Money value={lineTotal} className="max-[359px]:hidden" />
+              </>
+            )}
           </Button>
 
           <Button
@@ -253,6 +304,7 @@ export function ProductDetail({
             size="lg"
             full
             className="min-w-0 sm:flex-1"
+            disabled={soldOut}
             onClick={() =>
               // Straight to checkout with just this, leaving the cart as it is.
               router.push(buyNowHref(colourwayId, qty))
@@ -292,6 +344,43 @@ export function ProductDetail({
             ))}
           </ul>
         </div>
+
+        {/* The declarations the Legal Metrology (Packaged Commodities) Rules
+            require of an online listing, in one place. Collapsed, because a
+            buyer rarely needs them - but always in the page. */}
+        <details className="group rounded-tile bg-carbon border border-white/[0.09] px-5 py-4">
+          <summary className="text-dim flex min-h-8 cursor-pointer list-none items-center justify-between font-mono text-[11px] tracking-[0.18em] uppercase">
+            Product information
+            <Plus
+              className="size-4 transition-transform group-open:rotate-45"
+              strokeWidth={2}
+              aria-hidden
+            />
+          </summary>
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">
+            {[
+              ["Product", "Wall-mounted helmet holder (flame skull mount)"],
+              ["Net quantity", "1 unit: the mount and its wall fixings"],
+              [
+                "MRP",
+                <>
+                  <Money value={product.compareAtPrice} /> (inclusive of all taxes)
+                </>,
+              ],
+              ["Country of origin", "India"],
+              [
+                "Manufactured and packed by",
+                `${siteConfig.legalEntity}, ${siteConfig.address.line1}, ${siteConfig.address.city} ${siteConfig.address.pin}`,
+              ],
+              ["Consumer care", `${siteConfig.supportEmail} · ${siteConfig.phone}`],
+            ].map(([label, value]) => (
+              <React.Fragment key={String(label)}>
+                <dt className="text-dim">{label}</dt>
+                <dd className="text-ash">{value}</dd>
+              </React.Fragment>
+            ))}
+          </dl>
+        </details>
       </div>
     </div>
   )

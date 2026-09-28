@@ -22,13 +22,19 @@ export function StickyBuyBar({
 }) {
   const colourway = useBuySelection((s) => s.colourway) ?? defaultColourway
   const qty = useBuySelection((s) => s.qty)
+  // The picked colourway's price once the buy panel has said, else the lead's.
+  const picked = useBuySelection((s) => s.price) ?? price
+  const freeShipping = useBuySelection((s) => s.freeShipping)
 
+  // Near-opaque rather than blurred: a backdrop blur recomputed on every
+  // scroll frame was costing phones smoothness behind a bar you can barely
+  // see through.
   return (
-    <div className="bg-void/92 sticky bottom-0 z-40 flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+    <div className="bg-void/97 sticky bottom-0 z-40 flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden">
       <div className="shrink-0">
-        <Money value={price} className="font-display text-bone text-[26px] leading-none" />
-        <div className="text-dim mt-1 font-mono text-[9.5px] tracking-[0.1em]">
-          SHIPPING BY PINCODE
+        <Money value={picked} className="font-display text-bone text-[26px] leading-none" />
+        <div className="text-dim mt-1 font-mono text-[10px] tracking-[0.1em] uppercase">
+          {freeShipping ? "Free shipping" : "Shipping by pincode"}
         </div>
       </div>
       {/* Tighter on the narrowest phones, which it otherwise overhangs. */}

@@ -9,13 +9,19 @@ import { create } from "zustand"
 type BuySelection = {
   colourway: string | null
   qty: number
-  set: (colourway: string, qty: number) => void
+  /** The picked colourway's live price, so the bar quotes what Buy now charges. */
+  price: string | null
+  /** Shipping is free everywhere (Settings > Shipping charge at 0%). */
+  freeShipping: boolean | null
+  set: (colourway: string, qty: number, price: string, freeShipping: boolean) => void
 }
 
 export const useBuySelection = create<BuySelection>()((set) => ({
   colourway: null,
   qty: 1,
-  set: (colourway, qty) => set({ colourway, qty }),
+  price: null,
+  freeShipping: null,
+  set: (colourway, qty, price, freeShipping) => set({ colourway, qty, price, freeShipping }),
 }))
 
 /** Buy it now: checkout with just this, leaving the cart as it is. */
