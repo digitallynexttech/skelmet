@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <Anatomy />
       {/* Links back up to the buy panel: on this page the product link
           would only point at the page the reader is already on. */}
-      <Texture ctaHref="#buy" />
+      <Texture ctaHref="#buy" price={product.price} />
       <InstallSteps />
       {/* <TheHook /> */}
       <Comparison />

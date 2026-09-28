@@ -21,6 +21,9 @@ export const metadata: Metadata = pageMetadata({
   path: "/about",
 })
 
+/** Regenerated at most once a minute: the finish section quotes the live price. */
+export const revalidate = 60
+
 /**
  * Four things that are true on the day the shop opens.
  *

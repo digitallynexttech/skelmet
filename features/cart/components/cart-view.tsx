@@ -56,7 +56,27 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
   const totals = calculateTotals(items, false, coupon?.discount ?? 0)
 
   if (!mounted) {
-    return <div className="min-h-[60vh]" aria-hidden />
+    // The page's own heading and blocks the size of a line and the summary,
+    // so the footer does not jump when the saved cart is read.
+    return (
+      <div aria-hidden className="px-5 pb-24 sm:px-8 xl:px-14">
+        <div className="flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
+              Step 01 of 03
+            </div>
+            <div className="font-display text-bone text-[48px] leading-[1.0] uppercase sm:text-[64px] xl:text-[76px]">
+              Your stash
+            </div>
+          </div>
+          <CheckoutSteps current={1} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="rounded-card bg-carbon h-[150px] border border-white/[0.09] sm:h-[190px]" />
+          <div className="rounded-card bg-carbon h-[520px] border border-white/10" />
+        </div>
+      </div>
+    )
   }
 
   if (items.length === 0) {

@@ -24,7 +24,7 @@ export default function AppError({
         <span className="text-blaze">sideways</span>
       </h1>
       <p className="text-ash mb-8 max-w-[420px] text-[16px] leading-[1.6]">
-        Our side, not yours. Try again, if it keeps happening, tell us and we&apos;ll dig in.
+        Our side, not yours. Try again. If it keeps happening, tell us and we&apos;ll dig in.
       </p>
       <button
         type="button"

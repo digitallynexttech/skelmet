@@ -3,12 +3,13 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { getFeaturedProduct } from "@/features/catalog/server/catalog.service"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const TAGS = ["0.2 mm layers", "Matte, not glossy", "Hand-checked"]
 
-export function Texture({
+export async function Texture({
   /**
    * Where the buy button goes. This section runs on the home page, the about
    * page and the product page, and on the product page a link to the product
@@ -16,9 +17,23 @@ export function Texture({
    * buy panel it scrolled away from instead.
    */
   ctaHref = `/product/${FLAME_SKULL_MOUNT.slug}`,
+  /** The live price, when the page has it already; otherwise read here. */
+  price,
 }: {
   ctaHref?: string
+  price?: string
 } = {}) {
+  // The admin price, not the registry's: this button used to quote the
+  // figure the site was built with while the product page charged another.
+  const shown =
+    price ??
+    (await getFeaturedProduct().then(
+      (r) => (r.ok ? r.data.price : FLAME_SKULL_MOUNT.price),
+      () => FLAME_SKULL_MOUNT.price,
+    ))
+  // On the product page the button scrolls back to the buy panel rather than
+  // buying, so it does not borrow the label the checkout buttons use.
+  const label = ctaHref.startsWith("#") ? "Pick your colour" : "Buy it now"
   return (
     <SplitFeature
       image="/product/detail-flame.jpg"
@@ -74,7 +89,7 @@ export function Texture({
           anywhere else in this section, and a bare "Buy it now" that opens a
           page rather than a checkout should at least say what it costs. */}
       <ButtonLink href={ctaHref} variant="accent" size="md" className="mt-8 self-start">
-        Buy it now · {formatMoney(FLAME_SKULL_MOUNT.price)}
+        {label} · {formatMoney(shown)}
       </ButtonLink>
     </SplitFeature>
   )

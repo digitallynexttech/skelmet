@@ -190,7 +190,9 @@ export function PolicyPage({ policy }: { policy: Policy }) {
       </div>
 
       {/* Body */}
-      <div className="grid gap-10 px-5 py-11 pb-20 sm:px-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:px-14">
+      {/* minmax(0,1fr) below lg too: an auto column grew to fit a table's
+          min-width, and the whole page scrolled sideways on a phone. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-10 px-5 py-11 pb-20 sm:px-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:px-14">
         <aside>
           <div className="lg:sticky lg:top-24">
             <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">

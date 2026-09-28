@@ -128,8 +128,8 @@ export function PincodeCheck({ className }: { className?: string }) {
               <span>
                 <span className="font-mono tracking-[0.06em]">{result.pin}</span> -{" "}
                 {result.fee > 0 ? `${formatMoney(result.fee)} shipping` : "free delivery"},
-                dispatched in {siteConfig.promise.dispatchHours} hrs, arrives within{" "}
-                {siteConfig.promise.deliveryDays}.
+                dispatched within {siteConfig.promise.dispatchHours} hours, delivered within{" "}
+                {siteConfig.promise.deliveryDays} of dispatch.
               </span>
             </>
           ) : (

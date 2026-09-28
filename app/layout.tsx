@@ -54,13 +54,15 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: `${siteConfig.name} · ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: [{ url: "/product/hero-skull.jpg", width: 1200, height: 675, alt: siteConfig.name }],
+    // The file's real size: a card declared smaller than its image is
+    // cropped or refused by some crawlers.
+    images: [siteConfig.shareImage],
   },
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} · ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: ["/product/hero-skull.jpg"],
+    images: [siteConfig.shareImage.url],
   },
   robots: { index: true, follow: true },
 }

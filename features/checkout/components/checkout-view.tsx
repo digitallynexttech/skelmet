@@ -177,7 +177,7 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
         <span className="text-acid flex items-start gap-1.5">
           <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
           We deliver here - dispatched within {siteConfig.promise.dispatchHours} hours, delivered
-          within {siteConfig.promise.deliveryDays}.
+          within {siteConfig.promise.deliveryDays} of dispatch.
         </span>
         <span className="text-ash pl-5">
           {fee > 0 ? (
