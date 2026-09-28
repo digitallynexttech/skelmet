@@ -76,6 +76,37 @@ const NAV: NavItem[] = [
   },
 ]
 
+/**
+ * The "↳" from a section down into one of its pages, as in the KYG console.
+ *
+ * The numbers come from the section's row, not the eye: px-3.5 and an 18px
+ * icon put the icon's centre 23px in, and the stroke sits at x=1 here, so the
+ * svg goes at left-[22px]. The pages' list is py-0.5, so -top-0.5 starts the
+ * line on the section row's bottom edge; a page row is h-9, so its centre is
+ * 2 + 18 = 20px down, where the line turns and the arrowhead points. The page
+ * pill starts at 36px, clear of the arrow's tip at 33. Change the row's
+ * padding or icon and these move with it.
+ */
+function Elbow() {
+  return (
+    <svg
+      width={16}
+      height={23}
+      viewBox="0 0 16 23"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="miter"
+      aria-hidden
+      className="pointer-events-none absolute -top-0.5 left-[22px] text-white/25"
+    >
+      <path d="M1 0v20h10" />
+      <path d="m9 18 2 2-2 2" />
+    </svg>
+  )
+}
+
 const within = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`)
 
@@ -122,15 +153,18 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
               <Link
                 href={item.href}
                 aria-current={here ? "page" : undefined}
+                // Only the page you are on lights up: on one of the section's
+                // pages the section itself stays plain, or two rows would both
+                // read as the current page. The arrow says which section.
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors",
-                  active
+                  here
                     ? "bg-blaze/12 text-bone font-semibold"
                     : "text-ash hover:text-bone hover:bg-white/[0.04]",
                 )}
               >
                 <item.icon
-                  className={cn("size-[18px] shrink-0", active ? "text-blaze" : "text-dim")}
+                  className={cn("size-[18px] shrink-0", here ? "text-blaze" : "text-dim")}
                   strokeWidth={1.8}
                 />
                 {item.label}
@@ -138,33 +172,30 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
               {/* Always open: a menu that hides its pages until you are
                   already in the section is a menu you have to learn. */}
               {item.children ? (
-                <div className="my-1 ml-[25px] flex flex-col gap-0.5 border-l border-white/[0.09] pl-2.5">
+                <ul className="flex flex-col gap-0.5 py-0.5">
                   {item.children.map((child) => {
                     const on = current?.href === child.href
                     return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        aria-current={on ? "page" : undefined}
-                        className={cn(
-                          "flex min-h-9 items-center gap-2 rounded-lg px-3 text-[13px] transition-colors",
-                          on
-                            ? "text-bone bg-white/[0.05] font-semibold"
-                            : "text-dim hover:text-bone hover:bg-white/[0.04]",
-                        )}
-                      >
-                        <span
-                          aria-hidden
+                      <li key={child.href} className="relative">
+                        <Elbow />
+                        {/* ml-[36px] insets the pill past the arrow; with px-2
+                            the label lands on 44px, level with the section's. */}
+                        <Link
+                          href={child.href}
+                          aria-current={on ? "page" : undefined}
                           className={cn(
-                            "size-1.5 shrink-0 rounded-full",
-                            on ? "bg-blaze" : "bg-white/15",
+                            "ml-[36px] flex min-h-9 items-center rounded-lg px-2 text-[13.5px] transition-colors",
+                            on
+                              ? "bg-blaze/12 text-bone font-semibold"
+                              : "text-ash hover:text-bone hover:bg-white/[0.04]",
                           )}
-                        />
-                        {child.label}
-                      </Link>
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
                     )
                   })}
-                </div>
+                </ul>
               ) : null}
             </div>
           )
