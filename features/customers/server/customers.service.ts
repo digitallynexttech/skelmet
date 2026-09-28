@@ -3,7 +3,7 @@ import "server-only"
 import type { Prisma } from "@prisma/client"
 
 import type { AddressInput } from "@/features/checkout/schemas/checkout.schema"
-import { PERMISSIONS } from "@/lib/constants"
+import { MAX_PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
@@ -23,64 +23,93 @@ import { db } from "@/server/db"
  */
 
 /**
- * Upserts the customer behind an order and returns their id.
+ * Finds or creates the customer behind an order and returns their id. Writes
+ * nothing to a row that already exists.
  *
  * Runs INSIDE the order transaction: a customer record for an order that then
  * failed to write would be a person who never bought anything.
+ *
+ * It used to save the order's phone and address onto the customer here, at
+ * placement - so anyone could check out with someone else's email, close the
+ * payment window, and overwrite that person's saved address and number
+ * without paying a rupee. Those details are saved once the order is paid
+ * (rememberCustomerDetails), when the money is the proof.
  */
 export async function attachCustomer(
   tx: Prisma.TransactionClient,
-  input: { email: string; phone: string; address: AddressInput },
+  input: { email: string },
 ): Promise<string> {
   const email = input.email.toLowerCase()
-  const name = `${input.address.firstName} ${input.address.lastName}`.trim()
-
-  const existing = await tx.user.findUnique({
-    where: { email },
-    select: { id: true, name: true, phone: true },
-  })
 
   // `kind` is never written on an existing row. A staff member ordering with
   // their work address must not be demoted to CUSTOMER, and - far worse - a
   // customer must never be handed STAFF by typing an address that happens to
-  // match one. Existing names and numbers are only filled in where blank, so
-  // a checkout form cannot rewrite an admin's own details.
-  const user = existing
-    ? await tx.user.update({
-        where: { id: existing.id },
-        data: {
-          name: existing.name ?? (name || null),
-          phone: existing.phone ?? input.phone,
-        },
-        select: { id: true },
-      })
-    : await tx.user.create({
-        data: { email, kind: "CUSTOMER", name: name || null, phone: input.phone },
-        select: { id: true },
-      })
+  // match one.
+  const existing = await tx.user.findUnique({ where: { email }, select: { id: true } })
+  if (existing) return existing.id
 
-  // One address per customer, overwritten by the most recent order rather than
-  // accumulating a list. There is no account screen to choose between them, so
-  // a pile of old addresses would only be a way to ship to the wrong one.
-  const current = await tx.address.findFirst({
-    where: { userId: user.id, isDefault: true },
+  const created = await tx.user.create({
+    data: { email, kind: "CUSTOMER" },
     select: { id: true },
   })
+  return created.id
+}
 
-  const fields = {
-    name,
-    line1: input.address.line1,
-    line2: input.address.line2 || null,
-    city: input.address.city,
-    state: input.address.state,
-    pincode: input.address.pincode,
-    phone: input.phone,
+/**
+ * Saves a paid order's name, phone and delivery address onto its customer.
+ * Called by the payment capture, never at placement (see attachCustomer).
+ *
+ * Customers only: a member of staff who orders with their work address keeps
+ * the details they have. Existing names and numbers are only filled in where
+ * blank; the address is the most recent paid order's - one per customer,
+ * since there is no account screen to choose between several, and a pile of
+ * old addresses would only be a way to ship to the wrong one.
+ *
+ * Best effort: it never fails the payment it follows.
+ */
+export async function rememberCustomerDetails(orderId: string): Promise<void> {
+  try {
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      select: { email: true, phone: true, shippingAddress: true },
+    })
+    if (!order) return
+    const user = await db.user.findUnique({
+      where: { email: order.email.toLowerCase() },
+      select: { id: true, kind: true, name: true, phone: true },
+    })
+    if (!user || user.kind !== "CUSTOMER") return
+
+    const a = (order.shippingAddress ?? {}) as Partial<Record<keyof AddressInput, string>>
+    const name = `${a.firstName ?? ""} ${a.lastName ?? ""}`.trim()
+
+    await db.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { name: user.name ?? (name || null), phone: user.phone ?? order.phone },
+        select: { id: true },
+      })
+
+      if (!a.line1 || !a.city || !a.state || !a.pincode) return
+      const fields = {
+        name,
+        line1: a.line1,
+        line2: a.line2 || null,
+        city: a.city,
+        state: a.state,
+        pincode: a.pincode,
+        phone: order.phone,
+      }
+      const current = await tx.address.findFirst({
+        where: { userId: user.id, isDefault: true },
+        select: { id: true },
+      })
+      if (current) await tx.address.update({ where: { id: current.id }, data: fields })
+      else await tx.address.create({ data: { ...fields, userId: user.id, isDefault: true } })
+    })
+  } catch (err) {
+    console.error("[CUSTOMERS] could not save details from a paid order", orderId, err)
   }
-
-  if (current) await tx.address.update({ where: { id: current.id }, data: fields })
-  else await tx.address.create({ data: { ...fields, userId: user.id, isDefault: true } })
-
-  return user.id
 }
 
 export type CustomerRow = {
@@ -109,13 +138,22 @@ export type CustomerRow = {
  */
 export async function listCustomers(
   params: { page?: number; pageSize?: number; search?: string } = {},
-): Promise<ActionResult<{ data: CustomerRow[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }>> {
+): Promise<
+  ActionResult<{
+    data: CustomerRow[]
+    pagination: { page: number; pageSize: number; total: number; totalPages: number }
+  }>
+> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    const page = Math.max(1, params.page ?? 1)
-    const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 20))
+    // MAX_PAGE_SIZE, the window the table asks for: capped at 100, a list of
+    // 150 customers silently showed - and exported - only 100 of them.
+    const page = Number.isFinite(params.page) ? Math.max(1, Math.trunc(params.page!)) : 1
+    const pageSize = Number.isFinite(params.pageSize)
+      ? Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize!)))
+      : 20
     const search = params.search?.trim()
 
     const where: Prisma.UserWhereInput = {
@@ -284,7 +322,9 @@ export async function getCustomer(id: string): Promise<ActionResult<CustomerDeta
     // this person's history. Only the kept money counts toward spend.
     const revenue = user.orders.filter((o) => !NOT_REVENUE.has(o.status))
     const spent = revenue.reduce((sum, o) => sum + Number(o.total), 0)
-    const dates = user.orders.map((o) => o.placedAt ?? o.createdAt).sort((a, b) => a.getTime() - b.getTime())
+    const dates = user.orders
+      .map((o) => o.placedAt ?? o.createdAt)
+      .sort((a, b) => a.getTime() - b.getTime())
 
     return ok({
       id: user.id,

@@ -9,6 +9,7 @@ import {
 } from "@/features/settings/schemas/runtime-settings.schema"
 import { open } from "@/features/settings/server/secret-box"
 import { getEnv, hasDatabase, type Env } from "@/lib/env"
+import { AppError } from "@/lib/errors"
 import { db } from "@/server/db"
 
 /**
@@ -49,40 +50,53 @@ const SETTINGS_TTL_MS = 15_000
  * in development - and a save has to be seen by all of them, not only by the
  * copy that made it.
  */
+/**
+ * The saved rows, and whether they really are what is saved. `known` is
+ * false only when the database could not be read and nothing had been read
+ * before - the rows are then `{}`, which means ".env for everything".
+ */
+type Read = { value: StoredSettings; known: boolean }
+
 const shared = globalThis as unknown as {
-  skelmetSettings?: {
+  skelmetSettingsRead?: {
     cached: { value: StoredSettings; at: number } | null
-    reading: Promise<StoredSettings> | null
+    reading: Promise<Read> | null
     /** Bumped by every save, so a read that began before it cannot be cached after it. */
     generation: number
   }
 }
-const state = (shared.skelmetSettings ??= { cached: null, reading: null, generation: 0 })
+const state = (shared.skelmetSettingsRead ??= { cached: null, reading: null, generation: 0 })
 
-export async function storedSettings(): Promise<StoredSettings> {
-  if (!hasDatabase()) return {}
-  if (state.cached && Date.now() - state.cached.at < SETTINGS_TTL_MS) return state.cached.value
+async function readSettings(): Promise<Read> {
+  if (!hasDatabase()) return { value: {}, known: true }
+  if (state.cached && Date.now() - state.cached.at < SETTINGS_TTL_MS) {
+    return { value: state.cached.value, known: true }
+  }
   if (state.reading) return state.reading
 
   const generation = state.generation
-  const reading: Promise<StoredSettings> = db.setting
+  const reading: Promise<Read> = db.setting
     .findMany({ where: { key: { in: [...SETTING_KEYS] } }, select: { key: true, value: true } })
     .then((rows) => {
       const value = Object.fromEntries(rows.map((r) => [r.key, r.value])) as StoredSettings
       if (state.generation === generation) state.cached = { value, at: Date.now() }
-      return value
+      return { value, known: true }
     })
     .catch((err: unknown) => {
       // Keep running on what was last read rather than dropping to .env, which
       // could quietly swap the live payment keys for the test ones.
       console.error("[SETTINGS] could not read saved settings", err)
-      return state.cached?.value ?? {}
+      return state.cached ? { value: state.cached.value, known: true } : { value: {}, known: false }
     })
     .finally(() => {
       if (state.reading === reading) state.reading = null
     })
   state.reading = reading
   return reading
+}
+
+export async function storedSettings(): Promise<StoredSettings> {
+  return (await readSettings()).value
 }
 
 /** Called by every save, so the next read - in any route - sees it. */
@@ -150,8 +164,20 @@ export function resolvePayment(stored: StoredPayment | undefined, env: PaymentEn
   return { ...keys, mode: savedMode ?? envMode ?? "test", envMode }
 }
 
+export const PAYMENTS_UNAVAILABLE =
+  "Payments are temporarily unavailable. Please try again shortly."
+
+/**
+ * The Razorpay accounts in force. Fails closed: when the saved settings
+ * cannot be read and none were read before, it refuses rather than falling
+ * back to .env - whose keys and mode may be a different account from the
+ * one the console switched on, so guessing could take a real customer's
+ * payment on the test account, or verify it with the wrong secret.
+ */
 export async function paymentConfig(): Promise<PaymentConfig> {
-  return resolvePayment((await storedSettings()).payment, getEnv())
+  const read = await readSettings()
+  if (!read.known) throw new AppError(PAYMENTS_UNAVAILABLE, 503, "SETTINGS_UNAVAILABLE")
+  return resolvePayment(read.value.payment, getEnv())
 }
 
 // ── Shiprocket ──────────────────────────────────────────────

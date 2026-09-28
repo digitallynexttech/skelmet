@@ -185,23 +185,108 @@ export async function checkGatewayKeys(mode: PaymentMode): Promise<void> {
   }
 }
 
-export async function fetchPayment(
-  paymentId: string,
-  mode: PaymentMode,
-): Promise<{
+/** A payment as Razorpay reports it. `status`: created, authorized, captured, refunded, failed. */
+export type GatewayPayment = {
   id: string
   status: string
   amount: number
+  currency?: string
+  order_id?: string
   method?: string
-}> {
-  const { keyId, keySecret } = await credentials(mode)
+}
 
-  const res = await fetch(`${API}/payments/${paymentId}`, {
-    headers: { authorization: basic(keyId, keySecret) },
-    cache: "no-store",
-  })
-  if (!res.ok) throw new AppError("Could not read the payment.", 502, "GATEWAY_ERROR")
-  return (await res.json()) as { id: string; status: string; amount: number; method?: string }
+/** How long a call made while a buyer or a checkout waits may take. */
+const QUICK_MS = 8_000
+
+/** Razorpay ids are short and alphanumeric; anything else is not sent into a URL. */
+const safeId = (id: string) => /^[A-Za-z0-9_]{1,64}$/.test(id)
+
+async function readJson<T>(url: string, mode: PaymentMode, init: RequestInit = {}, ms = QUICK_MS) {
+  const { keyId, keySecret } = await credentials(mode)
+  let res: Response
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        authorization: basic(keyId, keySecret),
+        ...(init.body ? { "content-type": "application/json" } : {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(ms),
+    })
+  } catch {
+    throw new AppError("Razorpay did not answer.", 504, "GATEWAY_TIMEOUT")
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "")
+    console.error("[RAZORPAY]", init.method ?? "GET", url.replace(API, ""), res.status, detail)
+    // The status travels with it: a 5xx is Razorpay being down, a 4xx is
+    // Razorpay saying no, and callers treat those differently.
+    throw new AppError("Razorpay refused the request.", 502, "GATEWAY_ERROR", {
+      status: res.status,
+    })
+  }
+  return (await res.json()) as T
+}
+
+/**
+ * Whether a failed call means Razorpay could not be asked - a timeout, an
+ * outage, keys that cannot be read - as opposed to Razorpay answering no.
+ */
+export function gatewayUnreachable(err: unknown): boolean {
+  if (!(err instanceof AppError)) return true
+  if (err.status === 504 || err.status === 503) return true
+  const status = (err.details as { status?: unknown } | undefined)?.status
+  return typeof status === "number" && status >= 500
+}
+
+/** One payment, read with the keys of the account that took it. */
+export async function fetchPayment(
+  paymentId: string,
+  mode: PaymentMode,
+  ms: number = QUICK_MS,
+): Promise<GatewayPayment> {
+  if (!safeId(paymentId)) throw new AppError("Not a Razorpay payment id.", 422, "GATEWAY_ERROR")
+  return readJson<GatewayPayment>(`${API}/payments/${paymentId}`, mode, {}, ms)
+}
+
+/** Every payment attempted against one Razorpay order - declined cards included. */
+export async function fetchOrderPayments(
+  gatewayOrderId: string,
+  mode: PaymentMode,
+  ms: number = QUICK_MS,
+): Promise<GatewayPayment[]> {
+  if (!safeId(gatewayOrderId)) throw new AppError("Not a Razorpay order id.", 422, "GATEWAY_ERROR")
+  const list = await readJson<{ items?: GatewayPayment[] }>(
+    `${API}/orders/${gatewayOrderId}/payments`,
+    mode,
+    {},
+    ms,
+  )
+  return Array.isArray(list.items) ? list.items : []
+}
+
+/**
+ * Captures an authorised payment. An account set to capture by hand - or
+ * whose automatic capture has not run yet - leaves a successful payment
+ * `authorized`: the money is held, not taken, and Razorpay hands it back to
+ * the buyer after a few days unless it is captured.
+ */
+export async function captureGatewayPayment(
+  payment: Pick<GatewayPayment, "id" | "amount" | "currency">,
+  mode: PaymentMode,
+  ms: number = QUICK_MS,
+): Promise<GatewayPayment> {
+  if (!safeId(payment.id)) throw new AppError("Not a Razorpay payment id.", 422, "GATEWAY_ERROR")
+  return readJson<GatewayPayment>(
+    `${API}/payments/${payment.id}/capture`,
+    mode,
+    {
+      method: "POST",
+      body: JSON.stringify({ amount: payment.amount, currency: payment.currency ?? "INR" }),
+    },
+    ms,
+  )
 }
 
 export async function refundPayment(input: {

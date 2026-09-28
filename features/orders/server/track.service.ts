@@ -3,6 +3,7 @@ import "server-only"
 import { trackOrderSchema } from "@/features/orders/schemas/track.schema"
 import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
 import { hasDatabase } from "@/lib/env"
+import { rateLimit } from "@/lib/rate-limit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { db } from "@/server/db"
 
@@ -45,6 +46,11 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
   return runAction(async () => {
     const input = trackOrderSchema.parse(raw)
     if (!hasDatabase()) return fail("Tracking is not available yet.", undefined, 503)
+
+    // Per email as well as per address (the route): the address limit alone
+    // let one customer's order numbers be walked from a pool of addresses.
+    // A 429 here reads the same whether or not the email has any orders.
+    rateLimit(`track-email:${input.email.trim().toLowerCase()}`, 10, 10 * 60_000)
 
     const order = await db.order.findUnique({
       where: { number: input.orderNumber },
