@@ -67,7 +67,7 @@ export function ConsentBar() {
             href="/policies/privacy#s-06"
             className="text-blaze hover:text-ember font-medium transition-colors"
           >
-            Read more
+            How we use cookies
           </Link>
         </p>
 

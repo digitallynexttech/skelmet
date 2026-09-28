@@ -4,6 +4,7 @@ import * as React from "react"
 import Script from "next/script"
 
 import { useConsent } from "@/features/visitors/hooks/use-consent"
+import { afterFirstInteraction } from "@/lib/first-interaction"
 
 declare global {
   interface Window {
@@ -44,6 +45,11 @@ const DENIED = {
 export function GoogleAnalytics({ id }: { id: string }) {
   const consent = useConsent((s) => s.consent)
   const loaded = React.useRef(false)
+  // gtag.js - 170 KB, much of it unused on a first page - waits for the
+  // visitor to do something. The stub below queues every call into dataLayer
+  // until then, so the page view and consent state still reach Google.
+  const [library, setLibrary] = React.useState(false)
+  React.useEffect(() => afterFirstInteraction(() => setLibrary(true)), [])
 
   React.useEffect(() => {
     // On load the inline script has already applied the saved choice.
@@ -70,13 +76,12 @@ try {
 gtag('js', new Date());
 gtag('config', ${JSON.stringify(id)});`}
       </Script>
-      {/* The library itself waits for the page to finish loading: the stub
-          above queues every call into dataLayer until it arrives, so nothing
-          is lost, and 90 KB of analytics no longer competes with the hero. */}
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
-        strategy="lazyOnload"
-      />
+      {library ? (
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
+          strategy="afterInteractive"
+        />
+      ) : null}
     </>
   )
 }

@@ -56,6 +56,22 @@ const nextConfig = {
   serverExternalPackages: ["pdfkit"],
   images: {
     formats: ["image/avif", "image/webp"],
+    // 1280 and 1440 added to the default ladder: a full-width photo on a
+    // 1366 or 1440 laptop jumped from 1200 straight to 1920 wide, a third
+    // more image than the screen can show.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1280, 1440, 1920, 2048, 3840],
+    // A week in the browser. The optimiser's cache goes with each deploy's
+    // build directory, so a replaced photo is re-encoded after a deploy.
+    minimumCacheTTL: 604800,
+  },
+  // Source maps for the browser bundles: they only download when DevTools is
+  // open, and let an error in the field point at a real line. The code is
+  // shipped to every visitor anyway; nothing secret is in it.
+  productionBrowserSourceMaps: true,
+  // CSS arrives in the HTML instead of as a second, render-blocking request:
+  // Tailwind's output is small, and first visits are most of this shop's.
+  experimental: {
+    inlineCss: true,
   },
   // Never set typescript.ignoreBuildErrors - a broken import must fail the
   // build, not become a runtime 500. (dn-nextjs-standard §6)

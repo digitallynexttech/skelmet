@@ -7,6 +7,7 @@ import Image from "next/image"
 
 import { SkullBoundary } from "@/components/marketing/skull-boundary"
 import { getSkullInteraction } from "@/components/marketing/skull-interaction"
+import { afterFirstInteraction } from "@/lib/first-interaction"
 import { cn } from "@/lib/utils"
 
 /**
@@ -194,7 +195,19 @@ export function SkullStage({ className }: { className?: string }) {
         setAttempt(true)
         return
       }
-      cancel = afterPageSettles(() => setAttempt(true))
+      // First visit: not before the visitor does something, then not before
+      // the page has settled. The model is a megabyte and a second of main
+      // thread on a phone; the poster already fills the hero, so the first
+      // screen - and its speed - is the page's own, and the model arrives
+      // while they are reading.
+      let settle = () => {}
+      const waiting = afterFirstInteraction(() => {
+        settle = afterPageSettles(() => setAttempt(true))
+      })
+      cancel = () => {
+        waiting()
+        settle()
+      }
     }
 
     decide()

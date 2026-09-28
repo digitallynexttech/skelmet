@@ -27,7 +27,9 @@
   /* text */
   --color-bone: #f7f4ed;
   --color-ash: #a3a0b0;
-  --color-dim: #63606f;
+  /* 4.5:1 or better on void, carbon, graphite and slate (WCAG AA). It was
+     #63606f, 3.3:1 on the page background, which failed small text. */
+  --color-dim: #8e8b98;
   --color-faint: #46434f;
 
   /* type

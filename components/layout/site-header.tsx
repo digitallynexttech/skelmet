@@ -163,7 +163,7 @@ export function SiteHeader() {
           )}
         >
           <div className="flex h-[74px] items-center justify-between border-b border-white/[0.07] px-5">
-            <Wordmark size="sm" />
+            <Wordmark size="sm" lazy />
             <button
               type="button"
               aria-label="Close menu"

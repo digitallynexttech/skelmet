@@ -22,7 +22,23 @@ export const BRAND_LOCKUP = {
   height: 312,
 } as const
 
-export function Wordmark({ className, size = "md" }: { className?: string; size?: "sm" | "md" }) {
+export function Wordmark({
+  className,
+  size = "md",
+  lazy = false,
+}: {
+  className?: string
+  size?: "sm" | "md"
+  /**
+   * For a copy that starts hidden (the phone menu): a lazy image in a hidden
+   * panel is not fetched until the panel shows it, instead of downloading a
+   * second logo on every page. Served as the original file, whose size is
+   * exactly the width and height above: a hidden image reports those
+   * attributes as its size, and the optimiser's 128px copy is a hair off
+   * that ratio, which audits flag as a stretched image.
+   */
+  lazy?: boolean
+}) {
   return (
     <Link href="/" className={cn("inline-flex items-center", className)}>
       <Image
@@ -35,7 +51,8 @@ export function Wordmark({ className, size = "md" }: { className?: string; size?
         // Above the fold on every page, so eager - but small and never the
         // page's main image, so it must not queue ahead of the hero or product
         // photo. (The splash uses a different, single-colour file.)
-        loading="eager"
+        loading={lazy ? "lazy" : "eager"}
+        unoptimized={lazy}
         fetchPriority="low"
         className={cn("w-auto", size === "sm" ? "h-8" : "h-10")}
       />

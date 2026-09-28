@@ -16,7 +16,9 @@ const buttonVariants = cva(
         // colourway.
         tint: "bg-gradient-to-r from-(--tint) to-(--tint-to) text-void shadow-[0_14px_40px_color-mix(in_oklab,var(--tint)_34%,transparent)] hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--tint)_46%,transparent)]",
         accent: "bg-acid text-void hover:bg-[#e2ff6a]",
-        violet: "bg-violet text-bone hover:bg-[#8f74ff]",
+        // A shade deeper than --color-violet: bone on the brand violet is 4.3:1,
+        // under the 4.5 small text needs; this is 4.9.
+        violet: "bg-[#6a4bf2] text-bone hover:bg-violet",
         light: "bg-bone text-void hover:bg-white",
         ghost:
           "border border-white/[0.18] text-bone hover:border-white/35 hover:bg-white/[0.04] font-semibold",

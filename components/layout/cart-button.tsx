@@ -19,16 +19,16 @@ export function CartButton({ className }: { className?: string }) {
   return (
     <Link
       href="/cart"
-      aria-label={
-        mounted && count > 0 ? `Cart, ${count} ${count === 1 ? "item" : "items"}` : "Cart"
-      }
+      // Starts with what is on the button ("Cart 2"), so voice control that
+      // is told "click cart 2" finds it; the word after says what 2 counts.
+      aria-label={`Cart ${mounted ? count : 0} ${mounted && count === 1 ? "item" : "items"}`}
       className={cn(
         "text-bone flex h-10 items-center gap-2 rounded-full border border-white/[0.14] px-4 font-mono text-xs transition-colors hover:border-white/30",
         className,
       )}
     >
       <ShoppingBag className="size-[15px]" strokeWidth={1.7} />
-      <span className="hidden sm:inline">CART</span>
+      <span className="hidden sm:inline">CART</span>{" "}
       <span
         className={cn(
           "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold",

@@ -83,7 +83,7 @@ export function Bento() {
             src="/product/lifestyle-gloves.jpg"
             alt="Riding gloves hanging from the hooks on the mount"
             fill
-            sizes="100vw"
+            sizes="(min-width: 1280px) calc(100vw - 112px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(7_6_10_/_0.94)_4%,rgb(7_6_10_/_0.55)_52%,rgb(7_6_10_/_0.05)_100%)]" />
