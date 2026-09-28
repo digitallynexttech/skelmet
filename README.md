@@ -28,19 +28,19 @@ The storefront renders with no database. Orders, login and everything under
 
 ### Storefront
 
-| Route                                                  | State                                         |
-| ------------------------------------------------------ | --------------------------------------------- |
-| `/`                                                    | Home, 19 sections                             |
-| `/shop`                                                | Collection                                    |
-| `/product/[slug]`                                      | Colourway switcher, qty, gallery              |
-| `/cart`                                                | Live totals, qty, remove, upsell, empty state |
-| `/checkout`                                            | Address, contact, coupon, COD or Razorpay     |
-| `/checkout/thank-you`                                  | Confirmation and timeline                     |
-| `/about` `/contact` `/refer` `/riders` `/faq` `/track` | Live                                          |
-| `/policies/[slug]`                                     | privacy, terms, shipping, returns, referral   |
-| `/login`                                               | One door for staff and customers              |
+| Route                                         | State                                               |
+| --------------------------------------------- | --------------------------------------------------- |
+| `/`                                           | Home: 3D hero, lineup, features, reviews, FAQ       |
+| `/product/[slug]`                             | Colourway switcher, qty, gallery, pincode check     |
+| `/cart`                                       | Live totals, qty, remove, coupon, empty state       |
+| `/checkout`                                   | Contact, address, coupon, Razorpay; Buy now too     |
+| `/checkout/thank-you`                         | The order as it stands: paid, processing, cancelled |
+| `/about` `/contact` `/riders` `/faq` `/track` | Live                                                |
+| `/policies/[slug]`                            | privacy, terms, shipping, returns                   |
+| `/login`                                      | Staff only. There are no customer accounts          |
 
-The cart persists to `localStorage` and survives a reload.
+`/shop` redirects to the product page. The cart persists to `localStorage`
+and survives a reload.
 
 ### Staff console
 
@@ -49,22 +49,21 @@ service re-checks the permission itself, so an API call that skips the UI is
 refused the same way. A signed-in customer who guesses an admin URL gets a 404,
 not a 403, so the console never confirms it exists.
 
-| Route                             | What an employee does there                                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `/admin`                          | Today: revenue, order count, pending payments, low stock, recent orders                                           |
-| `/admin/orders`                   | Paid orders and every stage after (packed, shipped, delivered, returned, refunded); search, filter by status      |
-| `/admin/orders/all`               | Every order, paid or not, including those awaiting payment and cancelled unpaid                                   |
-| `/admin/orders/[id]`              | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
-| `/admin/orders/abandoned`         | Orders placed and never paid (and whether the buyer paid later), carts left behind; WhatsApp, call or email them  |
-| `/admin/customers`                | Buyers: everyone who has paid for an order                                                                        |
-| `/admin/customers/visitors`       | Everyone who browsed: device, city, source, pages, time on site, cart; IP and contact when they accepted cookies  |
-| `/admin/customers/visitors/[id]`  | One visitor, visit by visit, page by page                                                                         |
-| `/admin/products`                 | Prices, stock in and out, publish or unpublish                                                                    |
-| `/admin/coupons`                  | Create, edit, activate, deactivate discount codes                                                                 |
-| `/admin/referrals`                | Credit a referrer, void a referral                                                                                |
-| `/admin/reviews`                  | Moderation queue, publish or reject                                                                               |
-| `/admin/inquiries`                | Contact form inbox, pick up and resolve                                                                           |
-| `/admin/settings`                 | Add employees, assign roles, reset passwords, revoke access                                                       |
+| Route                            | What an employee does there                                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/admin`                         | Today: revenue, order count, pending payments, low stock, recent orders                                           |
+| `/admin/orders`                  | Paid orders and every stage after (packed, shipped, delivered, returned, refunded); search, filter by status      |
+| `/admin/orders/all`              | Every order, paid or not, including those awaiting payment and cancelled unpaid                                   |
+| `/admin/orders/[id]`             | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
+| `/admin/orders/abandoned`        | Orders placed and never paid (and whether the buyer paid later), carts left behind; WhatsApp, call or email them  |
+| `/admin/customers`               | Buyers: everyone who has paid for an order                                                                        |
+| `/admin/customers/visitors`      | Everyone who browsed: device, city, source, pages, time on site, cart; IP and contact when they accepted cookies  |
+| `/admin/customers/visitors/[id]` | One visitor, visit by visit, page by page                                                                         |
+| `/admin/products`                | Prices, stock in and out, publish or unpublish                                                                    |
+| `/admin/coupons`                 | Create, edit, activate, deactivate discount codes                                                                 |
+| `/admin/reviews`                 | Moderation queue, publish or reject                                                                               |
+| `/admin/inquiries`               | Contact form inbox, pick up and resolve                                                                           |
+| `/admin/settings`                | Add employees, assign roles, reset passwords, revoke access                                                       |
 
 Order transitions are atomic claims (`updateMany` with the expected status in
 the `where`), so two employees clicking "Mark packed" at the same moment cannot
@@ -86,10 +85,9 @@ since that is a one-click way to lock every employee out for good.
 4. `POST /api/public/webhooks/razorpay` verifies its own signature over the **raw**
    body and does the same. Either can land first, both are idempotent.
 
-Cash on delivery works with no Razorpay keys at all. With the keys blank an
-online payment is refused _before_ any order is written, so nothing is left
-holding stock. COD orders are packed while still `PENDING` and become paid at
-delivery, which is when they start counting as revenue.
+Payment is online only. With the keys blank a payment is refused _before_ any
+order is written, so nothing is left holding stock. Cash on delivery has been
+withdrawn; orders placed as COD before that still show and invoice as COD.
 
 The webhook fails closed: with no `PAYMENT_WEBHOOK_SECRET` it rejects
 everything rather than trusting an unsigned call.
@@ -197,10 +195,11 @@ Aiven and most hosted Postgres present a self-signed CA. `pg` v8 now reads
 
 - `?sslmode=require&uselibpqcompat=true` restores libpq semantics. The
   connection is still encrypted, but the server identity is not verified.
-- Better: download the CA from the Aiven console, commit it as
-  `certs/aiven-ca.pem`, and use
-  `?sslmode=verify-full&sslrootcert=./certs/aiven-ca.pem`. That encrypts and
-  proves you are talking to your database rather than something in the middle.
+- Better: download the CA from the Aiven console, keep it on the server
+  outside the repo (`*.pem` is git-ignored: a CA is configuration, not
+  source), and use `?sslmode=verify-full&sslrootcert=/absolute/path/ca.pem`.
+  That encrypts and proves you are talking to your database rather than
+  something in the middle.
 
 ---
 
@@ -213,25 +212,30 @@ degrades to `any`, and type-check fails the build.
 
 Set these on the host, not just in `.env`:
 
-| Variable                              | Note                                                    |
-| ------------------------------------- | ------------------------------------------------------- |
-| `DATABASE_URL`                        | include `&uselibpqcompat=true` for Aiven, see TLS above |
-| `AUTH_SECRET`                         | `openssl rand -base64 32`                               |
-| `AUTH_URL` `NEXT_PUBLIC_SITE_URL`     | the real domain, never localhost                        |
-| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET` | live keys, not test, when you go live                   |
-| `PAYMENT_WEBHOOK_SECRET`              | the webhook 401s everything until this is set           |
-| `SHIPROCKET_EMAIL` `SHIPROCKET_PASSWORD` | the API user, not the main Shiprocket login          |
-| `SHIPROCKET_PICKUP_LOCATION`          | the pickup address's name in Shiprocket                 |
-| `SHIPROCKET_WEBHOOK_TOKEN`            | tracking updates are ignored until this is set          |
-| `REQUIRE_BACKEND=1`                   | boot fails fast on a missing secret                     |
+| Variable                                            | Note                                                    |
+| --------------------------------------------------- | ------------------------------------------------------- |
+| `DATABASE_URL`                                      | include `&uselibpqcompat=true` for Aiven, see TLS above |
+| `AUTH_SECRET`                                       | `openssl rand -base64 32`                               |
+| `AUTH_URL` `NEXT_PUBLIC_SITE_URL`                   | the real domain, never localhost                        |
+| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET`               | live keys, not test, when you go live                   |
+| `PAYMENT_WEBHOOK_SECRET`                            | the webhook 401s everything until this is set           |
+| `SHIPROCKET_EMAIL` `SHIPROCKET_PASSWORD`            | the API user, not the main Shiprocket login             |
+| `SHIPROCKET_PICKUP_LOCATION`                        | the pickup address's name in Shiprocket                 |
+| `SHIPROCKET_WEBHOOK_TOKEN`                          | tracking updates are ignored until this is set          |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASSWORD` | receipts and invoices; with none set, mail is skipped   |
+| `MAIL_FROM`                                         | the From line of every email                            |
+| `REQUIRE_BACKEND=1`                                 | boot fails fast on a missing secret                     |
+| `NEXT_DIST_DIR`                                     | the build directory; the deploy alternates two          |
 
 Point the Razorpay dashboard webhook at
 `https://<host>/api/public/webhooks/razorpay` and subscribe to `payment.captured` and
 `payment.failed`. Razorpay signs the raw body, so nothing in front of the app
 may rewrite or re-encode POST bodies on that route.
 
-Migrations do not run at build time. Run `pnpm db:migrate` against production
-yourself when a release contains one.
+Migrations do not run inside `next build`. On the production server,
+`skelmet-deploy` resets to `origin/main`, installs with the frozen lockfile,
+runs `pnpm db:migrate`, builds into whichever of two dist directories is idle
+and restarts pm2, so a failed build leaves the live one serving.
 
 ---
 
@@ -239,12 +243,15 @@ yourself when a release contains one.
 
 ```
 app/          routing only, one expression per route handler
-features/     <domain>/{components,hooks,schemas,server} + index.ts barrel
+features/     <domain>/{components,hooks,schemas,server,emails}
 components/   ui/ shared/ layout/ marketing/ providers/
-lib/          framework-free helpers
+lib/          helpers for client and server: money, dates, env, mail, API envelope
 server/       db, auth, guards, audit, error mapping
 prisma/       schema, hand-written SQL migrations, seed
 ```
+
+Features are imported by path (`@/features/cart/hooks/use-cart`). There are no
+`index.ts` barrels: one would pull a feature's server code into client bundles.
 
 Routes are one expression, `respond(await service(...))`. Services return an
 `ActionResult` and own their own permission guard, so the guard cannot be
@@ -252,13 +259,19 @@ skipped by calling the service from somewhere else.
 
 ---
 
-## Not built yet
+## Not built
 
-Customer `/account/*` pages, order confirmation emails, and the abandoned-cart
-and review-request crons. The schema and permissions exist; the code does not.
+- Customer accounts. Buyers check out as guests and follow an order on
+  `/track`; the customer tables hold their details, not logins.
+- Scheduled jobs. There is no cron on this server: unpaid orders past their
+  hour are released when the next checkout starts or staff open the order
+  screens, and old visits and carts are deleted when staff open theirs.
 
 ## Content
 
-Copy, reviews and rider quotes are written placeholders, not real customer
-statements. Specs shown in brackets are unconfirmed. Replace both before launch.
-The policy pages carry a visible notice that they are not legal advice.
+The storefront's rating, review count and review quotes are set in code
+(`features/catalog/catalog.ts`, `components/marketing/content.ts`), not read
+from the reviews table. The shop's promises (dispatch, delivery, damage window,
+refunds, support replies) are stated once, in `siteConfig.promise` in
+`config/site.ts`, and quoted from there by the policies, FAQ, checkout and
+emails.
