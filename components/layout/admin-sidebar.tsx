@@ -41,7 +41,10 @@ const NAV: NavItem[] = [
     href: "/admin/orders",
     icon: ShoppingBag,
     scope: PERMISSIONS.ORDER_READ,
-    children: [{ label: "Abandoned checkouts", href: "/admin/orders/abandoned" }],
+    children: [
+      { label: "All orders", href: "/admin/orders/all" },
+      { label: "Abandoned carts", href: "/admin/orders/abandoned" },
+    ],
   },
   { label: "Products", href: "/admin/products", icon: Package, scope: PERMISSIONS.PRODUCT_WRITE },
   // Gated on ORDER_READ, not a scope of its own: a customer list is the

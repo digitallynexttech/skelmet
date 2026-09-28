@@ -7,8 +7,8 @@ import { OrderTable } from "@/features/orders/components/order-table"
 export default function AdminOrdersPage() {
   // useSearchParams needs a Suspense boundary in the app router.
   return (
-    <Suspense fallback={<div className="rounded-md h-96 animate-pulse bg-white/5" />}>
-      <OrderTable />
+    <Suspense fallback={<div className="h-96 animate-pulse rounded-md bg-white/5" />}>
+      <OrderTable scope="paid" />
     </Suspense>
   )
 }

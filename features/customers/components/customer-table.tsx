@@ -21,7 +21,7 @@ type Payload = {
  * these rows are written by checkout rather than by anyone signing up - which
  * means this list is the only place the shop's customers exist as people
  * rather than as a column on an order. People who placed an order and never
- * paid are under Orders > Abandoned checkouts; everyone else who came by is
+ * paid are under Orders > Abandoned carts; everyone else who came by is
  * under Customers > Visitors.
  */
 

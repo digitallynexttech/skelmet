@@ -52,7 +52,8 @@ not a 403, so the console never confirms it exists.
 | Route                             | What an employee does there                                                                                       |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `/admin`                          | Today: revenue, order count, pending payments, low stock, recent orders                                           |
-| `/admin/orders`                   | Search, filter by status, paginate                                                                                |
+| `/admin/orders`                   | Paid orders and every stage after (packed, shipped, delivered, returned, refunded); search, filter by status      |
+| `/admin/orders/all`               | Every order, paid or not, including those awaiting payment and cancelled unpaid                                   |
 | `/admin/orders/[id]`              | Timeline, items, customer, payment, address; pack, ship with courier and AWB, deliver, cancel and restock, refund |
 | `/admin/orders/abandoned`         | Orders placed and never paid (and whether the buyer paid later), carts left behind; WhatsApp, call or email them  |
 | `/admin/customers`                | Buyers: everyone who has paid for an order                                                                        |
@@ -135,7 +136,7 @@ with the sandbox's own login.
 Without the `SHIPROCKET_*` settings the console falls back to typing the
 courier and AWB by hand.
 
-### Visitors and abandoned checkouts
+### Visitors and abandoned carts
 
 `features/visitors/`. Every storefront page runs a small tracker
 (`lib/tracker.ts`) that posts to `POST /api/public/visits`: page views, the
@@ -156,9 +157,9 @@ reaches checkout, and the order it becomes. The server half is
 Bots and signed-in staff are never counted, so to see yourself as a visitor,
 sign out of the console or use a private window.
 
-Unpaid orders are cancelled after an hour to put their stock back on sale, so
-most of the orders board's Cancelled column is abandoned payments.
-`/admin/orders/abandoned` separates those out, says whether the buyer came
+Unpaid orders are cancelled after an hour to put their stock back on sale.
+Orders lists only paid orders; All orders keeps the unpaid and cancelled ones,
+and `/admin/orders/abandoned` (Abandoned carts) follows them up, says whether the buyer came
 back and paid on a later order, and lists the carts nobody checked out.
 
 The city, region and pincode area come from Cloudflare. Switch on **Rules >

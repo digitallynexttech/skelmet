@@ -3,7 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api-fetch"
-import { MAX_PAGE_SIZE, type OrderStatus } from "@/lib/constants"
+import { MAX_PAGE_SIZE, type OrderScope, type OrderStatus } from "@/lib/constants"
 import { mutationWithToast } from "@/lib/query"
 
 // ── wire types ────────────────────────────────────────────
@@ -148,9 +148,17 @@ const getDashboard = () => apiFetch<Dashboard>("/api/admin/dashboard")
 
 const getUnpaidOrders = () => apiFetch<UnpaidOrdersPayload>("/api/admin/orders/abandoned")
 
-const getOrders = (params: { page: number; status: OrderStatus | "ALL"; q: string }) => {
+type OrderListParams = {
+  page: number
+  scope: OrderScope
+  status: OrderStatus | "ALL"
+  q: string
+}
+
+const getOrders = (params: OrderListParams) => {
   const search = new URLSearchParams({
     page: String(params.page),
+    scope: params.scope,
     status: params.status,
     // The console sorts and exports client-side, so it takes the whole
     // window rather than twenty rows it would then mis-describe.
@@ -173,7 +181,7 @@ export function useDashboard() {
   return useQuery({ queryKey: ["dashboard"], queryFn: getDashboard, staleTime: 30_000 })
 }
 
-/** Unpaid orders for the abandoned checkouts screen. */
+/** Unpaid orders for the abandoned carts screen. */
 export function useUnpaidOrders() {
   return useQuery({
     queryKey: ["unpaid-orders"],
@@ -183,7 +191,7 @@ export function useUnpaidOrders() {
   })
 }
 
-export function useOrders(params: { page: number; status: OrderStatus | "ALL"; q: string }) {
+export function useOrders(params: OrderListParams) {
   return useQuery({
     queryKey: ["orders", params],
     queryFn: () => getOrders(params),

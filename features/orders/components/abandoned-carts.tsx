@@ -75,7 +75,7 @@ function Tabs({
   return (
     <div
       role="tablist"
-      aria-label="Abandoned checkouts"
+      aria-label="Abandoned carts"
       className="flex gap-1 overflow-x-auto border-b border-white/[0.09]"
     >
       {TABS.map((tab, i) => {
@@ -341,7 +341,7 @@ function UnpaidOrders({ show, onShow }: { show: Show; onShow: (show: Show) => vo
  * at the payment, with an order already written, or before it, with only a
  * cart.
  */
-export function AbandonedCheckouts() {
+export function AbandonedCarts() {
   const [state, setState] = useUrlState(DEFAULTS)
   const active: TabId = TABS.some((t) => t.id === state.tab) ? (state.tab as TabId) : "unpaid"
   const show: Show = (["all", "lost", "recovered", "open"] as const).includes(state.show as Show)
@@ -356,8 +356,8 @@ export function AbandonedCheckouts() {
     <div className="flex flex-col gap-7">
       <PageHeader
         eyebrow="Orders"
-        title="Abandoned checkouts"
-        description="People who got as far as paying, or as far as the cart, and stopped. Unpaid orders are cancelled after an hour to put their stock back on sale, so most of the orders board's Cancelled are here."
+        title="Abandoned carts"
+        description="People who got as far as paying, or as far as the cart, and stopped. Unpaid orders are cancelled after an hour to put their stock back on sale; All orders lists them as Cancelled."
       />
 
       <Tabs

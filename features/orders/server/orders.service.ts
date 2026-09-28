@@ -14,6 +14,8 @@ import {
   ORDER_STATUSES,
   PAGE_SIZE,
   PERMISSIONS,
+  statusesIn,
+  type OrderScope,
   type OrderStatus,
 } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
@@ -87,10 +89,17 @@ function serializeRow(row: {
   }
 }
 
-/** Admin order queue. Never an unbounded findMany (§7). */
+/**
+ * Admin order queue. Never an unbounded findMany (§7).
+ *
+ * `scope` is which orders the list is about at all - "paid" for the Orders
+ * page (paid and every stage after), "all" for All orders. The search and the
+ * tiles stay inside it; the status filter narrows within it.
+ */
 export async function listOrders(params: {
   page?: number
   pageSize?: number
+  scope?: OrderScope
   status?: OrderStatus | "ALL"
   q?: string | null
 }): Promise<
@@ -105,7 +114,7 @@ export async function listOrders(params: {
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // So the list staff read never shows an abandoned checkout as live.
+    // So the list staff read never shows an abandoned cart's order as live.
     await releaseStaleOrders()
 
     const page = Math.max(1, params.page ?? 1)
@@ -125,10 +134,14 @@ export async function listOrders(params: {
         }
       : {}
 
-    const where = {
-      ...searched,
-      ...(params.status && params.status !== "ALL" ? { status: params.status } : {}),
-    }
+    const inScope = statusesIn(params.scope ?? "paid")
+    // A status outside the scope matches nothing rather than widening it.
+    const status =
+      params.status && params.status !== "ALL"
+        ? { status: inScope.includes(params.status) ? params.status : { in: [] } }
+        : { status: { in: [...inScope] } }
+    const scoped = { ...searched, status: { in: [...inScope] } }
+    const where = { ...searched, ...status }
 
     const [rows, total, grouped] = await Promise.all([
       db.order.findMany({
@@ -140,7 +153,7 @@ export async function listOrders(params: {
       }),
       db.order.count({ where }),
       // One grouped query rather than eight counts.
-      db.order.groupBy({ by: ["status"], where: searched, _count: { _all: true } }),
+      db.order.groupBy({ by: ["status"], where: scoped, _count: { _all: true } }),
     ])
 
     // Every status is present, including the ones at zero: a tile that

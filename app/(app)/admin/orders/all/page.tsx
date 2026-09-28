@@ -2,13 +2,13 @@
 
 import { Suspense } from "react"
 
-import { AbandonedCarts } from "@/features/orders/components/abandoned-carts"
+import { OrderTable } from "@/features/orders/components/order-table"
 
-export default function AdminAbandonedCartsPage() {
+export default function AdminAllOrdersPage() {
   // useSearchParams needs a Suspense boundary in the app router.
   return (
     <Suspense fallback={<div className="h-96 animate-pulse rounded-md bg-white/5" />}>
-      <AbandonedCarts />
+      <OrderTable scope="all" />
     </Suspense>
   )
 }

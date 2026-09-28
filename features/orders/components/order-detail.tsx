@@ -32,7 +32,7 @@ import {
   type OrderDetail,
 } from "@/features/orders/hooks/use-orders"
 import { useConfirm, type Ask } from "@/hooks/use-confirm"
-import type { OrderStatus } from "@/lib/constants"
+import { PAID_ORDER_STATUSES, type OrderStatus } from "@/lib/constants"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
@@ -466,17 +466,21 @@ export function OrderDetailView({ id }: { id: string }) {
   const unitsText = `${units} item${units === 1 ? "" : "s"}`
   // Refund restocks what never left; the server makes the same call.
   const unshipped = order.status === "PAID" || order.status === "PACKED"
+  // Back to the list this order is on: Orders only shows it once it is paid.
+  const back = (PAID_ORDER_STATUSES as readonly OrderStatus[]).includes(order.status)
+    ? { href: "/admin/orders", label: "Orders" }
+    : { href: "/admin/orders/all", label: "All orders" }
 
   return (
     <div className="flex flex-col gap-7">
       {dialog}
       <div>
         <Link
-          href="/admin/orders"
+          href={back.href}
           className="text-ash hover:text-bone mb-5 inline-flex items-center gap-2 text-[13.5px] transition-colors"
         >
           <ArrowLeft className="size-4" strokeWidth={2} />
-          All orders
+          {back.label}
         </Link>
 
         <div className="flex flex-wrap items-center gap-4">

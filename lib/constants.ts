@@ -59,6 +59,27 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
+/**
+ * Orders that have been paid for, and every stage after: the console's Orders
+ * page. Awaiting payment and the unpaid orders cancelled after an hour are
+ * under All orders and Abandoned carts instead.
+ */
+export const PAID_ORDER_STATUSES = [
+  "PAID",
+  "PACKED",
+  "SHIPPED",
+  "DELIVERED",
+  "RETURNED",
+  "REFUNDED",
+] as const satisfies readonly OrderStatus[]
+
+/** Which orders a list covers: paid onwards (the Orders page) or every one. */
+export type OrderScope = "paid" | "all"
+
+export function statusesIn(scope: OrderScope): readonly OrderStatus[] {
+  return scope === "paid" ? PAID_ORDER_STATUSES : ORDER_STATUSES
+}
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Awaiting payment",
   PAID: "Paid",

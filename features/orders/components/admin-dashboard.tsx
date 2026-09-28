@@ -114,8 +114,9 @@ export function AdminDashboard() {
       <div className="rounded-md bg-carbon border border-white/[0.09]">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
           <h2 className="font-display text-bone text-[22px] uppercase">Latest orders</h2>
+          {/* The latest of every status, paid or not, so the full list it continues. */}
           <Link
-            href="/admin/orders"
+            href="/admin/orders/all"
             className="text-ember hover:text-flare flex items-center gap-2 text-[13px] font-semibold"
           >
             All orders

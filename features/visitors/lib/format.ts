@@ -1,6 +1,6 @@
 /**
  * How the console writes visitor facts. Client-safe, shared by the Visitors
- * screens and the abandoned checkouts screen.
+ * screens and the abandoned carts screen.
  */
 
 /** "42s", "4m 12s", "1h 03m". */

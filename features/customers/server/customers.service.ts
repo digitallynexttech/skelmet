@@ -101,7 +101,7 @@ export type CustomerRow = {
  * Checkout writes a customer row the moment an order is placed, before any
  * payment, so without that condition everyone who closed the payment window
  * was listed as a customer with nothing bought. They are in Abandoned
- * checkouts instead, where they can be followed up.
+ * carts instead, where they can be followed up.
  *
  * Staff accounts are excluded: they are colleagues with console logins, not
  * people who bought a skull, and mixing them into a customer list is how

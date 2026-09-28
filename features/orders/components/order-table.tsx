@@ -16,16 +16,41 @@ import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
 import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
-  ORDER_STATUSES,
+  statusesIn,
+  type OrderScope,
   type OrderStatus,
 } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
+import { cn } from "@/lib/utils"
 
-const FILTERS: Array<{ label: string; value: OrderStatus | "ALL" }> = [
-  { label: "All orders", value: "ALL" },
-  ...ORDER_STATUSES.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s as OrderStatus })),
-]
+/**
+ * The two boards one table serves. Orders is the working list - paid, and
+ * everything that happens after. All orders adds the ones never paid for,
+ * which Abandoned carts follows up on.
+ */
+const SCOPES: Record<
+  OrderScope,
+  { title: string; description: string; all: string; exportName: string; tiles: string }
+> = {
+  paid: {
+    title: "Orders",
+    description:
+      "Paid orders and every stage after, newest first. Unpaid ones are under All orders and Abandoned carts. Search by order number, email or phone.",
+    all: "All paid",
+    exportName: "orders",
+    // Seven tiles: four then three, or one row once there is room.
+    tiles: "lg:grid-cols-4 xl:grid-cols-7",
+  },
+  all: {
+    title: "All orders",
+    description: "Every order, paid or not, newest first. Search by order number, email or phone.",
+    all: "All",
+    exportName: "all-orders",
+    // Nine tiles: five then four. Nine in a row left each too narrow for its label.
+    tiles: "lg:grid-cols-5",
+  },
+}
 
 /** The tile's accent, taken from the same map the badges read. */
 const TILE_TONE: Record<"neutral" | "accent" | "success" | "danger", string> = {
@@ -44,7 +69,14 @@ function fmtDate(iso: string) {
   })
 }
 
-export function OrderTable() {
+export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
+  const copy = SCOPES[scope]
+  const statuses = statusesIn(scope)
+  const filters: Array<{ label: string; value: OrderStatus | "ALL" }> = [
+    { label: scope === "paid" ? "All paid orders" : "All orders", value: "ALL" },
+    ...statuses.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s })),
+  ]
+
   // Filter and search live in the URL, so a filtered view is shareable (§6).
   // The page number no longer does: paging happens in the table now, over the
   // window the server sent.
@@ -56,8 +88,11 @@ export function OrderTable() {
     if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  const status = state.status as OrderStatus | "ALL"
-  const { data, isLoading, isError, error } = useOrders({ page: 1, status, q: state.q })
+  // A link or bookmark naming a status this board does not show falls back to all of it.
+  const status: OrderStatus | "ALL" = statuses.includes(state.status as OrderStatus)
+    ? (state.status as OrderStatus)
+    : "ALL"
+  const { data, isLoading, isError, error } = useOrders({ page: 1, scope, status, q: state.q })
 
   const columns: Column<OrderRow>[] = [
     {
@@ -131,26 +166,21 @@ export function OrderTable() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader
-        eyebrow="Console"
-        title="Orders"
-        description="Every order, newest first. Search by order number, email or phone."
-      />
+      <PageHeader eyebrow="Console" title={copy.title} description={copy.description} />
 
-      {/* The board. Every status is here whether or not it has anything in
-          it, and each tile is also the filter — the dropdown and these set
-          the same thing, so whichever you reach for the other follows.
-          Five across at most: nine in a row left each tile too narrow for
-          its own label, so this runs 5 + 4 over two rows instead. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* The board. Every status this page covers is here whether or not it
+          has anything in it, and each tile is also the filter — the dropdown
+          and these set the same thing, so whichever you reach for the other
+          follows. */}
+      <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3", copy.tiles)}>
         <BoardTile
-          label="All"
+          label={copy.all}
           value={data?.allCount ?? 0}
           empty={!data?.allCount}
           active={status === "ALL"}
           onClick={() => setState({ status: "ALL" })}
         />
-        {ORDER_STATUSES.map((s) => (
+        {statuses.map((s) => (
           <BoardTile
             key={s}
             label={ORDER_STATUS_LABELS[s]}
@@ -183,7 +213,7 @@ export function OrderTable() {
           value={status}
           onChange={(next) => setState({ status: next })}
           className="w-full sm:w-[260px]"
-          options={FILTERS.map((f) => ({
+          options={filters.map((f) => ({
             value: f.value,
             label: f.label,
             hint:
@@ -204,7 +234,7 @@ export function OrderTable() {
           rows={data?.data ?? []}
           columns={columns}
           rowId={(o) => o.id}
-          exportName="orders"
+          exportName={copy.exportName}
           loading={isLoading}
           total={data?.pagination?.total}
           empty="Nothing matches. Try a different status or clear the search."
