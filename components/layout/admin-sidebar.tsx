@@ -30,7 +30,7 @@ type NavItem = {
   href: string
   icon: LucideIcon
   scope: Permission
-  /** Pages of the section, listed under it. The first is the section's own page. */
+  /** Further pages of the section, listed under it. The item itself is the section's own page. */
   children?: NavChild[]
 }
 
@@ -41,10 +41,7 @@ const NAV: NavItem[] = [
     href: "/admin/orders",
     icon: ShoppingBag,
     scope: PERMISSIONS.ORDER_READ,
-    children: [
-      { label: "All orders", href: "/admin/orders" },
-      { label: "Abandoned checkouts", href: "/admin/orders/abandoned" },
-    ],
+    children: [{ label: "Abandoned checkouts", href: "/admin/orders/abandoned" }],
   },
   { label: "Products", href: "/admin/products", icon: Package, scope: PERMISSIONS.PRODUCT_WRITE },
   // Gated on ORDER_READ, not a scope of its own: a customer list is the
@@ -57,10 +54,7 @@ const NAV: NavItem[] = [
     href: "/admin/customers",
     icon: Users,
     scope: PERMISSIONS.ORDER_READ,
-    children: [
-      { label: "Buyers", href: "/admin/customers" },
-      { label: "Visitors", href: "/admin/customers/visitors" },
-    ],
+    children: [{ label: "Visitors", href: "/admin/customers/visitors" }],
   },
   {
     label: "Offers & codes",
@@ -86,8 +80,8 @@ const within = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`)
 
 /**
- * The child a page belongs to: the longest href it sits under, so an order's
- * own page is still "All orders" while /admin/orders/abandoned is not.
+ * The child a page belongs to: the longest href it sits under. None for the
+ * section's own pages - an order's page belongs to Orders itself.
  */
 function currentChild(pathname: string, children: NavChild[]): NavChild | undefined {
   return children
@@ -121,10 +115,13 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
             item.href === "/admin" ? pathname === "/admin" : within(pathname, item.href)
           const current =
             item.children && active ? currentChild(pathname, item.children) : undefined
+          // The section's own page, rather than one of the pages under it.
+          const here = active && !current
           return (
             <div key={item.href}>
               <Link
                 href={item.href}
+                aria-current={here ? "page" : undefined}
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors",
                   active
@@ -138,9 +135,8 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                 />
                 {item.label}
               </Link>
-              {/* Always open: there are only two of each, and a menu that
-                  hides its pages until you are already in the section is a
-                  menu you have to learn. */}
+              {/* Always open: a menu that hides its pages until you are
+                  already in the section is a menu you have to learn. */}
               {item.children ? (
                 <div className="my-1 ml-[25px] flex flex-col gap-0.5 border-l border-white/[0.09] pl-2.5">
                   {item.children.map((child) => {
