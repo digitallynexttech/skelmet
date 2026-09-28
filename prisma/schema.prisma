@@ -314,6 +314,8 @@ model Order {
   @@index([email])
   @@index([couponId])
   @@index([visitorId])
+  @@index([paymentMethod])
+  @@index([placedAt])
   @@map("orders")
 }
 
