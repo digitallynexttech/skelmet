@@ -19,9 +19,10 @@ export const footerNav: Array<{ title: string; items: NavItem[] }> = [
     title: "Shop",
     items: [
       { label: "All mounts", href: "/product/flame-skull-mount" },
-      { label: "Blaze Orange", href: "/product/flame-skull-mount?colourway=blaze" },
-      { label: "Militia Olive", href: "/product/flame-skull-mount?colourway=olive" },
-      { label: "Ghost Grey", href: "/product/flame-skull-mount?colourway=ghost" },
+      // ?colour= is what the product page's picker reads (product-detail.tsx).
+      { label: "Blaze Orange", href: "/product/flame-skull-mount?colour=blaze" },
+      { label: "Militia Olive", href: "/product/flame-skull-mount?colour=olive" },
+      { label: "Ghost Grey", href: "/product/flame-skull-mount?colour=ghost" },
       { label: "Bulk & clubs", href: "/contact?topic=bulk" },
     ],
   },
@@ -40,7 +41,7 @@ export const footerNav: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { label: "Privacy policy", href: "/policies/privacy" },
       { label: "Terms of service", href: "/policies/terms" },
-      { label: "Refund policy", href: "/policies/returns" },
+      { label: "Returns, refunds & cancellation", href: "/policies/returns" },
       { label: "About us", href: "/about" },
     ],
   },

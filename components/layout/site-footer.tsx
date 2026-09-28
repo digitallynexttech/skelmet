@@ -22,9 +22,30 @@ export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNod
       <div className="grid gap-12 pb-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
           <Wordmark className="mb-5" />
-          <p className="text-ash mb-6 max-w-[300px] text-[14.5px] leading-[1.6]">
+          <p className="text-ash mb-5 max-w-[300px] text-[14.5px] leading-[1.6]">
             Somewhere proper to put your helmet. Designed, made and shipped from {siteConfig.city}.
           </p>
+          {/* Who the buyer is dealing with and how to reach them, on every
+              page: the E-Commerce Rules ask for the seller's name, address
+              and contact details to be shown, not just filed. */}
+          <address className="text-dim mb-6 max-w-[300px] text-[13px] leading-[1.6] not-italic">
+            <span className="text-ash">{siteConfig.legalEntity}</span>
+            <br />
+            {siteConfig.address.line1}
+            <br />
+            {siteConfig.address.city} {siteConfig.address.pin}
+            <br />
+            <a
+              href={`tel:${siteConfig.phone.replace(/\s/g, "")}`}
+              className="hover:text-bone transition-colors"
+            >
+              {siteConfig.phone}
+            </a>
+            {" · "}
+            <a href={`mailto:${siteConfig.email}`} className="hover:text-bone transition-colors">
+              {siteConfig.email}
+            </a>
+          </address>
           <div className="flex gap-2.5">
             {SOCIALS.map(({ href, label, Icon }) => (
               <a
@@ -61,7 +82,8 @@ export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNod
 
       <div className="text-dim flex flex-col gap-3 border-t border-white/[0.07] py-6 font-mono text-[11.5px] tracking-[0.1em] sm:flex-row sm:items-center sm:justify-between">
         <span>
-          © {new Date().getFullYear()} SKELMET · {siteConfig.legalEntity} · GSTIN {siteConfig.gstin}
+          © {new Date().getFullYear()} SKELMET · {siteConfig.legalEntity} ({siteConfig.legalForm}) ·
+          GSTIN {siteConfig.gstin}
         </span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {cookieSettings}

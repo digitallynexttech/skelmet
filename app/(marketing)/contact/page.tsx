@@ -1,21 +1,22 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 import { ArrowRight, Mail } from "lucide-react"
 
 import { FaqSection } from "@/components/marketing/faq-section"
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 import { WhatsappIcon } from "@/components/shared/social-icons"
 import { siteConfig } from "@/config/site"
-import { ContactForm } from "@/features/inquiries/components/contact-form"
+import { ContactForm, ContactFormFromLink } from "@/features/inquiries/components/contact-form"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact us",
-  description:
-    "Talk to a human at SKELMET. No ticket queue, no bot, one of us reads every message and replies within a working day.",
-  alternates: { canonical: "/contact" },
-}
+  description: `Talk to a human at SKELMET. No ticket queue, no bot: one of us reads every message, and we reply within ${siteConfig.promise.supportReply}.`,
+  path: "/contact",
+})
 
 const HOURS = [
   { day: "Mon – Fri", time: "10:00 – 18:00" },
@@ -37,15 +38,22 @@ export default function ContactPage() {
             human
           </h1>
           <p className="text-ash max-w-[520px] text-[16px] leading-[1.6] text-pretty sm:text-[17.5px]">
-            No ticket queue, no bot that loops you back to the FAQ. One of us reads every message
-            and replies within a working day.
+            No ticket queue, no bot that loops you back to the FAQ. One of us reads every message,
+            and we reply within {siteConfig.promise.supportReply}.
           </p>
         </div>
       </div>
 
       <Section className="pt-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <ContactForm />
+          {/* The form reads ?topic= (the footer's "Bulk & clubs" link sends
+              ?topic=bulk). This page is prerendered, so the part that reads
+              the query renders in the browser; until it does, the same form
+              with the default topic stands in, and the page is never
+              without one. */}
+          <Suspense fallback={<ContactForm />}>
+            <ContactFormFromLink />
+          </Suspense>
 
           <aside className="flex flex-col gap-3.5">
             <a
@@ -61,7 +69,8 @@ export default function ContactPage() {
                 </span>
               </div>
               <p className="text-ash mb-4 text-[14.5px] leading-[1.56]">
-                Fastest route for anything order-related. Usually answered within a couple of hours.
+                Handy for anything order-related, photos included. We reply within{" "}
+                {siteConfig.promise.supportReply}.
               </p>
               <div className="text-acid font-mono text-[15px] tracking-[0.06em]">
                 {siteConfig.phone}
@@ -86,6 +95,31 @@ export default function ContactPage() {
               </div>
             </a>
 
+            <div className="rounded-tile bg-carbon border border-white/10 p-6">
+              <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+                The business
+              </div>
+              <address className="text-ash text-[14px] leading-[1.6] not-italic">
+                <span className="text-bone">{siteConfig.legalEntity}</span>, a{" "}
+                {siteConfig.legalForm} trading as {siteConfig.name}
+                <br />
+                {siteConfig.address.line1}
+                <br />
+                {siteConfig.address.city} {siteConfig.address.pin}
+                <br />
+                <a href={`tel:${siteConfig.phone.replace(/\s/g, "")}`} className="hover:text-bone">
+                  {siteConfig.phone}
+                </a>
+                <br />
+                <a href={`mailto:${siteConfig.email}`} className="hover:text-bone">
+                  {siteConfig.email}
+                </a>
+                <br />
+                <span className="font-mono text-[12.5px] tracking-[0.04em]">
+                  GSTIN {siteConfig.gstin}
+                </span>
+              </address>
+            </div>
 
             <div className="rounded-tile bg-carbon border border-white/10 p-6">
               <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
@@ -109,7 +143,7 @@ export default function ContactPage() {
               Might already be answered
             </h2>
             <p className="text-ash text-[15px]">
-              Fitment, drilling, shipping times and returns are all covered below.
+              Fitment, drilling, shipping, returns and payment are all covered below.
             </p>
           </div>
           <Link
