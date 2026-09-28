@@ -3,7 +3,6 @@
 import * as React from "react"
 import Image from "next/image"
 
-import { splashHoldCount } from "@/components/shared/splash-gate"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
@@ -20,26 +19,34 @@ import { cn } from "@/lib/utils"
  * hide - so the markup ships in the HTML and the client's only job is to take
  * it away again.
  *
- * Shown once per page load: it lives in a layout, and layouts survive
- * client-side navigation, so moving around the site never replays it. Only a
- * reload does. `splashCompleted` covers the one case that slips through -
- * bouncing out to /admin and back remounts this layout.
+ * Shown once per browser session. It lives in a layout, so moving around the
+ * site never replays it; and once it has played, sessionStorage remembers, and
+ * the inline script in app/layout.tsx marks <html data-splash-skip> before the
+ * first paint of every later page load in the session, which hides it in CSS.
+ * Reduced motion hides it in CSS too (globals.css), so neither case waits for
+ * JavaScript to take an orange screen away. `splashCompleted` still covers
+ * bouncing out to /admin and back, which remounts this layout.
  *
- * Dismissal is bounded at both ends. MIN_HOLD stops a warm cache flashing the
- * splash for two frames; MAX_HOLD guarantees a stalled font, a dead network or
- * a wedged hold can never keep the curtain shut. A click, tap or keypress skips
- * the rest.
+ * Dismissal is bounded at both ends, measured from navigation start rather
+ * than from hydration: on a slow phone the JavaScript alone can take seconds,
+ * and the curtain must not add its whole hold on top of that. MIN_HOLD stops a
+ * warm cache flashing it for two frames; MAX_HOLD opens it however the load is
+ * going. A click, tap or keypress skips the rest, and a CSS-only failsafe
+ * (globals.css) lifts it even if the JavaScript never arrives.
  *
- * Above-the-fold work can ask for more time through `splash-gate`: the hero
- * takes a hold while the 3D model downloads, so the swap happens behind the
- * curtain. MAX_HOLD still wins, so a slow model costs the visitor nothing - the
- * curtain opens on time onto the hero poster and the model arrives when it does.
+ * Nothing holds it down any more. The hero's 3D model used to, so the swap
+ * from poster to model happened behind the curtain - but that made every
+ * visitor wait for a megabyte they may never see. The poster is a finished
+ * hero; the model fades in over it later.
  */
 
-/** Brand beat floor, so a warm cache does not flash the splash and vanish. */
-const MIN_HOLD_MS = 1500
-/** Hard ceiling. A stalled font must never trap the visitor behind the curtain. */
-const MAX_HOLD_MS = 1800
+/** Brand beat floor, from navigation start, so a warm cache does not flash it and vanish. */
+const MIN_HOLD_MS = 1100
+/** Hard ceiling, from navigation start. A stalled font must never trap the visitor. */
+const MAX_HOLD_MS = 2000
+
+/** The session's memory that the intro has played. The same key is read in app/layout.tsx. */
+const SPLASH_SEEN_KEY = "skm.splash"
 /** Content fade (400ms) then the halves parting (1200ms, starting at 150ms). */
 const EXIT_MS = 950
 
@@ -87,18 +94,22 @@ export function SplashScreen() {
   const fillRef = React.useRef<HTMLDivElement>(null)
   const readoutRef = React.useRef<HTMLSpanElement>(null)
 
-  // Two ways to never play at all, both settled before the first paint.
+  // The ways to never play at all. CSS has already hidden the markup for the
+  // first two; this takes it out of the tree and releases the scroll lock.
   //
   // Reduced motion skips the intro outright rather than holding a still frame
-  // of it. Every element here arrives on a delayed animation, so a motionless
-  // version is a flat orange rectangle with nothing on it - and the splash is
-  // pure decoration over a page that is already mounted underneath. Same call
-  // the hero makes when it declines to ship three.js to these visitors.
-  //
-  // The other is the /admin round trip remounting this layout: already played
-  // this page load, so it is not a fresh visit.
+  // of it: every element here arrives on a delayed animation, so a motionless
+  // version is a flat orange rectangle over a page that is already there. A
+  // later page load in the same session has seen it, and so has the /admin
+  // round trip remounting this layout.
   useBeforePaint(() => {
-    if (splashCompleted || prefersReducedMotion()) setPhase("done")
+    if (
+      splashCompleted ||
+      prefersReducedMotion() ||
+      document.documentElement.hasAttribute("data-splash-skip")
+    ) {
+      setPhase("done")
+    }
   }, [])
 
   // The whole intro: loading signals, the fill ramp, and the two clocks that
@@ -108,12 +119,10 @@ export function SplashScreen() {
     if (phase !== "intro") return
 
     const abort = new AbortController()
-    const startedAt = performance.now()
 
-    // What "ready" means here: the document has finished loading, the display
-    // face is resolved, and nothing is holding the gate. Anton arriving late is
-    // the one swap the visitor would notice, since the count is set in it; the
-    // gate covers the hero model on top of that.
+    // What "ready" means here: the document has finished loading and the
+    // display face is resolved. Anton arriving late is the one swap the visitor
+    // would notice, since the count is set in it.
     const signals: Promise<unknown>[] = [
       document.readyState === "complete"
         ? Promise.resolve()
@@ -141,11 +150,12 @@ export function SplashScreen() {
     let frame = 0
 
     const tick = (now: number) => {
-      const elapsed = now - startedAt
+      // rAF's timestamp counts from navigation start, not from this effect.
+      const elapsed = now
       // The ceiling is a backstop for a load event that never fires, and it is
       // treated exactly like a real one so the fill still runs out instead of
       // snapping.
-      const settled = (loaded && splashHoldCount() === 0) || elapsed >= MAX_HOLD_MS
+      const settled = loaded || elapsed >= MAX_HOLD_MS
 
       const target = settled ? 1 : CREEP_CEILING
       value += (target - value) * (settled ? SETTLE_RATE : CREEP_RATE)
@@ -190,6 +200,12 @@ export function SplashScreen() {
     if (phase !== "exit") return
     const timer = setTimeout(() => {
       splashCompleted = true
+      try {
+        sessionStorage.setItem(SPLASH_SEEN_KEY, "1")
+      } catch {
+        // Storage refused (private mode, blocked site data): it plays again on
+        // the next reload, which is harmless.
+      }
       setPhase("done")
     }, EXIT_MS)
     return () => clearTimeout(timer)
@@ -258,12 +274,16 @@ export function SplashScreen() {
             actually loads - the reference's outline-and-fill mechanic, with the
             real lockup standing in for its outlined type. */}
         <div className="relative w-[min(560px,82vw)]">
+          {/* Lazy and low priority: decoration, not the page's main image. On
+              a page load where the splash is skipped it is display:none, so a
+              lazy image is never fetched at all. */}
           <Image
             src={LOCKUP.src}
             width={LOCKUP.width}
             height={LOCKUP.height}
             alt=""
-            priority
+            loading="lazy"
+            fetchPriority="low"
             sizes="(min-width: 640px) 560px, 82vw"
             className="h-auto w-full opacity-30"
           />
@@ -273,7 +293,8 @@ export function SplashScreen() {
               width={LOCKUP.width}
               height={LOCKUP.height}
               alt=""
-              priority
+              loading="lazy"
+              fetchPriority="low"
               sizes="(min-width: 640px) 560px, 82vw"
               className="h-auto w-full"
             />

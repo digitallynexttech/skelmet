@@ -21,7 +21,7 @@ import {
   type MeshStandardMaterial,
 } from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
+import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 
 import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-interaction"
@@ -89,6 +89,39 @@ const OPTICAL_CENTRE_LIFT = 0.06
 
 /** Retina is not worth the fill rate on a mesh this size. */
 const MAX_PIXEL_RATIO = 1.75
+
+/**
+ * Touch screens get a lighter renderer: a phone's GPU is better spent keeping
+ * the scroll smooth than on a sharper skull. No multisampling, a lower pixel
+ * ratio and a quarter-size shadow map.
+ */
+const TOUCH = { pixelRatio: 1.25, shadowMapSize: 1024 }
+
+/**
+ * An idle skull's only motion is the bob, a slow drift nobody reads frame by
+ * frame. Drawn every 50 ms rather than every display frame (60-120 Hz), so a
+ * skull just sitting in the hero costs a fraction of the GPU it did.
+ */
+const IDLE_FRAME_MS = 50
+
+/**
+ * The parsed model, kept for the rest of the page's life. Coming back to the
+ * home page then costs no download, no meshopt decode and no parse - only the
+ * new canvas's first upload. Unmounting disposes the GPU copies of geometry and
+ * textures, which three uploads again on the next draw from the data still
+ * held here. A failed download is not kept, so the next mount tries afresh.
+ */
+let skullFile: Promise<GLTF> | null = null
+
+function loadSkull(loader: GLTFLoader): Promise<GLTF> {
+  skullFile ??= new Promise<GLTF>((resolve, reject) =>
+    loader.load("/product/skull.glb", resolve, undefined, reject),
+  ).catch((reason: unknown) => {
+    skullFile = null
+    throw reason
+  })
+  return skullFile
+}
 
 /**
  * The point the headline burns around, in pivot space: up on the cranium,
@@ -182,9 +215,10 @@ export function SkullCanvas({
     // Context creation throws on a machine with no WebGL, and it happens here
     // rather than during render, so the error boundary upstream would never see
     // it. Hand it to the caller instead, which puts the poster back.
+    const touch = window.matchMedia("(pointer: coarse)").matches
     try {
       renderer = new WebGLRenderer({
-        antialias: true,
+        antialias: !touch,
         alpha: true,
         powerPreference: "high-performance",
       })
@@ -193,7 +227,9 @@ export function SkullCanvas({
       return
     }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, touch ? TOUCH.pixelRatio : MAX_PIXEL_RATIO),
+    )
     renderer.toneMapping = ACESFilmicToneMapping
     renderer.toneMappingExposure = STAGE.exposure
     renderer.shadowMap.enabled = true
@@ -235,7 +271,8 @@ export function SkullCanvas({
     const key = new DirectionalLight(STAGE_KEY.clone(), STAGE.key)
     key.position.set(-3.4, 4.4, 1.9)
     key.castShadow = true
-    key.shadow.mapSize.set(2048, 2048)
+    const shadowSize = touch ? TOUCH.shadowMapSize : 2048
+    key.shadow.mapSize.set(shadowSize, shadowSize)
     // Bias pair tuned for a double-sided mesh: without normalBias the curved
     // cranium stipples itself with shadow acne.
     key.shadow.bias = -0.0006
@@ -411,7 +448,7 @@ export function SkullCanvas({
     let bank = 0
     let lastCx = NaN
     /** The pose last submitted to the GPU, so an idle skull costs no draws. */
-    const drawn = { x: NaN, y: NaN, z: NaN, lift: NaN, width: 0, height: 0, studio: NaN }
+    const drawn = { x: NaN, y: NaN, z: NaN, lift: NaN, width: 0, height: 0, studio: NaN, at: 0 }
     /** The model's scaled width and depth, for the halo's silhouette width. */
     const extent = new Vector3()
     const haloPoint = new Vector3()
@@ -527,17 +564,19 @@ export function SkullCanvas({
       // relight and redraw on every sub-pixel of scroll.
       const studio = Math.round(pose.docked * 200) / 200
       const size = renderer.domElement
-      if (
+      const moved =
         studio !== drawn.studio ||
         Math.abs(pivot.rotation.x - drawn.x) > 1e-5 ||
         Math.abs(pivot.rotation.y - drawn.y) > 1e-5 ||
         Math.abs(pivot.rotation.z - drawn.z) > 1e-5 ||
-        Math.abs(pivot.position.y - drawn.lift) > 1e-5 ||
         size.width !== drawn.width ||
         size.height !== drawn.height
-      ) {
+      const bobbed = Math.abs(pivot.position.y - drawn.lift) > 1e-5
+      const now = performance.now()
+      if (moved || (bobbed && now - drawn.at >= IDLE_FRAME_MS)) {
         if (studio !== drawn.studio) rig(studio)
         renderer.render(scene, camera)
+        drawn.at = now
         drawn.studio = studio
         drawn.x = pivot.rotation.x
         drawn.y = pivot.rotation.y
@@ -596,101 +635,115 @@ export function SkullCanvas({
     // hero never gets past its poster.
     loader.setMeshoptDecoder(MeshoptDecoder)
     const loadModel = () =>
-      loader.load(
-        "/product/skull.glb",
-      (gltf) => {
-        if (disposed) return
+      loadSkull(loader).then(
+        (gltf) => {
+          if (disposed) return
 
-        const root = gltf.scene
+          const root = gltf.scene
+          // A kept model comes back still parented to the last visit's scene,
+          // offset and scaled for it. Detach and reset before measuring, or the
+          // bounds below would be taken through that stale transform.
+          root.removeFromParent()
+          root.position.set(0, 0, 0)
+          root.updateMatrixWorld(true)
 
-        // Generators ship these meshes as metalness 1 / roughness 1. That is
-        // wrong for matte PLA: a fully metallic surface takes its colour from
-        // reflections rather than its own base map, which turns the orange into
-        // washed-out grey plastic. Retag it as the dielectric it actually is.
-        root.traverse((child) => {
-          const mesh = child as Mesh
-          if (!mesh.isMesh) return
-          const material = mesh.material as MeshStandardMaterial
-          material.metalness = 0.0
-          // The generator's roughness map is dropped rather than scaled: three
-          // multiplies `roughness` by the map, so a glossy map keeps blown-out
-          // hotspots no matter how high the scalar goes. A uniform value gives
-          // one broad, controllable sheen instead. Not fully diffuse, though -
-          // at 1.0 the surface loses every specular cue and reads as moulded
-          // toy plastic. The normal map stays: that is where the flame relief
-          // and layer lines live.
-          material.roughnessMap = null
-          material.roughness = STAGE.roughness
-          material.envMapIntensity = 0.3
+          // Generators ship these meshes as metalness 1 / roughness 1. That is
+          // wrong for matte PLA: a fully metallic surface takes its colour from
+          // reflections rather than its own base map, which turns the orange into
+          // washed-out grey plastic. Retag it as the dielectric it actually is.
+          root.traverse((child) => {
+            const mesh = child as Mesh
+            if (!mesh.isMesh) return
+            const material = mesh.material as MeshStandardMaterial
+            material.metalness = 0.0
+            // The generator's roughness map is dropped rather than scaled: three
+            // multiplies `roughness` by the map, so a glossy map keeps blown-out
+            // hotspots no matter how high the scalar goes. A uniform value gives
+            // one broad, controllable sheen instead. Not fully diffuse, though -
+            // at 1.0 the surface loses every specular cue and reads as moulded
+            // toy plastic. The normal map stays: that is where the flame relief
+            // and layer lines live.
+            material.roughnessMap = null
+            material.roughness = STAGE.roughness
+            material.envMapIntensity = 0.3
 
-          // Self-shadowing is what carves the eye sockets and the flame
-          // grooves. Without it the form is only shaded by lambert falloff,
-          // which is flat.
-          materials.push(material)
-          mesh.castShadow = true
-          mesh.receiveShadow = true
-        })
+            // Self-shadowing is what carves the eye sockets and the flame
+            // grooves. Without it the form is only shaded by lambert falloff,
+            // which is flat.
+            materials.push(material)
+            mesh.castShadow = true
+            mesh.receiveShadow = true
+          })
 
-        const box = new Box3().setFromObject(root)
-        const size = box.getSize(new Vector3())
-        const centre = box.getCenter(new Vector3())
-        const longest = Math.max(size.x, size.y, size.z) || 1
-        // Normalised so the longest axis fills most of the frame. Kept under
-        // the full 3.1-unit view height so a dragged skull, which is deeper
-        // than it is wide, cannot clip the edges mid-spin.
-        const scale = 2.5 / longest
+          const box = new Box3().setFromObject(root)
+          const size = box.getSize(new Vector3())
+          const centre = box.getCenter(new Vector3())
+          const longest = Math.max(size.x, size.y, size.z) || 1
+          // Normalised so the longest axis fills most of the frame. Kept under
+          // the full 3.1-unit view height so a dragged skull, which is deeper
+          // than it is wide, cannot clip the edges mid-spin.
+          const scale = 2.5 / longest
 
-        root.position.set(-centre.x, -centre.y, -centre.z)
+          root.position.set(-centre.x, -centre.y, -centre.z)
 
-        const scaled = new Group()
-        scaled.scale.setScalar(scale)
-        scaled.add(root)
-        pivot.add(scaled)
-        extent.copy(size).multiplyScalar(scale)
-        lastRot.x = follow.x
-        lastRot.y = follow.y
-        model = scaled
-        drawn.studio = NaN
+          const scaled = new Group()
+          scaled.scale.setScalar(scale)
+          scaled.add(root)
+          pivot.add(scaled)
+          extent.copy(size).multiplyScalar(scale)
+          lastRot.x = follow.x
+          lastRot.y = follow.y
+          model = scaled
+          drawn.studio = NaN
 
-        // Sample the surface into pivot space for the silhouette. About forty
-        // thousand points pins the outline to well under a pixel, and a new
-        // angle costs a fraction of a millisecond to measure.
-        pivot.updateMatrixWorld(true)
-        const toPivot = new Matrix4().copy(pivot.matrixWorld).invert()
-        const points: number[] = []
-        const point = new Vector3()
-        root.traverse((child) => {
-          const mesh = child as Mesh
-          if (!mesh.isMesh) return
-          const position = mesh.geometry.getAttribute("position")
-          const toLocal = new Matrix4().multiplyMatrices(toPivot, mesh.matrixWorld)
-          const step = Math.max(1, Math.floor(position.count / 40000))
-          for (let k = 0; k < position.count; k += step) {
-            point.fromBufferAttribute(position, k).applyMatrix4(toLocal)
-            points.push(point.x, point.y, point.z)
+          // Sample the surface into pivot space for the silhouette. About forty
+          // thousand points pins the outline to well under a pixel, and a new
+          // angle costs a fraction of a millisecond to measure.
+          pivot.updateMatrixWorld(true)
+          const toPivot = new Matrix4().copy(pivot.matrixWorld).invert()
+          const points: number[] = []
+          const point = new Vector3()
+          root.traverse((child) => {
+            const mesh = child as Mesh
+            if (!mesh.isMesh) return
+            const position = mesh.geometry.getAttribute("position")
+            const toLocal = new Matrix4().multiplyMatrices(toPivot, mesh.matrixWorld)
+            const step = Math.max(1, Math.floor(position.count / 40000))
+            for (let k = 0; k < position.count; k += step) {
+              point.fromBufferAttribute(position, k).applyMatrix4(toLocal)
+              points.push(point.x, point.y, point.z)
+            }
+          })
+          surface = Float32Array.from(points)
+          // Home is placed by the silhouette too; now it is known exactly.
+          measure()
+
+          // Compile the shaders off the main thread before the first draw. Done
+          // synchronously inside that draw it is one long task - four lights and
+          // a shadow pass - landing just as the visitor starts to interact.
+          void renderer
+            .compileAsync(scene, camera)
+            .catch(() => {
+              // Compiled on first draw instead; slower, not broken.
+            })
+            .then(() => {
+              if (!disposed) readyRef.current()
+            })
+        },
+        (reason: unknown) => {
+          if (disposed) return
+          // A dropped connection is the common failure here, not a bad file, so
+          // it is worth asking once more before settling for the poster. After
+          // that it stays on the poster, which is a finished hero rather than an
+          // error state, so there is nothing louder to do.
+          if (modelAttempt < 1) {
+            modelAttempt += 1
+            retryTimer = window.setTimeout(loadModel, 1200)
+            return
           }
-        })
-        surface = Float32Array.from(points)
-        // Home is placed by the silhouette too; now it is known exactly.
-        measure()
-
-        readyRef.current()
-      },
-      undefined,
-      (reason) => {
-        if (disposed) return
-        // A dropped connection is the common failure here, not a bad file, so
-        // it is worth asking once more before settling for the poster. After
-        // that it stays on the poster, which is a finished hero rather than an
-        // error state, so there is nothing louder to do.
-        if (modelAttempt < 1) {
-          modelAttempt += 1
-          retryTimer = window.setTimeout(loadModel, 1200)
-          return
-        }
-        errorRef.current(reason)
-      },
-    )
+          errorRef.current(reason)
+        },
+      )
 
     loadModel()
 

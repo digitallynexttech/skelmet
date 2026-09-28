@@ -7,7 +7,6 @@ import Image from "next/image"
 
 import { SkullBoundary } from "@/components/marketing/skull-boundary"
 import { getSkullInteraction } from "@/components/marketing/skull-interaction"
-import { holdSplash } from "@/components/shared/splash-gate"
 import { cn } from "@/lib/utils"
 
 /**
@@ -23,18 +22,19 @@ import { cn } from "@/lib/utils"
  * bloom. The cutout is posed and sized to sit where the mesh sits, so the
  * hand-off between them is close to invisible.
  *
- * That ordering is what makes the slow path bearable. The model is 8.7MB on
- * top of a ~900KB three.js chunk, so there are plenty of visitors who should
- * never be asked to download it: a metered connection, 2G, reduced motion, a
- * device with no WebGL, or a fetch that simply fails. Every one of those cases
- * lands on the poster, which is a finished hero rather than a placeholder -
- * the treatment this section shipped with before the model existed.
+ * That ordering is what makes the slow path bearable. The model is about 1MB
+ * (meshopt) on top of a ~650KB three.js chunk, so there are plenty of visitors
+ * who should never be asked to download it: a metered connection, 2G, reduced
+ * motion, a low-end phone, a device with no WebGL, or a fetch that simply
+ * fails. Every one of those lands on the poster, which is a finished hero
+ * rather than a placeholder - and it is the page's main image, so it is the one
+ * thing preloaded at high priority.
  *
- * While the model is in flight the stage holds the splash down, so on a
- * healthy connection the swap happens behind the visor and nobody watches the
- * skull arrive. The splash has its own ceiling, so a slow model delays nothing:
- * the visor lifts on schedule, the poster is already there, and the canvas
- * cross-fades in later if it makes it.
+ * The model waits its turn: nothing is fetched until the page has loaded and
+ * gone idle, so it never competes with the poster, the fonts or hydration. It
+ * then cross-fades in over the poster. Once it has been on screen, coming back
+ * to the page starts without the poster, so the photo never flashes before the
+ * model, whose parsed file skull-canvas keeps for the rest of the session.
  *
  * The canvas is not drawn inside this box. It is portalled to the body, into
  * a box the size of this one, and flown down the page by skull-journey: it
@@ -94,6 +94,46 @@ function prefersLessData(): boolean {
   return connection.effectiveType === "slow-2g" || connection.effectiveType === "2g"
 }
 
+/**
+ * A phone that would struggle: 4 GB or less of memory, or 4 cores or fewer, on
+ * a touch screen. It keeps the poster - the model would cost it a megabyte and
+ * seconds of main thread for a decoration. Absent APIs (Safari has no
+ * deviceMemory) count as capable.
+ */
+function lowEndPhone(): boolean {
+  if (!window.matchMedia("(pointer: coarse)").matches) return false
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+  const cores = navigator.hardwareConcurrency
+  return (memory !== undefined && memory <= 4) || (cores !== undefined && cores <= 4)
+}
+
+/** After the load event, then the next idle moment - or a second, where idle callbacks don't exist. */
+function afterPageSettles(run: () => void): () => void {
+  let idle = 0
+  let timer = 0
+  const schedule = () => {
+    // Safari has no requestIdleCallback.
+    if (typeof window.requestIdleCallback === "function") {
+      idle = window.requestIdleCallback(run, { timeout: 2000 })
+    } else {
+      timer = window.setTimeout(run, 1000)
+    }
+  }
+  if (document.readyState === "complete") schedule()
+  else window.addEventListener("load", schedule, { once: true })
+  return () => {
+    window.removeEventListener("load", schedule)
+    if (idle) window.cancelIdleCallback(idle)
+    window.clearTimeout(timer)
+  }
+}
+
+/**
+ * The model has been on screen at least once in this page's lifetime. Client
+ * code only; a module binding on the server would be shared between visitors.
+ */
+let modelShown = false
+
 /** Is this viewport point on the skull, wherever it currently is on the page. */
 function onSkull(x: number, y: number): boolean {
   const hit = getSkullInteraction().hit
@@ -105,58 +145,65 @@ function onSkull(x: number, y: number): boolean {
 
 export function SkullStage({ className }: { className?: string }) {
   const flightRef = useRef<HTMLDivElement>(null)
-  const release = useRef<(() => void) | null>(null)
 
   /** Are we downloading the model at all. */
   const [attempt, setAttempt] = useState(false)
   /** Is the mesh on screen - the only thing that hides the poster. */
   const [live, setLive] = useState(false)
-
-  const releaseSplash = useCallback(() => {
-    release.current?.()
-    release.current = null
-  }, [])
+  /**
+   * Coming back to a page where the model has already been seen: leave the
+   * poster out, so the stage waits a beat for the model rather than showing
+   * the photo and swapping. Read in the initialiser so not even the first
+   * frame shows the photo. That is hydration-safe: the flag is only ever true
+   * after a client-side navigation, never on a fresh page load.
+   */
+  const [returning, setReturning] = useState(() => typeof window !== "undefined" && modelShown)
 
   const onReady = useCallback(() => {
+    modelShown = true
     setLive(true)
-    releaseSplash()
-  }, [releaseSplash])
+  }, [])
 
   // Covers both routes a failure can take: the boundary, for anything thrown
   // during render, and the canvas itself, for the async ones it owns - a model
-  // that never downloads, or a machine with no WebGL context to give. Put the
-  // poster back as well as releasing the splash, since a context lost after the
-  // mesh went live would otherwise leave the stage empty.
+  // that never downloads, or a machine with no WebGL context to give. The
+  // poster comes back, since a context lost after the mesh went live would
+  // otherwise leave the stage empty.
   const onFailed = useCallback(() => {
     setLive(false)
-    releaseSplash()
-  }, [releaseSplash])
+    setReturning(false)
+  }, [])
 
-  // Decide whether to go after the model, and hold the splash while we do.
-  //
-  // The hold is taken first and dropped immediately if the answer is no, so
-  // there is no window where the splash could sample the count mid-decision.
-  // An effect is early enough by a wide margin: the splash cannot begin
-  // leaving before its own minimum hold, which is three orders of magnitude
-  // further out than this frame.
+  // Decide whether to go after the model at all, and when.
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    let cancel = () => {}
 
     const decide = () => {
-      const allow = !motion.matches && !prefersLessData()
-      setAttempt(allow)
-      if (!allow) releaseSplash()
+      cancel()
+      const allow = !motion.matches && !prefersLessData() && !lowEndPhone()
+      if (!allow) {
+        setAttempt(false)
+        setReturning(false)
+        return
+      }
+      // Seen already: the file is parsed and cached, so there is nothing to
+      // wait for and no reason to show the poster first.
+      if (modelShown) {
+        setReturning(true)
+        setAttempt(true)
+        return
+      }
+      cancel = afterPageSettles(() => setAttempt(true))
     }
 
-    release.current = holdSplash()
     decide()
-
     motion.addEventListener("change", decide)
     return () => {
+      cancel()
       motion.removeEventListener("change", decide)
-      releaseSplash()
     }
-  }, [releaseSplash])
+  }, [])
 
   // The skull tracks the cursor anywhere on screen, and can be grabbed and
   // spun wherever it has flown to - so these listen on the window rather than
@@ -311,12 +358,15 @@ export function SkullStage({ className }: { className?: string }) {
           alt=""
           width={836}
           height={1376}
-          priority
-          sizes="(min-width: 1024px) 360px, 260px"
+          // The page's main image: preloaded, and first in the queue.
+          preload
+          fetchPriority="high"
+          sizes="(min-width: 1024px) 360px, (min-width: 640px) 300px, 260px"
           className={cn(
-            "animate-drift w-auto object-contain",
+            "w-auto object-contain",
             "transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            live && "opacity-0",
+            // The drift stops once the model has taken over.
+            live || returning ? "opacity-0" : "animate-drift",
           )}
           style={{ height: `${MESH_HEIGHT_RATIO}%` }}
         />

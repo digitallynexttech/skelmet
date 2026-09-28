@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { Anatomy } from "@/components/marketing/anatomy"
@@ -21,7 +22,9 @@ import { MarqueeTicker } from "@/components/shared/marquee-ticker"
 import { siteConfig } from "@/config/site"
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} · ${siteConfig.tagline}`,
+  // Absolute: the root layout's template appends " · SKELMET", which made
+  // this "SKELMET · Park the menace · SKELMET".
+  title: { absolute: `${siteConfig.name} · ${siteConfig.tagline}` },
   description: siteConfig.description,
   alternates: { canonical: "/" },
 }
@@ -42,6 +45,21 @@ export const metadata: Metadata = {
  */
 export const revalidate = 60
 
+/**
+ * A below-the-fold section the browser may skip laying out and painting until
+ * it nears the viewport (content-visibility: auto). `size` is its rough height
+ * in px, kept as a placeholder until it has rendered once, then remembered.
+ * Only sections the flying skull never lands on: those it docks on are
+ * measured on load and must be laid out.
+ */
+function Deferred({ size, children }: { size: number; children: React.ReactNode }) {
+  return (
+    <div style={{ contentVisibility: "auto", containIntrinsicSize: `auto ${size}px` }}>
+      {children}
+    </div>
+  )
+}
+
 export default function HomePage() {
   return (
     <>
@@ -53,14 +71,27 @@ export default function HomePage() {
           same block is 05 here and 03 on the product page. Commenting a
           section out therefore only means deleting a line and closing the
           numbers up, with no component edited and no other page disturbed. */}
-      <ColourwayGrid />
-      <Bento />
+      {/* Its own boundary: it is the one section that reads the database, and
+          without this its wait put the WHOLE page behind the route's loading
+          spinner, streamed after the footer. Now only the lineup waits. */}
+      <Suspense fallback={<div aria-hidden className="min-h-[900px]" />}>
+        <ColourwayGrid />
+      </Suspense>
+      <Deferred size={720}>
+        <Bento />
+      </Deferred>
       <Anatomy />
       <Texture />
-      <Comparison />
-      <RiderWall />
+      <Deferred size={880}>
+        <Comparison />
+      </Deferred>
+      <Deferred size={760}>
+        <RiderWall />
+      </Deferred>
       <Reviews />
-      <FaqSection />
+      <Deferred size={820}>
+        <FaqSection />
+      </Deferred>
       <DropList />
 
       {/* Hidden, not deleted - all five still render on other routes and are

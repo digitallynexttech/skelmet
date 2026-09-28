@@ -39,7 +39,9 @@ export function ConsentBar() {
       aria-labelledby="cookie-consent-title"
       className="fixed inset-x-3 bottom-3 z-[60] sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[400px]"
     >
-      <div className="bg-graphite/95 rounded-tile relative border border-white/[0.12] p-6 shadow-[0_24px_60px_rgb(0_0_0_/_0.55)] backdrop-blur-xl">
+      {/* Opaque rather than blurred below sm: on a phone it sits over the
+          scrolling page, and a blur there is recomputed on every frame. */}
+      <div className="bg-graphite sm:bg-graphite/95 rounded-tile relative border border-white/[0.12] p-6 shadow-[0_24px_60px_rgb(0_0_0_/_0.55)] sm:backdrop-blur-xl">
         {reviewing ? (
           <button
             type="button"

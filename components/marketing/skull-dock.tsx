@@ -61,7 +61,8 @@ export function SkullDock({
         alt=""
         fill
         sizes={sizes}
-        loading={hideOwnSkull ? "eager" : undefined}
+        // Lazy even where it hides its own skull: it is below the fold, and it
+        // only ever shows once the 3D skull lands on it, long after first paint.
         className="object-cover"
         style={{ opacity: "var(--skull-dock, 0)" }}
       />

@@ -32,9 +32,11 @@ export function Wordmark({ className, size = "md" }: { className?: string; size?
         alt={siteConfig.name}
         // h-10 against a 2.87:1 lockup is ~115px wide; h-8 is narrower still.
         sizes="120px"
-        // Above the fold on every page, and the splash paints the same file, so
-        // it wants to be in flight with the document rather than after it.
-        priority
+        // Above the fold on every page, so eager - but small and never the
+        // page's main image, so it must not queue ahead of the hero or product
+        // photo. (The splash uses a different, single-colour file.)
+        loading="eager"
+        fetchPriority="low"
         className={cn("w-auto", size === "sm" ? "h-8" : "h-10")}
       />
     </Link>
