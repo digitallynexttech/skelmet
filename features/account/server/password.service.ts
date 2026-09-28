@@ -4,26 +4,28 @@ import { changePasswordSchema } from "@/features/account/schemas/password.schema
 import { hashPassword, verifyPassword } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
-import { requireSession } from "@/server/action-guard"
+import { requireStaff } from "@/server/action-guard"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { db } from "@/server/db"
 
 /**
  * Lets someone change their own password, and clears `mustChangePassword`.
  *
- * That flag was already written by `createStaff` and `resetStaffPassword`,
- * carried through `authorize` onto the JWT and typed on the session - and read
- * by nothing at all. A staff member handed a temporary password was marked as
- * needing to change it and then never asked to, so the password an admin could
- * see stayed valid indefinitely. This and the gate in `app/(app)/layout.tsx`
- * are the two halves that make the flag mean something.
+ * That flag is written by `createStaff` and `resetStaffPassword`, and while it
+ * is set the guards refuse everything but this (action-guard.ts) and the
+ * (app) layout sends every page to /change-password.
+ *
+ * Changing it bumps `sessionVersion`, which ends every session opened with
+ * the old password - including one left open on another computer. The form
+ * signs the caller straight back in with the new one, so the only session
+ * that survives is the one that just proved it knows the new password.
  *
  * Deliberately not under `/api/account`: `proxy.ts` fences that prefix to the
  * CUSTOMER population, and the people most likely to arrive here are staff.
  */
 export async function changeOwnPassword(raw: unknown): Promise<ActionResult<{ ok: true }>> {
   return runAction(async () => {
-    const session = await requireSession()
+    const session = await requireStaff({ allowPendingPasswordChange: true })
     if (!hasDatabase()) return fail("Not available.", undefined, 503)
 
     const input = changePasswordSchema.parse(raw)
@@ -47,7 +49,9 @@ export async function changeOwnPassword(raw: unknown): Promise<ActionResult<{ ok
       data: {
         passwordHash: await hashPassword(input.newPassword),
         mustChangePassword: false,
+        sessionVersion: { increment: 1 },
       },
+      select: { id: true },
     })
 
     // Never log the password, old or new - only that it moved.

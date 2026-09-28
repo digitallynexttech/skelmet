@@ -71,6 +71,10 @@ model User {
   phone            String?
   marketingOptIn   Boolean    @default(false) @map("marketing_opt_in")
   mustChangePassword Boolean  @default(false) @map("must_change_password")
+  /// Copied into the session token at sign-in. Bumped by a password reset or
+  /// change, a revoke and a role removal, which ends every session opened
+  /// before it (server/session-policy.ts).
+  sessionVersion   Int        @default(0) @map("session_version")
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 

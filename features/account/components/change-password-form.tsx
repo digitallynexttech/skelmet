@@ -1,14 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { signOut } from "next-auth/react"
+import { signIn, signOut } from "next-auth/react"
 import { AlertTriangle, ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { safeNextPath } from "@/features/account/lib/safe-next"
 import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 
-export function ChangePasswordForm({ next = "/admin" }: { next?: string }) {
+export function ChangePasswordForm({ next = "/admin", email }: { next?: string; email: string }) {
   const [error, setError] = React.useState<string | null>(null)
   const [pending, setPending] = React.useState(false)
 
@@ -18,26 +19,40 @@ export function ChangePasswordForm({ next = "/admin" }: { next?: string }) {
     setPending(true)
 
     const form = new FormData(event.currentTarget)
+    const newPassword = String(form.get("newPassword") ?? "")
     try {
       await apiFetch<{ ok: true }>("/api/me/password", {
         method: "POST",
         body: JSON.stringify({
           currentPassword: String(form.get("currentPassword") ?? ""),
-          newPassword: String(form.get("newPassword") ?? ""),
+          newPassword,
           confirmPassword: String(form.get("confirmPassword") ?? ""),
         }),
       })
-
-      // mustChangePassword rides the JWT, so the flag stays true in the token
-      // until a new one is minted - and `session.update()` needs a
-      // SessionProvider this app does not mount. Signing out and back in is
-      // the reissue, and it is the honest flow anyway: the password they just
-      // replaced is the one their current session was opened with.
-      await signOut({ redirectTo: `/login?next=${encodeURIComponent(next)}` })
     } catch (err) {
       setError(err instanceof ApiFetchError ? err.message : "That didn't work. Try again.")
       setPending(false)
+      return
     }
+
+    // The change ended every session opened with the old password, this one
+    // included. Signing straight back in with the new one issues a fresh
+    // session - with the flag cleared - so they carry on where they were.
+    const destination = safeNextPath(next)
+    const again = await signIn("credentials", {
+      email,
+      password: newPassword,
+      redirect: false,
+    }).catch(() => null)
+
+    if (again && !again.error) {
+      window.location.assign(destination)
+      return
+    }
+
+    // Could not sign back in (a sign-in limit, say): the password is changed
+    // either way, so sign out cleanly and let them use it.
+    await signOut({ redirectTo: `/login?next=${encodeURIComponent(destination)}` })
   }
 
   return (

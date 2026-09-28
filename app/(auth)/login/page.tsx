@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { Wordmark } from "@/components/shared/wordmark"
 import { LoginForm } from "@/features/account/components/login-form"
+import { safeNextPath } from "@/features/account/lib/safe-next"
 import { auth } from "@/server/auth"
 
 export const metadata: Metadata = {
@@ -18,8 +19,9 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>
 }) {
   const { next } = await searchParams
-  // Only ever an internal path, so a crafted ?next= cannot bounce someone off-site.
-  const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : "/admin"
+  // Only ever a console path, so a crafted ?next= cannot bounce someone
+  // off-site (features/account/lib/safe-next.ts).
+  const safeNext = safeNextPath(next)
 
   // Already signed in? Send them on rather than showing a form they cannot
   // usefully submit. Signing in again would only mint the same session.
@@ -41,8 +43,8 @@ export default async function LoginPage({
             Sign in
           </h1>
           <p className="text-ash mb-9 text-[15px] leading-[1.6]">
-            The staff console. Customers never need this - orders are placed as a guest and
-            tracked by order number.
+            The staff console. Customers never need this - orders are placed as a guest and tracked
+            by order number.
           </p>
 
           <LoginForm next={safeNext} />
