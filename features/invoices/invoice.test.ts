@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildInvoice,
+  creditNoteCounterKey,
+  creditNoteNumber,
   financialYear,
   invoiceNumber,
+  paymentTerms,
   type InvoiceOrder,
 } from "@/features/invoices/invoice"
 import { rupeesInWords } from "@/lib/amount-in-words"
@@ -107,5 +110,20 @@ describe("invoice numbers", () => {
     // 31 March 23:00 UTC is already 1 April in India.
     expect(financialYear(new Date("2027-03-31T23:00:00Z"))).toBe("27-28")
     expect(invoiceNumber("26-27", 7)).toBe("SKM/26-27/0007")
+  })
+
+  it("give credit notes their own series, under their own counter", () => {
+    expect(creditNoteNumber("26-27", 1)).toBe("CN/26-27/0001")
+    expect(creditNoteCounterKey("26-27")).toBe("CN-26-27")
+    expect(creditNoteCounterKey("26-27")).not.toBe("26-27")
+  })
+})
+
+describe("paymentTerms", () => {
+  it("never calls money that came through the gateway cash on delivery", () => {
+    expect(paymentTerms({ method: "ONLINE", reference: "pay_X" })).toBe("Prepaid online")
+    expect(paymentTerms({ method: "COD", reference: "pay_X" })).toBe("Prepaid online")
+    expect(paymentTerms({ method: "ONLINE", reference: null })).toBe("Prepaid online")
+    expect(paymentTerms({ method: "COD", reference: null })).toBe("Cash on delivery")
   })
 })
