@@ -4,7 +4,12 @@
  * connect-src, so Razorpay's checkout, Google Analytics and Microsoft Clarity
  * keep loading and reporting as they do. What it does stop is the site being
  * framed (clickjacking the console or the payment button), a <base> tag
- * re-pointing relative URLs, plugins, and forms posting off-site.
+ * re-pointing relative URLs, and plugins.
+ *
+ * No form-action: Razorpay's redirect mode - which checkout.js falls back to
+ * inside in-app browsers such as Instagram's - posts a form from this page to
+ * Razorpay, and Chrome applies form-action to the bank redirects after it too.
+ * Blocking that would fail payments; nothing on this site takes posted HTML.
  */
 const SECURITY_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
@@ -18,7 +23,7 @@ const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
   {
     key: "Content-Security-Policy",
-    value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+    value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
   },
 ]
 

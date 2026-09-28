@@ -23,14 +23,23 @@ import { db } from "@/server/db"
  * pages still build and render with nothing behind them.
  */
 
-/** Live figures for one product's variants, keyed by SKU. */
+/**
+ * Live figures for one product's variants, keyed by SKU. `forSale` is the
+ * product's status: checkout refuses a product that is not ACTIVE, so the
+ * storefront must not offer one.
+ */
 async function liveBySku(skus: string[]) {
   const rows = await db.variant.findMany({
     where: { sku: { in: skus } },
     // select, never include (§7).
-    select: { sku: true, price: true, stock: true },
+    select: { sku: true, price: true, stock: true, product: { select: { status: true } } },
   })
-  return new Map(rows.map((r) => [r.sku, { price: r.price.toString(), stock: r.stock }]))
+  return new Map(
+    rows.map((r) => [
+      r.sku,
+      { price: r.price.toString(), stock: r.stock, forSale: r.product.status === "ACTIVE" },
+    ]),
+  )
 }
 
 /**
@@ -46,7 +55,11 @@ async function withLive(product: Product): Promise<Product> {
   const colourways = product.colourways.map((c) => {
     const row = live.get(c.sku)
     if (!row) return c
-    return { ...c, price: row.price, stock: row.stock, inStock: row.stock > 0 }
+    // Unpublished (DRAFT or ARCHIVED) reads as sold out rather than as a
+    // missing page: the shop's only product page stays up, says it cannot be
+    // bought, and offers nothing checkout would then refuse.
+    const stock = row.forSale ? row.stock : 0
+    return { ...c, price: row.price, stock, inStock: stock > 0 }
   })
 
   // The product-level price is what surfaces outside the picker - cards, the

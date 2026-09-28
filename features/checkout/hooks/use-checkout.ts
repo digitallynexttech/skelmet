@@ -3,19 +3,12 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 
-import { apiFetch } from "@/lib/api-fetch"
+import { siteConfig } from "@/config/site"
+import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import type { PlaceOrderInput } from "@/features/checkout/schemas/checkout.schema"
+import type { StartedCheckout } from "@/features/checkout/server/checkout.service"
 import { reportPlaced } from "@/features/visitors/lib/tracker"
-
-type StartedCheckout = {
-  orderId: string
-  orderNumber: string
-  total: string
-  gatewayOrderId: string | null
-  gatewayKeyId: string | null
-  paymentMethod: "ONLINE" | "COD"
-}
 
 type RazorpayHandlerResponse = {
   razorpay_order_id: string
@@ -156,13 +149,26 @@ export function useCheckout() {
                 gatewayPaymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
               }),
-            })
-              .catch(() => {
-                // Payment succeeded at the gateway; the webhook will reconcile.
-              })
-              .finally(() => {
+            }).then(
+              () => done(started.orderNumber),
+              (err: unknown) => {
+                // 409: the server asked Razorpay and Razorpay says this
+                // payment has not gone through, so there is nothing to
+                // confirm. Stay here with the order ready to pay again.
+                if (err instanceof ApiFetchError && err.status === 409) {
+                  unpaid.current = { key, at: Date.now(), started }
+                  settle()
+                  setError(
+                    `Razorpay has not confirmed this payment, so the order is still unpaid. Try again, or write to ${siteConfig.supportEmail} if money has left your account.`,
+                  )
+                  return
+                }
+                // Anything else - a dropped connection, a timeout - says
+                // nothing about the payment, which Razorpay reported as made;
+                // the webhook will settle it.
                 done(started.orderNumber)
-              })
+              },
+            )
           },
           modal: {
             ondismiss: () => {

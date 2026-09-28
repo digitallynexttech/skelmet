@@ -82,6 +82,7 @@ admin/orders/[id]/book                   POST AWB, pickup, manifest, label
 admin/orders/[id]/tracking               POST pull the latest tracking
 admin/orders/[id]/invoice                GET  tax invoice PDF
 admin/orders/[id]/invoice/email          POST email it to the buyer
+admin/orders/[id]/credit-note           GET  credit note PDF for a refunded, invoiced order
 admin/orders/abandoned · admin/carts     GET
 admin/customers · [id]                   GET
 admin/visitors · [id]                    GET

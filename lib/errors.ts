@@ -31,13 +31,6 @@ export class ForbiddenError extends AppError {
   }
 }
 
-/** A missing grant answers 404, never 403, so nobody can probe what exists (§6). */
-export class NotFoundError extends AppError {
-  constructor(message = "Not found.") {
-    super(message, 404, "NOT_FOUND")
-  }
-}
-
 export class ConflictError extends AppError {
   constructor(message: string, details?: unknown) {
     super(message, 409, "CONFLICT", details)

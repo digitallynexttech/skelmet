@@ -116,5 +116,4 @@ export const PAGE_SIZE = 20
  * stops being a safe request once the shop has years of orders.
  */
 export const MAX_PAGE_SIZE = 200
-export const FREE_SHIPPING = true
 export const COD_FEE = 49

@@ -14,6 +14,6 @@ export async function register() {
     )
   }
 
-  // TODO(scheduler): start server/scheduler.ts here once queue draining exists,
-  // guarded by DISABLE_INLINE_SCHEDULER so only one instance runs it (§6).
+  // No scheduler runs here: the work a cron would do (releasing unpaid orders,
+  // deleting old visits) runs when a checkout starts or staff open the screen.
 }

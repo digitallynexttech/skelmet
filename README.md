@@ -176,16 +176,17 @@ PostgreSQL 16 or 17, reachable from wherever the app runs.
 ```bash
 cp .env.example .env          # then fill in the values
 pnpm db:migrate               # hand-guarded, safe to re-run
-pnpm db:seed                  # DESTRUCTIVE, throwaway databases only
+pnpm db:bootstrap             # adds only what is missing; safe on live data
 ```
 
-On a database that already holds real orders, run `pnpm db:migrate` only.
-`db:seed` wipes the catalogue, roles and permissions. For permission changes on
-live data use `pnpm db:sync-permissions`.
+`db:bootstrap` creates the permissions, the Admin role, the first administrator
+(`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`, who must choose a new password at
+first sign-in) and the product at stock 0. It never changes an existing
+password, price or stock. When a release adds permissions, run
+`pnpm db:sync-permissions` on the live database.
 
-The seed prints a console login, `admin@skelmet.in` / `skelmet-dev` unless you
-set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` first. Change it before
-anything is public.
+`pnpm db:seed` is for a throwaway local database: it wipes the catalogue,
+roles and orders only with `SEED_RESET=1`, and refuses a non-local host.
 
 ### Hosted Postgres and TLS
 

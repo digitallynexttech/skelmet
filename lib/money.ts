@@ -22,15 +22,6 @@ export function formatMoney(value: string | number): string {
   return Number.isInteger(n) ? INR.format(n) : INR_PAISE.format(n)
 }
 
-/** Sum wire strings without ever going through float rounding twice. */
-export function sumMoney(values: Array<string | number>): number {
-  return values.reduce<number>((total, v) => total + Number(v), 0)
-}
-
-export function multiplyMoney(unit: string | number, qty: number): number {
-  return Number(unit) * qty
-}
-
 /**
  * Whole-percent saving off the MRP.
  *
