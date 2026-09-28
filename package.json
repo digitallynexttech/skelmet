@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -18,7 +21,13 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:sync-permissions": "tsx prisma/sync-permissions.ts"
+    "db:sync-permissions": "tsx prisma/sync-permissions.ts",
+    "assets:icons": "node scripts/build-app-icons.mjs",
+    "assets:brand": "node scripts/build-brand-assets.mjs",
+    "assets:colourways": "node scripts/build-colourways.mjs",
+    "assets:colourway-shots": "node scripts/build-colourway-shots.mjs",
+    "assets:hero-poster": "node scripts/build-hero-poster.mjs",
+    "assets:skull-plates": "node scripts/build-skull-plates.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
@@ -31,7 +40,6 @@
     "next-auth": "5.0.0-beta.32",
     "nodemailer": "^10.0.10",
     "pdfkit": "^0.17.2",
-    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sonner": "^2.0.8",
@@ -43,9 +51,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^20.19.43",
+    "@types/node": "^22.20.4",
     "@types/pdfkit": "^0.17.6",
-    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/three": "^0.186.0",
