@@ -41,6 +41,21 @@ describe("renderOrderConfirmed", () => {
     expect(m.text).not.toMatch(/cash on delivery/i)
   })
 
+  it("never reads as pay-on-delivery for an online order, in either part", () => {
+    const m = renderOrderConfirmed({ ...base, paymentMethod: "ONLINE" })
+    for (const body of [m.text, m.html]) {
+      expect(body).not.toMatch(/on delivery/i)
+      expect(body).not.toMatch(/pay the courier/i)
+    }
+  })
+
+  it("counts dispatch from payment and delivery from dispatch", () => {
+    const m = renderOrderConfirmed({ ...base, paymentMethod: "ONLINE" })
+    expect(m.text.replace(/\s+/g, " ")).toContain(
+      "We dispatch within 48 hours of payment, and delivery takes up to 7 working days from dispatch.",
+    )
+  })
+
   it("tells them there is no account, because there is not one", () => {
     const m = renderOrderConfirmed({ ...base, paymentMethod: "COD" })
     expect(m.text).toMatch(/no account/i)

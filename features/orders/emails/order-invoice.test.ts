@@ -19,6 +19,14 @@ describe("renderOrderInvoice", () => {
     for (const body of [m.text, m.html]) expect(body).toContain("SKM/26-27/0001")
   })
 
+  it("states the amount in rupees the same way in both parts", () => {
+    const m = renderOrderInvoice(base)
+    for (const body of [m.text, m.html.replace("&#8377;", "₹")]) {
+      expect(body).toContain("₹6,998.00")
+    }
+    expect(m.text).not.toMatch(/\bRs\b/)
+  })
+
   it("escapes what it interpolates", () => {
     const m = renderOrderInvoice({ ...base, firstName: "<b>x</b>" })
     expect(m.html).not.toContain("<b>x</b>")
