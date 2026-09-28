@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { Anatomy } from "@/components/marketing/anatomy"
@@ -71,12 +70,13 @@ export default function HomePage() {
           same block is 05 here and 03 on the product page. Commenting a
           section out therefore only means deleting a line and closing the
           numbers up, with no component edited and no other page disturbed. */}
-      {/* Its own boundary: it is the one section that reads the database, and
-          without this its wait put the WHOLE page behind the route's loading
-          spinner, streamed after the footer. Now only the lineup waits. */}
-      <Suspense fallback={<div aria-hidden className="min-h-[900px]" />}>
-        <ColourwayGrid />
-      </Suspense>
+      {/* No Suspense boundary, here or as a loading.tsx: the page is
+          prerendered, so nobody waits on its database read. A boundary made
+          the saved HTML open with its fallback and carry the real section at
+          the end, swapped in by a script - on a slow connection the footer
+          painted first and was then shoved down the screen (layout shift
+          0.3-0.6), and the hero painted seconds late. */}
+      <ColourwayGrid />
       <Deferred size={720}>
         <Bento />
       </Deferred>

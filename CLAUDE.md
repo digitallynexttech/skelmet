@@ -39,3 +39,11 @@ Cloudflare sits in front; nginx passes the client IP as `X-Real-IP`.
   48 hours, delivery within 7 working days, transit damage reported within 24
   hours, refunds issued within 7 working days of approval.
 - Run Prettier on the files you changed, not on directories.
+- No `loading.tsx` and no `<Suspense>` around async server components in the
+  storefront (`app/(marketing)`), whatever the standard says for the console.
+  Those pages are prerendered, so nobody waits on them, and a boundary makes
+  the saved HTML open with its fallback and carry the real content at the end:
+  on a slow connection the footer paints first and is shoved down (CLS 0.3-0.6
+  measured). A Suspense a client hook needs (`useSearchParams`) is fine.
+- Heavy extras wait for `afterFirstInteraction` (lib/first-interaction.ts):
+  the 3D skull and gtag.js. Clarity loads only after the cookie Accept.
