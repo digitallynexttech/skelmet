@@ -33,6 +33,28 @@ export type MailInput = {
 
 export type MailAttachment = { filename: string; content: Buffer; contentType: string }
 
+/**
+ * How long to wait on the mail server. nodemailer's own defaults are two
+ * minutes to connect and ten for a quiet socket, which is how a mail server
+ * that stopped answering held a request open for minutes.
+ */
+export const SMTP_TIMEOUTS = {
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 20_000,
+} as const
+
+/**
+ * An address as the logs show it: `r***@example.in`. Enough to tell two
+ * customers apart when chasing a failure, without the logs becoming a list
+ * of every buyer's email.
+ */
+export function maskEmail(address: string): string {
+  const at = address.lastIndexOf("@")
+  if (at <= 0) return "***"
+  return `${address[0]}***${address.slice(at)}`
+}
+
 export function isMailConfigured(): boolean {
   return Boolean(getEnv().SMTP_HOST)
 }
@@ -41,7 +63,9 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
   if (!isMailConfigured()) {
     // Warn, not error: on a machine with no SMTP this is the expected path and
     // logging it at error level would train people to ignore the log.
-    console.warn(`[MAILER] SMTP not configured, skipped "${input.subject}" to ${input.to}`)
+    console.warn(
+      `[MAILER] SMTP not configured, skipped "${input.subject}" to ${maskEmail(input.to)}`,
+    )
     return { ok: true, delivered: false, reason: "unconfigured" }
   }
 
@@ -55,6 +79,7 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
       // 465 is implicit TLS; everything else starts plain and upgrades.
       secure: env.SMTP_PORT === 465,
       auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
+      ...SMTP_TIMEOUTS,
     })
 
     const info = await transport.sendMail({
@@ -70,7 +95,7 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
     return { ok: true, delivered: true, messageId: info.messageId ?? null }
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err)
-    console.error(`[MAILER] send failed to ${input.to}:`, error)
+    console.error(`[MAILER] send failed to ${maskEmail(input.to)}:`, error)
     return { ok: false, delivered: false, error }
   }
 }

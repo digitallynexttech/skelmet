@@ -13,6 +13,7 @@ import {
   visitorCookie,
 } from "@/features/visitors/server/visitor-cookie"
 import { hasDatabase } from "@/lib/env"
+import { trustedClientIp } from "@/lib/rate-limit"
 import { ok, runAction, type ActionResult } from "@/server/action-result"
 import { optionalSession } from "@/server/action-guard"
 import { db } from "@/server/db"
@@ -69,12 +70,11 @@ type Facts = {
 async function requestFacts(): Promise<Facts> {
   const h = await headers()
   const value = (name: string) => h.get(name)?.trim() || null
-  const forwarded = value("x-forwarded-for")?.split(",")[0]?.trim() || null
   const country = value("cf-ipcountry")
   return {
-    // Cloudflare's own header first: the first X-Forwarded-For entry is
-    // whatever the browser chose to claim.
-    ip: value("cf-connecting-ip") ?? forwarded ?? value("x-real-ip"),
+    // The address nginx vouches for (lib/rate-limit.ts), never the first
+    // X-Forwarded-For entry, which is whatever the browser chose to claim.
+    ip: trustedClientIp(h),
     // XX is "unknown" and T1 is Tor - neither is a country.
     country: country && country !== "XX" && country !== "T1" ? country : null,
     // Cloudflare adds these once "Add visitor location headers" is switched

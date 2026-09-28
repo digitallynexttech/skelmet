@@ -30,6 +30,31 @@ describe("isUnknownPage", () => {
     for (const file of files) expect(isUnknownPage(`/product/${file}`)).toBe(false)
   })
 
+  it("stops made-up names with a dot that is not a file's extension", () => {
+    for (const pathname of [
+      "/product/x.y",
+      "/product/flame-skull-mount.backup",
+      "/product/nope.php",
+      "/product/a.b.c",
+      "/policies/returns.old",
+      "/product/.png",
+    ]) {
+      expect(isUnknownPage(pathname), pathname).toBe(true)
+    }
+  })
+
+  it("lets any static file extension through, whatever the case", () => {
+    for (const pathname of [
+      "/product/new-photo.JPG",
+      "/product/model.gltf",
+      "/product/clip.webm",
+      "/product/sitemap.xml",
+      "/policies/terms.pdf",
+    ]) {
+      expect(isUnknownPage(pathname), pathname).toBe(false)
+    }
+  })
+
   it("leaves everything else alone", () => {
     for (const pathname of [
       "/",

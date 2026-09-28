@@ -6,10 +6,11 @@ import type {
   PaymentMode,
   PaymentSettingsInput,
   RuntimeSettingsView,
+  SettingVersions,
   ShippingCharge,
   ShiprocketSettingsInput,
 } from "@/features/settings/schemas/runtime-settings.schema"
-import { apiFetch } from "@/lib/api-fetch"
+import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 import { mutationWithToast } from "@/lib/query"
 
 const KEY = ["runtime-settings"] as const
@@ -26,33 +27,52 @@ export function useRuntimeSettings() {
 const patch = (path: string, body: unknown) =>
   apiFetch<RuntimeSettingsView>(path, { method: "PATCH", body: JSON.stringify(body) })
 
-/** Every save answers with the whole view, which replaces the cached one: no refetch. */
+/**
+ * Every save answers with the whole view, which replaces the cached one: no
+ * refetch. Each save also sends back the version of its section this screen
+ * was showing, so a save made on top of someone else's newer one is refused
+ * (409) instead of silently undoing it; the refusal invalidates the view so
+ * the newer settings load.
+ */
 export function useRuntimeSettingsMutations() {
   const qc = useQueryClient()
   const put = (view: RuntimeSettingsView) => qc.setQueryData(KEY, view)
+  const reloadOnConflict = (err: unknown) => {
+    if (err instanceof ApiFetchError && err.status === 409)
+      void qc.invalidateQueries({ queryKey: KEY })
+  }
+  /** Undefined when nothing is cached: the server then checks against what it reads itself. */
+  const versionOf = (section: keyof SettingVersions) =>
+    qc.getQueryData<RuntimeSettingsView>(KEY)?.versions?.[section]
 
   const savePayment = useMutation({
     mutationFn: mutationWithToast(
-      (input: PaymentSettingsInput) => patch("/api/admin/settings/payment", input),
+      (input: PaymentSettingsInput) =>
+        patch("/api/admin/settings/payment", { ...input, version: versionOf("payment") }),
       { loading: "Saving Razorpay settings…", success: "Razorpay settings saved" },
     ),
     onSuccess: put,
+    onError: reloadOnConflict,
   })
 
   const saveShiprocket = useMutation({
     mutationFn: mutationWithToast(
-      (input: ShiprocketSettingsInput) => patch("/api/admin/settings/shiprocket", input),
+      (input: ShiprocketSettingsInput) =>
+        patch("/api/admin/settings/shiprocket", { ...input, version: versionOf("shiprocket") }),
       { loading: "Saving Shiprocket settings…", success: "Shiprocket settings saved" },
     ),
     onSuccess: put,
+    onError: reloadOnConflict,
   })
 
   const saveShipping = useMutation({
     mutationFn: mutationWithToast(
-      (input: ShippingCharge) => patch("/api/admin/settings/shipping", input),
+      (input: ShippingCharge) =>
+        patch("/api/admin/settings/shipping", { ...input, version: versionOf("shipping") }),
       { loading: "Saving the shipping charge…", success: "Shipping charge saved" },
     ),
     onSuccess: put,
+    onError: reloadOnConflict,
   })
 
   const testPayment = useMutation({

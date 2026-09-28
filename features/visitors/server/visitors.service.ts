@@ -82,7 +82,8 @@ const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null)
 export async function listVisitors(params: {
   view?: string | null
   q?: string | null
-  days?: string | null
+  /** Days back from now; 0 or absent is all time. */
+  days?: number | string | null
 }): Promise<ActionResult<VisitorListPayload>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)

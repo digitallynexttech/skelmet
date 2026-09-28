@@ -7,6 +7,7 @@ import { ArrowRight, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { safeNextPath } from "@/features/account/lib/safe-next"
 
 export function LoginForm({ next = "/admin" }: { next?: string }) {
   const router = useRouter()
@@ -34,7 +35,9 @@ export function LoginForm({ next = "/admin" }: { next?: string }) {
       return
     }
 
-    router.push(next)
+    // Checked again here, not only by the page: this is the line that
+    // actually navigates.
+    router.push(safeNextPath(next))
     router.refresh()
   }
 

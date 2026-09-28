@@ -1,5 +1,6 @@
 import "server-only"
 
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { PERMISSIONS } from "@/lib/constants"
@@ -30,7 +31,7 @@ export type RoleRow = {
 export const createStaffSchema = z.object({
   name: z.string().trim().min(2, "Enter a name").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(10, "At least 10 characters"),
+  password: z.string().min(10, "At least 10 characters").max(200),
   roleIds: z.array(z.string().uuid()).min(1, "Pick at least one role"),
 })
 
@@ -39,7 +40,7 @@ export const setStaffRolesSchema = z.object({
 })
 
 export const resetStaffPasswordSchema = z.object({
-  password: z.string().min(10, "At least 10 characters"),
+  password: z.string().min(10, "At least 10 characters").max(200),
 })
 
 const STAFF_SELECT = {
@@ -105,6 +106,12 @@ export async function listStaff(): Promise<ActionResult<{ staff: StaffRow[]; rol
   })
 }
 
+/**
+ * Adds a member of staff. An address checkout has already met - someone who
+ * bought before joining, whose customer row holds their orders - is promoted
+ * in place rather than refused: the row has no login to protect, and a second
+ * row for the same email cannot exist.
+ */
 export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
@@ -116,7 +123,7 @@ export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>>
       where: { email: input.email },
       select: { id: true, kind: true },
     })
-    if (clash) return fail("Someone already has that email.", undefined, 409)
+    if (clash?.kind === "STAFF") return fail("Someone already has that email.", undefined, 409)
 
     const roles = await db.role.findMany({
       where: { id: { in: input.roleIds } },
@@ -124,29 +131,101 @@ export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>>
     })
     if (roles.length !== input.roleIds.length) return fail("Unknown role.", undefined, 422)
 
-    const row = await db.user.create({
-      data: {
-        email: input.email,
-        name: input.name,
-        kind: "STAFF",
-        passwordHash: await hashPassword(input.password),
-        // They chose nothing here, someone else did. Force a change at first login.
-        mustChangePassword: true,
-        roles: { create: input.roleIds.map((roleId) => ({ roleId })) },
-      },
-      select: STAFF_SELECT,
-    })
+    const passwordHash = await hashPassword(input.password)
+    // They chose nothing here, someone else did. Force a change at first login.
+    const login = {
+      name: input.name,
+      kind: "STAFF" as const,
+      passwordHash,
+      mustChangePassword: true,
+    }
+
+    const row = clash
+      ? await db.$transaction(async (tx) => {
+          // Conditional on still being a customer, so two admins adding the
+          // same address at once cannot both succeed.
+          const promoted = await tx.user.updateMany({
+            where: { id: clash.id, kind: "CUSTOMER" },
+            data: { ...login, sessionVersion: { increment: 1 } },
+          })
+          if (promoted.count === 0) return null
+          await tx.userRole.deleteMany({ where: { userId: clash.id } })
+          await tx.userRole.createMany({
+            data: input.roleIds.map((roleId) => ({ userId: clash.id, roleId })),
+            skipDuplicates: true,
+          })
+          return tx.user.findUniqueOrThrow({ where: { id: clash.id }, select: STAFF_SELECT })
+        })
+      : await db.user.create({
+          data: {
+            email: input.email,
+            ...login,
+            roles: { create: input.roleIds.map((roleId) => ({ roleId })) },
+          },
+          select: STAFF_SELECT,
+        })
+    if (!row) return fail("Someone already has that email.", undefined, 409)
 
     await createAuditLog(session, {
       action: "staff:create",
       module: "setting",
       entityId: row.id,
-      meta: { email: row.email, roles: row.roles.map((r) => r.role.name) },
+      meta: {
+        email: row.email,
+        roles: row.roles.map((r) => r.role.name),
+        ...(clash ? { promotedFromCustomer: true } : {}),
+      },
       ...(await getAuditMeta()),
     })
 
     return ok(serializeStaff(row))
   })
+}
+
+/** Thrown inside a staff transaction to roll it back when it would leave no administrator. */
+class NoAdministratorLeft extends Error {}
+
+const LAST_OWNER =
+  "That would leave nobody who can administer the console. Give someone else an owner role first."
+
+/**
+ * Runs a change to who holds which role so that it can never leave the
+ * console without an administrator.
+ *
+ * The check used to be a count taken before the change and outside any
+ * transaction, so two admins demoting each other at the same moment both
+ * saw the other still in place and both went ahead. Now every such change
+ * takes the same row lock first - the `setting:write` permission row - so
+ * they run one at a time, and the count is taken after the change, inside
+ * its transaction, which is rolled back if it comes to zero.
+ */
+async function changeStaffAccess<T>(
+  work: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  try {
+    const value = await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM permissions WHERE scope = ${PERMISSIONS.SETTING_WRITE} FOR UPDATE`
+      const result = await work(tx)
+      const admins = await tx.user.count({
+        where: {
+          kind: "STAFF",
+          roles: {
+            some: {
+              role: {
+                permissions: { some: { permission: { scope: PERMISSIONS.SETTING_WRITE } } },
+              },
+            },
+          },
+        },
+      })
+      if (admins === 0) throw new NoAdministratorLeft()
+      return result
+    })
+    return { ok: true, value }
+  } catch (err) {
+    if (err instanceof NoAdministratorLeft) return { ok: false }
+    throw err
+  }
 }
 
 export async function setStaffRoles(id: string, raw: unknown): Promise<ActionResult<StaffRow>> {
@@ -162,11 +241,8 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
     })
     if (!target || target.kind !== "STAFF") return fail("Staff member not found.", undefined, 404)
 
-    // Never let the console end up with nobody who can administer it.
-    const guard = await guardLastOwner(id, input.roleIds)
-    if (guard) return guard
-
-    const row = await db.$transaction(async (tx) => {
+    const changed = await changeStaffAccess(async (tx) => {
+      const before = await tx.userRole.findMany({ where: { userId: id }, select: { roleId: true } })
       await tx.userRole.deleteMany({ where: { userId: id } })
       if (input.roleIds.length > 0) {
         await tx.userRole.createMany({
@@ -174,8 +250,21 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
           skipDuplicates: true,
         })
       }
+      // Losing a role ends the sessions they have open, as a revoke does.
+      // Not for someone editing their own roles, who would be signed out
+      // mid-click; their permissions are re-read on every request anyway.
+      const removed = before.some((r) => !input.roleIds.includes(r.roleId))
+      if (removed && id !== session.user.id) {
+        await tx.user.update({
+          where: { id },
+          data: { sessionVersion: { increment: 1 } },
+          select: { id: true },
+        })
+      }
       return tx.user.findUniqueOrThrow({ where: { id }, select: STAFF_SELECT })
     })
+    if (!changed.ok) return fail(LAST_OWNER, undefined, 409)
+    const row = changed.value
 
     await createAuditLog(session, {
       action: "staff:roles",
@@ -189,6 +278,14 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
   })
 }
 
+/**
+ * Sets a temporary password for someone else, who must replace it at their
+ * next sign-in. Every session they have open ends.
+ *
+ * Not for your own account: that would change your password without the
+ * current one, which Change password asks for so that an unlocked screen is
+ * not enough to take the account over.
+ */
 export async function resetStaffPassword(
   id: string,
   raw: unknown,
@@ -197,13 +294,25 @@ export async function resetStaffPassword(
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
+    if (id === session.user.id) {
+      return fail(
+        "Use Change password for your own account - it asks for your current one.",
+        undefined,
+        409,
+      )
+    }
+
     const input = resetStaffPasswordSchema.parse(raw)
     const target = await db.user.findUnique({ where: { id }, select: { kind: true, email: true } })
     if (!target || target.kind !== "STAFF") return fail("Staff member not found.", undefined, 404)
 
     const row = await db.user.update({
       where: { id },
-      data: { passwordHash: await hashPassword(input.password), mustChangePassword: true },
+      data: {
+        passwordHash: await hashPassword(input.password),
+        mustChangePassword: true,
+        sessionVersion: { increment: 1 },
+      },
       select: STAFF_SELECT,
     })
 
@@ -221,8 +330,12 @@ export async function resetStaffPassword(
 }
 
 /**
- * Revokes console access by demoting to a customer and dropping every role.
- * The row stays, because their audit log entries and orders point at it.
+ * Revokes console access by demoting to a customer, dropping every role and
+ * the password, and ending their sessions. The row stays, because their audit
+ * log entries and orders point at it.
+ *
+ * The password goes too. Demoting alone left a working password on the row,
+ * and nothing but the kind check stood between it and a session.
  */
 export async function revokeStaff(id: string): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
@@ -236,13 +349,20 @@ export async function revokeStaff(id: string): Promise<ActionResult<{ id: string
     const target = await db.user.findUnique({ where: { id }, select: { kind: true, email: true } })
     if (!target || target.kind !== "STAFF") return fail("Staff member not found.", undefined, 404)
 
-    const guard = await guardLastOwner(id, [])
-    if (guard) return guard
-
-    await db.$transaction(async (tx) => {
+    const revoked = await changeStaffAccess(async (tx) => {
       await tx.userRole.deleteMany({ where: { userId: id } })
-      await tx.user.update({ where: { id }, data: { kind: "CUSTOMER" } })
+      await tx.user.update({
+        where: { id },
+        data: {
+          kind: "CUSTOMER",
+          passwordHash: null,
+          mustChangePassword: false,
+          sessionVersion: { increment: 1 },
+        },
+        select: { id: true },
+      })
     })
+    if (!revoked.ok) return fail(LAST_OWNER, undefined, 409)
 
     await createAuditLog(session, {
       action: "staff:revoke",
@@ -254,44 +374,4 @@ export async function revokeStaff(id: string): Promise<ActionResult<{ id: string
 
     return ok({ id })
   })
-}
-
-/**
- * Refuses a change that would leave nobody holding `setting:write`. Without
- * this it is one click to lock every employee out of the console for good.
- */
-async function guardLastOwner(
-  userId: string,
-  nextRoleIds: string[],
-): Promise<ActionResult<never> | null> {
-  const admins = await db.user.findMany({
-    where: {
-      kind: "STAFF",
-      roles: {
-        some: {
-          role: { permissions: { some: { permission: { scope: PERMISSIONS.SETTING_WRITE } } } },
-        },
-      },
-    },
-    select: { id: true },
-  })
-
-  const isAdmin = admins.some((a) => a.id === userId)
-  if (!isAdmin || admins.length > 1) return null
-
-  // They are the only administrator. The change is fine only if it keeps them one.
-  const keeps = await db.role.count({
-    where: {
-      id: { in: nextRoleIds },
-      permissions: { some: { permission: { scope: PERMISSIONS.SETTING_WRITE } } },
-    },
-  })
-
-  return keeps > 0
-    ? null
-    : fail(
-        "That would leave nobody who can administer the console. Give someone else an owner role first.",
-        undefined,
-        409,
-      )
 }

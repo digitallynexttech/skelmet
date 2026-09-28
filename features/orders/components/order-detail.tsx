@@ -343,6 +343,12 @@ function ShipDialog({
 /** Paid for, or cash on delivery that has been packed - as the server decides. */
 const INVOICEABLE: OrderStatus[] = ["PAID", "PACKED", "SHIPPED", "DELIVERED"]
 
+/** The sale was undone: the invoice is replaced by a credit note (invoice.service). */
+const CREDITED: OrderStatus[] = ["REFUNDED", "CANCELLED"]
+
+/** The credit note fields the order API sends beside the invoice's. */
+type CreditNote = { creditNoteNumber?: string | null; creditedAt?: string | null }
+
 function InvoiceSection({
   order,
   actions,
@@ -358,6 +364,74 @@ function InvoiceSection({
   const canIssue = INVOICEABLE.includes(order.status)
   if (!order.invoiceNumber && !canIssue) return null
   const href = `/api/admin/orders/${order.id}/invoice`
+  const credit = order as OrderDetail & CreditNote
+  const refreshSoon = () =>
+    window.setTimeout(() => void qc.invalidateQueries({ queryKey: ["orders", order.id] }), 2500)
+
+  // Paid on Razorpay's test account: not a sale, so no tax invoice.
+  const testMode = order.payments.some(
+    (p) => p.mode === "test" && (p.status === "CAPTURED" || p.status === "REFUNDED"),
+  )
+  if (testMode) {
+    return (
+      <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
+        <div className="mb-4 flex items-center gap-2.5">
+          <FileText className="text-ember size-4" strokeWidth={1.9} />
+          <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">Invoice</h2>
+        </div>
+        <p className="text-ash text-[13.5px]">
+          Test-mode orders don&apos;t get tax invoices: no money changed hands.
+        </p>
+      </section>
+    )
+  }
+
+  // Refunded or cancelled after it was invoiced: the credit note, not the invoice.
+  if (order.invoiceNumber && CREDITED.includes(order.status)) {
+    return (
+      <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
+        <div className="mb-4 flex items-center gap-2.5">
+          <FileText className="text-ember size-4" strokeWidth={1.9} />
+          <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
+            Credit note
+          </h2>
+        </div>
+        <div className="flex flex-col gap-2 text-[13.5px]">
+          {credit.creditNoteNumber ? (
+            <>
+              <Row
+                label="Number"
+                value={<span className="font-mono">{credit.creditNoteNumber}</span>}
+              />
+              <Row label="Dated" value={when(credit.creditedAt ?? null, false)} />
+            </>
+          ) : (
+            <p className="text-ash">
+              Opening it for the first time gives it the next credit note number and today&apos;s
+              date.
+            </p>
+          )}
+          <Row
+            label="Cancels invoice"
+            value={<span className="font-mono">{order.invoiceNumber}</span>}
+          />
+          <Row label="Invoice dated" value={when(order.invoicedAt, false)} />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2.5 border-t border-white/[0.07] pt-4">
+          <a
+            href={`/api/admin/orders/${order.id}/credit-note`}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonVariants({ variant: "primary", size: "sm" })}
+            onClick={refreshSoon}
+          >
+            <Printer className="size-4" strokeWidth={1.9} />
+            Print credit note
+          </a>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
@@ -394,12 +468,7 @@ function InvoiceSection({
           rel="noreferrer"
           className={buttonVariants({ variant: "primary", size: "sm" })}
           // The first open issues the number; show it once it has.
-          onClick={() =>
-            window.setTimeout(
-              () => void qc.invalidateQueries({ queryKey: ["orders", order.id] }),
-              2500,
-            )
-          }
+          onClick={refreshSoon}
         >
           <Printer className="size-4" strokeWidth={1.9} />
           Print invoice

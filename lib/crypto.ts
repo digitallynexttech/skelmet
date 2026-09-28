@@ -1,34 +1,131 @@
-import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto"
-import { promisify } from "node:util"
+import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto"
 
-const scrypt = promisify(scryptCb) as (
-  password: string,
-  salt: Buffer,
-  keylen: number,
-) => Promise<Buffer>
+const scrypt = (password: string, salt: Buffer, keylen: number, options: ScryptOptions) =>
+  new Promise<Buffer>((resolve, reject) =>
+    scryptCb(password, salt, keylen, options, (err, key) => (err ? reject(err) : resolve(key))),
+  )
 
 const KEYLEN = 64
 
 /**
+ * The cost new hashes are made with: N = 2^17, r = 8, p = 1, the OWASP
+ * recommendation for scrypt. Node's own defaults (N = 2^14) are a quarter
+ * of a millisecond on a GPU; these take a few hundred milliseconds here.
+ *
+ * Stored in the hash itself, so the cost can be raised later without
+ * locking anyone out: old hashes verify with the parameters they were made
+ * with, and are rewritten at the new cost the next time their owner signs in.
+ */
+export const SCRYPT_PARAMS = { log2N: 17, r: 8, p: 1 } as const
+
+/** Node refuses scrypt above 32 MiB unless told otherwise; N=2^17, r=8 needs 128 MiB. */
+const maxmemFor = (N: number, r: number) => 128 * N * r * 2
+
+type Parsed = { log2N: number; r: number; p: number; salt: Buffer; hash: Buffer }
+
+/**
+ * `scrypt$17$8$1$<saltHex>$<hashHex>`, or the original `scrypt$<saltHex>$<hashHex>`,
+ * which was made with Node's defaults (N = 2^14, r = 8, p = 1).
+ */
+function parse(stored: string): Parsed | null {
+  const parts = stored.split("$")
+  if (parts[0] !== "scrypt") return null
+
+  if (parts.length === 3) {
+    const [, saltHex, hashHex] = parts
+    if (!saltHex || !hashHex) return null
+    return {
+      log2N: 14,
+      r: 8,
+      p: 1,
+      salt: Buffer.from(saltHex, "hex"),
+      hash: Buffer.from(hashHex, "hex"),
+    }
+  }
+
+  if (parts.length === 6) {
+    const [, n, r, p, saltHex, hashHex] = parts
+    const log2N = Number(n)
+    const blockSize = Number(r)
+    const parallel = Number(p)
+    const sane = (v: number, max: number) => Number.isInteger(v) && v >= 1 && v <= max
+    if (!sane(log2N, 20) || !sane(blockSize, 32) || !sane(parallel, 16)) return null
+    if (!saltHex || !hashHex) return null
+    return {
+      log2N,
+      r: blockSize,
+      p: parallel,
+      salt: Buffer.from(saltHex, "hex"),
+      hash: Buffer.from(hashHex, "hex"),
+    }
+  }
+
+  return null
+}
+
+function derive(
+  password: string,
+  salt: Buffer,
+  keylen: number,
+  log2N: number,
+  r: number,
+  p: number,
+) {
+  const N = 2 ** log2N
+  return scrypt(password, salt, keylen, { N, r, p, maxmem: maxmemFor(N, r) })
+}
+
+/**
  * scrypt from node:crypto rather than bcrypt/argon2 - no native dependency to
  * build on every platform, and it is the algorithm Node itself recommends.
- * Format: `scrypt$<saltHex>$<hashHex>`.
  */
 export async function hashPassword(password: string): Promise<string> {
+  const { log2N, r, p } = SCRYPT_PARAMS
   const salt = randomBytes(16)
-  const hash = await scrypt(password, salt, KEYLEN)
-  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`
+  const hash = await derive(password, salt, KEYLEN, log2N, r, p)
+  return `scrypt$${log2N}$${r}$${p}$${salt.toString("hex")}$${hash.toString("hex")}`
 }
 
 /** Constant-time compare - never a plain `===` on a secret (§6). */
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  const [scheme, saltHex, hashHex] = stored.split("$")
-  if (scheme !== "scrypt" || !saltHex || !hashHex) return false
+  const parsed = parse(stored)
+  if (!parsed || parsed.salt.length === 0 || parsed.hash.length === 0) return false
 
-  const salt = Buffer.from(saltHex, "hex")
-  const expected = Buffer.from(hashHex, "hex")
-  const actual = await scrypt(password, salt, expected.length)
-  return expected.length === actual.length && timingSafeEqual(expected, actual)
+  const actual = await derive(
+    password,
+    parsed.salt,
+    parsed.hash.length,
+    parsed.log2N,
+    parsed.r,
+    parsed.p,
+  )
+  return parsed.hash.length === actual.length && timingSafeEqual(parsed.hash, actual)
+}
+
+/** Whether a hash that just verified should be rewritten at the current cost. */
+export function needsRehash(stored: string): boolean {
+  const parsed = parse(stored)
+  if (!parsed) return true
+  return (
+    parsed.log2N !== SCRYPT_PARAMS.log2N ||
+    parsed.r !== SCRYPT_PARAMS.r ||
+    parsed.p !== SCRYPT_PARAMS.p ||
+    parsed.hash.length !== KEYLEN
+  )
+}
+
+/**
+ * A hash nobody's password matches, at the current cost. Signing in as an
+ * address that has no account is checked against this, so it takes as long
+ * as a wrong password for a real one - otherwise the response time alone
+ * says which emails have a console login.
+ */
+const NOBODY = "scrypt$17$8$1$6e6f626f64792d686173682d73616c74$" + "0".repeat(KEYLEN * 2)
+
+/** Spends the same time as checking a real password, and always fails. */
+export async function verifyPasswordOfNobody(password: string): Promise<false> {
+  await verifyPassword(password, NOBODY)
+  return false
 }
 
 /** Order numbers: SKM-2026-4F2K. Short, unambiguous, no 0/O/1/I. */

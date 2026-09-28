@@ -2,6 +2,7 @@ import "server-only"
 
 import type { Prisma } from "@prisma/client"
 import type { Session } from "next-auth"
+import { z } from "zod"
 
 import { siteConfig } from "@/config/site"
 import { refreshShippingTerms } from "@/features/catalog/server/refresh-storefront"
@@ -17,10 +18,12 @@ import {
   type RuntimeSettingsView,
   type SecretState,
   type SettingSource,
+  type SettingVersions,
 } from "@/features/settings/schemas/runtime-settings.schema"
 import {
   forgetSettings,
   modeOfKey,
+  SETTING_KEYS,
   resolvePayment,
   resolveShipping,
   resolveShiprocket,
@@ -101,7 +104,12 @@ function keySetView(
   }
 }
 
-function view(stored: StoredSettings, env: Env, canWrite: boolean): RuntimeSettingsView {
+function view(
+  stored: StoredSettings,
+  env: Env,
+  canWrite: boolean,
+  versions: SettingVersions,
+): RuntimeSettingsView {
   const payment = resolvePayment(stored.payment, env)
   const shiprocket = resolveShiprocket(stored.shiprocket, env)
   const savedLogin = Boolean(stored.shiprocket?.email?.trim() && open(stored.shiprocket?.password))
@@ -121,6 +129,10 @@ function view(stored: StoredSettings, env: Env, canWrite: boolean): RuntimeSetti
       email: { value: shiprocket.email, source: loginSource },
       password: {
         ...secretState(savedLogin ? stored.shiprocket?.password : undefined, shiprocket.password),
+        // Set or not set, nothing more. The last four characters of a key
+        // secret tell two keys apart; of a password a person chose, they
+        // are a quarter of what someone would need to guess it.
+        hint: null,
         unreadable: Boolean(stored.shiprocket?.password) && !open(stored.shiprocket?.password),
       },
       pickupLocation: {
@@ -136,38 +148,97 @@ function view(stored: StoredSettings, env: Env, canWrite: boolean): RuntimeSetti
       ready: Boolean(shiprocket.email && shiprocket.password),
     },
     shipping: { ...resolveShipping(stored.shipping), source: saved ? "saved" : "default" },
+    versions,
     canWrite,
   }
 }
 
-/** The saved rows as they are in the database now, not as last cached. */
-async function freshSettings(): Promise<StoredSettings> {
+/** When each section was last saved - the version a save has to still find. */
+async function settingVersions(): Promise<SettingVersions> {
+  const rows = await db.setting.findMany({
+    where: { key: { in: [...SETTING_KEYS] } },
+    select: { key: true, updatedAt: true },
+  })
+  const at = (key: SettingKey) => rows.find((r) => r.key === key)?.updatedAt.toISOString() ?? null
+  return { payment: at("payment"), shiprocket: at("shiprocket"), shipping: at("shipping") }
+}
+
+/** The whole view, from the rows as they are in the database now, not as last cached. */
+async function currentView(canWrite: boolean): Promise<RuntimeSettingsView> {
   forgetSettings()
-  return storedSettings()
+  const [stored, versions] = await Promise.all([storedSettings(), settingVersions()])
+  return view(stored, getEnv(), canWrite, versions)
 }
 
 export async function getRuntimeSettings(): Promise<ActionResult<RuntimeSettingsView>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_READ)
     if (!hasDatabase()) return fail(NO_DATABASE, undefined, 503)
-    return ok(view(await freshSettings(), getEnv(), can(session, PERMISSIONS.SETTING_WRITE)))
+    return ok(await currentView(can(session, PERMISSIONS.SETTING_WRITE)))
   })
 }
 
 // ── saving ──────────────────────────────────────────────────
 
+/**
+ * Two admins saving the same section at once used to both succeed, the second
+ * quietly undoing the first: each merged its change into the section as it
+ * read it and wrote the whole of it back. Now every save is conditional on the
+ * section still being the version it was merged into - the one the console
+ * showed when the form was opened, which it sends back as `version`, or failing
+ * that the one read here - and the loser is told to reload.
+ */
+export const STALE_SETTINGS =
+  "Someone else saved these settings a moment ago. Reload to see what they changed, then save again."
+
+const versionSchema = z.iso.datetime().nullable().optional()
+
+/** Takes `version` off a save's body, so the section's own schema never sees it. */
+function takeVersion(raw: unknown): { version: string | null | undefined; body: unknown } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) || !("version" in raw)) {
+    return { version: undefined, body: raw }
+  }
+  const { version, ...body } = raw as Record<string, unknown>
+  return { version: versionSchema.parse(version), body }
+}
+
+/** One section as it is in the database now, with its version. */
+async function currentRow<K extends SettingKey>(
+  key: K,
+): Promise<{ value: StoredSettings[K] | undefined; version: string | null }> {
+  const row = await db.setting.findUnique({
+    where: { key },
+    select: { value: true, updatedAt: true },
+  })
+  return {
+    value: (row?.value ?? undefined) as StoredSettings[K] | undefined,
+    version: row ? row.updatedAt.toISOString() : null,
+  }
+}
+
+/** Writes a section only if it is still at `expected`; null when someone else got there first. */
 async function save(
   session: Session,
   key: SettingKey,
   value: StoredSettings[SettingKey],
   audit: Record<string, unknown>,
-): Promise<RuntimeSettingsView> {
+  expected: string | null,
+): Promise<RuntimeSettingsView | null> {
   const json = (value ?? {}) as Prisma.InputJsonValue
-  await db.setting.upsert({
-    where: { key },
-    create: { key, value: json, updatedBy: session.user.id },
-    update: { value: json, updatedBy: session.user.id },
-  })
+  if (expected === null) {
+    try {
+      await db.setting.create({ data: { key, value: json, updatedBy: session.user.id } })
+    } catch (err) {
+      if ((err as { code?: unknown }).code === "P2002") return null
+      throw err
+    }
+  } else {
+    const written = await db.setting.updateMany({
+      where: { key, updatedAt: new Date(expected) },
+      data: { value: json, updatedBy: session.user.id },
+    })
+    if (written.count === 0) return null
+  }
   forgetSettings()
   await createAuditLog(session, {
     action: `setting:${key}`,
@@ -176,7 +247,7 @@ async function save(
     meta: audit,
     ...(await getAuditMeta()),
   })
-  return view(await storedSettings(), getEnv(), true)
+  return currentView(true)
 }
 
 /**
@@ -194,10 +265,14 @@ export async function savePaymentSettings(
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
     if (!hasDatabase()) return fail(NO_DATABASE, undefined, 503)
-    const input = paymentSettingsSchema.parse(raw)
+    const { version, body } = takeVersion(raw)
+    const input = paymentSettingsSchema.parse(body)
     const env = getEnv()
 
-    const before: StoredPayment = (await freshSettings()).payment ?? {}
+    const row = await currentRow("payment")
+    if (version !== undefined && version !== row.version)
+      return fail(STALE_SETTINGS, undefined, 409)
+    const before: StoredPayment = row.value ?? {}
     const next: StoredPayment = { ...before }
     const changed: string[] = []
 
@@ -253,7 +328,7 @@ export async function savePaymentSettings(
       changed.push("mode")
     }
 
-    if (changed.length === 0) return ok(view(await storedSettings(), env, true))
+    if (changed.length === 0) return ok(await currentView(true))
 
     const now = resolvePayment(next, env)
     const ready = (c: typeof now) => Boolean(c[c.mode].keyId && c[c.mode].keySecret)
@@ -265,12 +340,14 @@ export async function savePaymentSettings(
       )
     }
 
-    return ok(
-      await save(session, "payment", next, {
-        changed,
-        mode: was.mode === now.mode ? now.mode : { from: was.mode, to: now.mode },
-      }),
+    const saved = await save(
+      session,
+      "payment",
+      next,
+      { changed, mode: was.mode === now.mode ? now.mode : { from: was.mode, to: now.mode } },
+      row.version,
     )
+    return saved ? ok(saved) : fail(STALE_SETTINGS, undefined, 409)
   })
 }
 
@@ -286,9 +363,13 @@ export async function saveShiprocketSettings(
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
     if (!hasDatabase()) return fail(NO_DATABASE, undefined, 503)
-    const input = shiprocketSettingsSchema.parse(raw)
+    const { version, body } = takeVersion(raw)
+    const input = shiprocketSettingsSchema.parse(body)
 
-    const before: StoredShiprocket = (await freshSettings()).shiprocket ?? {}
+    const row = await currentRow("shiprocket")
+    if (version !== undefined && version !== row.version)
+      return fail(STALE_SETTINGS, undefined, 409)
+    const before: StoredShiprocket = row.value ?? {}
     const next: StoredShiprocket = { ...before }
     const changed: string[] = []
 
@@ -339,9 +420,10 @@ export async function saveShiprocketSettings(
       }
     }
 
-    if (changed.length === 0) return ok(view(await storedSettings(), getEnv(), true))
+    if (changed.length === 0) return ok(await currentView(true))
 
-    const saved = await save(session, "shiprocket", next, { changed })
+    const saved = await save(session, "shiprocket", next, { changed }, row.version)
+    if (!saved) return fail(STALE_SETTINGS, undefined, 409)
     resetShiprocketSession()
     forgetPincodeChecks()
     return ok(saved)
@@ -353,10 +435,15 @@ export async function saveShippingCharge(raw: unknown): Promise<ActionResult<Run
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
     if (!hasDatabase()) return fail(NO_DATABASE, undefined, 503)
-    const input = shippingChargeSchema.parse(raw)
+    const { version, body } = takeVersion(raw)
+    const input = shippingChargeSchema.parse(body)
 
-    const before = resolveShipping((await freshSettings()).shipping)
-    const saved = await save(session, "shipping", input, { from: before, to: input })
+    const row = await currentRow("shipping")
+    if (version !== undefined && version !== row.version)
+      return fail(STALE_SETTINGS, undefined, 409)
+    const before = resolveShipping(row.value)
+    const saved = await save(session, "shipping", input, { from: before, to: input }, row.version)
+    if (!saved) return fail(STALE_SETTINGS, undefined, 409)
     refreshShippingTerms()
     return ok(saved)
   })

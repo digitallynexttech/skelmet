@@ -1,7 +1,7 @@
 import "server-only"
 
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
-import { queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
+import { creditNoteOnRefund, queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paymentConfig } from "@/features/settings/server/runtime-settings"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
@@ -13,6 +13,7 @@ import {
   MAX_PAGE_SIZE,
   ORDER_STATUSES,
   PAGE_SIZE,
+  PAID_ORDER_STATUSES,
   PERMISSIONS,
   statusesIn,
   type OrderScope,
@@ -221,6 +222,8 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
         invoiceNumber: true,
         invoicedAt: true,
         invoiceEmailedAt: true,
+        creditNoteNumber: true,
+        creditedAt: true,
         shipment: {
           select: {
             courier: true,
@@ -254,6 +257,7 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
       placedAt: order.placedAt?.toISOString() ?? null,
       invoicedAt: order.invoicedAt?.toISOString() ?? null,
       invoiceEmailedAt: order.invoiceEmailedAt?.toISOString() ?? null,
+      creditedAt: order.creditedAt?.toISOString() ?? null,
       coupon: order.coupon ? { ...order.coupon, value: order.coupon.value.toString() } : null,
       items: order.items.map((i) => ({ ...i, unitPrice: i.unitPrice.toString() })),
       payments: order.payments.map((p) => ({
@@ -543,6 +547,10 @@ export async function refundOrder(
     // Still on our shelf, so call off the courier and the Shiprocket order.
     if (UNSHIPPED.includes(order.status)) await cancelShiprocketOrder(id, session)
 
+    // An invoiced sale is reversed on paper too: its credit note is issued
+    // now, and the tax invoice can no longer be printed or emailed.
+    await creditNoteOnRefund(id, session)
+
     await createAuditLog(session, {
       action: "order:refund",
       module: "order",
@@ -560,21 +568,35 @@ export async function refundOrder(
   })
 }
 
+const IST_OFFSET_MS = 5.5 * 60 * 60_000
+
+/**
+ * Midnight in India, as an instant. The shop's day is India's: a "today" that
+ * began at UTC midnight began at 05:30 here, so every order from midnight to
+ * half past five counted towards yesterday.
+ */
+export function startOfIndianDay(now: Date): Date {
+  const ist = new Date(now.getTime() + IST_OFFSET_MS)
+  return new Date(
+    Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - IST_OFFSET_MS,
+  )
+}
+
 /** Dashboard counters. One query per tile, all bounded. */
 export async function getDashboard(): Promise<ActionResult<unknown>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.DASHBOARD_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // Date.UTC, never new Date(y, m, d) - that is local midnight and shifts (§6).
-    const now = new Date()
-    const startOfToday = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    )
+    const startOfToday = startOfIndianDay(new Date())
     const startOfWeek = new Date(startOfToday.getTime() - 6 * 86_400_000)
 
     const [todayCount, weekRevenue, awaiting, lowStock, recent] = await Promise.all([
-      db.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      // Orders paid for today. Counting every order written counted each
+      // closed payment window as a sale.
+      db.order.count({
+        where: { placedAt: { gte: startOfToday }, status: { in: [...PAID_ORDER_STATUSES] } },
+      }),
       db.order.aggregate({
         _sum: { total: true },
         where: { placedAt: { gte: startOfWeek }, status: { notIn: ["CANCELLED", "REFUNDED"] } },

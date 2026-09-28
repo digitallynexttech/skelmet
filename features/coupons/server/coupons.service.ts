@@ -3,9 +3,16 @@ import "server-only"
 import { couponReduction } from "@/features/cart/server/cart-pricing"
 import {
   createCouponSchema,
+  PERCENT_TOO_HIGH,
+  percentTooHigh,
   updateCouponSchema,
   validateCouponSchema,
 } from "@/features/coupons/schemas/coupon.schema"
+import {
+  COUPON_UNUSABLE,
+  couponIsLive,
+  minimumSpendMessage,
+} from "@/features/coupons/server/coupon-rules"
 import { paginate } from "@/lib/api-response"
 import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
@@ -135,8 +142,17 @@ export async function updateCoupon(id: string, raw: unknown): Promise<ActionResu
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
     const input = updateCouponSchema.parse(raw)
-    const exists = await db.coupon.findUnique({ where: { id }, select: { id: true } })
+    const exists = await db.coupon.findUnique({
+      where: { id },
+      select: { id: true, kind: true, value: true },
+    })
     if (!exists) return fail("Coupon not found.", undefined, 404)
+
+    // The 90% rule for the coupon as it will be after this edit, not only for
+    // the half of it the edit happens to send.
+    if (percentTooHigh(input.kind ?? exists.kind, input.value ?? Number(exists.value))) {
+      return fail(PERCENT_TOO_HIGH, { fieldErrors: { value: [PERCENT_TOO_HIGH] } }, 422)
+    }
 
     const row = await db.coupon.update({
       where: { id },
@@ -209,18 +225,12 @@ export async function validateCoupon(
       },
     })
 
-    if (!coupon) return fail("That code is not valid.", undefined, 422)
-    if (coupon.expiresAt && coupon.expiresAt.getTime() < Date.now()) {
-      return fail("That code has expired.", undefined, 422)
-    }
-    if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) {
-      return fail("That code has been fully used.", undefined, 422)
-    }
+    // Missing, expired and used up all read the same, so this cannot be used
+    // to find out which codes exist (coupon-rules.ts).
+    if (!coupon || !couponIsLive(coupon)) return fail(COUPON_UNUSABLE, undefined, 422)
 
     const discount = couponReduction(coupon, input.subtotal)
-    if (discount <= 0) {
-      return fail(`Spend at least ₹${Number(coupon.minSubtotal)} to use that code.`, undefined, 422)
-    }
+    if (discount <= 0) return fail(minimumSpendMessage(coupon.minSubtotal), undefined, 422)
 
     return ok({
       code: coupon.code,

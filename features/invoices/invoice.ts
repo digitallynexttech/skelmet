@@ -151,3 +151,25 @@ export function financialYear(date: Date): string {
 export function invoiceNumber(fy: string, sequence: number): string {
   return `${invoiceConfig.numberPrefix}/${fy}/${String(sequence).padStart(4, "0")}`
 }
+
+/**
+ * Credit notes run their own sequence, CN/<fy>/0001 upwards, beside the
+ * invoices' - kept in the same counters table under their own key, so the two
+ * series never share or skip a number.
+ */
+export function creditNoteCounterKey(fy: string): string {
+  return `CN-${fy}`
+}
+
+export function creditNoteNumber(fy: string, sequence: number): string {
+  return `CN/${fy}/${String(sequence).padStart(4, "0")}`
+}
+
+/**
+ * How the invoice states the terms of payment. Money that came through the
+ * gateway is prepaid, whatever the order's method field says - an online
+ * payment must never read as cash on delivery on a tax document.
+ */
+export function paymentTerms(payment: InvoiceOrder["payment"]): string {
+  return payment.method === "COD" && !payment.reference ? "Cash on delivery" : "Prepaid online"
+}

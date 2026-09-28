@@ -231,6 +231,14 @@ describe("recordVisit with consent", () => {
     )
   })
 
+  it("keeps the address nginx vouches for, never the X-Forwarded-For a browser can write", async () => {
+    mocks.headers.current.set("x-forwarded-for", "6.6.6.6")
+    mocks.headers.current.set("x-real-ip", "198.51.100.20")
+    await recordVisit(view(true))
+
+    expect(mocks.db.visitor.create.mock.calls[0]![0].data).toMatchObject({ ip: "198.51.100.20" })
+  })
+
   it("keeps details typed at checkout, the email lower-cased", async () => {
     mocks.cookies.get.mockReturnValue({ value: KNOWN })
     mocks.db.visitor.findFirst.mockResolvedValue({ id: KNOWN, anonymous: false })

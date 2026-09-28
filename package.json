@@ -21,6 +21,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:bootstrap": "tsx prisma/bootstrap.ts",
     "db:sync-permissions": "tsx prisma/sync-permissions.ts",
     "assets:icons": "node scripts/build-app-icons.mjs",
     "assets:brand": "node scripts/build-brand-assets.mjs",

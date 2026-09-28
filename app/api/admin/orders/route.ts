@@ -1,20 +1,20 @@
-import type { OrderStatus } from "@/lib/constants"
 import { listOrders } from "@/features/orders/server/orders.service"
 import { respond } from "@/lib/api-response"
+import { ORDER_STATUSES } from "@/lib/constants"
 import { withErrorHandler } from "@/server/api-handler"
+import { enumParam, listParams, pageParam, pageSizeParam, textParam } from "@/server/list-params"
 
 export const dynamic = "force-dynamic"
 
+const QUERY = {
+  page: pageParam,
+  pageSize: pageSizeParam,
+  scope: enumParam(["paid", "all"], "paid"),
+  status: enumParam(["ALL", ...ORDER_STATUSES], "ALL"),
+  q: textParam,
+}
+
+/** One expression. No try/catch, no db, no NextResponse.json (§5). */
 export const GET = withErrorHandler(async (req) =>
-  respond(
-    await listOrders({
-      page: Number(req.nextUrl.searchParams.get("page") ?? 1),
-      // The service caps this; an unbounded ?pageSize would let anyone
-      // with console access pull the whole table in one query.
-      pageSize: Number(req.nextUrl.searchParams.get("pageSize")) || undefined,
-      scope: req.nextUrl.searchParams.get("scope") === "all" ? "all" : "paid",
-      status: (req.nextUrl.searchParams.get("status") ?? "ALL") as OrderStatus | "ALL",
-      q: req.nextUrl.searchParams.get("q"),
-    }),
-  ),
+  respond(await listOrders(listParams(req.nextUrl.searchParams, QUERY))),
 )

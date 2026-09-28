@@ -71,6 +71,10 @@ model User {
   phone            String?
   marketingOptIn   Boolean    @default(false) @map("marketing_opt_in")
   mustChangePassword Boolean  @default(false) @map("must_change_password")
+  /// Copied into the session token at sign-in. Bumped by a password reset or
+  /// change, a revoke and a role removal, which ends every session opened
+  /// before it (server/session-policy.ts).
+  sessionVersion   Int        @default(0) @map("session_version")
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
@@ -287,6 +291,10 @@ model Order {
   invoiceNumber    String?   @unique @map("invoice_number")
   invoicedAt       DateTime? @map("invoiced_at")
   invoiceEmailedAt DateTime? @map("invoice_emailed_at")
+  /// The credit note that reverses the invoice once the order is refunded:
+  /// CN/26-27/0001, its own sequence per financial year.
+  creditNoteNumber String?   @unique @map("credit_note_number")
+  creditedAt       DateTime? @map("credited_at")
   /// The visitor who placed it - only ever one who accepted cookies. A visit
   /// made without that consent is never tied to the person behind an order.
   visitorId       String?     @map("visitor_id") @db.Uuid
@@ -306,6 +314,8 @@ model Order {
   @@index([email])
   @@index([couponId])
   @@index([visitorId])
+  @@index([paymentMethod])
+  @@index([placedAt])
   @@map("orders")
 }
 

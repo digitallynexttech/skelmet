@@ -6,7 +6,7 @@ import PDFDocument from "pdfkit"
 
 import { invoiceConfig } from "@/config/invoice"
 import { siteConfig } from "@/config/site"
-import type { Invoice } from "@/features/invoices/invoice"
+import { paymentTerms, type Invoice } from "@/features/invoices/invoice"
 
 /**
  * The tax invoice as an A4 PDF, laid out as Gee Star Spinning Solutions' own
@@ -14,13 +14,25 @@ import type { Invoice } from "@/features/invoices/invoice"
  * with the tax beneath them, the amount in words, the HSN-wise tax summary,
  * the declaration and the signatory - with the SKELMET mark above the seller.
  *
+ * The same layout makes a credit note: the same amounts, titled "Credit Note"
+ * under its own number, and naming the invoice it reverses.
+ *
  * Noto Sans is embedded because the PDF standard fonts have no rupee sign.
  */
 
-const ASSETS = path.join(process.cwd(), "assets")
-const FONT = path.join(ASSETS, "fonts", "NotoSans-Regular.ttf")
-const BOLD = path.join(ASSETS, "fonts", "NotoSans-Bold.ttf")
+/**
+ * Only the three files the PDF needs, in a folder of their own. The path is
+ * traced at build time, and pointing it at the whole of assets/ copied 250 MB
+ * of product photography and video into every server bundle that could reach
+ * this file.
+ */
+const ASSETS = path.join(process.cwd(), "assets", "invoice")
+const FONT = path.join(ASSETS, "NotoSans-Regular.ttf")
+const BOLD = path.join(ASSETS, "NotoSans-Bold.ttf")
 const LOGO = path.join(ASSETS, "skelmet-lockup-ink.png")
+
+/** A tax invoice, or a credit note reversing one. */
+export type PdfKind = { kind: "invoice" } | { kind: "credit-note"; number: string; date: Date }
 
 const INK = "#111114"
 const DIM = "#5b5b66"
@@ -36,12 +48,14 @@ const day = (d: Date) => {
   return `${part({ day: "2-digit" })}-${part({ month: "short" }).slice(0, 3)}-${part({ year: "2-digit" })}`
 }
 
-export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
+export function renderInvoicePdf(inv: Invoice, as: PdfKind = { kind: "invoice" }): Promise<Buffer> {
+  const credit = as.kind === "credit-note" ? as : null
+  const title = credit ? "Credit Note" : "Tax Invoice"
   const doc = new PDFDocument({
     size: "A4",
     margin: 24,
     info: {
-      Title: `Tax Invoice ${inv.order.invoiceNumber}`,
+      Title: `${title} ${credit ? credit.number : inv.order.invoiceNumber}`,
       Author: invoiceConfig.seller.name,
       Subject: `Order ${inv.order.number}`,
     },
@@ -86,7 +100,7 @@ export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
   doc.lineWidth(0.6).strokeColor(LINE)
 
   // ── title ───────────────────────────────────────────────────
-  text("Tax Invoice", X0, 22, { w: W, size: 12, bold: true, align: "center" })
+  text(title, X0, 22, { w: W, size: 12, bold: true, align: "center" })
   text("(ORIGINAL FOR RECIPIENT)", X0, 25, { w: W, size: 7, color: DIM, align: "right" })
 
   const top = 44
@@ -109,24 +123,32 @@ export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
   }
   const sellerBottom = Math.max(y + 8, top + 150)
 
-  const cells: Array<[string, string]> = [
-    ["Invoice No.", order.invoiceNumber],
-    ["Dated", day(order.invoicedAt)],
-    ["Order No.", order.number],
-    ["Order Date", day(order.placedAt)],
-    [
-      "Mode/Terms of Payment",
-      order.payment.method === "COD" ? "Cash on delivery" : "Prepaid online",
-    ],
-    ["Payment Reference", order.payment.reference ?? "-"],
-    ["Dispatched through", order.shipment?.courier ?? "-"],
-    ["Dispatch Doc No. (AWB)", order.shipment?.awb ?? "-"],
-    ["Destination", `${order.address.city} - ${order.address.pincode}`],
-    [
-      "Place of Supply",
-      `${inv.placeOfSupply.state}${inv.placeOfSupply.code ? ` (${inv.placeOfSupply.code})` : ""}`,
-    ],
-  ]
+  const placeOfSupply = `${inv.placeOfSupply.state}${inv.placeOfSupply.code ? ` (${inv.placeOfSupply.code})` : ""}`
+  const cells: Array<[string, string]> = credit
+    ? [
+        ["Credit Note No.", credit.number],
+        ["Dated", day(credit.date)],
+        ["Against Invoice No.", order.invoiceNumber],
+        ["Invoice Dated", day(order.invoicedAt)],
+        ["Order No.", order.number],
+        ["Order Date", day(order.placedAt)],
+        ["Mode/Terms of Payment", paymentTerms(order.payment)],
+        ["Payment Reference", order.payment.reference ?? "-"],
+        ["Reason", "Order refunded"],
+        ["Place of Supply", placeOfSupply],
+      ]
+    : [
+        ["Invoice No.", order.invoiceNumber],
+        ["Dated", day(order.invoicedAt)],
+        ["Order No.", order.number],
+        ["Order Date", day(order.placedAt)],
+        ["Mode/Terms of Payment", paymentTerms(order.payment)],
+        ["Payment Reference", order.payment.reference ?? "-"],
+        ["Dispatched through", order.shipment?.courier ?? "-"],
+        ["Dispatch Doc No. (AWB)", order.shipment?.awb ?? "-"],
+        ["Destination", `${order.address.city} - ${order.address.pincode}`],
+        ["Place of Supply", placeOfSupply],
+      ]
   const cellW = (X1 - SPLIT) / 2
   const cellH = (sellerBottom - top) / 5
   cells.forEach(([label, value], i) => {
@@ -220,7 +242,12 @@ export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
   hline(totalBottom)
 
   // ── amount in words ─────────────────────────────────────────
-  text("Amount Chargeable (in words)", X0 + 6, totalBottom + 5, { size: 7, color: DIM })
+  text(
+    credit ? "Amount Credited (in words)" : "Amount Chargeable (in words)",
+    X0 + 6,
+    totalBottom + 5,
+    { size: 7, color: DIM },
+  )
   text("E. & O.E", X0, totalBottom + 5, { w: W - 6, size: 7, color: DIM, align: "right" })
   const wordsBottom =
     text(inv.amountInWords, X0 + 6, totalBottom + 15, { w: W - 12, size: 9, bold: true }) + 6
@@ -298,7 +325,9 @@ export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
   const SIGN = X0 + W * 0.56
   text("Declaration", X0 + 6, footTop, { size: 7.5, bold: true })
   text(
-    "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. Prices on skelmet.in are inclusive of GST; the tax above is the part of the amount paid that is GST.",
+    credit
+      ? `This credit note cancels tax invoice ${order.invoiceNumber} dated ${day(order.invoicedAt)} in full: the goods, shipping and tax above are credited back to the buyer, whose payment has been refunded. Prices on skelmet.in are inclusive of GST.`
+      : "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. Prices on skelmet.in are inclusive of GST; the tax above is the part of the amount paid that is GST.",
     X0 + 6,
     footTop + 11,
     { w: SIGN - X0 - 16, size: 7.2 },
@@ -324,7 +353,7 @@ export function renderInvoicePdf(inv: Invoice): Promise<Buffer> {
     size: 7.5,
     align: "center",
   })
-  text("This is a Computer Generated Invoice", X0, boxBottom + 19, {
+  text(`This is a Computer Generated ${credit ? "Credit Note" : "Invoice"}`, X0, boxBottom + 19, {
     w: W,
     size: 7,
     color: DIM,

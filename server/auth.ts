@@ -3,18 +3,20 @@ import "server-only"
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 
-import { verifyPassword } from "@/lib/crypto"
-import type { Permission } from "@/lib/constants"
-import { clientIp, rateLimit } from "@/lib/rate-limit"
-import { db } from "@/server/db"
+import { SESSION_IDLE_SECONDS, tokenStillValid } from "@/server/session-policy"
+import { authorizeStaff } from "@/server/staff-login"
 
 /**
  * Auth.js v5, JWT sessions. The token carries identity and a snapshot of the
  * roles for display; the service guards re-read permissions from the database,
  * so a role change or a revoke takes effect on the next request (§6).
+ *
+ * The token also carries `sessionVersion` and `loginAt` (server/session-policy.ts):
+ * every read checks the version against the user's row and the sign-in time
+ * against the absolute lifetime, and ends the session when either has moved on.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
+  session: { strategy: "jwt", maxAge: SESSION_IDLE_SECONDS },
   pages: { signIn: "/login" },
   trustHost: true,
   providers: [
@@ -23,67 +25,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(raw, request) {
-        const email = typeof raw?.email === "string" ? raw.email.trim().toLowerCase() : ""
-        const password = typeof raw?.password === "string" ? raw.password : ""
-        if (!email || !password) return null
-
-        // Checkout, coupons and contact were rate-limited; the one endpoint
-        // that trades a guess for an account was not. Keyed on the address
-        // rather than the email so cycling addresses does not reset the
-        // budget, and rateLimit throws a 429 AppError, which Auth.js turns
-        // into the same opaque failure as a wrong password - a blocked
-        // attacker learns nothing a wrong guess would not have told them.
-        try {
-          rateLimit(`login:${clientIp(request.headers)}`, 10, 10 * 60_000)
-        } catch {
-          return null
-        }
-
-        // passwordHash is omitted by default in server/db.ts, so opt back in
-        // here - the one place it is genuinely needed (§6).
-        const user = await db.user.findUnique({
-          where: { email },
-          // select overrides the global omit in server/db.ts, which is the
-          // one place passwordHash is genuinely needed.
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            kind: true,
-            passwordHash: true,
-            mustChangePassword: true,
-            roles: {
-              select: {
-                role: {
-                  select: {
-                    name: true,
-                    permissions: { select: { permission: { select: { scope: true } } } },
-                  },
-                },
-              },
-            },
-          },
-        })
-
-        if (!user?.passwordHash) return null
-        if (!(await verifyPassword(password, user.passwordHash))) return null
-
-        const roles = user.roles.map((r) => r.role.name)
-        const permissions = [
-          ...new Set(user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.scope))),
-        ] as Permission[]
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          kind: user.kind,
-          roles,
-          permissions,
-          mustChangePassword: user.mustChangePassword,
-        }
-      },
+      authorize: (raw, request) => authorizeStaff(raw, request.headers),
     }),
   ],
   callbacks: {
@@ -93,15 +35,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // member grant themselves every scope. Nothing here calls session.update(),
     // and the guards re-read permissions from the database (action-guard.ts), so
     // the token is only ever written from a verified login.
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string
         token.kind = user.kind
         token.roles = user.roles
         token.permissions = user.permissions
         token.mustChangePassword = user.mustChangePassword
+        token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0
+        token.loginAt = Date.now()
+        return token
       }
-      return token
+      // null signs this browser out: Auth.js clears the cookie.
+      return (await tokenStillValid(token)) ? token : null
     },
     session({ session, token }) {
       session.user.id = token.id
@@ -109,6 +55,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.roles = token.roles
       session.user.permissions = token.permissions
       session.user.mustChangePassword = token.mustChangePassword
+      // Read back by the guards (sessionClaims in server/session-policy.ts).
+      Object.assign(session.user, { sessionVersion: token.sessionVersion, loginAt: token.loginAt })
       return session
     },
   },
