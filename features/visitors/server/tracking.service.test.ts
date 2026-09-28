@@ -42,6 +42,7 @@ const mocks = vi.hoisted(() => ({
     variant: { findMany: vi.fn() },
     order: { update: vi.fn(), updateMany: vi.fn() },
     user: { findFirst: vi.fn() },
+    pincodePlace: { findUnique: vi.fn(), upsert: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -100,6 +101,8 @@ beforeEach(() => {
   db.visitorSession.findUnique.mockResolvedValue(null)
   db.visitorSession.create.mockResolvedValue({ id: "session-1", pageviews: 0 })
   db.cart.upsert.mockResolvedValue({ id: "cart-1" })
+  // 302001 has been looked up before.
+  db.pincodePlace.findUnique.mockResolvedValue({ district: "Jaipur" })
 })
 
 describe("recordVisit without consent", () => {
@@ -123,6 +126,57 @@ describe("recordVisit without consent", () => {
       expect(call.data).not.toHaveProperty("ip")
     }
     expect(mocks.cookies.set).not.toHaveBeenCalled()
+  })
+
+  it("keeps the city, district and state, but not the pincode that found the district", async () => {
+    await recordVisit(view(false))
+
+    const created = mocks.db.visitor.create.mock.calls[0]![0].data
+    expect(created).toMatchObject({ city: "Jaipur", district: "Jaipur", region: "Rajasthan" })
+    expect(created).not.toHaveProperty("postalCode")
+    expect(mocks.db.visitorSession.create.mock.calls[0]![0].data).toMatchObject({
+      city: "Jaipur",
+      district: "Jaipur",
+      region: "Rajasthan",
+      ip: null,
+    })
+  })
+
+  it("looks up a pincode seen for the first time, after the response", async () => {
+    mocks.db.pincodePlace.findUnique.mockResolvedValue(null)
+    const fetch = vi.fn(async (_url: string) =>
+      Response.json([
+        {
+          Status: "Success",
+          PostOffice: [{ District: "Jaipur", State: "Rajasthan", DeliveryStatus: "Delivery" }],
+        },
+      ]),
+    )
+    vi.stubGlobal("fetch", fetch)
+    try {
+      await recordVisit(view(false))
+
+      // Not known yet: written in once the lookup answers.
+      expect(mocks.db.visitor.create.mock.calls[0]![0].data.district).toBeUndefined()
+      await vi.waitFor(() =>
+        expect(mocks.db.visitorSession.updateMany).toHaveBeenCalledWith({
+          where: { id: "session-1" },
+          data: { district: "Jaipur" },
+        }),
+      )
+      expect(String(fetch.mock.calls[0]![0])).toMatch(/\/302001$/)
+      expect(mocks.db.pincodePlace.upsert.mock.calls[0]![0].create).toEqual({
+        pincode: "302001",
+        district: "Jaipur",
+        state: "Rajasthan",
+      })
+      expect(mocks.db.visitor.updateMany).toHaveBeenCalledWith({
+        where: { id: "visitor-1" },
+        data: { district: "Jaipur" },
+      })
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it("does not keep details typed at checkout", async () => {

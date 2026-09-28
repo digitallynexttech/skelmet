@@ -29,6 +29,7 @@ import {
 } from "@/features/visitors/lib/format"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
+import { regionOf } from "@/lib/india"
 
 const VIEWS: Array<{ id: VisitorView; label: string; tone: string }> = [
   { id: "all", label: "All visitors", tone: "text-bone" },
@@ -242,7 +243,9 @@ export function VisitorTable() {
             { header: "Phone", value: (v) => v.phone ?? "" },
             { header: "IP address", value: (v) => v.ip ?? "" },
             { header: "City", value: (v) => v.city ?? "" },
-            { header: "Region", value: (v) => v.region ?? "" },
+            { header: "District", value: (v) => v.district ?? "" },
+            { header: "State", value: (v) => v.region ?? "" },
+            { header: "Region", value: (v) => regionOf(v.region) ?? "" },
             { header: "Country", value: (v) => v.country ?? "" },
             { header: "Device type", value: (v) => v.deviceType ?? "" },
             { header: "Device", value: (v) => v.deviceModel ?? "" },

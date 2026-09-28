@@ -94,7 +94,7 @@ const PRIVACY: Policy = {
             "Order: what you bought, colourway, quantity, price paid, any discount code used - including an order you place and do not pay for.",
             "Payment: the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.",
             "Account: a hashed password and saved addresses, if you create an account.",
-            "Technical, for every visit: pages viewed and the time spent on each, browser and device type, the city your connection comes from, the site or campaign that sent you, and what you put in your cart.",
+            "Technical, for every visit: pages viewed and the time spent on each, browser and device type, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart.",
             "Technical, only if you accept cookies: your IP address, your device model, a cookie that recognises this device on later visits, and the email, phone, name and pincode you type at checkout, even if you do not place the order.",
             "Content you send us: support messages, review text, and any photo you submit to the rider wall.",
           ],
@@ -153,7 +153,7 @@ const PRIVACY: Policy = {
           type: "list",
           items: [
             "Strictly necessary, always: your cart and your cookie choice, kept in your own browser, and a cookie that lets the confirmation page show the order you just placed. The site does not work without these.",
-            "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the city your connection comes from, the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate.",
+            "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate.",
             "Only if you accept: a cookie that recognises this device for a year, and with it your IP address, your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads.",
           ],
         },
@@ -191,7 +191,7 @@ const PRIVACY: Policy = {
             ["[HOSTING]", "Running the site", "Technical data"],
             [
               "Cloudflare",
-              "Delivering the site, and the city a visit comes from",
+              "Delivering the site, and the area a visit comes from",
               "Technical data, IP address",
             ],
             [

@@ -41,13 +41,20 @@ export function deviceLine(v: {
   return [v.deviceModel, v.os, v.browser].filter(Boolean).join(" · ") || "-"
 }
 
-/** "Jaipur, Rajasthan", or the country code alone when that is all there is. */
+/**
+ * "Noida, Gautam Buddha Nagar, Uttar Pradesh" - city, district, state - or the
+ * country code alone when that is all there is. A district named like its
+ * city ("Jaipur, Jaipur") is said once.
+ */
 export function placeLine(v: {
   city?: string | null
+  district?: string | null
   region?: string | null
   country?: string | null
 }): string {
-  return [v.city, v.region].filter(Boolean).join(", ") || v.country || "-"
+  const district =
+    v.district && v.district.toLowerCase() !== v.city?.toLowerCase() ? v.district : null
+  return [v.city, district, v.region].filter(Boolean).join(", ") || v.country || "-"
 }
 
 /** "instagram / social", "direct". */

@@ -17,6 +17,7 @@ export type VisitorRow = {
   phone: string | null
   ip: string | null
   city: string | null
+  district: string | null
   region: string | null
   country: string | null
   deviceType: string | null
@@ -69,6 +70,8 @@ export type VisitorSessionRow = {
   referrer: string | null
   ip: string | null
   city: string | null
+  district: string | null
+  region: string | null
   events: VisitorEventRow[]
 }
 
@@ -109,6 +112,7 @@ export type LeftCartRow = {
   email: string | null
   phone: string | null
   city: string | null
+  district: string | null
   region: string | null
   deviceType: string | null
   deviceModel: string | null

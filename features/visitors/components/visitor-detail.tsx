@@ -25,6 +25,7 @@ import {
 } from "@/features/visitors/hooks/use-visitors"
 import { duration, placeLine, sourceLine, visitorName, when } from "@/features/visitors/lib/format"
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/constants"
+import { regionOf } from "@/lib/india"
 
 /**
  * One visitor: who they are if they have said, what they browse on, where
@@ -156,7 +157,7 @@ function Visit({ session }: { session: VisitorSessionRow }) {
         <span className="text-dim font-mono text-[11.5px]">
           {session.pageviews} {session.pageviews === 1 ? "page" : "pages"} ·{" "}
           {duration(session.engagedSeconds)} · {sourceLine(session)}
-          {session.city ? ` · ${session.city}` : ""}
+          {placeLine(session) !== "-" ? ` · ${placeLine(session)}` : ""}
           {session.ip ? ` · ${session.ip}` : ""}
         </span>
       </div>
@@ -255,7 +256,10 @@ function Body({ v }: { v: VisitorDetail }) {
 
         <Card title="Where" icon={<MapPin className="text-ember size-3.5" strokeWidth={1.9} />}>
           <dl>
-            <Fact label="Place" value={placeLine(v) === "-" ? null : placeLine(v)} />
+            <Fact label="City" value={v.city} />
+            <Fact label="District" value={v.district} />
+            <Fact label="State" value={v.region} />
+            <Fact label="Region" value={regionOf(v.region)} />
             <Fact label="Country" value={v.country} mono />
             <Fact label="Postal area" value={v.postalCode} mono />
             <Fact label="Pincode typed" value={v.pincode} mono />
@@ -263,7 +267,8 @@ function Body({ v }: { v: VisitorDetail }) {
           </dl>
           {v.anonymous ? (
             <p className="text-dim mt-3 text-[12px] leading-[1.5]">
-              No IP address or exact place is kept for a visitor who did not accept cookies.
+              A visitor who did not accept cookies keeps their city, district and state, but no IP
+              address or pincode.
             </p>
           ) : null}
         </Card>

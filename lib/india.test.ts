@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { INDIAN_STATES, matchState, normalizeMobileInput } from "@/lib/india"
+import { INDIAN_STATES, matchState, normalizeMobileInput, regionOf } from "@/lib/india"
 
 describe("matchState", () => {
   it("knows all 36 states and union territories by their own names", () => {
@@ -51,5 +51,23 @@ describe("normalizeMobileInput", () => {
     // even when the number happens to start with 91.
     expect(normalizeMobileInput("98765432101")).toBe("9876543210")
     expect(normalizeMobileInput("91876543210")).toBe("9187654321")
+  })
+})
+
+describe("regionOf", () => {
+  it("places every state and union territory in a part of India", () => {
+    for (const state of INDIAN_STATES) expect(regionOf(state), state).not.toBeNull()
+  })
+
+  it("reads the names Cloudflare gives", () => {
+    expect(regionOf("National Capital Territory of Delhi")).toBe("North India")
+    expect(regionOf("Uttar Pradesh")).toBe("Central India")
+    expect(regionOf("Tamil Nadu")).toBe("South India")
+    expect(regionOf("Assam")).toBe("Northeast India")
+  })
+
+  it("is null for anything that is not an Indian state", () => {
+    expect(regionOf("California")).toBeNull()
+    expect(regionOf(null)).toBeNull()
   })
 })

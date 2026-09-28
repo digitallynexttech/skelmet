@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 
 import { visitSchema, type VisitInput } from "@/features/visitors/schemas/visit.schema"
 import { arrivalOf, cleanPath, type Arrival } from "@/features/visitors/server/attribution"
+import { fillDistrictLater, knownDistrict, visitPincode } from "@/features/visitors/server/district"
 import { describeAgent, type Agent } from "@/features/visitors/server/user-agent"
 import {
   dropVisitorCookie,
@@ -27,8 +28,9 @@ import { db } from "@/server/db"
  *   IP address, the phone model, the details typed at checkout, and a link to
  *   its orders.
  * - Not accepted (refused, or not answered yet): one row per visit, found by
- *   the tab's own key. The pages, the time, the device type, the city and the
- *   cart - no cookie, no IP address, no contact details, no link to anyone.
+ *   the tab's own key. The pages, the time, the device type, the area (city,
+ *   district, state) and the cart - no cookie, no IP address, no pincode, no
+ *   contact details, no link to anyone.
  */
 
 /** Past this many pages in one visit the rest are not written: a script, not a person. */
@@ -57,6 +59,8 @@ type Facts = {
   country: string | null
   region: string | null
   city: string | null
+  /** From the pincode, when it has been looked up before (district.ts). */
+  district: string | null
   postalCode: string | null
   userAgent: string
   host: string | null
@@ -78,6 +82,7 @@ async function requestFacts(): Promise<Facts> {
     // development, they are simply absent.
     region: value("cf-region"),
     city: value("cf-ipcity"),
+    district: null,
     postalCode: value("cf-postal-code"),
     userAgent: (h.get("user-agent") ?? "").slice(0, 500),
     host: value("x-forwarded-host") ?? value("host"),
@@ -108,6 +113,7 @@ function profile(agent: Agent, facts: Facts, device: Device, identified: boolean
     country: keep(facts.country),
     region: keep(facts.region),
     city: keep(facts.city),
+    district: keep(facts.district),
     ...(identified
       ? {
           ip: keep(facts.ip),
@@ -294,6 +300,8 @@ async function resolveSession(
         campaign: arrival?.campaign ?? null,
         ip: visitor.anonymous ? null : facts.ip,
         city: facts.city,
+        region: facts.region,
+        district: facts.district,
       },
       select: SESSION,
     })
@@ -465,9 +473,15 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
       return ok({ recorded: true })
     }
 
+    // The pincode only finds the district; it is kept for nobody who refused.
+    const pincode = visitPincode(facts)
+    const district = pincode ? await knownDistrict(pincode) : undefined
+    facts.district = district ?? null
+
     const now = new Date()
     const visitor = await resolveVisitor(input, facts, agent, now)
     const visit = await resolveSession(visitor, input, facts, now)
+    if (pincode && district === undefined) fillDistrictLater(pincode, visitor.id, visit.id)
 
     switch (input.t) {
       case "view": {

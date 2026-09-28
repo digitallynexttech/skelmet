@@ -507,6 +507,9 @@ model Visitor {
   country        String?
   region         String?
   city           String?
+  /// From the pincode Cloudflare places them in, through India Post. Kept
+  /// for every visitor, like the city; the pincode itself only with consent.
+  district       String?
   postalCode     String?   @map("postal_code")
   pincode        String?
 
@@ -567,6 +570,8 @@ model VisitorSession {
   campaign       String?
   ip             String?
   city           String?
+  region         String?
+  district       String?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -603,4 +608,17 @@ model VisitorEvent {
   @@index([sessionId, createdAt])
   @@index([type, createdAt])
   @@map("visitor_events")
+}
+
+/// The district and state India Post files a pincode under, looked up once:
+/// how a visit's approximate pincode becomes a district. A null district is
+/// India Post saying there is no such pincode, remembered so it is not asked
+/// again.
+model PincodePlace {
+  pincode    String   @id
+  district   String?
+  state      String?
+  lookedUpAt DateTime @default(now()) @map("looked_up_at")
+
+  @@map("pincode_places")
 }

@@ -70,6 +70,8 @@ const ALIASES: Record<string, IndianState> = {
   uttaranchal: "Uttarakhand",
   "new delhi": "Delhi",
   "nct of delhi": "Delhi",
+  // How IP location databases, Cloudflare's among them, name it.
+  "national capital territory of delhi": "Delhi",
   "delhi ncr": "Delhi",
   "jammu kashmir": "Jammu and Kashmir",
   "andaman nicobar": "Andaman and Nicobar Islands",
@@ -93,6 +95,65 @@ const BY_NAME = new Map<string, IndianState>([
 export function matchState(name: string | null | undefined): IndianState | null {
   if (!name) return null
   return BY_NAME.get(simplify(name)) ?? null
+}
+
+/** The part of India a state is in, as the Zonal Councils group them. */
+export const INDIAN_REGIONS = [
+  "North India",
+  "Central India",
+  "East India",
+  "West India",
+  "South India",
+  "Northeast India",
+] as const
+
+export type IndianRegion = (typeof INDIAN_REGIONS)[number]
+
+// The two island territories belong to no Zonal Council; they go with the
+// coast they lie off.
+const REGION_OF_STATE: Record<IndianState, IndianRegion> = {
+  Chandigarh: "North India",
+  Delhi: "North India",
+  Haryana: "North India",
+  "Himachal Pradesh": "North India",
+  "Jammu and Kashmir": "North India",
+  Ladakh: "North India",
+  Punjab: "North India",
+  Rajasthan: "North India",
+  Chhattisgarh: "Central India",
+  "Madhya Pradesh": "Central India",
+  "Uttar Pradesh": "Central India",
+  Uttarakhand: "Central India",
+  Bihar: "East India",
+  Jharkhand: "East India",
+  Odisha: "East India",
+  "West Bengal": "East India",
+  "Andaman and Nicobar Islands": "East India",
+  Goa: "West India",
+  Gujarat: "West India",
+  Maharashtra: "West India",
+  "Dadra and Nagar Haveli and Daman and Diu": "West India",
+  "Andhra Pradesh": "South India",
+  Karnataka: "South India",
+  Kerala: "South India",
+  Puducherry: "South India",
+  "Tamil Nadu": "South India",
+  Telangana: "South India",
+  Lakshadweep: "South India",
+  "Arunachal Pradesh": "Northeast India",
+  Assam: "Northeast India",
+  Manipur: "Northeast India",
+  Meghalaya: "Northeast India",
+  Mizoram: "Northeast India",
+  Nagaland: "Northeast India",
+  Sikkim: "Northeast India",
+  Tripura: "Northeast India",
+}
+
+/** "North India" for "Delhi"; null for anything that is not an Indian state. */
+export function regionOf(state: string | null | undefined): IndianRegion | null {
+  const match = matchState(state)
+  return match ? REGION_OF_STATE[match] : null
 }
 
 /** A ten-digit Indian mobile: what couriers ring, and all Shiprocket accepts. */

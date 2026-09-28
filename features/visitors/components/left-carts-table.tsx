@@ -224,7 +224,7 @@ export function LeftCartsTable() {
           { header: "Value", value: (r) => Number(r.value) },
           { header: "Reached checkout", value: (r) => (r.checkoutAt ? when(r.checkoutAt) : "") },
           { header: "Device", value: (r) => deviceLine(r) },
-          { header: "City", value: (r) => placeLine(r) },
+          { header: "Place", value: (r) => placeLine(r) },
           { header: "Source", value: (r) => r.source ?? "" },
           { header: "Last change", value: (r) => when(r.updatedAt) },
         ]}
