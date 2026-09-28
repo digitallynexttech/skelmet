@@ -96,8 +96,12 @@ export function parcelFor(items: ShippableOrder["items"]): Parcel {
  * refuses a second order with the same id, a retry can never create a
  * duplicate shipment.
  *
- * `sub_total` is "after deductions" in Shiprocket's words, and they do not
- * compute totals themselves, so it is what the lines cost after the coupon.
+ * `sub_total` is what the lines cost BEFORE the coupon. Shiprocket's docs call
+ * it the total "after deductions", but Shiprocket takes `total_discount` off it
+ * again: SKM-2026-E2Q9 went out as sub_total 101 with a 3398 discount and its
+ * label printed "Order Total: ₹1" - below zero, floored. Sent before the
+ * coupon, the label reads what the customer actually paid, and that is also
+ * the value the courier's liability for a lost parcel is capped at.
  */
 export function buildAdhocOrder(order: ShippableOrder, pickupLocation: string) {
   const parcel = parcelFor(order.items)
@@ -127,7 +131,7 @@ export function buildAdhocOrder(order: ShippableOrder, pickupLocation: string) {
     payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
     shipping_charges: order.shipping,
     total_discount: order.discount,
-    sub_total: round(order.subtotal - order.discount, 2),
+    sub_total: round(order.subtotal, 2),
     length: parcel.lengthCm,
     breadth: parcel.breadthCm,
     height: parcel.heightCm,

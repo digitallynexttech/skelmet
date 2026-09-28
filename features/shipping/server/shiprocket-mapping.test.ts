@@ -81,9 +81,16 @@ describe("buildAdhocOrder", () => {
     expect(buildAdhocOrder({ ...order, paymentMethod: "COD" }, "x").payment_method).toBe("COD")
   })
 
-  it("sends the sub-total after the coupon, since Shiprocket computes no totals", () => {
-    expect(payload.sub_total).toBe(2999)
+  it("sends the sub-total before the coupon, which Shiprocket takes off itself", () => {
+    expect(payload.sub_total).toBe(3499)
     expect(payload.total_discount).toBe(500)
+  })
+
+  it("adds up, on Shiprocket's reckoning, to what the customer paid", () => {
+    // SKM-2026-E2Q9: sent after the coupon, its label printed Order Total ₹1.
+    const coupon = { ...order, subtotal: 3499, discount: 3398, shipping: 0 }
+    const p = buildAdhocOrder(coupon, "x")
+    expect(p.sub_total - p.total_discount + p.shipping_charges).toBe(101)
   })
 
   it("lists each line with its units and unit price", () => {
