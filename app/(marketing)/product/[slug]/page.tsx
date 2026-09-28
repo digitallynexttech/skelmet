@@ -6,6 +6,7 @@ import { Anatomy } from "@/components/marketing/anatomy"
 import { Comparison } from "@/components/marketing/comparison"
 import { FaqSection } from "@/components/marketing/faq-section"
 import { InstallSteps } from "@/components/marketing/install-steps"
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Texture } from "@/components/marketing/texture"
@@ -31,18 +32,22 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const product = getProduct(slug)
   if (!product) return { title: "Not found" }
 
-  return {
+  // Says what the thing is before it says anything clever: the strapline alone
+  // ("Give it a wall, not the floor") told a search result or a shared link
+  // nothing about the product, its colours or where it ships.
+  const colours = product.colourways.map((c) => c.name)
+  const last = colours.pop()
+  const colourList = colours.length > 0 ? `${colours.join(", ")} and ${last}` : last
+  const description = `A 3D-printed flame-skull wall mount for motorcycle helmets, with hooks for gloves, jacket and keys. In ${colourList}. Made in India, delivered across India.`
+
+  return pageMetadata({
     title: product.name,
-    description: product.strapline,
-    alternates: { canonical: `/product/${product.slug}` },
-    openGraph: {
-      title: product.name,
-      description: product.strapline,
-      // Blaze is the canonical finish for sharing: metadata is per slug,
-      // not per selected colourway.
-      images: [{ url: product.gallery[0]!.src.blaze }],
-    },
-  }
+    description,
+    path: `/product/${product.slug}`,
+    // Blaze is the canonical finish for sharing: metadata is per slug,
+    // not per selected colourway.
+    image: { url: product.gallery[0]!.src.blaze, alt: product.gallery[0]!.alt },
+  })
 }
 
 /**

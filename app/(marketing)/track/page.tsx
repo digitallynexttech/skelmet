@@ -1,16 +1,18 @@
 import type { Metadata } from "next"
 
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { TrustStrip } from "@/components/marketing/trust-strip"
 import { TrackForm } from "@/features/orders/components/track-form"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Track your order",
-  description: "Order number and email: no account needed.",
-  alternates: { canonical: "/track" },
-}
+  description:
+    "Where your SKELMET order has got to, from your order number and email. No account needed.",
+  path: "/track",
+})
 
 export default function TrackPage() {
   return (
