@@ -95,8 +95,11 @@ export async function ColourwayGrid() {
                 // Above the hero skull (z-30) when it docks here, as the badge
                 // is above the photo - on a phone the skull reaches this
                 // corner. Click-through, so the card link under it still works.
+                // "The original", not "Best seller": the other two colours were
+                // made from this one's plate, which is true on day one, while a
+                // sales ranking is a claim the shop cannot back yet.
                 <Badge variant="solid" className="pointer-events-none absolute top-4 left-4 z-[35]">
-                  Best seller
+                  The original
                 </Badge>
               ) : null}
             </div>
