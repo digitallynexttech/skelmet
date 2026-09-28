@@ -713,11 +713,25 @@ const sharedCache = globalThis as unknown as {
 }
 const pincodeCache = (sharedCache.skelmetPincodes ??= new Map())
 
+/**
+ * The most answers held. Every pincode and parcel size is its own key, so
+ * without a ceiling a crawl through pincodes grew this for six hours at a
+ * time; past it, the oldest answer goes, and costs one more Shiprocket call.
+ */
+export const PINCODE_CACHE_MAX = 5_000
+
 function remember(key: string, reach: Reach, now: number): Reach {
-  if (pincodeCache.size > 5_000) {
+  if (pincodeCache.size >= PINCODE_CACHE_MAX) {
     for (const [k, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(k)
   }
+  // Re-inserted, so the Map's insertion order is the order answers arrived in.
+  pincodeCache.delete(key)
   pincodeCache.set(key, { reach, expiresAt: now + PINCODE_TTL_MS })
+  while (pincodeCache.size > PINCODE_CACHE_MAX) {
+    const oldest = pincodeCache.keys().next().value
+    if (oldest === undefined) break
+    pincodeCache.delete(oldest)
+  }
   return reach
 }
 
@@ -779,66 +793,108 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
     const hit = pincodeCache.get(key)
     if (hit && hit.expiresAt > now) return ok(await priced(hit.reach))
 
-    const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
-    const [reach, place] = await Promise.allSettled([
-      pickupPincode().then((pickup) =>
-        shiprocket.serviceability({
-          pickup_postcode: pickup,
-          delivery_postcode: pincode,
-          cod: 0,
-          weight: parcel.weightKg,
-          length: parcel.lengthCm,
-          breadth: parcel.breadthCm,
-          height: parcel.heightCm,
-        }),
-      ),
-      shiprocket.postcodeDetails(pincode),
-    ])
+    // Carries on past the budget, so a slow answer still lands in the cache
+    // for the next check; anything it throws by then is only logged.
+    const lookup = askShiprocket(key, pincode, units, now)
+    lookup.catch((err: unknown) => console.warn("[SHIPPING] pincode lookup failed", message(err)))
 
-    // null: Shiprocket has no such pincode. undefined: the lookup itself failed.
-    const where = place.status === "fulfilled" ? place.value : undefined
-    if (place.status === "rejected") {
-      console.warn("[SHIPPING] postcode lookup failed", message(place.reason))
+    const answer = await withinBudget(lookup, PINCODE_BUDGET_MS)
+    if (answer === "late") {
+      console.warn("[SHIPPING] Shiprocket took too long; pincode check fell back")
+      return ok(offline)
     }
+    if ("reach" in answer) return ok(await priced(answer.reach))
+    return ok({ ...offline, city: answer.city, state: answer.state })
+  })
+}
 
-    // Not a real pincode. That does not change, so it is remembered like any answer.
-    if (where === null) {
-      const nowhere: Reach = {
-        answer: {
-          live: true,
-          serviceable: false,
-          days: null,
-          found: false,
-          city: null,
-          state: null,
-        },
-        options: [],
-      }
-      return ok(await priced(remember(key, nowhere, now)))
-    }
+/**
+ * How long the pincode check waits on Shiprocket. Its calls time out at 20
+ * seconds each, and a pickup lookup, a login and a rate quote in a row kept a
+ * buyer at checkout for most of a minute. Past this, the answer is the one
+ * given when Shiprocket is unavailable - serviceable, no shipping fee.
+ */
+export const PINCODE_BUDGET_MS = 4_000
 
-    if (reach.status === "rejected") {
-      console.warn(
-        "[SHIPPING] pincode check fell back to the static promise",
-        message(reach.reason),
-      )
-      return ok({ ...offline, city: where?.city ?? null, state: where?.state ?? null })
-    }
+async function withinBudget<T>(work: Promise<T>, ms: number): Promise<T | "late"> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<"late">((resolve) => {
+    timer = setTimeout(() => resolve("late"), ms)
+    timer.unref?.()
+  })
+  try {
+    return await Promise.race([work, late])
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
-    const { options } = courierOptions(reach.value)
-    const best = deliveryEstimate(options)
-    const found: Reach = {
+/**
+ * Asks Shiprocket, and caches what it says. Either a full answer, or - when
+ * the rate quote failed - only where the pincode is, for the offline answer.
+ */
+async function askShiprocket(
+  key: string,
+  pincode: string,
+  units: number,
+  now: number,
+): Promise<{ reach: Reach } | { city: string | null; state: string | null }> {
+  const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
+  const [reach, place] = await Promise.allSettled([
+    pickupPincode().then((pickup) =>
+      shiprocket.serviceability({
+        pickup_postcode: pickup,
+        delivery_postcode: pincode,
+        cod: 0,
+        weight: parcel.weightKg,
+        length: parcel.lengthCm,
+        breadth: parcel.breadthCm,
+        height: parcel.heightCm,
+      }),
+    ),
+    shiprocket.postcodeDetails(pincode),
+  ])
+
+  // null: Shiprocket has no such pincode. undefined: the lookup itself failed.
+  const where = place.status === "fulfilled" ? place.value : undefined
+  if (place.status === "rejected") {
+    console.warn("[SHIPPING] postcode lookup failed", message(place.reason))
+  }
+
+  // Not a real pincode. That does not change, so it is remembered like any answer.
+  if (where === null) {
+    const nowhere: Reach = {
       answer: {
         live: true,
-        serviceable: options.length > 0,
-        days: best?.days ?? null,
-        found: true,
-        city: where?.city ?? null,
-        state: where?.state ?? null,
+        serviceable: false,
+        days: null,
+        found: false,
+        city: null,
+        state: null,
       },
-      options,
+      options: [],
     }
-    // Without the place, not remembered: the next check can still fill it in.
-    return ok(await priced(where ? remember(key, found, now) : found))
-  })
+    return { reach: remember(key, nowhere, now) }
+  }
+
+  if (reach.status === "rejected") {
+    console.warn("[SHIPPING] pincode check fell back to the static promise", message(reach.reason))
+    return { city: where?.city ?? null, state: where?.state ?? null }
+  }
+
+  const { options } = courierOptions(reach.value)
+  const best = deliveryEstimate(options)
+  const found: Reach = {
+    answer: {
+      live: true,
+      serviceable: options.length > 0,
+      days: best?.days ?? null,
+      found: true,
+      city: where?.city ?? null,
+      state: where?.state ?? null,
+    },
+    options,
+  }
+  // Without the place, not remembered: the next check can still fill it in.
+  return { reach: where ? remember(key, found, now) : found }
 }
