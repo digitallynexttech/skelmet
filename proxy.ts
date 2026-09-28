@@ -28,11 +28,85 @@ export const ROUTE_RULES: RouteRule[] = [
 
 const AUTH_READY = Boolean(process.env.AUTH_SECRET)
 
+const under = (pathname: string, prefix: string) =>
+  pathname === prefix || pathname.startsWith(`${prefix}/`)
+
+/**
+ * The console's API authenticates with a cookie, and a cookie rides along on
+ * a request another site makes the browser send. So a write to /api/admin or
+ * /api/me from another origin is refused here, before anything reads it:
+ * when the browser says the request is cross-site (Sec-Fetch-Site), or when
+ * its Origin names a different host from the one it was sent to. A request
+ * with neither header - curl, a server - is not a browser carrying someone's
+ * cookie, and is left to the session check.
+ */
+export function isCrossSiteWrite(req: NextRequest): boolean {
+  const { pathname } = req.nextUrl
+  if (!under(pathname, "/api/admin") && !under(pathname, "/api/me")) return false
+
+  const method = req.method.toUpperCase()
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    // Reading an invoice or credit note the first time ISSUES its number, so
+    // these GETs are writes in all but name.
+    return issuesADocument(pathname) && req.headers.get("sec-fetch-site") === "cross-site"
+  }
+
+  if (req.headers.get("sec-fetch-site") === "cross-site") return true
+
+  const origin = req.headers.get("origin")
+  if (!origin) return false
+  let originHost: string
+  try {
+    originHost = new URL(origin).host.toLowerCase()
+  } catch {
+    // "null" - a sandboxed frame or a cross-site redirect.
+    return true
+  }
+  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
+    .split(",")[0]!
+    .trim()
+    .toLowerCase()
+  return !host || originHost !== host
+}
+
+function issuesADocument(pathname: string): boolean {
+  return /^\/api\/admin\/orders\/[^/]+\/(invoice|credit-note)$/.test(pathname)
+}
+
+/**
+ * Whether Auth.js set its session cookie with the `__Secure-` prefix, worked
+ * out the way Auth.js does: from AUTH_URL when it is set, otherwise from the
+ * scheme the request arrived with - which, behind a proxy that ends TLS, is
+ * only in X-Forwarded-Proto. Reading the scheme off the URL alone looked for
+ * the plain cookie while Auth.js had set the secure one, and every console
+ * request bounced to the login page.
+ */
+export function usesSecureCookie(req: NextRequest): boolean {
+  const envUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL
+  if (envUrl) {
+    try {
+      return new URL(envUrl).protocol === "https:"
+    } catch {
+      // Fall through to the request's own scheme.
+    }
+  }
+  const forwarded = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
+  if (forwarded) return forwarded === "https" || forwarded === "https:"
+  return req.nextUrl.protocol === "https:"
+}
+
+const json = (status: number, code: string, message: string) =>
+  NextResponse.json({ success: false, error: { code, message } }, { status })
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (isUnknownPage(pathname)) return NextResponse.rewrite(new URL("/not-found", req.url))
 
-  const rule = ROUTE_RULES.find((r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`))
+  if (isCrossSiteWrite(req)) {
+    return json(403, "FORBIDDEN", "That request came from another site, so it was refused.")
+  }
+
+  const rule = ROUTE_RULES.find((r) => under(pathname, r.prefix))
   if (!rule) return NextResponse.next()
 
   const isApi = pathname.startsWith("/api/")
@@ -41,26 +115,18 @@ export async function proxy(req: NextRequest) {
     // Nothing behind the fence can work without a secret. Answer as if the
     // route does not exist rather than advertising that it is coming.
     return isApi
-      ? NextResponse.json(
-          { success: false, error: { code: "NOT_FOUND", message: "Not found." } },
-          { status: 404 },
-        )
+      ? json(404, "NOT_FOUND", "Not found.")
       : NextResponse.rewrite(new URL("/not-found", req.url))
   }
 
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET,
-    secureCookie: req.nextUrl.protocol === "https:",
+    secureCookie: usesSecureCookie(req),
   })
 
   if (!token) {
-    if (isApi) {
-      return NextResponse.json(
-        { success: false, error: { code: "UNAUTHORIZED", message: "Sign in to continue." } },
-        { status: 401 },
-      )
-    }
+    if (isApi) return json(401, "UNAUTHORIZED", "Sign in to continue.")
     const login = new URL("/login", req.url)
     login.searchParams.set("next", pathname)
     return NextResponse.redirect(login)
@@ -70,10 +136,7 @@ export async function proxy(req: NextRequest) {
   // staff area contains (§6).
   if (token.kind !== rule.kind) {
     return isApi
-      ? NextResponse.json(
-          { success: false, error: { code: "NOT_FOUND", message: "Not found." } },
-          { status: 404 },
-        )
+      ? json(404, "NOT_FOUND", "Not found.")
       : NextResponse.rewrite(new URL("/not-found", req.url))
   }
 
@@ -81,5 +144,11 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/product/:path*", "/policies/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/me/:path*",
+    "/product/:path*",
+    "/policies/:path*",
+  ],
 }
