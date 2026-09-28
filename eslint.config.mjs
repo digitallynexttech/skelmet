@@ -5,7 +5,9 @@ import prettier from "eslint-config-prettier"
 /** @type {import('eslint').Linter.Config[]} */
 const config = [
   {
-    ignores: [".next/**", "node_modules/**", "design/**", "public/**"],
+    // .next-* are the deploy's alternating build directories, .claude/ holds
+    // agent worktrees (whole copies of the repo): neither is our source.
+    ignores: [".next/**", ".next-*/**", ".claude/**", "node_modules/**", "public/**"],
   },
   // Imported directly - never through FlatCompat, which crashes here.
   ...coreWebVitals,

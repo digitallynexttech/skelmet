@@ -46,7 +46,14 @@ const sharpDir = fs
 if (!sharpDir) throw new Error("sharp not found in the pnpm store")
 const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
 
-const SRC = path.join(ROOT, "assets/product-gen/01-front.png")
+// The generated plates are working files, kept beside the repo rather than
+// in it (254 MB every deploy cloned). Pass another path to use a different one:
+//   node scripts/build-colourways.mjs path/to/01-front.png
+const SRC = path.resolve(
+  process.argv[2] ??
+    path.join(ROOT, "../FILES_SKELMET/website-source-media/product-gen/01-front.png"),
+)
+if (!fs.existsSync(SRC)) throw new Error(`Source plate not found: ${SRC}`)
 /** Match product-front.jpg exactly, so `object-cover` crops all three alike. */
 const OUT_W = 1611
 const OUT_H = 2000

@@ -1,0 +1,37 @@
+# Lint, typecheck, test and build on every push and pull request to main.
+# The deploy server builds main itself; this only says, before it does,
+# whether that build would pass.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # No DATABASE_URL on purpose: without one the catalogue falls back to
+      # the built-in registry (lib/env.ts hasDatabase), so pages prerender
+      # without a database to reach.
+      AUTH_SECRET: ci-only-secret-not-used-anywhere-real-000000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build

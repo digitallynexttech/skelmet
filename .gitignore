@@ -12,9 +12,13 @@ out/
 build/
 next-env.d.ts
 
-# env
+# env - every .env file except the documented example
 .env
-.env*.local
+.env.*
+!.env.example
+
+# Claude Code's agent worktrees: full copies of this repo on their own branches
+.claude/worktrees/
 
 # prisma
 prisma/*.db
@@ -29,6 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 server.log
 
-# design working files are kept - they re-seed the canvas
-# (design/*.dc.html, design/canvas.json, design/*.jpg)
-design/skelmet-storefront.html
+# Design mockups and source media live beside the repo, in
+# ../FILES_SKELMET (website-design-mockups, website-source-media).
+design/
