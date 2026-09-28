@@ -9,21 +9,40 @@ import { siteConfig } from "@/config/site"
  * confirmation page; the tracker, which is the page people open *to find out
  * when it arrives*, did not show a date at all.
  *
- * The published promise, "7 working days". Kept to its upper bound when it
- * was a range: quoting the optimistic end turns a normal delivery into a late
- * one.
+ * The published promise is two parts: dispatched within 48 hours - two
+ * working days - and then delivered within 7 working days. Kept to its upper
+ * bound: quoting the optimistic end turns a normal delivery into a late one.
+ *
+ * It used to add 7 calendar days to the UTC date, which forgot the dispatch
+ * time, counted weekends as working days, and put an order placed after
+ * midnight in India on the day before. So an order placed on a Friday was
+ * promised for the next Friday when the honest answer is the Thursday after.
  */
-const DELIVERY_DAYS = 7
+const DISPATCH_WORKING_DAYS = Math.ceil(siteConfig.promise.dispatchHours / 24)
+const DELIVERY_WORKING_DAYS = 7
+
+const IST_OFFSET_MS = 5.5 * 60 * 60_000
+
+/** Monday to Friday. The day is a UTC-midnight date standing for a calendar day. */
+const isWorkingDay = (day: Date) => day.getUTCDay() !== 0 && day.getUTCDay() !== 6
 
 /**
- * Date.UTC rather than `new Date(y, m, d)`. The server runs UTC, and local
- * midnight would shift the date by a day for anyone east or west of it (§6).
+ * The calendar day it should arrive by, as a UTC-midnight Date - a date, not
+ * an instant - so formatting it in UTC prints that day. Counted from the day
+ * it was placed on in India.
  */
 export function deliveryEta(placedIso: string): Date {
   const placed = new Date(placedIso)
-  return new Date(
-    Date.UTC(placed.getUTCFullYear(), placed.getUTCMonth(), placed.getUTCDate() + DELIVERY_DAYS),
+  const inIndia = new Date(placed.getTime() + IST_OFFSET_MS)
+  const day = new Date(
+    Date.UTC(inIndia.getUTCFullYear(), inIndia.getUTCMonth(), inIndia.getUTCDate()),
   )
+  let left = DISPATCH_WORKING_DAYS + DELIVERY_WORKING_DAYS
+  while (left > 0) {
+    day.setUTCDate(day.getUTCDate() + 1)
+    if (isWorkingDay(day)) left -= 1
+  }
+  return day
 }
 
 /** `TUE, 30 SEP` - short enough to sit beside a label without wrapping. */
