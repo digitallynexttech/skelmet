@@ -1,18 +1,17 @@
 import { listInquiries } from "@/features/inquiries/server/inquiries.service"
 import { respond } from "@/lib/api-response"
 import { withErrorHandler } from "@/server/api-handler"
+import { enumParam, listParams, pageParam, pageSizeParam, textParam } from "@/server/list-params"
 
 export const dynamic = "force-dynamic"
 
+const QUERY = {
+  page: pageParam,
+  pageSize: pageSizeParam,
+  status: enumParam(["ALL", "NEW", "OPEN", "RESOLVED"], "ALL"),
+  q: textParam,
+}
+
 export const GET = withErrorHandler(async (req) =>
-  respond(
-    await listInquiries({
-      page: Number(req.nextUrl.searchParams.get("page") ?? 1),
-        // The service caps this; an unbounded ?pageSize would let anyone
-        // with console access pull the whole table in one query.
-        pageSize: Number(req.nextUrl.searchParams.get("pageSize")) || undefined,
-      status: req.nextUrl.searchParams.get("status"),
-      q: req.nextUrl.searchParams.get("q"),
-    }),
-  ),
+  respond(await listInquiries(listParams(req.nextUrl.searchParams, QUERY))),
 )

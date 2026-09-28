@@ -13,6 +13,7 @@ import {
   MAX_PAGE_SIZE,
   ORDER_STATUSES,
   PAGE_SIZE,
+  PAID_ORDER_STATUSES,
   PERMISSIONS,
   statusesIn,
   type OrderScope,
@@ -567,21 +568,35 @@ export async function refundOrder(
   })
 }
 
+const IST_OFFSET_MS = 5.5 * 60 * 60_000
+
+/**
+ * Midnight in India, as an instant. The shop's day is India's: a "today" that
+ * began at UTC midnight began at 05:30 here, so every order from midnight to
+ * half past five counted towards yesterday.
+ */
+export function startOfIndianDay(now: Date): Date {
+  const ist = new Date(now.getTime() + IST_OFFSET_MS)
+  return new Date(
+    Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - IST_OFFSET_MS,
+  )
+}
+
 /** Dashboard counters. One query per tile, all bounded. */
 export async function getDashboard(): Promise<ActionResult<unknown>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.DASHBOARD_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // Date.UTC, never new Date(y, m, d) - that is local midnight and shifts (§6).
-    const now = new Date()
-    const startOfToday = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    )
+    const startOfToday = startOfIndianDay(new Date())
     const startOfWeek = new Date(startOfToday.getTime() - 6 * 86_400_000)
 
     const [todayCount, weekRevenue, awaiting, lowStock, recent] = await Promise.all([
-      db.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      // Orders paid for today. Counting every order written counted each
+      // closed payment window as a sale.
+      db.order.count({
+        where: { placedAt: { gte: startOfToday }, status: { in: [...PAID_ORDER_STATUSES] } },
+      }),
       db.order.aggregate({
         _sum: { total: true },
         where: { placedAt: { gte: startOfWeek }, status: { notIn: ["CANCELLED", "REFUNDED"] } },

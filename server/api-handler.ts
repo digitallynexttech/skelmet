@@ -17,12 +17,30 @@ type Handler<P> = (req: NextRequest, ctx: Ctx<P>) => Promise<NextResponse> | Nex
  *
  *   export const PATCH = withErrorHandler<{ id: string }>(async (req, { params }) => …)
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Every `[id]` in this API is a uuid primary key. Anything else cannot name a
+ * row, and passed on it made Postgres refuse the query - a 500 for what is
+ * simply a page that does not exist.
+ */
+function badId(params: unknown): boolean {
+  const id = (params as { id?: unknown } | null)?.id
+  return typeof id === "string" && !UUID.test(id)
+}
+
 export function withErrorHandler<P = Record<string, never>>(handler: Handler<P>) {
   return async (req: NextRequest, ctx: { params: Promise<P> } | Ctx<P>) => {
     try {
       // Next 16 hands route params in as a promise.
       const raw = (ctx as { params: Promise<P> }).params
       const params = raw instanceof Promise ? await raw : ((raw ?? {}) as P)
+      if (badId(params)) {
+        return NextResponse.json(
+          { success: false, error: { code: "NOT_FOUND", message: "Not found." } },
+          { status: 404 },
+        )
+      }
       return await handler(req, { params })
     } catch (err) {
       if (err instanceof ZodError) {
