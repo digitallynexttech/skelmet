@@ -80,7 +80,7 @@ export default function AboutPage() {
             <dd className="font-display text-blaze mb-2.5 text-[42px] leading-none sm:text-[58px]">
               {n.value}
             </dd>
-            <dt className="text-ash font-mono text-[10.5px] tracking-[0.18em] uppercase sm:text-[11px]">
+            <dt className="text-ash font-mono text-[11px] tracking-[0.14em] uppercase">
               {n.label}
             </dt>
           </div>

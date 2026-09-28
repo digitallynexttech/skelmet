@@ -87,7 +87,7 @@ export function TrackForm() {
       >
         <div className="mb-5 flex items-center gap-3">
           <PackageSearch className="text-ember size-5" strokeWidth={1.8} />
-          <span className="text-dim font-mono text-[10.5px] tracking-[0.18em] uppercase">
+          <span className="text-dim font-mono text-[11px] tracking-[0.14em] uppercase">
             Order lookup
           </span>
         </div>
@@ -211,7 +211,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
             arrival.done ? "border-acid/30 bg-acid/[0.06]" : "border-ember/30 bg-ember/[0.06]",
           )}
         >
-          <span className="text-dim font-mono text-[10px] tracking-[0.18em] uppercase">
+          <span className="text-dim font-mono text-[11px] tracking-[0.14em] uppercase">
             {arrival.label}
           </span>
           <span

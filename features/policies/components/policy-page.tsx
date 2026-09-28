@@ -84,7 +84,7 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
             {block.head.map((h) => (
               <div
                 key={h}
-                className="text-dim px-5 py-3.5 font-mono text-[10px] tracking-[0.16em] uppercase"
+                className="text-dim px-5 py-3.5 font-mono text-[11px] tracking-[0.14em] uppercase"
               >
                 {h}
               </div>
@@ -118,7 +118,7 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
   return (
     <div className="grid max-w-[720px] gap-3.5 sm:grid-cols-2">
       <div className="rounded-tile bg-carbon border border-white/[0.09] p-6">
-        <div className="text-dim mb-3 font-mono text-[10px] tracking-[0.16em] uppercase">
+        <div className="text-dim mb-3 font-mono text-[11px] tracking-[0.14em] uppercase">
           Grievance Officer
         </div>
         <address className="text-ash text-[14px] leading-[1.6] not-italic">
@@ -138,7 +138,7 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
         </address>
       </div>
       <div className="rounded-tile bg-carbon border border-white/[0.09] p-6">
-        <div className="text-dim mb-3 font-mono text-[10px] tracking-[0.16em] uppercase">
+        <div className="text-dim mb-3 font-mono text-[11px] tracking-[0.14em] uppercase">
           Response times
         </div>
         <div className="text-ash text-[14px] leading-[1.7]">
@@ -195,7 +195,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 px-5 py-11 pb-20 sm:px-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:px-14">
         <aside>
           <div className="lg:sticky lg:top-24">
-            <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+            <div className="text-dim mb-4 font-mono text-[11px] tracking-[0.14em] uppercase">
               On this page
             </div>
             <nav className="mb-7 flex flex-col">
@@ -215,7 +215,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
             </nav>
 
             <div className="rounded-tile bg-carbon border border-white/[0.09] p-5">
-              <div className="text-dim mb-2.5 font-mono text-[10px] tracking-[0.16em] uppercase">
+              <div className="text-dim mb-2.5 font-mono text-[11px] tracking-[0.14em] uppercase">
                 Short version
               </div>
               <p className="text-ash text-[13px] leading-[1.6]">{policy.shortVersion}</p>

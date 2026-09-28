@@ -137,7 +137,7 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
                   </button>
                 </div>
 
-                <div className="text-dim mt-1.5 mb-auto flex items-center gap-2 font-mono text-[10px] tracking-[0.1em] sm:text-[11.5px]">
+                <div className="text-dim mt-1.5 mb-auto flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] sm:text-[11.5px]">
                   <span
                     className="size-2.5 rounded-full"
                     style={{
@@ -248,7 +248,7 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </ButtonLink>
 
-            <div className="text-dim flex flex-wrap items-center justify-center gap-3 pt-4 font-mono text-[10.5px] tracking-[0.12em]">
+            <div className="text-dim flex flex-wrap items-center justify-center gap-3 pt-4 font-mono text-[11px] tracking-[0.1em]">
               <span>UPI</span>
               <span aria-hidden>·</span>
               <span>CARDS</span>

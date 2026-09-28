@@ -109,7 +109,7 @@ export function Hero() {
               // edge is what is pinned, so dropping it would slide the label
               // down onto the chin.
               "mt-2 flex items-center gap-3 py-2",
-              "text-bone font-mono text-[10px] tracking-[0.2em] uppercase",
+              "text-bone font-mono text-[11px] tracking-[0.14em] uppercase",
               // Hangs below the canvas rather than sitting on its bottom edge,
               // which the chin reaches, and outranks the canvas so the pill is
               // not painted over by it.

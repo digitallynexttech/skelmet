@@ -139,7 +139,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
         </div>
 
         <fieldset className="flex flex-col gap-2.5">
-          <legend className="text-dim mb-1 font-mono text-[10.5px] tracking-[0.16em] uppercase">
+          <legend className="text-dim mb-1 font-mono text-[11px] tracking-[0.14em] uppercase">
             What&apos;s this about
           </legend>
           <div className="flex flex-wrap gap-2.5">

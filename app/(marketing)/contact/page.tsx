@@ -96,7 +96,7 @@ export default function ContactPage() {
             </a>
 
             <div className="rounded-tile bg-carbon border border-white/10 p-6">
-              <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+              <div className="text-dim mb-4 font-mono text-[11px] tracking-[0.14em] uppercase">
                 The business
               </div>
               <address className="text-ash text-[14px] leading-[1.6] not-italic">
@@ -122,7 +122,7 @@ export default function ContactPage() {
             </div>
 
             <div className="rounded-tile bg-carbon border border-white/10 p-6">
-              <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+              <div className="text-dim mb-4 font-mono text-[11px] tracking-[0.14em] uppercase">
                 We reply
               </div>
               <dl className="flex flex-col gap-3">

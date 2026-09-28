@@ -200,7 +200,7 @@ export function ProductDetail({
         {/* colourway */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-dim font-mono text-[10px] tracking-[0.18em] uppercase">
+            <span className="text-dim font-mono text-[11px] tracking-[0.14em] uppercase">
               Colourway
             </span>
             <span className="text-bone text-[13.5px] font-semibold">{colourway.name}</span>
@@ -332,7 +332,7 @@ export function ProductDetail({
 
         {/* in the box */}
         <div className="rounded-tile bg-carbon border border-white/[0.09] p-5">
-          <div className="text-dim mb-3.5 font-mono text-[10px] tracking-[0.18em] uppercase">
+          <div className="text-dim mb-3.5 font-mono text-[11px] tracking-[0.14em] uppercase">
             In the box
           </div>
           <ul className="flex flex-col gap-2.5">

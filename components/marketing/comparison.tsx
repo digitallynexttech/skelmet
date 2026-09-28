@@ -13,7 +13,7 @@ export function Comparison() {
       <SectionHeading className="mb-10 sm:mb-12">Or you could keep doing this</SectionHeading>
 
       {/* Scrollbars are hidden globally, so say out loud that this one moves. */}
-      <div className="text-dim mb-3 flex items-center gap-2 font-mono text-[10.5px] tracking-[0.16em] uppercase lg:hidden">
+      <div className="text-dim mb-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] uppercase lg:hidden">
         Swipe to compare
         <ArrowRight className="size-3.5" strokeWidth={2} />
       </div>

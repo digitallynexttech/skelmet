@@ -33,7 +33,7 @@ export function WhyCare() {
                 <Icon className="text-magenta size-[18px]" strokeWidth={1.8} />
               </span>
               <div>
-                <p className="text-magenta mb-2 font-mono text-[10.5px] tracking-[0.18em] uppercase">
+                <p className="text-magenta mb-2 font-mono text-[11px] tracking-[0.14em] uppercase">
                   {kicker}
                 </p>
                 <p className="text-ash text-[14.5px] leading-[1.6]">{body}</p>
