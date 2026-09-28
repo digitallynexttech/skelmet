@@ -33,6 +33,9 @@ export function Select<T extends string>({
   placeholder,
   invalid,
   className,
+  id,
+  "aria-describedby": describedBy,
+  "aria-invalid": ariaInvalid,
 }: {
   value: T
   options: SelectOption<T>[]
@@ -48,6 +51,10 @@ export function Select<T extends string>({
   /** Magenta border, as on an Input with aria-invalid. */
   invalid?: boolean
   className?: string
+  /** Set by Field, which ties its label and message to the trigger. */
+  id?: string
+  "aria-describedby"?: string
+  "aria-invalid"?: boolean
 }) {
   const [open, setOpen] = React.useState(false)
   const [focused, setFocused] = React.useState(0)
@@ -148,8 +155,11 @@ export function Select<T extends string>({
     <div ref={wrap} className={cn("relative", className)} onKeyDown={onKeyDown}>
       <button
         ref={trigger}
+        id={id}
         type="button"
         role="combobox"
+        aria-describedby={describedBy}
+        aria-invalid={ariaInvalid ?? (invalid || undefined)}
         aria-expanded={open}
         aria-controls={listId}
         aria-haspopup="listbox"
@@ -161,7 +171,6 @@ export function Select<T extends string>({
           open && "border-blaze",
           invalid && !open && "border-magenta focus:ring-magenta/[0.16]",
         )}
-        aria-invalid={invalid || undefined}
       >
         <span className={cn("truncate", !selected && "text-dim")}>
           {selected ? selected.label : placeholder}
