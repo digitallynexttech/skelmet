@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { ArrowRight } from "lucide-react"
 
 import { Anatomy } from "@/components/marketing/anatomy"
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { SplitFeature } from "@/components/marketing/split-feature"
 import { Texture } from "@/components/marketing/texture"
@@ -13,12 +14,12 @@ import { ButtonLink } from "@/components/ui/button"
 import { siteConfig } from "@/config/site"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About us",
   description:
     "We started with one annoyed rider and a 3D printer. Here's why the mount looks the way it does.",
-  alternates: { canonical: "/about" },
-}
+  path: "/about",
+})
 
 /**
  * Four things that are true on the day the shop opens.
@@ -31,7 +32,10 @@ export const metadata: Metadata = {
  */
 const NUMBERS = [
   { value: "10 kg", label: "Load rated" },
-  { value: siteConfig.promise.deliveryDays.replace(" working days", ""), label: "Working days to deliver" },
+  {
+    value: siteConfig.promise.deliveryDays.replace(" working days", ""),
+    label: "Working days to deliver",
+  },
   { value: "4.9", label: "Average rating" },
 ]
 
@@ -128,7 +132,7 @@ export default function AboutPage() {
         </p>
         <div className="flex flex-wrap gap-2.5">
           <Badge variant="acid">Hand-finished</Badge>
-          <Badge variant="acid">Plastic-free packing</Badge>
+          <Badge variant="acid">Made in India</Badge>
         </div>
       </SplitFeature>
 
@@ -145,7 +149,7 @@ export default function AboutPage() {
               Enough about us
             </h2>
             <p className="text-void/80 max-w-[480px] text-[16px] leading-[1.56] text-pretty sm:text-[17px]">
-              Get the throne of your riding gear. It looks much better in person.
+              Give your riding gear the throne it deserves. It looks even better in person.
             </p>
           </div>
           <ButtonLink

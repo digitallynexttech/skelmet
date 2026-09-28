@@ -16,10 +16,13 @@ import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import type { TrackedOrder } from "@/features/orders/server/track.service"
+import { siteConfig } from "@/config/site"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import { formatDay, formatEta } from "@/lib/delivery"
 import type { OrderStatus } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+
+const P = siteConfig.promise
 
 /**
  * The lookup this page has always displayed but never performed - the form was
@@ -33,12 +36,11 @@ import { cn } from "@/lib/utils"
 /** Orders that have left the delivery path. A progress rail would mislead. */
 const OFF_PATH = new Set<OrderStatus>(["CANCELLED", "RETURNED", "REFUNDED"])
 
+/** Refund timing is the returns policy's one statement, word for word. */
 const OFF_PATH_NOTE: Partial<Record<OrderStatus, string>> = {
-  CANCELLED:
-    "This order was cancelled. Nothing is on its way, and anything paid goes back to the original method.",
-  RETURNED:
-    "This order came back to us. Once it has been checked in, the refund follows to the original method.",
-  REFUNDED: "This order has been refunded. Banks usually take 5-7 working days to show it.",
+  CANCELLED: `This order was cancelled, so nothing is on its way. If you paid for it, the refund goes to the original payment method within ${P.refundDays}, and banks usually take ${P.bankDays} more to show it.`,
+  RETURNED: `This order came back to us. Once it passes inspection, the refund goes to the original payment method within ${P.refundDays}, and banks usually take ${P.bankDays} more to show it.`,
+  REFUNDED: `This order has been refunded to the original payment method. Banks usually take ${P.bankDays} to show it.`,
 }
 
 export function TrackForm() {
@@ -94,7 +96,8 @@ export function TrackForm() {
             <Input
               name="orderNumber"
               required
-              placeholder="SKM-2026-0412"
+              // A number that could exist: order numbers never use 0, 1, I or O.
+              placeholder="SKM-2026-4F2K"
               autoComplete="off"
               spellCheck={false}
               className="font-mono tracking-[0.06em] uppercase"
@@ -103,7 +106,14 @@ export function TrackForm() {
           <Field label="Email on the order">
             <Input name="email" type="email" required placeholder="you@example.com" />
           </Field>
-          <Button type="submit" variant="primary" size="md" full disabled={pending} className="mt-1">
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            full
+            disabled={pending}
+            className="mt-1"
+          >
             {pending ? "Looking…" : "Track it"}
             <ArrowRight className="size-4" strokeWidth={2.4} />
           </Button>
@@ -198,9 +208,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         <div
           className={cn(
             "rounded-tile mb-6 flex items-center justify-between gap-3 border px-4 py-3.5",
-            arrival.done
-              ? "border-acid/30 bg-acid/[0.06]"
-              : "border-ember/30 bg-ember/[0.06]",
+            arrival.done ? "border-acid/30 bg-acid/[0.06]" : "border-ember/30 bg-ember/[0.06]",
           )}
         >
           <span className="text-dim font-mono text-[10px] tracking-[0.18em] uppercase">
@@ -286,7 +294,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         </div>
       ) : !OFF_PATH.has(status) ? (
         <p className="text-dim mt-5 border-t border-white/[0.08] pt-5 text-[13px] leading-[1.5]">
-          No courier assigned yet. We dispatch within 48 hours of the order.
+          No courier assigned yet. We dispatch within {P.dispatchHours} hours of payment.
         </p>
       ) : null}
     </div>

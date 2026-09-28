@@ -16,7 +16,7 @@ export function Bento() {
       <SectionLabel numbered className="mb-3.5">
         Why it slaps
       </SectionLabel>
-      <SectionHeading className="mb-10 sm:mb-12">Made for a Reason.</SectionHeading>
+      <SectionHeading className="mb-10 sm:mb-12">Made for a reason</SectionHeading>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:grid-rows-[repeat(3,220px)]">
         {/* Hero tile */}
@@ -34,7 +34,7 @@ export function Bento() {
               Store in style
             </h3>
             <p className="max-w-[420px] text-[13.5px] leading-[1.56] text-[#c9c6d4] sm:text-[14.5px]">
-              Bedroom, Garage, Living room; wherever you mount it, it catches eyes, commands
+              Bedroom, garage or living room: wherever you mount it, it catches eyes, commands
               attention and makes a statement.
             </p>
           </div>
@@ -47,7 +47,7 @@ export function Bento() {
               Simple installation
             </h3>
             <p className="text-ash text-[13px] leading-[1.52] sm:text-[13.5px]">
-              Screw the mount arm into the wall, and you are done.
+              Mark, drill, plug, screw. Four steps with a drill and the fixings in the box.
             </p>
           </div>
         </article>
@@ -59,8 +59,8 @@ export function Bento() {
               Safeguard your equipment
             </h3>
             <p className="text-ash text-[13px] leading-[1.52] sm:text-[13.5px]">
-              Floors and shelves wear your helmet down over time with dust, scratches, and scuffs.
-              A wall mount doesn&apos;t.
+              Floors and shelves wear your helmet down over time with dust, scratches, and scuffs. A
+              wall mount doesn&apos;t.
             </p>
           </div>
         </article>

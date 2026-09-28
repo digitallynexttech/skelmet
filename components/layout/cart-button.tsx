@@ -19,7 +19,9 @@ export function CartButton({ className }: { className?: string }) {
   return (
     <Link
       href="/cart"
-      aria-label={mounted && count > 0 ? `Cart, ${count} items` : "Cart"}
+      aria-label={
+        mounted && count > 0 ? `Cart, ${count} ${count === 1 ? "item" : "items"}` : "Cart"
+      }
       className={cn(
         "text-bone flex h-10 items-center gap-2 rounded-full border border-white/[0.14] px-4 font-mono text-xs transition-colors hover:border-white/30",
         className,
