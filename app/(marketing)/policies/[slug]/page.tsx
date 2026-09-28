@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { PolicyPage } from "@/features/policies/components/policy-page"
 import { POLICIES, getPolicy } from "@/features/policies/policies"
 import { shippingCharge } from "@/features/settings/server/runtime-settings"
@@ -29,11 +30,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const policy = getPolicy(slug)
   if (!policy) return { title: "Not found" }
 
-  return {
+  return pageMetadata({
     title: policy.title,
     description: policy.intro,
-    alternates: { canonical: `/policies/${policy.slug}` },
-  }
+    path: `/policies/${policy.slug}`,
+  })
 }
 
 export default async function PolicyRoute({ params }: { params: Promise<Params> }) {

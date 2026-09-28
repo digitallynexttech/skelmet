@@ -38,9 +38,15 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   text: string
   html: string
 } {
-  const paid = data.paymentMethod === "ONLINE"
+  // Cash on delivery is withdrawn: this email now goes out only once an online
+  // payment is captured. The COD wording stays for orders placed before that,
+  // and only an order explicitly marked COD gets it - anything paid online
+  // must never read as pay-on-delivery.
+  const cod = data.paymentMethod === "COD"
+  const paid = !cod
   const trackUrl = `${siteConfig.url}/track`
   const lines = data.items.map((i) => `${i.qty} x ${i.name}`)
+  const { dispatchHours, deliveryDays } = siteConfig.promise
 
   const subject = `Order ${data.number} confirmed`
 
@@ -54,8 +60,8 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
       ? `Paid: ${formatMoney(data.total)}`
       : `Due on delivery: ${formatMoney(data.total)} (cash on delivery)`,
     ``,
-    `We dispatch within ${siteConfig.promise.dispatchHours} hours on working days, and most`,
-    `pincodes see it within ${siteConfig.promise.deliveryDays}.`,
+    `We dispatch within ${dispatchHours} hours of ${paid ? "payment" : "your order"}, and delivery`,
+    `takes up to ${deliveryDays} from dispatch.`,
     ``,
     `Track it any time at ${trackUrl}`,
     `You will need this order number and this email address - there is no account to sign in to.`,
@@ -90,7 +96,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   <!-- Inbox preview line. Hidden in the body, but it is what the list shows
        beside the subject, and without it clients grab the first stray text. -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-    ${escapeHtml(data.number)} &mdash; ${paid ? "paid" : "confirmed"}, dispatching within ${siteConfig.promise.dispatchHours} hours.
+    ${escapeHtml(data.number)} &mdash; ${paid ? "paid" : "confirmed"}, dispatching within ${dispatchHours} hours.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.void};">
@@ -158,7 +164,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;">
                 <tr>
                   <td style="border-top:1px solid ${C.line};padding:20px 0 0;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ash};">
-                    We dispatch within <span style="color:${C.bone};">${siteConfig.promise.dispatchHours} hours</span> on working days, and most pincodes see it within <span style="color:${C.bone};">${siteConfig.promise.deliveryDays}</span>.
+                    We dispatch within <span style="color:${C.bone};">${dispatchHours} hours</span> of ${paid ? "payment" : "your order"}, and delivery takes up to <span style="color:${C.bone};">${deliveryDays}</span> from dispatch.
                   </td>
                 </tr>
               </table>

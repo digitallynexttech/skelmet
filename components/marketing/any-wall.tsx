@@ -23,7 +23,7 @@ export function AnyWall() {
           Garage. Hallway.
         </h2>
         <p className="max-w-[460px] text-[15.5px] leading-[1.6] text-[#c9c6d4] sm:text-[17px]">
-          Brick, plaster, drywall or concrete, the anchors in the box cover all four. It looks
+          Brick, plaster, drywall or concrete: the anchors in the box cover all four. It looks
           equally at home over a workbench and next to a houseplant.
         </p>
       </div>

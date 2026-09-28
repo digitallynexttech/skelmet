@@ -7,7 +7,11 @@ import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
-import { createInquirySchema } from "@/features/inquiries/schemas/inquiry.schema"
+import { DROP_LIST_TOPIC } from "@/features/inquiries/inquiries"
+import {
+  createInquirySchema,
+  joinDropListSchema,
+} from "@/features/inquiries/schemas/inquiry.schema"
 import { z } from "zod"
 
 export type InquiryStatus = "NEW" | "OPEN" | "RESOLVED"
@@ -140,8 +144,27 @@ export async function setInquiryStatus(
 }
 
 /**
+ * A drop-list sign-up as an inquiry row. There is no name to ask for on a
+ * one-field form, so the row says what it is instead of leaving "From" blank.
+ */
+function dropListInquiry(raw: unknown) {
+  const input = joinDropListSchema.parse(raw)
+  return {
+    name: "Drop list sign-up",
+    email: input.email,
+    phone: "",
+    topic: DROP_LIST_TOPIC,
+    orderNumber: "",
+    message: "Asked to be emailed when new designs and colourways drop.",
+  }
+}
+
+/**
  * Public. No session, so the route rate-limits by IP and the honeypot field
  * catches the bots that fill every input they can find.
+ *
+ * Takes both the contact form and the home page's drop-list form, which sends
+ * only an email under DROP_LIST_TOPIC.
  */
 export async function createInquiry(raw: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
@@ -154,9 +177,23 @@ export async function createInquiry(raw: unknown): Promise<ActionResult<{ id: st
       if (typeof pot === "string" && pot.length > 0) return ok({ id: "ok" })
     }
 
-    const input = createInquirySchema.parse(raw)
+    const dropList =
+      typeof raw === "object" &&
+      raw !== null &&
+      (raw as { topic?: unknown }).topic === DROP_LIST_TOPIC
+    const input = dropList ? dropListInquiry(raw) : createInquirySchema.parse(raw)
 
     if (!hasDatabase()) return fail("Messages are not available yet.", undefined, 503)
+
+    // Signing up twice is not two requests: one row per address is enough for
+    // the inbox and for the consent record.
+    if (dropList) {
+      const already = await db.inquiry.findFirst({
+        where: { topic: DROP_LIST_TOPIC, email: { equals: input.email, mode: "insensitive" } },
+        select: { id: true },
+      })
+      if (already) return ok({ id: already.id })
+    }
 
     const row = await db.inquiry.create({
       data: {

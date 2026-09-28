@@ -32,7 +32,9 @@ export function renderOrderInvoice(data: OrderInvoiceData): {
     `Your order ${data.number} has been delivered. Ride safe.`,
     ``,
     `The tax invoice ${data.invoiceNumber} is attached to this email as a PDF.`,
-    `Amount: Rs ${data.total}`,
+    // ₹ as in the HTML part: the mailer sends UTF-8, and "Rs" beside a ₹ in
+    // the other part read as two different amounts.
+    `Amount: ₹${data.total}`,
     ``,
     `Questions: just reply to this email.`,
     `${siteConfig.name}`,

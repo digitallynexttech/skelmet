@@ -178,7 +178,9 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
 
             <dl className="flex flex-col gap-3.5 border-b border-white/10 pb-5">
               <div className="flex justify-between text-[14.5px]">
-                <dt className="text-ash">Subtotal ({totals.itemCount} items)</dt>
+                <dt className="text-ash">
+                  Subtotal ({totals.itemCount} {totals.itemCount === 1 ? "item" : "items"})
+                </dt>
                 <dd className="text-bone font-mono">
                   <Money value={totals.subtotal} />
                 </dd>
@@ -231,7 +233,10 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
           <div className="rounded-tile bg-carbon flex items-start gap-3 border border-white/[0.08] p-5">
             <ShieldCheck className="text-acid mt-0.5 size-5 shrink-0" strokeWidth={1.7} />
             <p className="text-ash text-[13.5px] leading-[1.5]">
-              Doesn&apos;t fit your wall? Send it back within 7 days, we pay the return pickup.
+              {/* Unused and undrilled, because a mount that has been drilled in
+                  cannot come back (the returns policy). */}
+              Doesn&apos;t fit your wall? Send it back unused and undrilled within 7 days - we pay
+              the return pickup.
             </p>
           </div>
 

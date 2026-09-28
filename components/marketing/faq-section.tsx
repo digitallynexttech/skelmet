@@ -5,6 +5,7 @@ import { FAQ_ITEMS } from "@/components/marketing/content"
 import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
+import { siteConfig } from "@/config/site"
 
 export function FaqSection() {
   // Carbon, like rider-wall. The homepage has only one other darker band, so
@@ -30,7 +31,7 @@ export function FaqSection() {
             <Link href="/contact" className="border-acid/40 text-acid hover:text-bone border-b">
               Message us
             </Link>{" "}
-            and we answer within a working day.
+            and we reply within {siteConfig.promise.supportReply}.
           </p>
           <div className="rounded-tile relative hidden aspect-4/3 overflow-hidden border border-white/[0.08] lg:block">
             <Image

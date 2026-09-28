@@ -2,8 +2,7 @@ import Image from "next/image"
 
 import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DropListForm } from "@/features/inquiries/components/drop-list-form"
 
 export function DropList() {
   return (
@@ -24,24 +23,13 @@ export function DropList() {
           Next drop
         </SectionLabel>
         <h2 className="font-display text-bone mb-4 text-[34px] leading-[1.04] uppercase sm:text-[44px] xl:text-[50px]">
-          Want Some More?
+          Want some more?
         </h2>
         <p className="text-ash mb-7 max-w-[420px] text-[15px] leading-[1.6] sm:text-[15.5px]">
           New designs and colourways are dropping soon, and the good ones sell out fast. Be the
           first to know.
         </p>
-        <form className="flex max-w-[460px] flex-col gap-2.5 sm:flex-row">
-          <Input
-            type="email"
-            required
-            placeholder="you@example.com"
-            aria-label="Email address"
-            className="h-[54px] rounded-full"
-          />
-          <Button type="submit" variant="violet" size="md">
-            Notify me
-          </Button>
-        </form>
+        <DropListForm />
       </div>
     </section>
   )

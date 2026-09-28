@@ -3,8 +3,13 @@ import Image from "next/image"
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 
+/**
+ * Our own photographs for now, and the alt text says so rather than passing
+ * them off as customers' walls. Riders' shots go here once people tag us and
+ * agree to be featured.
+ */
 const SHOTS = [
-  { src: "/product/lifestyle-room.jpg", alt: "A SKELMET mount in a rider's bedroom" },
+  { src: "/product/lifestyle-room.jpg", alt: "A SKELMET mount in a bedroom" },
   { src: "/product/lifestyle-gloves.jpg", alt: "Gloves hanging from the hook" },
   { src: "/product/lifestyle-concrete.jpg", alt: "A helmet on the mount against concrete" },
   { src: "/product/lifestyle-garage.jpg", alt: "The mount on a workshop wall" },
@@ -21,7 +26,7 @@ export function RiderWall() {
           <SectionHeading>Mounted &amp; posted</SectionHeading>
         </div>
         <span className="border-magenta/40 text-magenta inline-flex h-11 items-center rounded-full border px-5 text-[13px] font-semibold tracking-[0.05em] uppercase">
-          Tag @skelmet to feature
+          Tag @skelmet to be featured
         </span>
       </div>
 

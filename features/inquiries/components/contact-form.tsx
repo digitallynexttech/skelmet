@@ -1,10 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { ArrowRight, Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api-fetch"
+import { siteConfig } from "@/config/site"
+import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import { Field, Input, Textarea } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -17,8 +19,35 @@ const TOPICS = [
   "Something else",
 ] as const
 
-export function ContactForm() {
-  const [topic, setTopic] = React.useState<string>(TOPICS[0])
+type Topic = (typeof TOPICS)[number]
+
+/**
+ * Short names a link can use for a topic: /contact?topic=bulk opens the form
+ * with "Bulk / club order" already picked. Anything unknown is ignored rather
+ * than trusted, and the form starts on its usual first topic.
+ */
+const TOPIC_LINKS = new Map<string, Topic>([
+  ["order", "My order"],
+  ["fitting", "Fitting help"],
+  ["return", "Return or refund"],
+  ["refund", "Return or refund"],
+  ["bulk", "Bulk / club order"],
+  ["custom", "Custom colour"],
+  ["other", "Something else"],
+])
+
+/**
+ * The form with its topic taken from `?topic=`. Reading the query suspends
+ * while the page is prerendered, so the page wraps this in <Suspense> with
+ * a plain <ContactForm /> as the fallback.
+ */
+export function ContactFormFromLink() {
+  const wanted = useSearchParams().get("topic")?.toLowerCase() ?? ""
+  return <ContactForm initialTopic={TOPIC_LINKS.get(wanted)} />
+}
+
+export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
+  const [topic, setTopic] = React.useState<string>(initialTopic ?? TOPICS[0])
   const [sent, setSent] = React.useState(false)
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -46,10 +75,13 @@ export function ContactForm() {
       setSent(true)
     } catch (err) {
       setPending(false)
+      // A 4xx names what is wrong with the message, so it is worth showing as
+      // is. Anything else - our side down, the connection dropped - gets a
+      // way round the form.
       setError(
-        err instanceof Error
+        err instanceof ApiFetchError && err.status < 500
           ? err.message
-          : "That did not send. Try again, or email hello@skelmet.in.",
+          : `That did not send. Try again, or email ${siteConfig.supportEmail}.`,
       )
     }
   }
@@ -64,8 +96,7 @@ export function ContactForm() {
           Message sent
         </h2>
         <p className="text-ash max-w-[380px] text-[15px] leading-[1.6]">
-          A human will read it and reply within a working day. If it&apos;s about an order in
-          transit, WhatsApp is faster.
+          A human will read it, and we reply within {siteConfig.promise.supportReply}.
         </p>
       </div>
     )

@@ -1,16 +1,18 @@
 import type { Metadata } from "next"
 
 import { FaqSection } from "@/components/marketing/faq-section"
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { TrustStrip } from "@/components/marketing/trust-strip"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "FAQ",
-  description: "Fitment, drilling, shipping and returns, the questions we actually get asked.",
-  alternates: { canonical: "/faq" },
-}
+  description:
+    "Fitment, drilling, shipping, returns and payment: the questions we actually get asked.",
+  path: "/faq",
+})
 
 export default function FaqPage() {
   return (

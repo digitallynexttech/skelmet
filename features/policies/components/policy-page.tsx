@@ -1,13 +1,41 @@
 import Image from "next/image"
 import Link from "next/link"
-import { AlertTriangle, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { siteConfig } from "@/config/site"
-import { POLICIES, type Policy, type PolicyBlock } from "@/features/policies/policies"
+import { POLICIES, type Inline, type Policy, type PolicyBlock } from "@/features/policies/policies"
 import { cn } from "@/lib/utils"
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+/**
+ * `2026-09-28` → `28 Sep 2026`. Spelled out by hand: en-GB's short September
+ * is "Sept" in current ICU, and the date should read the same everywhere.
+ */
+function formatUpdated(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number)
+  return `${d} ${MONTHS[(m ?? 1) - 1]} ${y}`
+}
+
+function Text({ text }: { text: string | Inline[] }) {
+  if (typeof text === "string") return text
+  return text.map((part, i) =>
+    typeof part === "string" ? (
+      part
+    ) : (
+      <Link
+        key={i}
+        href={part.href}
+        className="text-bone underline decoration-white/30 underline-offset-[3px] hover:decoration-white/70"
+      >
+        {part.text}
+      </Link>
+    ),
+  )
+}
 
 const ACCENT_TEXT = {
   blaze: "text-blaze",
@@ -25,7 +53,11 @@ const ACCENT_DOT = {
 
 function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"] }) {
   if (block.type === "p") {
-    return <p className="text-ash mb-4 max-w-[720px] text-[15px] leading-[1.72]">{block.text}</p>
+    return (
+      <p className="text-ash mb-4 max-w-[720px] text-[15px] leading-[1.72]">
+        <Text text={block.text} />
+      </p>
+    )
   }
 
   if (block.type === "list") {
@@ -79,27 +111,40 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
     )
   }
 
-  // contact block
+  // Contact block. The Consumer Protection (E-Commerce) Rules ask for the
+  // grievance officer's contact details and designation; a designation rather
+  // than a personal name, so the block outlives any one person in the role.
+  const { address, promise } = siteConfig
   return (
     <div className="grid max-w-[720px] gap-3.5 sm:grid-cols-2">
       <div className="rounded-tile bg-carbon border border-white/[0.09] p-6">
         <div className="text-dim mb-3 font-mono text-[10px] tracking-[0.16em] uppercase">
-          Grievance officer
+          Grievance Officer
         </div>
-        <div className="text-ash text-[14px] leading-[1.6]">
-          {siteConfig.grievanceEmail}
+        <address className="text-ash text-[14px] leading-[1.6] not-italic">
+          <span className="text-bone">{siteConfig.legalEntity}</span>
           <br />
-          {siteConfig.phone}
-        </div>
+          {address.line1}
+          <br />
+          {address.city} {address.pin}
+          <br />
+          <a href={`mailto:${siteConfig.grievanceEmail}`} className="hover:text-bone">
+            {siteConfig.grievanceEmail}
+          </a>
+          <br />
+          <a href={`tel:${siteConfig.phone.replace(/\s/g, "")}`} className="hover:text-bone">
+            {siteConfig.phone}
+          </a>
+        </address>
       </div>
       <div className="rounded-tile bg-carbon border border-white/[0.09] p-6">
         <div className="text-dim mb-3 font-mono text-[10px] tracking-[0.16em] uppercase">
           Response times
         </div>
         <div className="text-ash text-[14px] leading-[1.7]">
-          Acknowledgement: [48] hours
+          Acknowledged within {promise.grievanceAckHours} hours
           <br />
-          Resolution: [30] days
+          Resolved within {promise.grievanceResolution} (30 days)
         </div>
       </div>
     </div>
@@ -137,22 +182,11 @@ export function PolicyPage({ policy }: { policy: Policy }) {
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <Badge variant="acid">Last updated [DD MMM 2026]</Badge>
-            <Badge variant="outline">Version [1.0]</Badge>
+            <Badge variant="acid">Last updated {formatUpdated(policy.updated)}</Badge>
+            <Badge variant="outline">Version {policy.version}</Badge>
             <Badge variant="outline">{policy.readingTime}</Badge>
           </div>
         </div>
-      </div>
-
-      {/* Not-legal-advice banner */}
-      <div className="rounded-tile border-magenta/45 bg-magenta/[0.05] mx-5 mt-7 flex items-start gap-3.5 border border-dashed p-5 sm:mx-8 xl:mx-14">
-        <AlertTriangle className="text-magenta mt-0.5 size-5 shrink-0" strokeWidth={1.9} />
-        <p className="text-[13.5px] leading-[1.62] text-[#c9c6d4]">
-          <span className="text-magenta font-bold">DRAFT STRUCTURE · NOT LEGAL ADVICE.</span> This
-          page carries the sections an Indian D2C store needs (DPDP Act 2023, Consumer Protection
-          E-Commerce Rules 2020). Every bracketed value and the final wording must be settled by
-          your lawyer before launch.
-        </p>
       </div>
 
       {/* Body */}
@@ -242,8 +276,8 @@ export function PolicyPage({ policy }: { policy: Policy }) {
             Still got a question?
           </h2>
           <p className="text-ash mb-7 max-w-[420px] text-[15.5px] leading-[1.6]">
-            A human reads every message. Anything about your data goes straight to the grievance
-            officer.
+            A human reads every message, and we reply within {siteConfig.promise.supportReply}.
+            Anything about your data goes straight to the Grievance Officer.
           </p>
           <ButtonLink href="/contact" variant="primary" size="md" className="self-start">
             Contact us

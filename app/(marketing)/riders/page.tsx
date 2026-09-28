@@ -1,16 +1,18 @@
 import type { Metadata } from "next"
 
+import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Section } from "@/components/marketing/section"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Rider wall",
-  description: "Mounts in the wild. Tag @skelmet and we'll put you up here.",
-  alternates: { canonical: "/riders" },
-}
+  description:
+    "SKELMET mounts on the wall, helmets on the mounts. Put yours up, tag @skelmet on Instagram, and with your permission we may feature it here.",
+  path: "/riders",
+})
 
 export default function RidersPage() {
   return (
@@ -28,8 +30,9 @@ export default function RidersPage() {
             &amp; posted
           </h1>
           <p className="text-ash max-w-[540px] text-[16px] leading-[1.62] sm:text-[17.5px]">
-            Real walls, real helmets, no studio. Tag <span className="text-magenta">@skelmet</span>{" "}
-            and we&apos;ll put you up here, best shot each month gets a free mount.
+            The mount at home on a few walls of ours, for now. Put yours up, tag{" "}
+            <span className="text-magenta">@skelmet</span> on Instagram, and with your permission we
+            may feature it here.
           </p>
         </div>
       </Section>

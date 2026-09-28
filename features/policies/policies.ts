@@ -1,16 +1,26 @@
 /**
  * Policy content registry (client-safe, §4).
  *
- * NOT LEGAL ADVICE. The structure follows what an Indian D2C store needs,
- * the DPDP Act 2023 and the Consumer Protection (E-Commerce) Rules 2020,
- * including the grievance-officer block both require. Every [BRACKETED] value
- * and the final wording must be settled by a lawyer before launch, which is
- * why each page renders a visible banner saying so.
+ * The structure follows what an Indian D2C store needs under the DPDP Act 2023
+ * and the Consumer Protection (E-Commerce) Rules 2020, including the
+ * grievance-officer block both require. The figures in it - dispatch,
+ * delivery, the damage window, refund timing, grievance timings - are the
+ * shop's own decisions and live in siteConfig.promise, so the policies, the
+ * FAQ and the emails cannot quote different ones.
  */
 
 import { shippingConfig } from "@/config/shipping"
 import { siteConfig } from "@/config/site"
 import { formatMoney } from "@/lib/money"
+
+const P = siteConfig.promise
+
+/** Who "we" are, in the words every policy uses. */
+const BUSINESS = `${siteConfig.legalEntity}, a ${siteConfig.legalForm} (GSTIN ${siteConfig.gstin}), which trades as ${siteConfig.name}`
+const ADDRESS = `${siteConfig.address.line1}, ${siteConfig.address.city} ${siteConfig.address.pin}`
+
+/** The one statement of refund timing, used wherever a refund is promised. */
+const REFUND_TIMING = `Refunds are issued to the original payment method within ${P.refundDays} of approval. Banks usually take ${P.bankDays} more to show it.`
 
 /**
  * The shipping charge, as the policy states it. Checkout charges by the rule in
@@ -36,8 +46,11 @@ function shippingTerms(rule: ShippingRule): { short: string; cost: string } {
   }
 }
 
+/** A run of plain text, or a link inside a paragraph. */
+export type Inline = string | { text: string; href: string }
+
 export type PolicyBlock =
-  | { type: "p"; text: string }
+  | { type: "p"; text: string | Inline[] }
   | { type: "list"; items: string[] }
   | { type: "table"; head: string[]; rows: string[][] }
   | { type: "contact" }
@@ -55,6 +68,9 @@ export type Policy = {
   readingTime: string
   shortVersion: string
   accent: "blaze" | "violet" | "acid" | "magenta"
+  /** ISO date the wording last changed. Shown on the page and given to the sitemap. */
+  updated: string
+  version: string
   sections: PolicySection[]
 }
 
@@ -67,6 +83,8 @@ const PRIVACY: Policy = {
   shortVersion:
     "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
   accent: "violet",
+  updated: "2026-09-28",
+  version: "1.0",
   sections: [
     {
       n: "01",
@@ -74,7 +92,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "SKELMET is operated by Gee Star Spinning Solutions, registered at B-121, B Block, Udyog Marg, Sector 6, Noida, Gautam Buddha Nagar, Uttar Pradesh 201301, GSTIN 09AOIPJ0692M1ZG. In this policy “we”, “us” and “our” mean that company; “you” means anyone who visits skelmet.in or buys from us.",
+          text: `SKELMET is run by ${BUSINESS}, from ${ADDRESS}. In this policy “we”, “us” and “our” mean that business; “you” means anyone who visits skelmet.in or buys from us.`,
         },
         {
           type: "p",
@@ -93,10 +111,10 @@ const PRIVACY: Policy = {
             "Delivery: shipping address, pincode, any delivery note you add.",
             "Order: what you bought, colourway, quantity, price paid, any discount code used - including an order you place and do not pay for.",
             "Payment: the gateway's transaction reference and status. We never see or store your full card number, CVV or UPI PIN.",
-            "Account: a hashed password and saved addresses, if you create an account.",
             "Technical, for every visit: pages viewed and the time spent on each, browser and device type, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart.",
             "Technical, only if you accept cookies: your IP address, your device model, a cookie that recognises this device on later visits, and the email, phone, name and pincode you type at checkout, even if you do not place the order.",
-            "Content you send us: support messages, review text, and any photo you submit to the rider wall.",
+            "Content you send us: support messages, review text, and any photo you tag us in and agree to let us show.",
+            "If you ask to hear about new drops: your email address, and when you asked.",
           ],
         },
       ],
@@ -107,7 +125,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Most of it you give us directly: at checkout, when you create an account, when you write to us or post a review. Technical data is collected automatically by our servers and by the visit counter and cookies described in section 06. We do not buy personal data from third parties or scrape it.",
+          text: "Most of it you give us directly: at checkout, when you write to us or post a review. There are no customer accounts to sign up for. Technical data is collected automatically by our servers and by the visit counter and cookies described in section 06. We do not buy personal data from third parties or scrape it.",
         },
       ],
     },
@@ -169,7 +187,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "We do not sell your personal data. We share the minimum necessary with the processors in section 08, and we disclose data where the law requires it, a court order, a tax authority, or a genuine law-enforcement request we are satisfied is valid.",
+          text: "We do not sell your personal data. We share the minimum necessary with the processors in section 08, and we disclose data where the law requires it: a court order, a tax authority, or a genuine law-enforcement request we are satisfied is valid.",
         },
         {
           type: "p",
@@ -185,10 +203,18 @@ const PRIVACY: Policy = {
           type: "table",
           head: ["Processor", "Purpose", "Data seen"],
           rows: [
-            ["Razorpay", "Taking payment", "Name, email, amount"],
-            ["[COURIER]", "Delivering the parcel", "Name, address, phone"],
-            ["[EMAIL PROVIDER]", "Order and support email", "Name, email"],
-            ["[HOSTING]", "Running the site", "Technical data"],
+            ["Razorpay", "Taking payment", "Name, email, phone, amount"],
+            [
+              "Shiprocket and its courier partners",
+              "Delivering the parcel",
+              "Name, address, phone, what is in the parcel",
+            ],
+            ["Google (Gmail)", "Order and support email", "Name, email, what the email says"],
+            [
+              "Our cloud server provider",
+              "Running the site and its database",
+              "Everything the site stores, held on its servers",
+            ],
             [
               "Cloudflare",
               "Delivering the site, and the area a visit comes from",
@@ -215,12 +241,12 @@ const PRIVACY: Policy = {
         {
           type: "list",
           items: [
-            "Order and invoice records: [8] years, because tax law says so.",
-            "Account data: until you delete the account, then [30] days in backups.",
-            "Support messages: [24] months.",
-            "Abandoned carts: [90] days after they last changed.",
-            "Visit records, anonymous or not: [12] months after the visit.",
-            "Marketing consent records: for as long as you are subscribed, plus [24] months as proof of consent.",
+            "Order and invoice records: 8 years, because tax law says so.",
+            "Support messages: 24 months.",
+            "Abandoned carts: 90 days after they last changed.",
+            "Visit records, anonymous or not: 12 months after the visit.",
+            "Marketing consent records: for as long as you are subscribed, plus 24 months as proof of consent.",
+            "Anything we delete leaves our backups within 30 days.",
           ],
         },
       ],
@@ -242,7 +268,7 @@ const PRIVACY: Policy = {
         },
         {
           type: "p",
-          text: "Write to the grievance officer in the last section. We will respond within [30] days. If you are not satisfied you may complain to the Data Protection Board of India.",
+          text: `Write to the Grievance Officer in the last section. We acknowledge every request within ${P.grievanceAckHours} hours and answer it in full within ${P.grievanceResolution}. If you are not satisfied you may complain to the Data Protection Board of India.`,
         },
       ],
     },
@@ -262,7 +288,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "The site runs over TLS. Passwords are stored hashed, never in plain text. Access to customer data inside the company is limited to the people who need it and is logged. Payment credentials never reach us at all.",
+          text: "The site runs over TLS. There are no customer accounts, so there is no password of yours to leak. Access to customer data inside the business is limited to the people who need it and is logged. Payment credentials never reach us at all.",
         },
         {
           type: "p",
@@ -276,7 +302,7 @@ const PRIVACY: Policy = {
       blocks: [
         {
           type: "p",
-          text: "If we change anything that materially affects you, we will update the date at the top and email anyone with an account at least [14] days before the change takes effect. Older versions are kept and can be requested.",
+          text: "If we change anything that materially affects you, we will publish the new version here, with a new date at the top, at least 14 days before the change takes effect, and email anyone with an order still in progress. Older versions are kept and can be requested.",
         },
       ],
     },
@@ -300,8 +326,10 @@ const TERMS: Policy = {
   intro: "The deal between you and us when you buy a skull. Short sentences, no traps.",
   readingTime: "~9 min read",
   shortVersion:
-    "Buy it, we ship it. Don't like it, send it back within 7 days. Don't hang a person off it.",
+    "Buy it, we ship it. Don't like it? Send it back unused within 7 days. Don't hang a person off it.",
   accent: "blaze",
+  updated: "2026-09-28",
+  version: "1.0",
   sections: [
     {
       n: "01",
@@ -309,7 +337,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "By using skelmet.in or placing an order you accept these terms. They form a contract between you and Gee Star Spinning Solutions, registered at B-121, B Block, Udyog Marg, Sector 6, Noida, Gautam Buddha Nagar, Uttar Pradesh 201301. If you do not accept them, do not order.",
+          text: `By using skelmet.in or placing an order you accept these terms. They form a contract between you and ${BUSINESS}, of ${ADDRESS}. If you do not accept them, do not order.`,
         },
         {
           type: "p",
@@ -323,17 +351,17 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "You must be 18 or older and able to enter a contract under the Indian Contract Act 1872. We currently ship only within India. Orders that look like resale or bulk arbitrage may be declined, for genuine bulk and club orders, talk to us first.",
+          text: "You must be 18 or older and able to enter a contract under the Indian Contract Act 1872. We currently ship only within India. Orders that look like resale or bulk arbitrage may be declined. For genuine bulk and club orders, talk to us first.",
         },
       ],
     },
     {
       n: "03",
-      title: "Your account",
+      title: "No accounts",
       blocks: [
         {
           type: "p",
-          text: "You can check out as a guest. If you create an account, keep the password to yourself, anything done through your account is treated as done by you. Tell us immediately if you think someone else has access. We can suspend an account being used for fraud or abuse.",
+          text: "There are no customer accounts: everyone checks out as a guest. Your order number and the email address you ordered with are what identify your order, for tracking it and for anything you ask us about it, so keep the confirmation email. Anyone who has both can see where the order has got to.",
         },
       ],
     },
@@ -343,11 +371,11 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Every mount is 3D printed. That means small variations in layer texture and finish between units are normal and are not defects, it is the point of the product.",
+          text: "Every mount is 3D printed. That means small variations in layer texture and finish between units are normal and are not defects. They are the point of the product.",
         },
         {
           type: "p",
-          text: "Colours on your screen will not match the physical filament exactly. Dimensions and load figures published on the product page are [TO BE CONFIRMED BEFORE LAUNCH] and are given as guidance.",
+          text: "Colours on your screen will not match the physical filament exactly. The mount is rated to hold up to 10 kg.",
         },
       ],
     },
@@ -357,7 +385,11 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Prices are in Indian Rupees and include GST. The price you see at checkout is the price you pay, with no surprise fees at delivery.",
+          text: [
+            "Prices are in Indian Rupees and include GST. Shipping is charged on top where it applies, depending on your pincode, as the ",
+            { text: "shipping policy", href: "/policies/shipping" },
+            " explains. Checkout shows the shipping charge and the full total before you pay, and that total is what you pay, with no surprise fees at delivery.",
+          ],
         },
         {
           type: "p",
@@ -381,7 +413,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "We accept UPI, cards and netbanking. Payments are handled by Razorpay; we never see your card or UPI credentials.",
+          text: "We accept UPI, cards and netbanking, paid online at checkout; there is no cash on delivery. Payments are handled by Razorpay; we never see your card or UPI credentials.",
         },
       ],
     },
@@ -392,9 +424,9 @@ const TERMS: Policy = {
         {
           type: "list",
           items: [
-            "We dispatch within 48 hours of payment clearing, on working days.",
-            "Typical delivery is within 7 working days, depending on pincode.",
-            "Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within 24 hours.",
+            `We dispatch within ${P.dispatchHours} hours of payment.`,
+            `Delivery takes up to ${P.deliveryDays} from dispatch.`,
+            `Risk passes to you on delivery. If the parcel arrives visibly damaged, refuse it or photograph it before opening and tell us within ${P.damageReportHours} hours of delivery.`,
             "Three failed delivery attempts return the parcel to us; we will refund minus the actual return freight.",
           ],
         },
@@ -406,15 +438,19 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "You have 7 days from delivery to return a mount for any reason. It must be unused, undamaged and in its original packaging. We arrange and pay for the reverse pickup.",
+          text: `You have ${P.returnDays} days from delivery to return a mount for any reason. It must be unused, undrilled, undamaged and in its original packaging. We arrange and pay for the reverse pickup.`,
         },
         {
           type: "p",
-          text: "Refunds are issued to the original payment method within [7] working days of the return reaching us and passing inspection.",
+          text: `${REFUND_TIMING} A return is approved once it reaches us and passes inspection.`,
         },
         {
           type: "p",
-          text: "Custom-colour and engraved orders are made specifically for you and cannot be returned unless faulty.",
+          text: "The shipping charge you paid is refunded as well when the return is down to our mistake or a defect. It is not refunded when you return a mount because you changed your mind.",
+        },
+        {
+          type: "p",
+          text: "Custom-colour orders are made specifically for you and cannot be returned unless faulty.",
         },
       ],
     },
@@ -424,7 +460,11 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Cancel free of charge any time before dispatch, from your account or by messaging us. Once the parcel has left us, use the returns process instead.",
+          text: [
+            "Cancel free of charge any time before dispatch by ",
+            { text: "contacting us", href: "/contact" },
+            ` with your order number, and you get a full refund, shipping included. ${REFUND_TIMING} Once the parcel has left us it cannot be cancelled: use the returns process instead.`,
+          ],
         },
       ],
     },
@@ -514,7 +554,7 @@ const TERMS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "These terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts at Gautam Buddha Nagar, Uttar Pradesh. Before going to court, please raise it with the grievance officer, most things get sorted there.",
+          text: "These terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts at Gautam Buddha Nagar, Uttar Pradesh. Before going to court, please raise it with the Grievance Officer - most things get sorted there.",
         },
       ],
     },
@@ -534,8 +574,10 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
   title: "Shipping policy",
   intro: "When it leaves, how it travels, and what happens if it goes wrong.",
   readingTime: "~4 min read",
-  shortVersion: `${shippingTerms(rule).short} Out in 48 hours, usually with you within 7 working days.`,
+  shortVersion: `${shippingTerms(rule).short} Dispatched within ${P.dispatchHours} hours of payment, delivered within ${P.deliveryDays} of dispatch.`,
   accent: "acid",
+  updated: "2026-09-28",
+  version: "1.0",
   sections: [
     {
       n: "01",
@@ -543,7 +585,7 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
       blocks: [
         {
           type: "p",
-          text: "Everywhere in India that [COURIER] serves. Enter your pincode on the product page and we will tell you before you pay. We do not ship internationally yet, if you want one abroad, message us and we will quote a courier directly.",
+          text: "Everywhere in India that Shiprocket and its courier partners serve. Enter your pincode on the product page and we will tell you whether we deliver there, and what shipping costs, before you pay. We do not ship internationally yet. If you want one abroad, message us and we will quote a courier directly.",
         },
       ],
     },
@@ -563,11 +605,7 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
       blocks: [
         {
           type: "p",
-          text: "Orders placed before [4pm IST] on a working day are printed, finished and packed within [48] hours. Orders placed on a Sunday or a public holiday start counting from the next working day.",
-        },
-        {
-          type: "p",
-          text: "At busy times this can stretch to [4] working days. If it does, we email you rather than let you wonder.",
+          text: `Every order is printed, finished, packed and handed to the courier within ${P.dispatchHours} hours of payment. If anything ever holds an order up, we email you rather than let you wonder.`,
         },
       ],
     },
@@ -576,14 +614,8 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
       title: "Delivery time",
       blocks: [
         {
-          type: "table",
-          head: ["Zone", "Typical time"],
-          rows: [
-            ["Metro cities", "[2–3] working days"],
-            ["Tier 2 and 3 cities", "[3–5] working days"],
-            ["Rest of India", "[5–7] working days"],
-            ["Remote and North-East", "[7–10] working days"],
-          ],
+          type: "p",
+          text: `Delivery takes up to ${P.deliveryDays} from dispatch, wherever you are in India. Once the parcel is moving, the courier's own estimate for your pincode shows on the tracking page.`,
         },
       ],
     },
@@ -593,7 +625,11 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
       blocks: [
         {
           type: "p",
-          text: "The moment the parcel is handed to the courier you get an email and a WhatsApp message with the AWB number and a live tracking link. You can also track it from /track with your order number and email, without signing in.",
+          text: [
+            "The moment the parcel is handed to the courier you get an email with the AWB number and a live tracking link. You can also follow it on our ",
+            { text: "Track order", href: "/track" },
+            " page with your order number and email - there is no account to sign in to.",
+          ],
         },
       ],
     },
@@ -613,7 +649,7 @@ const shippingPolicy = (rule: ShippingRule): Policy => ({
       blocks: [
         {
           type: "p",
-          text: "Photograph the parcel before you open it further and send it to us within 24 hours of delivery. We ship a replacement immediately and we do not ask for the damaged one back.",
+          text: `Photograph the parcel before you open it further and send it to us within ${P.damageReportHours} hours of delivery. We ship a replacement immediately and we do not ask for the damaged one back.`,
         },
       ],
     },
@@ -629,12 +665,14 @@ const SHIPPING = shippingPolicy(shippingConfig.fee)
 
 const RETURNS: Policy = {
   slug: "returns",
-  title: "Returns & refunds",
+  title: "Returns, refunds & cancellation",
   intro: "Seven days, no interrogation, and we pay the pickup.",
   readingTime: "~4 min read",
   shortVersion:
-    "Changed your mind? Seven days, unused, original box. We collect it and refund you.",
+    "Changed your mind? Seven days, unused, original box. We collect it and refund you. Cancel free any time before dispatch.",
   accent: "magenta",
+  updated: "2026-09-28",
+  version: "1.0",
   sections: [
     {
       n: "01",
@@ -668,9 +706,9 @@ const RETURNS: Policy = {
           type: "list",
           items: [
             "Message us with your order number and a one-line reason.",
-            "We book a reverse pickup within [24] hours, at our cost.",
+            "We book a reverse pickup, at our cost, and tell you when to expect the courier.",
             "Repack it in the original box and hand it to the courier.",
-            "We inspect it the day it arrives and refund the same day it passes.",
+            "We inspect it when it arrives, and approve the refund once it passes.",
           ],
         },
       ],
@@ -679,18 +717,13 @@ const RETURNS: Policy = {
       n: "04",
       title: "Refund timing",
       blocks: [
+        // One figure for every payment method. Quoting the outer edge is the
+        // safe direction: a refund that lands early is a good surprise, one
+        // that lands late is a complaint.
+        { type: "p", text: REFUND_TIMING },
         {
-          type: "table",
-          head: ["Paid with", "Refund lands in"],
-          // One figure for every method until there is real data to split
-          // them by. Quoting the outer edge is the safe direction: a refund
-          // that lands early is a good surprise, one that lands late is a
-          // complaint.
-          rows: [
-            ["UPI", "Up to 7 working days"],
-            ["Card", "Up to 7 working days"],
-            ["Netbanking", "Up to 7 working days"],
-          ],
+          type: "p",
+          text: "The shipping charge you paid is refunded as well when the return is down to our mistake or a defect. It is not refunded for a change-of-mind return, though the pickup is still on us.",
         },
       ],
     },
@@ -700,7 +733,7 @@ const RETURNS: Policy = {
       blocks: [
         {
           type: "p",
-          text: `If it arrives cracked, warped, in the wrong colourway, or missing parts, send us a photo. We ship a replacement straight away and you keep or bin the original, whichever is less hassle. This is separate from the 7-day window and is not time-limited beyond the ${siteConfig.promise.warrantyMonths}-month warranty.`,
+          text: `If it arrives cracked, warped, in the wrong colourway, or missing parts, send us a photo. We ship a replacement straight away and you keep or bin the original, whichever is less hassle. Damage in transit must be reported within ${P.damageReportHours} hours of delivery. Anything else is separate from the 7-day window and can be reported at any time within the ${P.warrantyMonths}-month warranty.`,
         },
       ],
     },
@@ -711,7 +744,7 @@ const RETURNS: Policy = {
         {
           type: "list",
           items: [
-            "Custom-colour or engraved orders, unless faulty.",
+            "Custom-colour orders, unless faulty.",
             "Mounts that have been drilled in and used.",
             "Anything returned after the 7-day window without a fault.",
           ],
@@ -724,12 +757,30 @@ const RETURNS: Policy = {
       blocks: [
         {
           type: "p",
-          text: "Want a different colourway rather than your money back? Say so when you start the return and we ship the replacement as soon as the original is collected, you are not waiting on the refund first.",
+          text: "Want a different colourway rather than your money back? Say so when you start the return and we ship the replacement as soon as the original is collected - you are not waiting on the refund first.",
         },
       ],
     },
     {
       n: "08",
+      title: "Cancellation",
+      blocks: [
+        {
+          type: "p",
+          text: [
+            "You can cancel any time before dispatch for a full refund, shipping included: ",
+            { text: "contact us", href: "/contact" },
+            ` with your order number. ${REFUND_TIMING}`,
+          ],
+        },
+        {
+          type: "p",
+          text: "Once the parcel has been dispatched it can no longer be cancelled. Use the return process above instead.",
+        },
+      ],
+    },
+    {
+      n: "09",
       title: "Questions",
       blocks: [{ type: "contact" }],
     },
