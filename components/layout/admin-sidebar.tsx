@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
+  ChevronRight,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -171,10 +172,23 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                   strokeWidth={1.8}
                 />
                 {item.label}
+                {/* Says the section has pages under it; turns down while
+                    they are showing. */}
+                {item.children ? (
+                  <ChevronRight
+                    aria-hidden
+                    className={cn(
+                      "text-dim ml-auto size-4 shrink-0 transition-transform duration-200",
+                      active && "rotate-90",
+                    )}
+                    strokeWidth={2}
+                  />
+                ) : null}
               </Link>
-              {/* Always open: a menu that hides its pages until you are
-                  already in the section is a menu you have to learn. */}
-              {item.children ? (
+              {/* A section's pages show only while you are in it, so the
+                  menu stays short: on Visitors, Orders is one row. Opening
+                  the section is one click on its name. */}
+              {item.children && active ? (
                 <ul className="flex flex-col gap-0.5 py-0.5">
                   {item.children.map((child) => {
                     const on = current?.href === child.href
