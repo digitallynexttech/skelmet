@@ -23,7 +23,10 @@ export function priceCart(
   opts: { cod?: boolean; couponOff?: number; shippingFee?: number } = {},
 ): Priced {
   const itemCount = lines.reduce((n, l) => n + l.qty, 0)
-  const subtotal = lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0)
+  // Summed in paise and divided once: adding rupee floats line by line can
+  // land a paisa off (0.1 + 0.2), and that paisa reaches the gateway.
+  const subtotal =
+    lines.reduce((sum, l) => sum + Math.round(Number(l.unitPrice) * 100) * l.qty, 0) / 100
 
   const coupon = Math.max(0, Math.round(opts.couponOff ?? 0))
   // A coupon is the only discount now; never take it past the subtotal,

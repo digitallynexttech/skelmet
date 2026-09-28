@@ -50,6 +50,9 @@ declare global {
 
 const CHECKOUT_JS = "https://checkout.razorpay.com/v1/checkout.js"
 
+/** Well inside the server's hold on an unpaid order's stock. */
+const REUSE_UNPAID_MS = 30 * 60_000
+
 /** Loads Razorpay's script once, on demand rather than on every page. */
 function loadGateway(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -76,6 +79,12 @@ export function useCheckout() {
   const clear = useCart((s) => s.clear)
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  // A ref, not the pending state: two clicks inside one frame both see
+  // pending as false, and each would have opened an order.
+  const inFlight = React.useRef(false)
+  // The order a dismissed payment window left unpaid. Paying again for the
+  // same basket and address reopens it instead of opening a second order.
+  const unpaid = React.useRef<{ key: string; at: number; started: StartedCheckout } | null>(null)
 
   const submit = React.useCallback(
     /**
@@ -83,20 +92,34 @@ export function useCheckout() {
      * paying for it leaves the cart as it was.
      */
     async (input: PlaceOrderInput, { keepCart = false }: { keepCart?: boolean } = {}) => {
+      if (inFlight.current) return
+      inFlight.current = true
       setPending(true)
       setError(null)
+      const settle = () => {
+        inFlight.current = false
+        setPending(false)
+      }
       const done = (orderNumber: string) => {
+        unpaid.current = null
         if (!keepCart) clear()
         router.push(`/checkout/thank-you?order=${orderNumber}`)
       }
 
       try {
-        const started = await apiFetch<StartedCheckout>("/api/checkout/session", {
-          method: "POST",
-          body: JSON.stringify(input),
-        })
+        const key = JSON.stringify(input)
+        const reuse =
+          unpaid.current?.key === key && Date.now() - unpaid.current.at < REUSE_UNPAID_MS
+            ? unpaid.current.started
+            : null
+        const started =
+          reuse ??
+          (await apiFetch<StartedCheckout>("/api/checkout/session", {
+            method: "POST",
+            body: key,
+          }))
         // The basket is an order now, paid or not, so it was not left behind.
-        reportPlaced(started.orderNumber)
+        if (!reuse) reportPlaced(started.orderNumber)
 
         // Cash on delivery: the order already exists, nothing to pay now.
         if (started.paymentMethod === "COD" || !started.gatewayOrderId) {
@@ -143,7 +166,8 @@ export function useCheckout() {
           },
           modal: {
             ondismiss: () => {
-              setPending(false)
+              unpaid.current = { key, at: Date.now(), started }
+              settle()
               setError("Payment was cancelled. Your order is saved and still unpaid.")
             },
           },
@@ -151,7 +175,7 @@ export function useCheckout() {
 
         rz.open()
       } catch (err) {
-        setPending(false)
+        settle()
         setError(
           err instanceof Error && err.message === "gateway"
             ? "Could not reach the payment window. Check your connection and try again."

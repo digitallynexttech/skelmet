@@ -23,6 +23,7 @@ import { Select } from "@/components/ui/select"
 import { siteConfig } from "@/config/site"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, lineFor, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
+import { CheckoutSkeleton } from "@/features/checkout/components/checkout-skeleton"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
@@ -106,6 +107,19 @@ const unitsIn = (lines: CartLine[]) =>
     1,
     lines.reduce((n, l) => n + l.qty, 0),
   )
+
+/** "Buying just this" note for a Buy-now checkout over a non-empty cart. */
+function CartKept({ lines }: { lines: CartLine[] }) {
+  const n = unitsIn(lines)
+  return (
+    <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
+      Buying just this.{" "}
+      {n === 1
+        ? "The item in your cart stays there for later."
+        : `The ${n} items in your cart stay there for later.`}
+    </p>
+  )
+}
 
 function Lines({ items }: { items: CartLine[] }) {
   return (
@@ -227,6 +241,10 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   }, [mounted, basket])
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
+  // A Buy-now order keeps its code here, apart from the cart's: the cart is
+  // being left for later, and its code should be there when the customer is.
+  const [buyNowCode, setBuyNowCode] = React.useState<string | null>(null)
+  const couponProps = buyNow ? { code: buyNowCode, onCode: setBuyNowCode } : {}
   const formRef = React.useRef<HTMLFormElement>(null)
   const [prefilled, setPrefilled] = React.useState(false)
 
@@ -453,7 +471,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       // The named input is gone - CouponBox validates before anything is
       // applied, so the code that goes to the server is the one it accepted,
       // falling back to whatever the cart is still carrying.
-      couponCode: coupon?.code ?? couponCode ?? "",
+      couponCode: coupon?.code ?? (buyNow ? buyNowCode : couponCode) ?? "",
       paymentMethod: "ONLINE",
       saveAddress: false,
     })
@@ -485,7 +503,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     await submit(parsed.data, { keepCart: buyNow !== null })
   }
 
-  if (!mounted) return <div className="min-h-[60vh]" aria-hidden />
+  if (!mounted) return <CheckoutSkeleton />
 
   if (items.length === 0) {
     return (
@@ -527,11 +545,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         </summary>
         <div className="border-t border-white/[0.07] px-5 py-4">
           <Lines items={items} />
-          {buyNow && cartItems.length > 0 ? (
-            <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
-              Buying just this. The {unitsIn(cartItems)} in your cart stay there for later.
-            </p>
-          ) : null}
+          {buyNow && cartItems.length > 0 ? <CartKept lines={cartItems} /> : null}
         </div>
       </details>
 
@@ -730,6 +744,25 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             </div>
           </section>
 
+          {/* The desktop rail has its own box. This one is for phones, where
+              the rail is hidden - it used to be the only place a code could be
+              typed, so a phone could never enter one. The rail's box does the
+              re-checking; both are mounted whatever the width. */}
+          <div className="mt-6 lg:hidden">
+            <CouponBox
+              subtotal={totals.subtotal}
+              applied={coupon}
+              onApplied={setCoupon}
+              recheck={false}
+              {...couponProps}
+            />
+            {coupon && totals.couponOff > 0 ? (
+              <p className="text-acid -mt-3 mb-2 font-mono text-[12px] tracking-[0.08em]">
+                {coupon.label}: &minus; <Money value={totals.couponOff} />
+              </p>
+            ) : null}
+          </div>
+
           {formError || error ? (
             <div className="border-magenta/35 bg-magenta/[0.06] mt-5 flex items-start gap-3 rounded-xl border p-4">
               <AlertTriangle className="text-magenta mt-0.5 size-4 shrink-0" strokeWidth={1.9} />
@@ -766,13 +799,14 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               Your order
             </h2>
             <Lines items={items} />
-            {buyNow && cartItems.length > 0 ? (
-              <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
-                Buying just this. The {unitsIn(cartItems)} in your cart stay there for later.
-              </p>
-            ) : null}
+            {buyNow && cartItems.length > 0 ? <CartKept lines={cartItems} /> : null}
 
-            <CouponBox subtotal={totals.subtotal} applied={coupon} onApplied={setCoupon} />
+            <CouponBox
+              subtotal={totals.subtotal}
+              applied={coupon}
+              onApplied={setCoupon}
+              {...couponProps}
+            />
 
             <dl className="flex flex-col gap-3 border-y border-white/10 py-5">
               <div className="flex justify-between text-sm">

@@ -9,6 +9,11 @@ import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 
 export type AppliedCoupon = { code: string; discount: number; label: string }
 
+/** A code the server has actually refused, as opposed to a check that failed. */
+function refused(err: unknown) {
+  return err instanceof ApiFetchError && (err.status === 400 || err.status === 422)
+}
+
 /**
  * The discount box that used to be decoration: a form whose only handler was
  * `preventDefault`, next to a `/api/coupons/validate` endpoint that already
@@ -22,13 +27,30 @@ export function CouponBox({
   subtotal,
   applied,
   onApplied,
+  code: ownCode,
+  onCode,
+  recheck = true,
 }: {
   subtotal: number
   applied: AppliedCoupon | null
   onApplied: (c: AppliedCoupon | null) => void
+  /**
+   * Set together with `onCode` to keep the code somewhere other than the cart:
+   * a Buy-now checkout prices one line, and a code tried there must not end
+   * up on - or be taken off - the cart the customer is leaving for later.
+   */
+  code?: string | null
+  onCode?: (code: string | null) => void
+  /**
+   * Whether this box re-checks the code as the subtotal moves. A page showing
+   * the box twice (a phone layout and a desktop one) lets one of them do it.
+   */
+  recheck?: boolean
 }) {
-  const couponCode = useCart((s) => s.couponCode)
-  const setCoupon = useCart((s) => s.setCoupon)
+  const cartCode = useCart((s) => s.couponCode)
+  const setCartCode = useCart((s) => s.setCoupon)
+  const couponCode = onCode ? (ownCode ?? null) : cartCode
+  const setCoupon = onCode ?? setCartCode
 
   const [error, setError] = React.useState<string | null>(null)
   const [pending, setPending] = React.useState(false)
@@ -36,35 +58,41 @@ export function CouponBox({
   // Re-check on mount and whenever the subtotal moves: a code valid at three
   // items can fall under its minimum when one is removed, and the customer
   // should not reach checkout still believing it applies.
+  // Debounced, so stepping a quantity from 1 to 4 is one request, not three.
+  // Only a refusal takes the code off: a rate limit or a dropped connection
+  // says nothing about the code, and checkout re-checks it anyway.
   React.useEffect(() => {
     // No synchronous clear here - with no code there is simply nothing to
     // check, and `shown` below derives the empty state instead. Writing it
     // back through setState would schedule a second render for a fact already
     // visible in the store.
-    if (!couponCode) return
+    if (!couponCode || !recheck) return
     let cancelled = false
-    void apiFetch<AppliedCoupon>("/api/coupons/validate", {
-      method: "POST",
-      body: JSON.stringify({ code: couponCode, subtotal }),
-    })
-      .then((c) => {
-        if (!cancelled) onApplied(c)
+    const timer = window.setTimeout(() => {
+      void apiFetch<AppliedCoupon>("/api/coupons/validate", {
+        method: "POST",
+        body: JSON.stringify({ code: couponCode, subtotal }),
       })
-      .catch(() => {
-        if (cancelled) return
-        onApplied(null)
-        setCoupon(null)
-      })
+        .then((c) => {
+          if (!cancelled) onApplied(c)
+        })
+        .catch((err: unknown) => {
+          if (cancelled || !refused(err)) return
+          onApplied(null)
+          setCoupon(null)
+        })
+    }, 350)
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
-  }, [couponCode, subtotal, setCoupon, onApplied])
+  }, [couponCode, subtotal, recheck, setCoupon, onApplied])
 
   const [draft, setDraft] = React.useState("")
 
   async function apply() {
     const code = draft.trim()
-    if (code === "") return
+    if (code === "" || pending) return
 
     setError(null)
     setPending(true)
@@ -76,8 +104,11 @@ export function CouponBox({
       onApplied(c)
       setCoupon(c.code)
     } catch (err) {
-      onApplied(null)
-      setCoupon(null)
+      // A refused code replaces whatever was on; a failed check leaves it be.
+      if (refused(err)) {
+        onApplied(null)
+        setCoupon(null)
+      }
       setError(err instanceof ApiFetchError ? err.message : "That didn't work. Try again.")
     } finally {
       setPending(false)

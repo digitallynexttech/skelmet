@@ -159,7 +159,9 @@ export function calculateTotals(
   shippingFee = 0,
 ): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
-  const subtotal = items.reduce((sum, line) => sum + Number(line.unitPrice) * line.qty, 0)
+  // In paise, as the server sums it, so the preview and the charge agree.
+  const subtotal =
+    items.reduce((sum, line) => sum + Math.round(Number(line.unitPrice) * 100) * line.qty, 0) / 100
 
   const coupon = Math.max(0, Math.round(couponOff))
   // Never past the subtotal, so a coupon cannot make an order negative.
