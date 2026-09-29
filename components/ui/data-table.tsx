@@ -29,6 +29,13 @@ import { cn } from "@/lib/utils"
  * the table say so - because sorting twenty of two hundred rows and calling
  * it "sorted by spend" is a lie, and a spreadsheet that quietly holds one
  * page is a worse one.
+ *
+ * Cells never wrap: each column is as wide as its longest line, and the table
+ * scrolls sideways when that is wider than the screen. Squeezed to fit, it
+ * broke an order number over three lines at its hyphens and a two-word header
+ * over two. A cell that stacks lines on purpose - a name over an email -
+ * still stacks; only the lines themselves stay whole. The expanded detail row
+ * wraps as prose, since that is what it holds.
  */
 export type Column<T> = {
   key: string
@@ -211,10 +218,13 @@ export function DataTable<T>({
       </div>
 
       <div className={cn(frame && "overflow-hidden rounded-md border border-white/[0.09]")}>
-        <div className="overflow-x-auto">
+        {/* Contained on the inline axis, so a table wider than the screen
+            scrolls in here instead of reporting its width upward: in a grid
+            or flex column, that width stretched the whole page sideways. */}
+        <div className="scrollbar-visible overflow-x-auto contain-inline-size">
           <table className="w-full text-left">
             <thead className="bg-void/50">
-              <tr className="text-dim font-mono text-[10.5px] tracking-[0.14em] uppercase">
+              <tr className="text-dim font-mono text-[10.5px] tracking-[0.14em] whitespace-nowrap uppercase">
                 <th className="w-10 px-3 py-3">
                   <input
                     type="checkbox"
@@ -318,7 +328,7 @@ export function DataTable<T>({
                         <td
                           key={c.key}
                           className={cn(
-                            "px-4 py-3.5 align-middle",
+                            "px-4 py-3.5 align-middle whitespace-nowrap",
                             c.align === "right" && "text-right",
                             c.className,
                           )}

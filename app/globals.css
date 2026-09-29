@@ -237,6 +237,24 @@
     mix-blend-mode: screen;
   }
 
+  /* The one exception to no scrollbars: a console table wider than the
+     screen (DataTable). A trackpad or a finger can swipe it, but a mouse has
+     no other way to reach the columns on the right. Thin, and in the page's
+     colours. The standard properties are for Chrome and Firefox; Safari still
+     reads the -webkit- ones, which the base layer turned off. */
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+  }
+  .scrollbar-visible::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+  .scrollbar-visible::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.2);
+  }
+
   .conic-orbit {
     background: conic-gradient(
       from 0deg,
