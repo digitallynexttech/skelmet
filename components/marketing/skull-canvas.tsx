@@ -93,6 +93,39 @@ const MODEL_YAW_OFFSET = 0
  */
 const OPTICAL_CENTRE_LIFT = 0.06
 
+/**
+ * The camera that frames the stage: 32° tall, from z = 5.4, sees 3.096 units
+ * at the pivot. Every share in this file - the silhouette, the halo, the bob -
+ * is of the stage that camera fills.
+ */
+const STAGE_FOV = 32
+
+/**
+ * How tall the skull stands, in the 3.096 units the stage shows: on screen
+ * about 84% of the stage, the jaw being nearer the camera than the crown.
+ * The size it had before it was tilted to meet the eye; sized to the full
+ * 2.5 it crowded the headline. scripts/build-skull-model.mjs holds the same
+ * number, for the silhouette figures it prints.
+ */
+const SKULL_HEIGHT = 2.36
+
+/**
+ * The canvas is drawn larger than the stage, by this much each way, centred
+ * on it. The print is deeper than it is tall, so turned side-on it reaches
+ * 1.43 of the stage's half-width, and pitched down its jaw reaches 1.23 of
+ * the half-height - past a canvas the stage's size, which cut it off. The
+ * camera opens by the same factors, so the stage region of the canvas is
+ * drawn exactly as the stage camera would draw it, and the extra is room.
+ */
+const BLEED = { x: 1.5, y: 1.3 }
+const BLEED_STYLE = {
+  position: "absolute",
+  left: `${(-(BLEED.x - 1) / 2) * 100}%`,
+  top: `${(-(BLEED.y - 1) / 2) * 100}%`,
+  width: `${BLEED.x * 100}%`,
+  height: `${BLEED.y * 100}%`,
+} as const
+
 /** Retina is not worth the fill rate on a mesh this size. */
 const MAX_PIXEL_RATIO = 1.75
 
@@ -256,7 +289,11 @@ export function SkullCanvas({
     // the orange toward cream.
     scene.environmentIntensity = STAGE.environment
 
-    const camera = new PerspectiveCamera(32, 1, 0.1, 1000)
+    // Opened from the stage's 32° by the bleed: the tangent scales, so the
+    // stage region of the wider view is the stage camera's image exactly.
+    const bleedFov =
+      (2 * Math.atan(BLEED.y * Math.tan((STAGE_FOV * Math.PI) / 360)) * 180) / Math.PI
+    const camera = new PerspectiveCamera(bleedFov, 1, 0.1, 1000)
     camera.position.set(0, 0, 5.4)
 
     /**
@@ -358,17 +395,22 @@ export function SkullCanvas({
     // sizes the skull by its silhouette, and a dock can turn it side-on, so
     // the silhouette is measured off these at whatever angle is asked for.
     let surface: Float32Array | null = null
-    const silhouettes = new Map<number, Silhouette>()
-    const silhouette = (turn: number): Silhouette => {
+    const silhouettes = new Map<string, Silhouette>()
+    const silhouette = (turn: number, pitch: number): Silhouette => {
       if (!surface || box.height === 0) return REST_SILHOUETTE
       // Quantised, so a flight easing between two angles reuses its answers.
-      const key = Math.round(turn * 200) / 200
+      const yaw = Math.round(turn * 200) / 200
+      const nod = Math.round(pitch * 200) / 200
+      const key = `${yaw}:${nod}`
       const known = silhouettes.get(key)
       if (known) return known
 
-      const cos = Math.cos(key)
-      const sin = Math.sin(key)
-      const tan = Math.tan((camera.fov * Math.PI) / 360)
+      const cos = Math.cos(yaw)
+      const sin = Math.sin(yaw)
+      const cosP = Math.cos(nod)
+      const sinP = Math.sin(nod)
+      // Against the stage camera, not the bled one: the shares are of the box.
+      const tan = Math.tan((STAGE_FOV * Math.PI) / 360)
       const aspect = box.width / box.height
       let minX = Infinity
       let maxX = -Infinity
@@ -376,15 +418,18 @@ export function SkullCanvas({
       let maxY = -Infinity
       for (let k = 0; k < surface.length; k += 3) {
         const x = surface[k]!
-        const y = surface[k + 1]! + OPTICAL_CENTRE_LIFT
+        const y = surface[k + 1]!
         const z = surface[k + 2]!
-        // Yaw about the pivot, as three applies rotation.y, then the
-        // perspective divide. Out in NDC, where the box spans -1..1.
+        // Yaw then pitch about the pivot, as three applies rotation.y and
+        // rotation.x, the pivot's lift, then the perspective divide. Out in
+        // NDC, where the box spans -1..1.
         const turnedX = x * cos + z * sin
         const turnedZ = -x * sin + z * cos
-        const depth = (camera.position.z - turnedZ) * tan
+        const noddedY = y * cosP - turnedZ * sinP + OPTICAL_CENTRE_LIFT
+        const noddedZ = y * sinP + turnedZ * cosP
+        const depth = (camera.position.z - noddedZ) * tan
         const nx = turnedX / (depth * aspect)
-        const ny = y / depth
+        const ny = noddedY / depth
         if (nx < minX) minX = nx
         if (nx > maxX) maxX = nx
         if (ny < minY) minY = ny
@@ -407,7 +452,7 @@ export function SkullCanvas({
     const plates = new Map<HTMLElement, number>()
     const measure = () => {
       silhouettes.clear()
-      anchors = measureAnchors(silhouette(0))
+      anchors = measureAnchors(silhouette(0, 0))
       // A photo that has dropped off the route - resized down to a phone,
       // where the route is shorter - gets its own skull back.
       for (const el of plates.keys()) {
@@ -460,9 +505,9 @@ export function SkullCanvas({
     const haloPoint = new Vector3()
     const lastRot = { x: 0, y: 0 }
     let flare = 0
-    // World units visible top to bottom at the pivot's depth - the yardstick
-    // the halo radius is published against.
-    const viewHeight = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360)
+    // World units the stage shows top to bottom at the pivot's depth - the
+    // yardstick the halo radius and the bob are published against.
+    const viewHeight = 2 * camera.position.z * Math.tan((STAGE_FOV * Math.PI) / 360)
 
     const loop = () => {
       frame = requestAnimationFrame(loop)
@@ -483,7 +528,7 @@ export function SkullCanvas({
       // Put the box where the route says the skull is, sized so the
       // silhouette at the dock's angle matches the photographed one. Scaled
       // about its top left, so the translate is simply where that corner lands.
-      const shape = silhouette(pose.turn)
+      const shape = silhouette(pose.turn, pose.pitch)
       const s = pose.h / (shape.height * box.height)
       const w = box.width * s
       const h = box.height * s
@@ -495,19 +540,22 @@ export function SkullCanvas({
         written.transform = transform
       }
 
-      // The crop is an inset of the box, in its own unscaled pixels.
+      // The crop is an inset of the canvas - the box plus its bleed - in the
+      // canvas's own unscaled pixels.
+      const hostLeft = left - ((BLEED.x - 1) / 2) * w
+      const hostTop = top - ((BLEED.y - 1) / 2) * h
       const clip = pose.clip
         ? `inset(${[
-            pose.clip.top - top,
-            left + w - pose.clip.right,
-            top + h - pose.clip.bottom,
-            pose.clip.left - left,
+            pose.clip.top - hostTop,
+            hostLeft + w * BLEED.x - pose.clip.right,
+            hostTop + h * BLEED.y - pose.clip.bottom,
+            pose.clip.left - hostLeft,
           ]
             .map((v) => `${Math.max(0, v / s).toFixed(1)}px`)
             .join(" ")})`
         : "none"
       if (clip !== written.clip) {
-        flight.style.clipPath = clip
+        host.style.clipPath = clip
         written.clip = clip
       }
 
@@ -522,9 +570,11 @@ export function SkullCanvas({
           el.style.setProperty("--skull-dock", weight.toFixed(3))
         }
         i.box = { x: left, y: top - scroll, w, h }
-        i.hit = visible
-          ? { x: pose.cx, y: pose.cy - scroll, rx: i.halo.r * h, ry: pose.h / 2 }
-          : null
+        // Not grabbable once seated: a press on the card is for the card.
+        i.hit =
+          visible && pose.docked < 0.5
+            ? { x: pose.cx, y: pose.cy - scroll, rx: i.halo.r * h, ry: pose.h / 2 }
+            : null
       }
 
       // The skull looks at the cursor from wherever it is, not from the middle
@@ -559,8 +609,13 @@ export function SkullCanvas({
       }
       lastCx = pose.cx
 
-      pivot.rotation.x = follow.x + i.userRot.x
-      pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y + pose.spin + pose.turn
+      // Seated in a photo the skull is a picture: it neither looks at the
+      // cursor nor turns under a drag, so the card reads like the still images
+      // beside it - and turned or pitched, it ran into the card's edges. The
+      // hold fades in over the landing and out again on take-off.
+      const free = 1 - pose.docked
+      pivot.rotation.x = (follow.x + i.userRot.x) * free + pose.pitch
+      pivot.rotation.y = MODEL_YAW_OFFSET + (follow.y + i.userRot.y) * free + pose.spin + pose.turn
       pivot.rotation.z = bank
       // On the poster's clock rather than the timer's, so the frame that
       // replaces the poster is the one it was showing (see BOB_PERIOD).
@@ -622,8 +677,9 @@ export function SkullCanvas({
         lastRot.x = ownPitch
         lastRot.y = ownYaw
 
-        i.halo.x = (haloPoint.x + 1) / 2
-        i.halo.y = (1 - haloPoint.y) / 2
+        // Projected through the bled camera; back to shares of the box.
+        i.halo.x = (haloPoint.x * BLEED.x + 1) / 2
+        i.halo.y = (1 - haloPoint.y * BLEED.y) / 2
         i.halo.r = halfWidth / viewHeight
         i.halo.flare = flare
       }
@@ -655,22 +711,19 @@ export function SkullCanvas({
           root.position.set(0, 0, 0)
           root.updateMatrixWorld(true)
 
-          // Generators ship these meshes as metalness 1 / roughness 1. That is
-          // wrong for matte PLA: a fully metallic surface takes its colour from
-          // reflections rather than its own base map, which turns the orange into
-          // washed-out grey plastic. Retag it as the dielectric it actually is.
+          // The model is built from the print file (scripts/build-skull-model.mjs):
+          // one flat filament colour and no maps, so the surface is set here
+          // rather than trusted from the file. Matte PLA is a dielectric, so
+          // metalness 0: a metallic surface takes its colour from reflections
+          // rather than its own, and turned the orange into grey plastic.
           root.traverse((child) => {
             const mesh = child as Mesh
             if (!mesh.isMesh) return
             const material = mesh.material as MeshStandardMaterial
             material.metalness = 0.0
-            // The generator's roughness map is dropped rather than scaled: three
-            // multiplies `roughness` by the map, so a glossy map keeps blown-out
-            // hotspots no matter how high the scalar goes. A uniform value gives
-            // one broad, controllable sheen instead. Not fully diffuse, though -
-            // at 1.0 the surface loses every specular cue and reads as moulded
-            // toy plastic. The normal map stays: that is where the flame relief
-            // and layer lines live.
+            // A uniform roughness gives one broad, controllable sheen. Not fully
+            // diffuse, though - at 1.0 the surface loses every specular cue and
+            // reads as moulded toy plastic.
             material.roughnessMap = null
             material.roughness = STAGE.roughness
             material.envMapIntensity = 0.3
@@ -686,11 +739,11 @@ export function SkullCanvas({
           const box = new Box3().setFromObject(root)
           const size = box.getSize(new Vector3())
           const centre = box.getCenter(new Vector3())
-          const longest = Math.max(size.x, size.y, size.z) || 1
-          // Normalised so the longest axis fills most of the frame. Kept under
-          // the full 3.1-unit view height so a dragged skull, which is deeper
-          // than it is wide, cannot clip the edges mid-spin.
-          const scale = 2.5 / longest
+          // Normalised by height (SKULL_HEIGHT): the print is deeper than it is
+          // tall once tilted to meet the eye, and sizing by the longest axis
+          // made its size depend on the tilt. Turned side-on it reaches past
+          // the stage, into the canvas's bleed.
+          const scale = SKULL_HEIGHT / (size.y || 1)
 
           root.position.set(-centre.x, -centre.y, -centre.z)
 
@@ -792,7 +845,8 @@ export function SkullCanvas({
     }
   }, [flightRef])
 
-  return <div ref={hostRef} className="size-full" />
+  // Larger than the flying box it sits in, by the bleed, and centred on it.
+  return <div ref={hostRef} style={BLEED_STYLE} />
 }
 
 export default SkullCanvas

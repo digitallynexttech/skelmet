@@ -1,6 +1,7 @@
 /**
- * Builds every Ghost Grey photograph: the front plate and the four gallery
- * shots, from their Militia Olive and Blaze Orange twins.
+ * Builds the four Ghost Grey gallery shots from their Militia Olive and Blaze
+ * Orange twins. (The lineup card, colourway-ghost-grey-print.jpg, is the print
+ * itself seated in the photo: build-colourway-cards.mjs.)
  *
  *   node scripts/build-ghost-shots.mjs
  *
@@ -60,7 +61,6 @@ const WRITE_MASK = process.argv.includes("--mask")
 
 /** Each grey, and the olive and orange twins it is made from. */
 const SHOTS = [
-  { olive: "colourway-olive.jpg", blaze: "product-front.jpg", out: "colourway-ghost-grey.jpg" },
   { olive: "mount-side-olive.jpg", blaze: "mount-side.jpg", out: "mount-side-ghost-grey.jpg" },
   {
     olive: "lifestyle-concrete-olive.jpg",

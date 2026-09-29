@@ -28,8 +28,10 @@ import { cn } from "@/lib/utils"
  * Alpha rather than a blend, because the headline runs behind this box and the
  * skull is supposed to cover it - `screen` would brighten the type showing
  * through instead, and an opaque plate would punch a rectangle out of the
- * bloom. The frame is the whole stage, the same 4:5 box the canvas draws, so
- * the mesh lands on it pixel for pixel at every size.
+ * bloom. The frame is the whole stage, the 4:5 box the canvas frames (the
+ * canvas itself is drawn wider, so a turned or pitched skull has room past
+ * the stage - see BLEED in skull-canvas), so the mesh lands on it pixel for
+ * pixel at every size.
  *
  * That ordering is what makes the slow path bearable. The model is about 1MB
  * (meshopt) on top of a ~650KB three.js chunk, so there are plenty of visitors
@@ -249,11 +251,12 @@ export function SkullStage({ className }: { className?: string }) {
   }, [attempt])
 
   // The skull tracks the cursor anywhere on screen, and can be grabbed and
-  // spun wherever it has flown to - so these listen on the window rather than
-  // on this box, and hit-test against the silhouette the render loop
-  // publishes. Everything else under the skull keeps working: a press that is
-  // not on the skull is left alone, and a press on it that never moves is
-  // still a click, so the skull docked on a product card opens the product.
+  // spun in the hero and in flight - so these listen on the window rather
+  // than on this box, and hit-test against the silhouette the render loop
+  // publishes. Seated in a photo it publishes none, so a press on a product
+  // card is the card's. Everything else under the skull keeps working: a
+  // press that is not on the skull is left alone, and a press on it that
+  // never moves is still a click.
   useEffect(() => {
     if (!live) return
     const i = getSkullInteraction()

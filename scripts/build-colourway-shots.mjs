@@ -9,9 +9,9 @@
  * build-ghost-shots.mjs: the image model's grey came back near white, and a
  * re-run here would put that silver skull back in the gallery.
  *
- * Unlike build-colourways.mjs, which remaps the blaze plate's pixels through a
- * chroma mask, these came back from an image model asked to change the filament
- * colour and hold everything else. That is why they are encoded here rather
+ * These came back from an image model asked to change the filament colour and
+ * hold everything else, rather than being derived from the blaze photographs
+ * by hand. That is why they are encoded here rather
  * than generated here: the script's job is only to match the originals'
  * dimensions and file size so the gallery's object-cover crop lands the same
  * way on all three finishes.

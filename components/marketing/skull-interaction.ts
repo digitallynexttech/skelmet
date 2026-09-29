@@ -70,10 +70,11 @@ export const SKULL_MODEL = "/product/skull.glb"
  *
  * Derived from skull-canvas: the crown anchor (0, 0.45, 1.1) lifted by
  * OPTICAL_CENTRE_LIFT projects to y = 0.293 through the z=5.4, 32° camera; the
- * model is 0.638 as wide as it is tall, so at 2.5 units high its half-width is
- * 0.797 of the 3.096 units the camera sees.
+ * print, tilted to meet the eye, is 0.742 as wide as it is tall, so at 2.36
+ * units high (SKULL_HEIGHT) its half-width is 0.876 of the 3.096 units the
+ * camera sees. scripts/build-skull-model.mjs prints the radius for a new model.
  */
-export const HALO_REST = { x: 0.5, y: 0.293, r: 0.257, flare: 0 } as const
+export const HALO_REST = { x: 0.5, y: 0.293, r: 0.283, flare: 0 } as const
 
 const interaction: SkullInteraction = {
   cursor: null,

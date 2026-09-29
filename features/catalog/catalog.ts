@@ -83,7 +83,7 @@ export const COLOURWAYS: Colourway[] = [
     sku: "SKM-OLV",
     hex: "#8A9A5B",
     blurb: "Bold in presence, subtle in colour.",
-    image: "/product/colourway-olive.jpg",
+    image: "/product/colourway-olive-print.jpg",
     price: "3499",
     stock: 0,
     inStock: true,
@@ -97,7 +97,7 @@ export const COLOURWAYS: Colourway[] = [
     // was #C8CED6, which read as silver.
     hex: "#98979E",
     blurb: "Calm, cold and still as stone.",
-    image: "/product/colourway-ghost-grey.jpg",
+    image: "/product/colourway-ghost-grey-print.jpg",
     price: "3499",
     stock: 0,
     inStock: true,
@@ -119,8 +119,8 @@ export const FLAME_SKULL_MOUNT: Product = {
       alt: "Flame skull mount, front elevation",
       src: {
         blaze: "/product/product-front.jpg",
-        olive: "/product/colourway-olive.jpg",
-        ghost: "/product/colourway-ghost-grey.jpg",
+        olive: "/product/colourway-olive-print.jpg",
+        ghost: "/product/colourway-ghost-grey-print.jpg",
       },
     },
     {

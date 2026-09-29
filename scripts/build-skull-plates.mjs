@@ -12,7 +12,7 @@
  * over it and faded in as the mesh arrives. The mesh then reads as landing on
  * the empty bracket rather than doubling up on a picture of itself.
  *
- * Keying is chroma, as in build-colourways.mjs: the print is the only
+ * Keying is chroma: the print is the only
  * saturated thing in either shot. The backdrop, the black bracket, the steel
  * screws, the grey anchors and the paper template all sit near chroma 0, so
  * they stay in the plate untouched.

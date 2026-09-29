@@ -33,10 +33,11 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  *
  * skull-canvas measures the silhouette off the model's own vertices, at
  * whatever angle a dock turns it to. REST_SILHOUETTE is that measurement
- * facing the camera, for the frames before the model has loaded.
+ * facing the camera, for the frames before the model has loaded; the build
+ * script (scripts/build-skull-model.mjs) prints it for a new model.
  */
 export type Silhouette = { height: number; centreX: number; centreY: number }
-export const REST_SILHOUETTE: Silhouette = { height: 0.893, centreX: 0.5, centreY: 0.513 }
+export const REST_SILHOUETTE: Silhouette = { height: 0.829, centreX: 0.5, centreY: 0.512 }
 
 /** The skull's centre lands when it reaches this share of the viewport height... */
 const ARRIVE = 0.58
@@ -54,6 +55,20 @@ const RAMP = 280
 const SWING = 0.7
 /** How much smaller the skull gets mid-flight, as if pulled back in depth. */
 const DIP = 0.14
+/**
+ * How far the skull nods toward the camera once seated in a photo, radians.
+ * The camera sits level with the middle of the skull, which puts the eyes
+ * above it, and a skull seen from below its eyes reads as looking up. The
+ * photographs were taken from a little above eye level, so seated the skull
+ * tips forward to meet that camera, and faces the reader as the prints beside
+ * it do. Eased in over the landing with `docked`; the hero is untouched.
+ *
+ * 18°, chosen against the orange product photo: the skull's outline overlaps
+ * the photographed one most closely here (0.927), less at 14° and at 22°,
+ * and to the eye it is at 18° that the seated skull meets the camera as the
+ * photograph does.
+ */
+const DOCK_PITCH = 0.31
 
 /**
  * Phones, as Tailwind's `sm` breakpoint draws the line. Here the route is cut
@@ -95,6 +110,8 @@ export type Pose = {
   spin: number
   /** The dock's own yaw, eased between stops. Unlike spin, it sets the silhouette. */
   turn: number
+  /** Nod toward the camera while seated, radians: DOCK_PITCH by how seated. */
+  pitch: number
   /** The crop to apply, document px, or null for none. */
   clip: Box | null
   /** How far each photo's own skull should be hidden, 0..1. */
@@ -278,5 +295,5 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     }
   }
 
-  return { cx, cy, h, bob, spin, turn, clip, plates, docked: nearest }
+  return { cx, cy, h, bob, spin, turn, pitch: DOCK_PITCH * nearest, clip, plates, docked: nearest }
 }

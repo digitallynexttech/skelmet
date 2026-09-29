@@ -25,10 +25,11 @@
     "db:sync-permissions": "tsx prisma/sync-permissions.ts",
     "assets:icons": "node scripts/build-app-icons.mjs",
     "assets:brand": "node scripts/build-brand-assets.mjs",
-    "assets:colourways": "node scripts/build-colourways.mjs",
+    "assets:colourway-cards": "node scripts/build-colourway-cards.mjs",
     "assets:colourway-shots": "node scripts/build-colourway-shots.mjs",
     "assets:ghost-shots": "node scripts/build-ghost-shots.mjs",
     "assets:hero-poster": "node scripts/build-hero-poster.mjs",
+    "assets:skull-model": "node scripts/build-skull-model.mjs",
     "assets:skull-plates": "node scripts/build-skull-plates.mjs"
   },
   "dependencies": {
@@ -59,6 +60,9 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.20.4",
     "@types/pdfkit": "^0.17.6",
@@ -68,6 +72,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.6",
     "eslint-config-prettier": "^10.1.8",
+    "meshoptimizer": "^1.3.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.9.1",

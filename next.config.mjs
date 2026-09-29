@@ -62,7 +62,9 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1280, 1440, 1920, 2048, 3840],
     // A week in the browser. The optimiser's cache goes with each deploy's
     // build directory, so a replaced photo is re-encoded after a deploy.
-    minimumCacheTTL: 604800,
+    // Not in development: a re-rendered photo sat behind the browser's copy
+    // for a week there, and a normal reload does not refetch images.
+    minimumCacheTTL: process.env.NODE_ENV === "development" ? 0 : 604800,
   },
   // Source maps for the browser bundles: they only download when DevTools is
   // open, and let an error in the field point at a real line. The code is
