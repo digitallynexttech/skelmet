@@ -6,7 +6,12 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 
 import { SkullBoundary } from "@/components/marketing/skull-boundary"
-import { BOB_PERIOD, BOB_RISE, getSkullInteraction } from "@/components/marketing/skull-interaction"
+import {
+  BOB_PERIOD,
+  BOB_RISE,
+  getSkullInteraction,
+  SKULL_MODEL,
+} from "@/components/marketing/skull-interaction"
 import { afterFirstInteraction } from "@/lib/first-interaction"
 import { cn } from "@/lib/utils"
 
@@ -38,10 +43,15 @@ import { cn } from "@/lib/utils"
  * gone idle, so it never competes with the poster, the fonts or hydration. It
  * then takes over in a single frame. The two are the same picture bobbing to
  * the same clock (see BOB_PERIOD), and a cross-fade between identical images
- * only thins them both, showing the headline through the skull halfway. Once
- * the model has been on screen, coming back to the page starts without the
- * poster and fades the model in over the empty stage, since skull-canvas keeps
- * the parsed file for the rest of the session.
+ * only thins them both, showing the headline through the skull halfway.
+ *
+ * How long it waits depends on what the browser already has. A first visit
+ * waits for a sign of a person too, since that is a megabyte to download. A
+ * browser holding the file from an earlier visit loads it as soon as the page
+ * settles, behind the splash; one that has shown it in this page's lifetime,
+ * coming back from another page, loads it at once from the copy skull-canvas
+ * keeps. The poster stays up until the model is ready every time: it used to
+ * be left out on a return, and the stage stood empty until the model faded in.
  *
  * The canvas is not drawn inside this box. It is portalled to the body, into
  * a box the size of this one, and flown down the page by skull-journey: it
@@ -125,6 +135,23 @@ function afterPageSettles(run: () => void): () => void {
 }
 
 /**
+ * Whether this browser already holds the model, asked without touching the
+ * network: `only-if-cached` answers from the HTTP cache or not at all. The file
+ * is served immutable for a month, so anyone who saw the model on an earlier
+ * visit has it on disk. Browsers without the mode reject it, which reads as no
+ * and leaves them on the first-visit path.
+ */
+async function modelCached(): Promise<boolean> {
+  try {
+    const response = await fetch(SKULL_MODEL, { cache: "only-if-cached", mode: "same-origin" })
+    response.body?.cancel().catch(() => {})
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+/**
  * The model has been on screen at least once in this page's lifetime. Client
  * code only; a module binding on the server would be shared between visitors.
  */
@@ -147,14 +174,6 @@ export function SkullStage({ className }: { className?: string }) {
   const [attempt, setAttempt] = useState(false)
   /** Is the mesh on screen - the only thing that hides the poster. */
   const [live, setLive] = useState(false)
-  /**
-   * Coming back to a page where the model has already been seen: leave the
-   * poster out, so the stage waits a beat for the model rather than showing
-   * the photo and swapping. Read in the initialiser so not even the first
-   * frame shows the photo. That is hydration-safe: the flag is only ever true
-   * after a client-side navigation, never on a fresh page load.
-   */
-  const [returning, setReturning] = useState(() => typeof window !== "undefined" && modelShown)
 
   const onReady = useCallback(() => {
     modelShown = true
@@ -168,7 +187,6 @@ export function SkullStage({ className }: { className?: string }) {
   // otherwise leave the stage empty.
   const onFailed = useCallback(() => {
     setLive(false)
-    setReturning(false)
   }, [])
 
   // Decide whether to go after the model at all, and when.
@@ -181,26 +199,33 @@ export function SkullStage({ className }: { className?: string }) {
       const allow = !motion.matches && !prefersLessData() && !lowEndPhone()
       if (!allow) {
         setAttempt(false)
-        setReturning(false)
         return
       }
-      // Seen already: the file is parsed and cached, so there is nothing to
-      // wait for and no reason to show the poster first.
+      // Back from another page: the file is parsed and kept, so there is
+      // nothing to wait for.
       if (modelShown) {
-        setReturning(true)
         setAttempt(true)
         return
       }
-      // First visit: not before the visitor does something, then not before
-      // the page has settled. The model is a megabyte and a second of main
-      // thread on a phone; the poster already fills the hero, so the first
-      // screen - and its speed - is the page's own, and the model arrives
-      // while they are reading.
+      // Otherwise not before the page has settled, and on a first visit not
+      // before the visitor does something either. The model is a megabyte and
+      // a second of main thread on a phone; the poster already fills the hero,
+      // so the first screen - and its speed - is the page's own, and the model
+      // arrives while they are reading. A browser that already has the file
+      // has nothing to download, so it skips the wait for a person.
+      let stopped = false
+      let waiting = () => {}
       let settle = () => {}
-      const waiting = afterFirstInteraction(() => {
+      const load = () => {
         settle = afterPageSettles(() => setAttempt(true))
+      }
+      void modelCached().then((cached) => {
+        if (stopped) return
+        if (cached) load()
+        else waiting = afterFirstInteraction(load)
       })
       cancel = () => {
+        stopped = true
         waiting()
         settle()
       }
@@ -310,6 +335,9 @@ export function SkullStage({ className }: { className?: string }) {
       window.removeEventListener("click", swallowClick, true)
       i.dragging = false
       i.cursor = null
+      // Back to rest, so a return to the page starts the mesh where the
+      // poster is: it eases toward the last pointer even before it is shown.
+      for (const v of [i.pointer, i.userRot, i.vel]) v.x = v.y = 0
       setCursor(null)
     }
   }, [live])
@@ -377,14 +405,13 @@ export function SkullStage({ className }: { className?: string }) {
         preload
         fetchPriority="high"
         sizes="(min-width: 1280px) 576px, (min-width: 1024px) 528px, (min-width: 640px) 480px, 410px"
-        className={cn("pointer-events-none object-contain", (live || returning) && "invisible")}
+        className={cn("pointer-events-none object-contain", live && "invisible")}
         style={
           {
             "--bob-rise": `${BOB_RISE * 100}%`,
-            animation:
-              live || returning
-                ? "none"
-                : `skull-bob ${BOB_PERIOD}s cubic-bezier(0.37, 0, 0.63, 1) infinite`,
+            animation: live
+              ? "none"
+              : `skull-bob ${BOB_PERIOD}s cubic-bezier(0.37, 0, 0.63, 1) infinite`,
           } as CSSProperties
         }
       />
@@ -402,15 +429,8 @@ export function SkullStage({ className }: { className?: string }) {
               className="pointer-events-none absolute top-0 left-0 z-30 origin-top-left"
             >
               <SkullBoundary onError={onFailed}>
-                <div
-                  className={cn(
-                    "size-full",
-                    // Straight over the poster, which is this same frame. Faded
-                    // in only where there is no poster under it.
-                    returning && "ease-out-expo transition-opacity duration-700",
-                    live ? "opacity-100" : "opacity-0",
-                  )}
-                >
+                {/* Straight over the poster, which is this same frame. */}
+                <div className={cn("size-full", live ? "opacity-100" : "opacity-0")}>
                   <SkullCanvas flightRef={flightRef} onReady={onReady} onError={onFailed} />
                 </div>
               </SkullBoundary>

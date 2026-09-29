@@ -19,13 +19,13 @@ import { cn } from "@/lib/utils"
  * hide - so the markup ships in the HTML and the client's only job is to take
  * it away again.
  *
- * Shown once per browser session. It lives in a layout, so moving around the
- * site never replays it; and once it has played, sessionStorage remembers, and
- * the inline script in app/layout.tsx marks <html data-splash-skip> before the
- * first paint of every later page load in the session, which hides it in CSS.
- * Reduced motion hides it in CSS too (globals.css), so neither case waits for
- * JavaScript to take an orange screen away. `splashCompleted` still covers
- * bouncing out to /admin and back, which remounts this layout.
+ * Shown on every full page load - a first visit, a reload, a new tab - and
+ * never on a move within the site. It lives in a layout, so client navigation
+ * does not replay it, and `splashCompleted` covers bouncing out to /admin and
+ * back, which remounts this layout. It used to play once per browser session,
+ * remembered in sessionStorage, and a reload skipping it read as broken.
+ * Reduced motion hides it in CSS (globals.css), so that case never waits for
+ * JavaScript to take an orange screen away.
  *
  * Dismissal is bounded at both ends, measured from navigation start rather
  * than from hydration: on a slow phone the JavaScript alone can take seconds,
@@ -36,8 +36,9 @@ import { cn } from "@/lib/utils"
  *
  * Nothing holds it down any more. The hero's 3D model used to, so the swap
  * from poster to model happened behind the curtain - but that made every
- * visitor wait for a megabyte they may never see. The poster is a finished
- * hero; the model fades in over it later.
+ * visitor wait for a megabyte they may never see. The poster is the model's
+ * own frame; the model takes over from it later, and behind the curtain on a
+ * visit where the browser already holds the file (see SkullStage).
  */
 
 /** Brand beat floor, from navigation start, so a warm cache does not flash it and vanish. */
@@ -45,8 +46,6 @@ const MIN_HOLD_MS = 1100
 /** Hard ceiling, from navigation start. A stalled font must never trap the visitor. */
 const MAX_HOLD_MS = 2000
 
-/** The session's memory that the intro has played. The same key is read in app/layout.tsx. */
-const SPLASH_SEEN_KEY = "skm.splash"
 /** Content fade (400ms) then the halves parting (1200ms, starting at 150ms). */
 const EXIT_MS = 950
 
@@ -94,22 +93,15 @@ export function SplashScreen() {
   const fillRef = React.useRef<HTMLDivElement>(null)
   const readoutRef = React.useRef<HTMLSpanElement>(null)
 
-  // The ways to never play at all. CSS has already hidden the markup for the
-  // first two; this takes it out of the tree and releases the scroll lock.
+  // The ways to never play at all. CSS has already hidden the markup for
+  // reduced motion; this takes it out of the tree and releases the scroll lock.
   //
   // Reduced motion skips the intro outright rather than holding a still frame
   // of it: every element here arrives on a delayed animation, so a motionless
-  // version is a flat orange rectangle over a page that is already there. A
-  // later page load in the same session has seen it, and so has the /admin
-  // round trip remounting this layout.
+  // version is a flat orange rectangle over a page that is already there. The
+  // /admin round trip remounting this layout has seen it already.
   useBeforePaint(() => {
-    if (
-      splashCompleted ||
-      prefersReducedMotion() ||
-      document.documentElement.hasAttribute("data-splash-skip")
-    ) {
-      setPhase("done")
-    }
+    if (splashCompleted || prefersReducedMotion()) setPhase("done")
   }, [])
 
   // The whole intro: loading signals, the fill ramp, and the two clocks that
@@ -200,12 +192,6 @@ export function SplashScreen() {
     if (phase !== "exit") return
     const timer = setTimeout(() => {
       splashCompleted = true
-      try {
-        sessionStorage.setItem(SPLASH_SEEN_KEY, "1")
-      } catch {
-        // Storage refused (private mode, blocked site data): it plays again on
-        // the next reload, which is harmless.
-      }
       setPhase("done")
     }, EXIT_MS)
     return () => clearTimeout(timer)

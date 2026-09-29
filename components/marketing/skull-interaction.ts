@@ -58,6 +58,12 @@ export const BOB_PERIOD = 11.4
 export const BOB_RISE = 0.045 / 3.096
 
 /**
+ * The model file. Here rather than in skull-canvas so the stage can ask the
+ * browser's cache for it without pulling three.js into its own chunk.
+ */
+export const SKULL_MODEL = "/product/skull.glb"
+
+/**
  * The halo at rest, facing the camera. The poster path never loads the canvas,
  * so nothing ever overwrites this - it has to be where the mesh would put it,
  * or the burn would sit off the skull for every visitor on the fallback.

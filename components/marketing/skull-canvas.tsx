@@ -29,6 +29,7 @@ import {
   BOB_RISE,
   getSkullInteraction,
   HALO_REST,
+  SKULL_MODEL,
 } from "@/components/marketing/skull-interaction"
 import {
   journey,
@@ -120,7 +121,7 @@ let skullFile: Promise<GLTF> | null = null
 
 function loadSkull(loader: GLTFLoader): Promise<GLTF> {
   skullFile ??= new Promise<GLTF>((resolve, reject) =>
-    loader.load("/product/skull.glb", resolve, undefined, reject),
+    loader.load(SKULL_MODEL, resolve, undefined, reject),
   ).catch((reason: unknown) => {
     skullFile = null
     throw reason

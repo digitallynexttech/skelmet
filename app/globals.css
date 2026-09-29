@@ -360,15 +360,6 @@
   }
 }
 
-/* The splash (components/shared/splash-screen.tsx), decided without waiting
- * for JavaScript. Hidden for the rest of a session once it has played - the
- * inline script in app/layout.tsx sets data-splash-skip before first paint -
- * and for reduced motion. And never left up: if the script that lifts it has
- * not done so within 3.5 s of it appearing, it fades out on its own. */
-html[data-splash-skip] [data-splash] {
-  display: none !important;
-}
-
 /* The /cart and /checkout placeholders (see BEFORE_PAINT in app/layout.tsx):
  * each renders both its full layout and its empty state, and shows the one
  * the saved cart says the page is about to become. */
@@ -376,6 +367,9 @@ html[data-cart-empty] [data-when-cart="full"],
 html:not([data-cart-empty]) [data-when-cart="empty"] {
   display: none;
 }
+/* The splash (components/shared/splash-screen.tsx) is never left up: if the
+ * script that lifts it has not done so within 3.5 s of it appearing, it fades
+ * out on its own. Reduced motion hides it outright, below. */
 [data-splash] {
   animation: splash-failsafe 0.4s ease-out 3.5s forwards;
 }
