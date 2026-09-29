@@ -17,6 +17,8 @@ export const PERMISSIONS = {
   REVIEW_MODERATE: "review:moderate",
   INQUIRY_READ: "inquiry:read",
   INQUIRY_WRITE: "inquiry:write",
+  NEWSLETTER_READ: "newsletter:read",
+  NEWSLETTER_SEND: "newsletter:send",
   SETTING_READ: "setting:read",
   SETTING_WRITE: "setting:write",
 } as const
@@ -41,6 +43,12 @@ export const PERMISSION_DEFINITIONS: Array<{
   { scope: PERMISSIONS.REVIEW_MODERATE, module: "review", label: "Moderate reviews" },
   { scope: PERMISSIONS.INQUIRY_READ, module: "inquiry", label: "View inquiries" },
   { scope: PERMISSIONS.INQUIRY_WRITE, module: "inquiry", label: "Reply to inquiries" },
+  {
+    scope: PERMISSIONS.NEWSLETTER_READ,
+    module: "newsletter",
+    label: "View newsletter subscribers",
+  },
+  { scope: PERMISSIONS.NEWSLETTER_SEND, module: "newsletter", label: "Send newsletters" },
   { scope: PERMISSIONS.SETTING_READ, module: "setting", label: "View settings" },
   { scope: PERMISSIONS.SETTING_WRITE, module: "setting", label: "Change settings" },
 ]

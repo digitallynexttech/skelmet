@@ -1,11 +1,8 @@
-/**
- * Client-safe inquiry constants (§4). Kept out of the schema file so the home
- * page's one-field form does not pull zod into its bundle for a string.
- */
+/** Client-safe inquiry constants (§4). */
 
 /**
- * The topic a drop-list sign-up is filed under: the home page's "Notify me"
- * sends an email address and nothing else, and it lands in the inquiry inbox
- * staff already read, dated, which doubles as the record of consent.
+ * The topic the home page's "Notify me" used to post to the contact endpoint
+ * under. Sign-ups have their own endpoint now (features/newsletter); this
+ * stays so a page loaded before that change still reaches the list.
  */
 export const DROP_LIST_TOPIC = "Drop list"

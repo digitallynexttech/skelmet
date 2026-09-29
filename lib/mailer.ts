@@ -29,6 +29,8 @@ export type MailInput = {
   html?: string
   replyTo?: string
   attachments?: MailAttachment[]
+  /** Extra headers, e.g. the newsletter's List-Unsubscribe pair. */
+  headers?: Record<string, string>
 }
 
 export type MailAttachment = { filename: string; content: Buffer; contentType: string }
@@ -70,32 +72,79 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
   }
 
   try {
-    const env = getEnv()
     const nodemailer = (await import("nodemailer")).default
-
-    const transport = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      // 465 is implicit TLS; everything else starts plain and upgrades.
-      secure: env.SMTP_PORT === 465,
-      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
-      ...SMTP_TIMEOUTS,
-    })
-
-    const info = await transport.sendMail({
-      from: env.MAIL_FROM,
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      ...(input.html ? { html: input.html } : {}),
-      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
-      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
-    })
-
-    return { ok: true, delivered: true, messageId: info.messageId ?? null }
+    return await deliver(nodemailer.createTransport(transportOptions()), input)
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err)
-    console.error(`[MAILER] send failed to ${maskEmail(input.to)}:`, error)
-    return { ok: false, delivered: false, error }
+    return failed(input, err)
   }
+}
+
+/**
+ * One connection for sending the same email to a list, one message at a time.
+ * sendMail logs in afresh for every message, which is right for a receipt; for
+ * a few hundred in a row it is a few hundred logins, and Gmail reads that as
+ * abuse. Close it when the list is done.
+ *
+ * Same rules as sendMail: `send` never throws, and with SMTP unconfigured
+ * every send is a no-op that says so.
+ */
+export type MailPool = {
+  send: (input: MailInput) => Promise<MailResult>
+  close: () => void
+}
+
+export async function openMailPool(): Promise<MailPool> {
+  if (!isMailConfigured()) return { send: sendMail, close: () => {} }
+
+  const nodemailer = (await import("nodemailer")).default
+  const transport = nodemailer.createTransport({
+    ...transportOptions(),
+    pool: true,
+    maxConnections: 1,
+  })
+  return {
+    send: async (input) => {
+      try {
+        return await deliver(transport, input)
+      } catch (err) {
+        return failed(input, err)
+      }
+    },
+    close: () => transport.close(),
+  }
+}
+
+function transportOptions() {
+  const env = getEnv()
+  return {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    // 465 is implicit TLS; everything else starts plain and upgrades.
+    secure: env.SMTP_PORT === 465,
+    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
+    ...SMTP_TIMEOUTS,
+  }
+}
+
+async function deliver(
+  transport: { sendMail: (message: object) => Promise<{ messageId?: string }> },
+  input: MailInput,
+): Promise<MailResult> {
+  const info = await transport.sendMail({
+    from: getEnv().MAIL_FROM,
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    ...(input.html ? { html: input.html } : {}),
+    ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+    ...(input.attachments?.length ? { attachments: input.attachments } : {}),
+    ...(input.headers ? { headers: input.headers } : {}),
+  })
+  return { ok: true, delivered: true, messageId: info.messageId ?? null }
+}
+
+function failed(input: MailInput, err: unknown): MailResult {
+  const error = err instanceof Error ? err.message : String(err)
+  console.error(`[MAILER] send failed to ${maskEmail(input.to)}:`, error)
+  return { ok: false, delivered: false, error }
 }

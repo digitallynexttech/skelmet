@@ -8,6 +8,7 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   MessageSquare,
   Package,
@@ -71,6 +72,13 @@ const NAV: NavItem[] = [
     href: "/admin/inquiries",
     icon: MessageSquare,
     scope: PERMISSIONS.INQUIRY_READ,
+  },
+  {
+    label: "Newsletter",
+    href: "/admin/newsletter",
+    icon: Mail,
+    scope: PERMISSIONS.NEWSLETTER_READ,
+    children: [{ label: "Write an email", href: "/admin/newsletter/emails" }],
   },
   {
     label: "Settings",

@@ -62,6 +62,26 @@ enum InquiryStatus {
   RESOLVED
 }
 
+enum SubscriberStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+/// SENDING while the loop runs, PAUSED when it stopped short (the mail
+/// account's daily limit, or a restart), SENT once everyone has been tried.
+enum CampaignStatus {
+  SENDING
+  PAUSED
+  SENT
+}
+
+/// PENDING is claimed but not yet confirmed by the mail server.
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model User {
   id               String     @id @default(uuid()) @db.Uuid
   kind             UserKind   @default(CUSTOMER)
@@ -443,6 +463,72 @@ model Inquiry {
   @@index([status, createdAt])
   @@index([email])
   @@map("inquiries")
+}
+
+/// Someone who asked, through the home page's "Notify me", to hear about new
+/// designs and colourways. One row per address, stored lowercased; the row's
+/// dates are the record of consent and of withdrawing it.
+model Subscriber {
+  id             String           @id @default(uuid()) @db.Uuid
+  email          String           @unique
+  status         SubscriberStatus @default(SUBSCRIBED)
+  /// Where the address came from: "drop-list" for the home page form.
+  source         String
+  /// Signs the unsubscribe link in every email. Never shown in the console.
+  token          String           @unique
+  subscribedAt   DateTime         @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime?        @map("unsubscribed_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  deliveries NewsletterDelivery[]
+
+  @@index([status, subscribedAt])
+  @@map("newsletter_subscribers")
+}
+
+/// One email sent to the list from the console.
+model NewsletterCampaign {
+  id         String         @id @default(uuid()) @db.Uuid
+  subject    String
+  body       String
+  ctaLabel   String?        @map("cta_label")
+  ctaUrl     String?        @map("cta_url")
+  status     CampaignStatus @default(SENDING)
+  /// Subscribed addresses when it was sent; later sign-ups are not added.
+  recipients Int
+  /// The mail server's last word when it stopped short, for the console.
+  note       String?
+  sentById   String?        @map("sent_by_id") @db.Uuid
+  sentByEmail String?       @map("sent_by_email")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  finishedAt DateTime?      @map("finished_at")
+
+  deliveries NewsletterDelivery[]
+
+  @@index([createdAt])
+  @@map("newsletter_campaigns")
+}
+
+/// One campaign to one subscriber. Claimed before sending, so a campaign
+/// resumed after a restart never emails anyone twice.
+model NewsletterDelivery {
+  id           String         @id @default(uuid()) @db.Uuid
+  campaignId   String         @map("campaign_id") @db.Uuid
+  subscriberId String         @map("subscriber_id") @db.Uuid
+  status       DeliveryStatus @default(PENDING)
+  error        String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  campaign   NewsletterCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriber Subscriber         @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, subscriberId])
+  @@index([campaignId, status])
+  @@index([subscriberId])
+  @@map("newsletter_deliveries")
 }
 
 /// The last invoice number used in each financial year ("26-27"), claimed

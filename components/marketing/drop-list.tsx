@@ -2,7 +2,7 @@ import Image from "next/image"
 
 import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
-import { DropListForm } from "@/features/inquiries/components/drop-list-form"
+import { DropListForm } from "@/features/newsletter/components/drop-list-form"
 
 export function DropList() {
   return (

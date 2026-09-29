@@ -6,14 +6,15 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
-import { DROP_LIST_TOPIC } from "@/features/inquiries/inquiries"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 
 /**
- * "Notify me" on the home page. It used to be markup with no handler and an
- * input with no name, so pressing the button reloaded the page and the address
- * went nowhere. It now joins the drop list through the contact endpoint, which
- * files it in the inquiry inbox under DROP_LIST_TOPIC.
+ * "Notify me" on the home page: joins the drop list, which staff see and email
+ * under Newsletter in the console.
+ *
+ * It used to go through the contact endpoint and land in the inquiry inbox as
+ * a message, where an address was a row to resolve rather than someone to
+ * email - with no unsubscribe, and nothing to send from.
  */
 export function DropListForm() {
   const [state, setState] = React.useState<"idle" | "pending" | "done">("idle")
@@ -26,10 +27,9 @@ export function DropListForm() {
     setError(null)
 
     try {
-      await apiFetch("/api/public/contact", {
+      await apiFetch("/api/public/newsletter", {
         method: "POST",
         body: JSON.stringify({
-          topic: DROP_LIST_TOPIC,
           email: String(form.get("email") ?? ""),
           website: String(form.get("website") ?? ""),
         }),
