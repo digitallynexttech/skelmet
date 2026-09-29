@@ -491,7 +491,11 @@ model Subscriber {
 model NewsletterCampaign {
   id         String         @id @default(uuid()) @db.Uuid
   subject    String
+  /// The message as plain text: the email's text part, and the console's history.
   body       String
+  /// The rich-text editor's document the email is built from. Null for one
+  /// sent before the editor, which is rebuilt from `body`.
+  content    Json?
   ctaLabel   String?        @map("cta_label")
   ctaUrl     String?        @map("cta_url")
   status     CampaignStatus @default(SENDING)
@@ -509,6 +513,23 @@ model NewsletterCampaign {
 
   @@index([createdAt])
   @@map("newsletter_campaigns")
+}
+
+/// A picture placed in a newsletter, resized on upload and served from
+/// /api/public/newsletter/images/<id> for as long as any email points at it.
+/// In the database rather than on disk: a deploy resets the checkout, and
+/// `next start` serves only the public files that existed at build time.
+model NewsletterImage {
+  id          String   @id @default(uuid()) @db.Uuid
+  contentType String   @map("content_type")
+  data        Bytes
+  width       Int
+  height      Int
+  bytes       Int
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter_images")
 }
 
 /// One campaign to one subscriber. Claimed before sending, so a campaign

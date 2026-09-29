@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { renderNewsletter, unsubscribeHeaders } from "@/features/newsletter/emails/newsletter-email"
+import { docFromText } from "@/features/newsletter/newsletter-content"
 
 const base = {
   subject: "The Ghost Grey drop",
-  body: "Hey rider,\n\nThe grey one is here.\nSee https://www.skelmet.in/product/flame-skull-mount.",
+  content: docFromText("Hey rider,\n\nThe grey one is here."),
   unsubscribeUrl: "https://www.skelmet.in/unsubscribe?token=abc",
 }
 
@@ -19,11 +20,10 @@ describe("renderNewsletter", () => {
     expect(m.html).toContain('href="https://www.skelmet.in/unsubscribe?token=abc"')
   })
 
-  it("makes paragraphs of blank lines and links of web addresses, leaving the full stop out", () => {
-    const { html } = renderNewsletter(base)
-    expect(html.match(/<p style/g)).toHaveLength(2)
-    expect(html).toContain('href="https://www.skelmet.in/product/flame-skull-mount"')
-    expect(html).not.toContain('flame-skull-mount."')
+  it("puts the message in both parts", () => {
+    const m = renderNewsletter(base)
+    expect(m.text).toContain("Hey rider,\n\nThe grey one is here.")
+    expect(m.html).toContain("The grey one is here.")
   })
 
   it("adds the button only when there is a link, with a label if none was given", () => {
@@ -36,15 +36,10 @@ describe("renderNewsletter", () => {
     expect(m.text).toContain("Take a look: https://www.skelmet.in/product/flame-skull-mount")
   })
 
-  it("escapes what staff typed", () => {
-    const m = renderNewsletter({
-      ...base,
-      subject: "<script>x</script>",
-      body: "<b>bold</b> claim",
-    })
+  it("escapes the subject", () => {
+    const m = renderNewsletter({ ...base, subject: "<script>x</script>" })
     expect(m.html).not.toContain("<script>x</script>")
-    expect(m.html).not.toContain("<b>bold</b>")
-    expect(m.html).toContain("&lt;b&gt;bold&lt;/b&gt;")
+    expect(m.html).toContain("&lt;script&gt;")
   })
 })
 

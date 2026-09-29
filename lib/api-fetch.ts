@@ -22,7 +22,10 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const res = await fetch(path, {
     ...init,
     headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
+      // A FormData body sets its own multipart type, boundary included.
+      ...(init?.body && !(init.body instanceof FormData)
+        ? { "content-type": "application/json" }
+        : {}),
       ...init?.headers,
     },
   })

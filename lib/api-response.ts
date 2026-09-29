@@ -71,6 +71,20 @@ export function respondPdf(result: ActionResult<{ pdf: Buffer; filename: string 
   })
 }
 
+/**
+ * An image an id names for good, so any cache may keep it for a year: the
+ * newsletter's pictures are never edited in place, only uploaded afresh.
+ */
+export function respondImage(result: ActionResult<{ data: Uint8Array; contentType: string }>) {
+  if (!result.ok) return respond(result)
+  return new NextResponse(new Uint8Array(result.data.data), {
+    headers: {
+      "Content-Type": result.data.contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  })
+}
+
 /** A paginated read is `ok({ data: rows, pagination })`, so hooks read `.data.data`. */
 export function paginate<T>(rows: T[], page: number, pageSize: number, total: number) {
   return {

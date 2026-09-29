@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     },
     newsletterCampaign: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
     newsletterDelivery: { createMany: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    newsletterImage: { create: vi.fn() },
   },
   send: vi.fn(),
   sendMail: vi.fn(),
@@ -40,8 +41,11 @@ vi.mock("@/lib/mailer", () => ({
   sendMail: mocks.sendMail,
 }))
 
-const { runCampaign, sendCampaign, subscribe, unsubscribe } =
+const { runCampaign, sendCampaign, subscribe, unsubscribe, uploadNewsletterImage } =
   await import("@/features/newsletter/server/newsletter.service")
+
+const { docFromText } = await import("@/features/newsletter/newsletter-content")
+const sharp = (await import("sharp")).default
 
 const TOKEN = "a".repeat(64)
 
@@ -127,7 +131,7 @@ describe("unsubscribe", () => {
 })
 
 describe("sendCampaign", () => {
-  const draft = { subject: "The Ghost Grey drop", body: "It's here. Have a look." }
+  const draft = { subject: "The Ghost Grey drop", content: docFromText("It's here. Have a look.") }
 
   it("sends a test only to the person sending it", async () => {
     mocks.sendMail.mockResolvedValue({ ok: true, delivered: true, messageId: "m" })
@@ -159,6 +163,7 @@ describe("runCampaign", () => {
   const campaign = {
     subject: "The Ghost Grey drop",
     body: "It's here.",
+    content: null,
     ctaLabel: null,
     ctaUrl: null,
     createdAt: new Date(),
@@ -234,5 +239,80 @@ describe("runCampaign", () => {
       where: { id: "c1" },
       data: expect.objectContaining({ status: "SENT" }),
     })
+  })
+})
+
+describe("uploadNewsletterImage", () => {
+  const form = (file: File) => {
+    const f = new FormData()
+    f.append("file", file)
+    return f
+  }
+  const picture = async (width: number, height: number, alpha: boolean) =>
+    sharp({
+      create: {
+        width,
+        height,
+        channels: alpha ? 4 : 3,
+        background: alpha ? { r: 255, g: 90, b: 31, alpha: 0.5 } : { r: 255, g: 90, b: 31 },
+      },
+    })
+      [alpha ? "png" : "jpeg"]()
+      .toBuffer()
+
+  beforeEach(() => {
+    mocks.db.newsletterImage.create.mockResolvedValue({
+      id: "0b6f7f3e-4c1a-4d8e-9a55-1f2e3d4c5b6a",
+    })
+  })
+
+  it("shrinks a big photo to 1200 wide, as a JPEG, and hands back its public address", async () => {
+    const buf = await picture(3000, 2000, false)
+    const result = await uploadNewsletterImage(
+      form(new File([new Uint8Array(buf)], "ride.jpg", { type: "image/jpeg" })),
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        width: 1200,
+        height: 800,
+        url: expect.stringContaining(
+          "/api/public/newsletter/images/0b6f7f3e-4c1a-4d8e-9a55-1f2e3d4c5b6a",
+        ),
+      },
+    })
+    expect(mocks.db.newsletterImage.create.mock.calls[0]![0].data).toMatchObject({
+      contentType: "image/jpeg",
+      width: 1200,
+      height: 800,
+    })
+  })
+
+  it("keeps transparency as a PNG, and never enlarges a small one", async () => {
+    const buf = await picture(300, 200, true)
+    await uploadNewsletterImage(
+      form(new File([new Uint8Array(buf)], "logo.png", { type: "image/png" })),
+    )
+    expect(mocks.db.newsletterImage.create.mock.calls[0]![0].data).toMatchObject({
+      contentType: "image/png",
+      width: 300,
+      height: 200,
+    })
+  })
+
+  it("turns away what is not a picture, or too big to be one we want", async () => {
+    const pdf = new File([new Uint8Array([37, 80, 68, 70])], "menu.pdf", {
+      type: "application/pdf",
+    })
+    expect(await uploadNewsletterImage(form(pdf))).toMatchObject({ ok: false, status: 415 })
+
+    const huge = new File([new Uint8Array(8 * 1024 * 1024 + 1)], "huge.jpg", { type: "image/jpeg" })
+    expect(await uploadNewsletterImage(form(huge))).toMatchObject({ ok: false, status: 413 })
+
+    const fake = new File([new Uint8Array([1, 2, 3, 4])], "fake.jpg", { type: "image/jpeg" })
+    expect(await uploadNewsletterImage(form(fake))).toMatchObject({ ok: false, status: 422 })
+
+    expect(await uploadNewsletterImage(new FormData())).toMatchObject({ ok: false, status: 400 })
+    expect(mocks.db.newsletterImage.create).not.toHaveBeenCalled()
   })
 })

@@ -14,6 +14,14 @@ import { db } from "@/server/db"
 import { later } from "@/server/later"
 import { renderNewsletter, unsubscribeHeaders } from "@/features/newsletter/emails/newsletter-email"
 import {
+  docFromText,
+  docToText,
+  newsletterImageUrl,
+  type NewsletterDoc,
+} from "@/features/newsletter/newsletter-content"
+import {
+  NEWSLETTER_IMAGE_MAX_BYTES,
+  NEWSLETTER_IMAGE_TYPES,
   sendCampaignSchema,
   subscribeSchema,
   unsubscribeSchema,
@@ -337,6 +345,9 @@ export async function listCampaigns(): Promise<
   })
 }
 
+export type SendResult =
+  { test: true; to: string } | { test: false; id: string; recipients: number }
+
 /**
  * Sends a campaign, or a test of it to the staff member sending.
  *
@@ -344,9 +355,6 @@ export async function listCampaigns(): Promise<
  * real thing is recorded, answered at once, and sent after the response - a
  * few hundred paced emails take minutes, which no request should wait on.
  */
-export type SendResult =
-  { test: true; to: string } | { test: false; id: string; recipients: number }
-
 export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResult>> {
   return runAction<SendResult>(async () => {
     const session = await requirePermission(PERMISSIONS.NEWSLETTER_SEND)
@@ -356,9 +364,9 @@ export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResul
       return fail("Email is not set up on this server, so nothing can be sent.", undefined, 503)
     }
 
-    const content = {
+    const email = {
       subject: input.subject,
-      body: input.body,
+      content: input.content,
       ctaLabel: input.ctaLabel || null,
       ctaUrl: input.ctaUrl || null,
     }
@@ -367,7 +375,7 @@ export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResul
       const to = session.user.email
       if (!to) return fail("Your account has no email address to send a test to.")
       const mail = renderNewsletter({
-        ...content,
+        ...email,
         // A test has no subscriber behind it; this page says so.
         unsubscribeUrl: `${siteConfig.url}/unsubscribe?preview=1`,
       })
@@ -390,7 +398,11 @@ export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResul
 
     const campaign = await db.newsletterCampaign.create({
       data: {
-        ...content,
+        subject: email.subject,
+        body: docToText(email.content),
+        content: email.content,
+        ctaLabel: email.ctaLabel,
+        ctaUrl: email.ctaUrl,
         recipients,
         sentById: session.user.id,
         sentByEmail: session.user.email ?? null,
@@ -401,7 +413,7 @@ export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResul
       action: "newsletter:send",
       module: "newsletter",
       entityId: campaign.id,
-      meta: { subject: content.subject, recipients },
+      meta: { subject: email.subject, recipients },
       ...(await getAuditMeta()),
     })
 
@@ -468,9 +480,23 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
   try {
     const campaign = await db.newsletterCampaign.findUnique({
       where: { id },
-      select: { subject: true, body: true, ctaLabel: true, ctaUrl: true, createdAt: true },
+      select: {
+        subject: true,
+        body: true,
+        content: true,
+        ctaLabel: true,
+        ctaUrl: true,
+        createdAt: true,
+      },
     })
     if (!campaign) return
+    // Checked when it was sent; one sent before the editor has only its text.
+    const email = {
+      subject: campaign.subject,
+      content: campaign.content ? (campaign.content as NewsletterDoc) : docFromText(campaign.body),
+      ctaLabel: campaign.ctaLabel,
+      ctaUrl: campaign.ctaUrl,
+    }
 
     for (;;) {
       const batch = await db.subscriber.findMany({
@@ -495,7 +521,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
         if (claimed.count === 0) continue
 
         const links = unsubscribeLinks(subscriber.token)
-        const mail = renderNewsletter({ ...campaign, unsubscribeUrl: links.page })
+        const mail = renderNewsletter({ ...email, unsubscribeUrl: links.page })
         const result = await pool.send({
           to: subscriber.email,
           ...mail,
@@ -546,4 +572,85 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
     pool.close()
     running.delete(id)
   }
+}
+
+/**
+ * Twice the width the email draws an image at (EMAIL_IMAGE_WIDTH, 544px), so
+ * it is sharp on a phone's screen without mailing a camera's original.
+ */
+const IMAGE_MAX_WIDTH = 1200
+
+export type UploadedImage = { id: string; url: string; width: number; height: number }
+
+/**
+ * A picture for a newsletter, from the editor. Turned upright, shrunk to
+ * IMAGE_MAX_WIDTH, and re-encoded - JPEG for a photo, PNG where it has
+ * transparency to keep - which also strips the camera's metadata (location
+ * included) before it is published to every inbox. A GIF keeps its first
+ * frame: animation does not survive the trip reliably in mail clients anyway.
+ */
+export async function uploadNewsletterImage(form: FormData): Promise<ActionResult<UploadedImage>> {
+  return runAction(async () => {
+    const session = await requirePermission(PERMISSIONS.NEWSLETTER_SEND)
+    if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    const file = form.get("file")
+    if (!(file instanceof File) || file.size === 0) return fail("Choose a picture to upload.")
+    if (!NEWSLETTER_IMAGE_TYPES.includes(file.type)) {
+      return fail("Use a JPG, PNG, WebP or GIF picture.", undefined, 415)
+    }
+    if (file.size > NEWSLETTER_IMAGE_MAX_BYTES) {
+      return fail("That picture is over 8 MB. Use a smaller one.", undefined, 413)
+    }
+
+    let image: Awaited<ReturnType<typeof prepareImage>>
+    try {
+      image = await prepareImage(Buffer.from(await file.arrayBuffer()))
+    } catch {
+      return fail("That file could not be read as a picture.", undefined, 422)
+    }
+
+    const row = await db.newsletterImage.create({
+      data: { ...image, createdById: session.user.id },
+      select: { id: true },
+    })
+    return ok({
+      id: row.id,
+      url: newsletterImageUrl(row.id),
+      width: image.width,
+      height: image.height,
+    })
+  })
+}
+
+async function prepareImage(input: Buffer) {
+  const sharp = (await import("sharp")).default
+  const source = sharp(input, { failOn: "error" })
+  const { hasAlpha } = await source.metadata()
+  const resized = source.rotate().resize({ width: IMAGE_MAX_WIDTH, withoutEnlargement: true })
+  const { data, info } = hasAlpha
+    ? await resized.png({ compressionLevel: 9 }).toBuffer({ resolveWithObject: true })
+    : await resized.jpeg({ quality: 82, mozjpeg: true }).toBuffer({ resolveWithObject: true })
+  return {
+    data,
+    contentType: hasAlpha ? "image/png" : "image/jpeg",
+    width: info.width,
+    height: info.height,
+    bytes: data.length,
+  }
+}
+
+/** Public: a newsletter picture, for the inboxes that open the email. */
+export async function getNewsletterImage(
+  id: string,
+): Promise<ActionResult<{ data: Uint8Array; contentType: string }>> {
+  return runAction(async () => {
+    if (!hasDatabase()) return fail("Not available right now.", undefined, 503)
+    const row = await db.newsletterImage.findUnique({
+      where: { id },
+      select: { data: true, contentType: true },
+    })
+    if (!row) return fail("Not found.", undefined, 404)
+    return ok({ data: row.data, contentType: row.contentType })
+  })
 }

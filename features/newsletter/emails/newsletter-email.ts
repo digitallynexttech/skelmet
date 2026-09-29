@@ -1,23 +1,22 @@
-import "server-only"
-
 import { siteConfig } from "@/config/site"
+import { docToHtml, docToText, type NewsletterDoc } from "@/features/newsletter/newsletter-content"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 
 /**
  * A newsletter email: what staff wrote in the console, in the shop's colours,
  * with a way off the list in every copy.
  *
- * The message is plain text as typed. A blank line starts a new paragraph, a
- * single line break stays a line break, and a web address becomes a link -
- * enough for "the new colourway is here, have a look" without an editor, and
- * nothing a staff member types can break out into markup.
+ * The message is the console editor's document (newsletter-content.ts), which
+ * renders to inline-styled HTML from a whitelist of nodes, so nothing a staff
+ * member types or pastes can break out into markup. No server-only: the
+ * console's preview renders this same email in a frame.
  *
  * Same rules as the order emails (order-confirmed.ts): tables for layout,
  * inline styles, a plain-text part always.
  */
 export type NewsletterEmailData = {
   subject: string
-  body: string
+  content: NewsletterDoc
   ctaLabel?: string | null
   ctaUrl?: string | null
   /** The page that confirms the unsubscribe, for the link a person clicks. */
@@ -36,25 +35,6 @@ export function unsubscribeHeaders(oneClickUrl: string): Record<string, string> 
   }
 }
 
-const URL_PATTERN = /https?:\/\/[^\s<>"]+/g
-
-/** Escaped, with web addresses turned into links. Trailing punctuation stays text. */
-function linkify(escaped: string): string {
-  return escaped.replace(URL_PATTERN, (match) => {
-    const trail = match.match(/[.,;:!?)]+$/)?.[0] ?? ""
-    const href = trail ? match.slice(0, -trail.length) : match
-    return `<a href="${href}" style="color:${C.blaze};text-decoration:underline;">${href}</a>${trail}`
-  })
-}
-
-function paragraphs(body: string): string[] {
-  return body
-    .replace(/\r\n/g, "\n")
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-}
-
 export function renderNewsletter(data: NewsletterEmailData): {
   subject: string
   text: string
@@ -63,11 +43,12 @@ export function renderNewsletter(data: NewsletterEmailData): {
   const cta = data.ctaUrl
     ? { url: data.ctaUrl, label: data.ctaLabel?.trim() || "Take a look" }
     : null
-  const blocks = paragraphs(data.body)
-  const preheader = blocks[0]?.replace(/\s+/g, " ").slice(0, 140) ?? ""
+  const message = docToText(data.content)
+  const preheader = message.replace(/\s+/g, " ").slice(0, 140)
 
   const text = [
-    ...blocks.flatMap((p) => [p, ""]),
+    message,
+    "",
     ...(cta ? [`${cta.label}: ${cta.url}`, ""] : []),
     `${siteConfig.name}`,
     ``,
@@ -75,14 +56,7 @@ export function renderNewsletter(data: NewsletterEmailData): {
     `Unsubscribe: ${data.unsubscribeUrl}`,
   ].join("\n")
 
-  const body = blocks
-    .map(
-      (p) => `
-              <p style="margin:0 0 16px;font-family:${FONT};font-size:15.5px;line-height:1.65;color:${C.ash};">
-                ${linkify(escapeHtml(p)).replace(/\n/g, "<br>")}
-              </p>`,
-    )
-    .join("")
+  const body = docToHtml(data.content)
 
   const button = cta
     ? `

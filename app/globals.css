@@ -255,6 +255,85 @@
     background: rgb(255 255 255 / 0.2);
   }
 
+  /* The newsletter editor (features/newsletter/components/rich-editor.tsx).
+     The reset strips lists and headings of their look, so the writing area
+     gets it back, close to how the email draws the same things. */
+  .rich-editor .ProseMirror {
+    min-height: 280px;
+    padding: 16px 18px;
+    outline: none;
+    color: var(--color-ash);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .rich-editor .ProseMirror > * + * {
+    margin-top: 12px;
+  }
+  .rich-editor .ProseMirror h2 {
+    margin-top: 20px;
+    color: var(--color-bone);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+  .rich-editor .ProseMirror h3 {
+    margin-top: 16px;
+    color: var(--color-bone);
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+  .rich-editor .ProseMirror strong {
+    color: var(--color-bone);
+  }
+  .rich-editor .ProseMirror a {
+    color: var(--color-blaze);
+    text-decoration: underline;
+  }
+  .rich-editor .ProseMirror ul,
+  .rich-editor .ProseMirror ol {
+    padding-left: 22px;
+  }
+  .rich-editor .ProseMirror ul {
+    list-style: disc;
+  }
+  .rich-editor .ProseMirror ol {
+    list-style: decimal;
+  }
+  .rich-editor .ProseMirror li + li {
+    margin-top: 4px;
+  }
+  .rich-editor .ProseMirror blockquote {
+    border-left: 3px solid var(--color-blaze);
+    padding-left: 14px;
+  }
+  .rich-editor .ProseMirror hr {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid rgb(255 255 255 / 0.14);
+  }
+  /* Capped in height while writing, so a portrait photo does not push the
+     text out of reach; the email itself draws it at the card's width. */
+  .rich-editor .ProseMirror img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 380px;
+    border-radius: 10px;
+  }
+  .rich-editor .ProseMirror img.ProseMirror-selectednode {
+    outline: 2px solid var(--color-blaze);
+    outline-offset: 2px;
+  }
+  .rich-editor .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--color-dim);
+    pointer-events: none;
+  }
+
   .conic-orbit {
     background: conic-gradient(
       from 0deg,

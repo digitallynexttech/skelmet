@@ -9,20 +9,26 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable, type Column } from "@/components/ui/data-table"
-import { Field, Input, Textarea } from "@/components/ui/input"
+import type { JSONContent } from "@tiptap/react"
+
+import { Field, Input, Label } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
+import { EMPTY_DOC, RichEditor } from "@/features/newsletter/components/rich-editor"
+import { renderNewsletter } from "@/features/newsletter/emails/newsletter-email"
 import {
   useCampaigns,
   useResumeCampaign,
   useSendCampaign,
   type CampaignRow,
 } from "@/features/newsletter/hooks/use-newsletter"
+import type { NewsletterDoc } from "@/features/newsletter/newsletter-content"
 import { sendCampaignSchema } from "@/features/newsletter/schemas/newsletter.schema"
+import { useDebounce } from "@/hooks/use-debounce"
 import { ApiFetchError } from "@/lib/api-fetch"
 
-type Draft = { subject: string; body: string; ctaLabel: string; ctaUrl: string }
+type Draft = { subject: string; content: JSONContent; ctaLabel: string; ctaUrl: string }
 
-const EMPTY: Draft = { subject: "", body: "", ctaLabel: "", ctaUrl: "" }
+const EMPTY: Draft = { subject: "", content: EMPTY_DOC, ctaLabel: "", ctaUrl: "" }
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", {
@@ -32,14 +38,6 @@ const when = (iso: string) =>
     minute: "2-digit",
   })
 
-/** The message as the email lays it out: a blank line between paragraphs. */
-const paragraphs = (body: string) =>
-  body
-    .replace(/\r\n/g, "\n")
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-
 /**
  * Write an email to the drop list, try it on yourself, send it, and watch it
  * go. One at a time: a second one waits until the first has finished.
@@ -48,6 +46,8 @@ export function NewsletterEmails() {
   const [draft, setDraft] = React.useState<Draft>(EMPTY)
   const [errors, setErrors] = React.useState<Partial<Record<keyof Draft, string>>>({})
   const [confirming, setConfirming] = React.useState(false)
+  // Bumped to load a fresh editor: it reads its content once, when made.
+  const [editorKey, setEditorKey] = React.useState(0)
 
   const { data, isLoading, isError, error } = useCampaigns()
   const send = useSendCampaign()
@@ -57,10 +57,15 @@ export function NewsletterEmails() {
   const busy = data?.data.some((c) => c.running) ?? false
 
   const set =
-    (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (key: "subject" | "ctaLabel" | "ctaUrl") => (e: React.ChangeEvent<HTMLInputElement>) => {
       setDraft((d) => ({ ...d, [key]: e.target.value }))
       if (errors[key]) setErrors((x) => ({ ...x, [key]: undefined }))
     }
+
+  const setContent = React.useCallback((content: JSONContent) => {
+    setDraft((d) => ({ ...d, content }))
+    setErrors((x) => (x.content ? { ...x, content: undefined } : x))
+  }, [])
 
   /** The same schema the server checks, so a bad field is caught before the request. */
   function valid(): boolean {
@@ -80,7 +85,8 @@ export function NewsletterEmails() {
 
   function submit(test: boolean) {
     send.mutate(
-      { ...draft, test },
+      // The editor's own type is looser than the schema's; the server checks it.
+      { ...draft, content: draft.content as NewsletterDoc, test },
       {
         onSuccess: (result) => {
           if (result.test) {
@@ -90,6 +96,7 @@ export function NewsletterEmails() {
               `Sending to ${result.recipients} ${result.recipients === 1 ? "person" : "people"}.`,
             )
             setDraft(EMPTY)
+            setEditorKey((k) => k + 1)
           }
           setConfirming(false)
         },
@@ -162,7 +169,19 @@ export function NewsletterEmails() {
     },
   ]
 
-  const preview = paragraphs(draft.body)
+  // The email itself, as the subscribers will get it, a moment behind the typing.
+  const shown = useDebounce(draft, 350)
+  const preview = React.useMemo(
+    () =>
+      renderNewsletter({
+        subject: shown.subject || "Your subject",
+        content: shown.content as NewsletterDoc,
+        ctaLabel: shown.ctaLabel || null,
+        ctaUrl: /^https?:\/\/\S+\.\S+/.test(shown.ctaUrl) ? shown.ctaUrl : null,
+        unsubscribeUrl: `${siteConfig.url}/unsubscribe?preview=1`,
+      }).html,
+    [shown],
+  )
 
   return (
     <div className="flex flex-col gap-8">
@@ -173,7 +192,7 @@ export function NewsletterEmails() {
         actions={<Badge variant="acid">{subscribed} subscribed</Badge>}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_460px] xl:items-start">
         <form
           className="bg-carbon flex flex-col gap-5 rounded-md border border-white/[0.09] p-6"
           onSubmit={(e) => {
@@ -190,19 +209,28 @@ export function NewsletterEmails() {
             />
           </Field>
 
-          <Field
-            label="Message"
-            error={errors.body}
-            hint="A blank line starts a new paragraph. Web addresses become links."
-          >
-            <Textarea
-              value={draft.body}
-              onChange={set("body")}
-              rows={10}
-              maxLength={10_000}
-              placeholder={"Hey rider,\n\nThe skull you've been waiting for just dropped..."}
+          {/* Not a Field: that wires its label to one input, and this is a
+              toolbar and a writing area. */}
+          <div className="flex flex-col gap-2">
+            <Label>Message</Label>
+            <RichEditor
+              key={editorKey}
+              initial={draft.content}
+              onChange={setContent}
+              invalid={Boolean(errors.content)}
+              placeholder="Hey rider, the skull you've been waiting for just dropped..."
             />
-          </Field>
+            {errors.content ? (
+              <span role="alert" className="text-magenta text-[12.5px] leading-[1.45]">
+                {errors.content}
+              </span>
+            ) : (
+              <span className="text-acid font-mono text-[11px] tracking-[0.1em]">
+                Pictures: the toolbar button, or paste or drop them in. JPG, PNG, WebP or GIF, up to
+                8 MB.
+              </span>
+            )}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-[200px_minmax(0,1fr)]">
             <Field label="Button text" error={errors.ctaLabel}>
@@ -259,33 +287,18 @@ export function NewsletterEmails() {
           </p>
         </form>
 
-        {/* A sketch of the email, not the email: the test shows the real one. */}
-        <div className="bg-void rounded-md border border-white/[0.09] p-5">
-          <div className="text-dim mb-4 font-mono text-[10.5px] tracking-[0.14em] uppercase">
+        {/* The real email, from the same code that sends it, at about a
+            phone's width. Sandboxed: nothing in it can run. */}
+        <div className="bg-void rounded-md border border-white/[0.09] p-4">
+          <div className="text-dim mb-3 font-mono text-[10.5px] tracking-[0.14em] uppercase">
             Preview
           </div>
-          <div className="bg-carbon rounded-[12px] border border-white/[0.09] p-5">
-            <h3 className="text-bone mb-3 text-[18px] leading-[1.3] font-extrabold">
-              {draft.subject || "Your subject"}
-            </h3>
-            {preview.length ? (
-              preview.map((p, i) => (
-                <p key={i} className="text-ash mb-3 text-[14px] leading-[1.65] whitespace-pre-line">
-                  {p}
-                </p>
-              ))
-            ) : (
-              <p className="text-dim text-[14px] leading-[1.65]">Your message.</p>
-            )}
-            {draft.ctaUrl ? (
-              <span className="bg-blaze text-void mt-2 inline-block rounded-[9px] px-5 py-2.5 text-[13px] font-bold">
-                {draft.ctaLabel || "Take a look"}
-              </span>
-            ) : null}
-          </div>
-          <p className="text-dim mt-3 text-[11.5px] leading-[1.6]">
-            Every email ends with a line saying why they got it, and an Unsubscribe link.
-          </p>
+          <iframe
+            title="Email preview"
+            sandbox=""
+            srcDoc={preview}
+            className="h-[760px] w-full rounded-md border border-white/[0.06] bg-[#07060a]"
+          />
         </div>
       </div>
 
