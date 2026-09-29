@@ -1,5 +1,5 @@
 /**
- * Builds public/product/colourway-{olive,ghost}.jpg from the front-on shot.
+ * Builds public/product/colourway-olive.jpg from the front-on shot.
  *
  *   node scripts/build-colourways.mjs
  *
@@ -8,8 +8,13 @@
  * three-quarter while the blaze one is straight on, which made the row read as
  * three different products rather than one product in three finishes - and no
  * straight-on plate exists for the other two, so the angle cannot be cropped
- * back. Both are therefore derived from the blaze plate: identical framing,
+ * back. Olive is therefore derived from the blaze plate: identical framing,
  * lighting, shadow and layer texture, with the filament colour remapped.
+ *
+ * Ghost used to be made here too, held to the tone of a near-white plate that
+ * sold the grey filament as silver. It is now built from this olive plate by
+ * build-ghost-shots.mjs, with the other ghost photographs, against the one
+ * shot of the real grey print.
  *
  * Hue and saturation are applied to every pixel rather than through the mask.
  * Both are continuous as chroma approaches zero - a grey pixel is grey at any
@@ -24,7 +29,7 @@
  * source plate - nothing here is eyeballed, so the photographs cannot drift
  * away from the dots rendered beside them.
  *
- * These are derived plates, not photographs of real olive and grey prints.
+ * This is a derived plate, not a photograph of a real olive print.
  * Replace them with real ones when the shots exist; the card, the crop and the
  * catalogue all stay as they are.
  */
@@ -68,25 +73,14 @@ const SRC_HEX = "#FF5A1F"
  * hueKeep carries a fraction of the source pixel's own hue variation into the
  * result. The orange print swings a few degrees between its lit and shadowed
  * faces; dropping that entirely flattens the modelling, while keeping all of
- * it exaggerates the swing at the new saturation. Ghost keeps less, because a
- * near-grey shows hue noise far more readily than a mid-tone does.
+ * it exaggerates the swing at the new saturation.
  *
  * tone pins olive to the tone of the plate it replaced. Swatch times lighting
  * response alone landed it a little light - 0.471 against the old plate's
  * 0.437, read as the median of the brighter half of a box over the cranium -
  * and only the angle was meant to change, so the colour is held where it was.
- *
- * Ghost was held to its old plate the same way, and that plate was the
- * trouble: a near-white print, sold as a filament that prints mid grey. It is
- * pinned instead to colourway-lineup.jpg, where the real grey print stands
- * beside the orange one under one light and its forehead reads 0.93 of the
- * orange's luminance. The same box on this plate and product-front.jpg gives
- * 0.927 at this tone; the old plate was 1.5.
  */
-const TARGETS = [
-  { out: "colourway-olive.jpg", hex: "#8A9A5B", hueKeep: 0.25, tone: 0.928 },
-  { out: "colourway-ghost.jpg", hex: "#8F98A6", hueKeep: 0.15, tone: 0.97 },
-]
+const TARGETS = [{ out: "colourway-olive.jpg", hex: "#8A9A5B", hueKeep: 0.25, tone: 0.928 }]
 
 const smoothstep = (lo, hi, v) => {
   const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)))

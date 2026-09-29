@@ -92,11 +92,12 @@ export const COLOURWAYS: Colourway[] = [
     id: "ghost",
     name: "Ghost Grey",
     sku: "SKM-GHT",
-    // The grey the filament prints as: measured off the three prints shot
-    // side by side under one light. It was #C8CED6, which read as silver.
-    hex: "#8F98A6",
+    // The grey the filament prints as, measured off the lit face of the real
+    // print in colourway-lineup.jpg: near neutral, a faint violet cast. It
+    // was #C8CED6, which read as silver.
+    hex: "#98979E",
     blurb: "Calm, cold and still as stone.",
-    image: "/product/colourway-ghost.jpg",
+    image: "/product/colourway-ghost-grey.jpg",
     price: "3499",
     stock: 0,
     inStock: true,
@@ -119,7 +120,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       src: {
         blaze: "/product/product-front.jpg",
         olive: "/product/colourway-olive.jpg",
-        ghost: "/product/colourway-ghost.jpg",
+        ghost: "/product/colourway-ghost-grey.jpg",
       },
     },
     {
@@ -127,7 +128,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       src: {
         blaze: "/product/mount-side.jpg",
         olive: "/product/mount-side-olive.jpg",
-        ghost: "/product/mount-side-ghost.jpg",
+        ghost: "/product/mount-side-ghost-grey.jpg",
       },
     },
     {
@@ -135,7 +136,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       src: {
         blaze: "/product/lifestyle-concrete.jpg",
         olive: "/product/lifestyle-concrete-olive.jpg",
-        ghost: "/product/lifestyle-concrete-ghost.jpg",
+        ghost: "/product/lifestyle-concrete-ghost-grey.jpg",
       },
     },
     {
@@ -143,7 +144,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       src: {
         blaze: "/product/lifestyle-gloves.jpg",
         olive: "/product/lifestyle-gloves-olive.jpg",
-        ghost: "/product/lifestyle-gloves-ghost.jpg",
+        ghost: "/product/lifestyle-gloves-ghost-grey.jpg",
       },
     },
     {
@@ -151,7 +152,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       src: {
         blaze: "/product/detail-flame.jpg",
         olive: "/product/detail-flame-olive.jpg",
-        ghost: "/product/detail-flame-ghost.jpg",
+        ghost: "/product/detail-flame-ghost-grey.jpg",
       },
     },
   ],
