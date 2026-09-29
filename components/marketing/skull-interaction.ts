@@ -38,7 +38,24 @@ export type SkullInteraction = {
   box: { x: number; y: number; w: number; h: number } | null
   /** The skull's silhouette on screen, as an ellipse, for grabbing it. Null when off screen. */
   hit: { x: number; y: number; rx: number; ry: number } | null
+  /**
+   * When the bob began, in performance.now() milliseconds. The poster's own
+   * animation start, handed over so the mesh picks the bob up mid-stride.
+   */
+  bobEpoch: number
 }
+
+/**
+ * The idle bob, shared by the mesh and the poster so the hand-off between
+ * them is a frame nobody can see: the mesh keeps the poster's time (bobEpoch)
+ * and both trace the same cosine - the canvas in skull-canvas, the poster as
+ * the `skull-bob` keyframes, eased to a sine.
+ *
+ * The rise is a share of the stage height: 0.045 world units of the 3.096 the
+ * camera sees at the pivot.
+ */
+export const BOB_PERIOD = 11.4
+export const BOB_RISE = 0.045 / 3.096
 
 /**
  * The halo at rest, facing the camera. The poster path never loads the canvas,
@@ -61,6 +78,7 @@ const interaction: SkullInteraction = {
   halo: { ...HALO_REST },
   box: null,
   hit: null,
+  bobEpoch: 0,
 }
 
 export function getSkullInteraction(): SkullInteraction {

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 const TINT_TO: Record<ColourwayId, string> = {
   blaze: "#ff8a00",
   olive: "#aab872",
-  ghost: "#edf0f4",
+  ghost: "#b3bac5",
 }
 
 export async function ColourwayGrid() {

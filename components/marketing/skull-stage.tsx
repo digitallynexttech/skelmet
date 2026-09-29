@@ -1,27 +1,30 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import { createPortal } from "react-dom"
 import dynamic from "next/dynamic"
 import Image from "next/image"
 
 import { SkullBoundary } from "@/components/marketing/skull-boundary"
-import { getSkullInteraction } from "@/components/marketing/skull-interaction"
+import { BOB_PERIOD, BOB_RISE, getSkullInteraction } from "@/components/marketing/skull-interaction"
 import { afterFirstInteraction } from "@/lib/first-interaction"
 import { cn } from "@/lib/utils"
 
 /**
  * The hero object, in two layers.
  *
- * The poster is the hero. It is the front-on product shot keyed to real alpha
- * (see scripts/build-hero-poster.mjs), and it renders on the server with no
- * JavaScript at all. The 3D canvas is an enhancement laid over it.
+ * The poster is the hero. It is a frame of the mesh itself, captured from this
+ * component at rest (see scripts/build-hero-poster.mjs), and it renders on the
+ * server with no JavaScript at all. The 3D canvas is an enhancement laid over
+ * it. It used to be a keyed product photo, and the model that replaced it was
+ * visibly another picture: a flat studio shot giving way to a lit render,
+ * smaller and in a different light.
  *
  * Alpha rather than a blend, because the headline runs behind this box and the
  * skull is supposed to cover it - `screen` would brighten the type showing
  * through instead, and an opaque plate would punch a rectangle out of the
- * bloom. The cutout is posed and sized to sit where the mesh sits, so the
- * hand-off between them is close to invisible.
+ * bloom. The frame is the whole stage, the same 4:5 box the canvas draws, so
+ * the mesh lands on it pixel for pixel at every size.
  *
  * That ordering is what makes the slow path bearable. The model is about 1MB
  * (meshopt) on top of a ~650KB three.js chunk, so there are plenty of visitors
@@ -33,9 +36,12 @@ import { cn } from "@/lib/utils"
  *
  * The model waits its turn: nothing is fetched until the page has loaded and
  * gone idle, so it never competes with the poster, the fonts or hydration. It
- * then cross-fades in over the poster. Once it has been on screen, coming back
- * to the page starts without the poster, so the photo never flashes before the
- * model, whose parsed file skull-canvas keeps for the rest of the session.
+ * then takes over in a single frame. The two are the same picture bobbing to
+ * the same clock (see BOB_PERIOD), and a cross-fade between identical images
+ * only thins them both, showing the headline through the skull halfway. Once
+ * the model has been on screen, coming back to the page starts without the
+ * poster and fades the model in over the empty stage, since skull-canvas keeps
+ * the parsed file for the rest of the session.
  *
  * The canvas is not drawn inside this box. It is portalled to the body, into
  * a box the size of this one, and flown down the page by skull-journey: it
@@ -52,17 +58,6 @@ const SkullCanvas = dynamic(() => import("@/components/marketing/skull-canvas"),
   ssr: false,
   loading: () => null,
 })
-
-/**
- * Where the mesh sits in frame, so the poster can be put in the same place.
- *
- * The canvas camera is at z=5.4 with a 32° vertical fov, so it sees
- * 2 * 5.4 * tan(16°) = 3.096 units at the origin. skull-canvas normalises the
- * model's longest axis - its height - to 2.5 of those units and lifts it by
- * OPTICAL_CENTRE_LIFT (0.06). Both fall out as a share of the stage height.
- */
-const MESH_HEIGHT_RATIO = 80.7 // 2.5 / 3.096
-const MESH_LIFT_RATIO = 1.9 // 0.06 / 3.096
 
 /** Radians of spin per pixel dragged. */
 const DRAG_SENSITIVITY = 0.008
@@ -146,6 +141,7 @@ function onSkull(x: number, y: number): boolean {
 
 export function SkullStage({ className }: { className?: string }) {
   const flightRef = useRef<HTMLDivElement>(null)
+  const posterRef = useRef<HTMLImageElement>(null)
 
   /** Are we downloading the model at all. */
   const [attempt, setAttempt] = useState(false)
@@ -217,6 +213,15 @@ export function SkullStage({ className }: { className?: string }) {
       motion.removeEventListener("change", decide)
     }
   }, [])
+
+  // Hand the mesh the poster's bob before the canvas draws its first frame. A
+  // CSS animation's start time is on the document timeline, which counts from
+  // the same origin as performance.now().
+  useEffect(() => {
+    if (!attempt) return
+    const start = posterRef.current?.getAnimations()[0]?.startTime
+    if (typeof start === "number") getSkullInteraction().bobEpoch = start
+  }, [attempt])
 
   // The skull tracks the cursor anywhere on screen, and can be grabbed and
   // spun wherever it has flown to - so these listen on the window rather than
@@ -358,32 +363,31 @@ export function SkullStage({ className }: { className?: string }) {
         />
       ))}
 
-      {/* The poster, placed where the mesh lands rather than stretched to the
-          box. Labelled by the wrapper, so it stays silent to a screen reader
-          rather than announcing the same object twice. The drift is the
-          poster's answer to the idle bob the mesh does in useFrame. */}
-      <div
-        className="pointer-events-none absolute inset-0 flex items-center justify-center"
-        style={{ translate: `0 -${MESH_LIFT_RATIO}%` }}
-      >
-        <Image
-          src="/product/hero-skull-cutout.webp"
-          alt=""
-          width={836}
-          height={1376}
-          // The page's main image: preloaded, and first in the queue.
-          preload
-          fetchPriority="high"
-          sizes="(min-width: 1024px) 360px, (min-width: 640px) 300px, 260px"
-          className={cn(
-            "w-auto object-contain",
-            "transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            // The drift stops once the model has taken over.
-            live || returning ? "opacity-0" : "animate-drift",
-          )}
-          style={{ height: `${MESH_HEIGHT_RATIO}%` }}
-        />
-      </div>
+      {/* The poster: the mesh's own rest frame, filling the stage as the
+          canvas does. Labelled by the wrapper, so it stays silent to a screen
+          reader rather than announcing the same object twice. It bobs with
+          the mesh's period and rise, and an easing that bends the keyframes'
+          straight runs into the mesh's cosine. */}
+      <Image
+        ref={posterRef}
+        src="/product/hero-skull-poster.webp"
+        alt=""
+        fill
+        // The page's main image: preloaded, and first in the queue.
+        preload
+        fetchPriority="high"
+        sizes="(min-width: 1280px) 576px, (min-width: 1024px) 528px, (min-width: 640px) 480px, 410px"
+        className={cn("pointer-events-none object-contain", (live || returning) && "invisible")}
+        style={
+          {
+            "--bob-rise": `${BOB_RISE * 100}%`,
+            animation:
+              live || returning
+                ? "none"
+                : `skull-bob ${BOB_PERIOD}s cubic-bezier(0.37, 0, 0.63, 1) infinite`,
+          } as CSSProperties
+        }
+      />
 
       {/* The flying skull. In the document rather than fixed to the viewport,
           so that docked it scrolls with its photograph natively instead of a
@@ -400,7 +404,10 @@ export function SkullStage({ className }: { className?: string }) {
               <SkullBoundary onError={onFailed}>
                 <div
                   className={cn(
-                    "ease-out-expo size-full transition-opacity duration-700",
+                    "size-full",
+                    // Straight over the poster, which is this same frame. Faded
+                    // in only where there is no poster under it.
+                    returning && "ease-out-expo transition-opacity duration-700",
                     live ? "opacity-100" : "opacity-0",
                   )}
                 >

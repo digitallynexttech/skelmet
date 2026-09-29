@@ -12,7 +12,7 @@
  * over it and faded in as the mesh arrives. The mesh then reads as landing on
  * the empty bracket rather than doubling up on a picture of itself.
  *
- * Keying is chroma, as in build-hero-poster.mjs: the print is the only
+ * Keying is chroma, as in build-colourways.mjs: the print is the only
  * saturated thing in either shot. The backdrop, the black bracket, the steel
  * screws, the grey anchors and the paper template all sit near chroma 0, so
  * they stay in the plate untouched.
@@ -60,9 +60,8 @@ const SOURCES = [
 const DOCKS = path.join(ROOT, "components/marketing/skull-docks.json")
 
 /**
- * Chroma at which a pixel counts as print. The midpoint of the soft edge the
- * hero poster keys with (24-56), so the box found here is the one the poster
- * was trimmed to.
+ * Chroma at which a pixel counts as print: the middle of the gap between the
+ * backdrop (0-15) and the orange print (64 and up), with room either side.
  */
 const KEY = 40
 /** Grows the hole past the key, to take the antialiased rim and the orange spill with it. */

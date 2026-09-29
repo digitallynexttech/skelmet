@@ -5,7 +5,9 @@
  *
  * The gallery used to swap only its first slot when you picked a colourway:
  * choosing Militia Olive left four orange photographs behind it. These are the
- * missing four, in each of the two other finishes.
+ * missing four in olive. The Ghost Grey four are recoloured from these by
+ * build-ghost-shots.mjs: the image model's grey came back near white, and a
+ * re-run here would put that silver skull back in the gallery.
  *
  * Unlike build-colourways.mjs, which remaps the blaze plate's pixels through a
  * chroma mask, these came back from an image model asked to change the filament
@@ -42,13 +44,13 @@ const OUT_DIR = path.join(ROOT, "public/product")
 /** Each output matches the blaze original it sits beside in the gallery. */
 const SHOTS = [
   { from: "profile-olive.png", to: "mount-side-olive.jpg", like: "mount-side.jpg" },
-  { from: "profile-ghost.png", to: "mount-side-ghost.jpg", like: "mount-side.jpg" },
-  { from: "concrete-olive.png", to: "lifestyle-concrete-olive.jpg", like: "lifestyle-concrete.jpg" },
-  { from: "concrete-ghost.png", to: "lifestyle-concrete-ghost.jpg", like: "lifestyle-concrete.jpg" },
+  {
+    from: "concrete-olive.png",
+    to: "lifestyle-concrete-olive.jpg",
+    like: "lifestyle-concrete.jpg",
+  },
   { from: "gloves-olive.png", to: "lifestyle-gloves-olive.jpg", like: "lifestyle-gloves.jpg" },
-  { from: "gloves-ghost.png", to: "lifestyle-gloves-ghost.jpg", like: "lifestyle-gloves.jpg" },
   { from: "flame-olive.png", to: "detail-flame-olive.jpg", like: "detail-flame.jpg" },
-  { from: "flame-ghost.png", to: "detail-flame-ghost.jpg", like: "detail-flame.jpg" },
 ]
 
 for (const shot of SHOTS) {

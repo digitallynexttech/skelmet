@@ -24,7 +24,12 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 
-import { getSkullInteraction, HALO_REST } from "@/components/marketing/skull-interaction"
+import {
+  BOB_PERIOD,
+  BOB_RISE,
+  getSkullInteraction,
+  HALO_REST,
+} from "@/components/marketing/skull-interaction"
 import {
   journey,
   measureAnchors,
@@ -556,8 +561,11 @@ export function SkullCanvas({
       pivot.rotation.x = follow.x + i.userRot.x
       pivot.rotation.y = MODEL_YAW_OFFSET + follow.y + i.userRot.y + pose.spin + pose.turn
       pivot.rotation.z = bank
-      pivot.position.y =
-        OPTICAL_CENTRE_LIFT + Math.sin(timer.getElapsed() * 0.55) * 0.045 * pose.bob
+      // On the poster's clock rather than the timer's, so the frame that
+      // replaces the poster is the one it was showing (see BOB_PERIOD).
+      const now = performance.now()
+      const bob = (((now - i.bobEpoch) / 1000) * 2 * Math.PI) / BOB_PERIOD
+      pivot.position.y = OPTICAL_CENTRE_LIFT + Math.cos(bob) * BOB_RISE * viewHeight * pose.bob
 
       // Stage light in the hero and in flight, studio light once seated in a
       // photo. Quantised, so a skull hovering at the edge of a dock does not
@@ -572,7 +580,6 @@ export function SkullCanvas({
         size.width !== drawn.width ||
         size.height !== drawn.height
       const bobbed = Math.abs(pivot.position.y - drawn.lift) > 1e-5
-      const now = performance.now()
       if (moved || (bobbed && now - drawn.at >= IDLE_FRAME_MS)) {
         if (studio !== drawn.studio) rig(studio)
         renderer.render(scene, camera)

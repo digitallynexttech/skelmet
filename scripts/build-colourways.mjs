@@ -17,9 +17,8 @@
  * untouched and the antialiased rim cannot hold an orange fringe. Only the
  * lightness change, which is not continuous that way, is ramped by the mask.
  *
- * The mask is chroma, as in build-hero-poster.mjs: the backdrop sits below 20
- * and the print above 60, with 0.2% of pixels between them, so the ramp only
- * ever covers the one-pixel edge.
+ * The mask is chroma: the backdrop sits below 20 and the print above 60, with
+ * 0.2% of pixels between them, so the ramp only ever covers the one-pixel edge.
  *
  * Every number comes off the swatch in the catalogue and the pixels of the
  * source plate - nothing here is eyeballed, so the photographs cannot drift
@@ -72,16 +71,21 @@ const SRC_HEX = "#FF5A1F"
  * it exaggerates the swing at the new saturation. Ghost keeps less, because a
  * near-grey shows hue noise far more readily than a mid-tone does.
  *
- * tone pins the result to the tone of the plate it replaces. Swatch times
- * lighting response alone landed both a little light - olive at 0.471 against
- * the old plate's 0.437 and ghost at 0.763 against 0.688, read as the median
- * of the brighter half of a box over the cranium - because a flat swatch
- * carries no sense of how much of a lit object is turned away from the key.
- * Only the angle was meant to change here, so the colour is held where it was.
+ * tone pins olive to the tone of the plate it replaced. Swatch times lighting
+ * response alone landed it a little light - 0.471 against the old plate's
+ * 0.437, read as the median of the brighter half of a box over the cranium -
+ * and only the angle was meant to change, so the colour is held where it was.
+ *
+ * Ghost was held to its old plate the same way, and that plate was the
+ * trouble: a near-white print, sold as a filament that prints mid grey. It is
+ * pinned instead to colourway-lineup.jpg, where the real grey print stands
+ * beside the orange one under one light and its forehead reads 0.93 of the
+ * orange's luminance. The same box on this plate and product-front.jpg gives
+ * 0.927 at this tone; the old plate was 1.5.
  */
 const TARGETS = [
   { out: "colourway-olive.jpg", hex: "#8A9A5B", hueKeep: 0.25, tone: 0.928 },
-  { out: "colourway-ghost.jpg", hex: "#C8CED6", hueKeep: 0.15, tone: 0.902 },
+  { out: "colourway-ghost.jpg", hex: "#8F98A6", hueKeep: 0.15, tone: 0.97 },
 ]
 
 const smoothstep = (lo, hi, v) => {

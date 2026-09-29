@@ -27,6 +27,7 @@
     "assets:brand": "node scripts/build-brand-assets.mjs",
     "assets:colourways": "node scripts/build-colourways.mjs",
     "assets:colourway-shots": "node scripts/build-colourway-shots.mjs",
+    "assets:ghost-shots": "node scripts/build-ghost-shots.mjs",
     "assets:hero-poster": "node scripts/build-hero-poster.mjs",
     "assets:skull-plates": "node scripts/build-skull-plates.mjs"
   },

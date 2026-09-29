@@ -92,7 +92,9 @@ export const COLOURWAYS: Colourway[] = [
     id: "ghost",
     name: "Ghost Grey",
     sku: "SKM-GHT",
-    hex: "#C8CED6",
+    // The grey the filament prints as: measured off the three prints shot
+    // side by side under one light. It was #C8CED6, which read as silver.
+    hex: "#8F98A6",
     blurb: "Calm, cold and still as stone.",
     image: "/product/colourway-ghost.jpg",
     price: "3499",

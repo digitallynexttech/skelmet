@@ -22,7 +22,7 @@
 
   /* filament colourways (product, not UI) */
   --color-olive: #8a9a5b;
-  --color-ghost: #c8ced6;
+  --color-ghost: #8f98a6;
 
   /* text */
   --color-bone: #f7f4ed;
@@ -71,7 +71,6 @@
   --animate-spin-slow: spin-slow 16s linear infinite;
   --animate-spin-rev: spin-rev 52s linear infinite;
   --animate-bloom: bloom 6s ease-in-out infinite;
-  --animate-drift: drift 7s ease-in-out infinite;
   --animate-blink: blink 1.6s ease-in-out infinite;
   --animate-rise: rise 9s linear infinite;
 
@@ -99,15 +98,6 @@
     50% {
       opacity: 0.85;
       transform: scale(1.06);
-    }
-  }
-  @keyframes drift {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-12px);
     }
   }
   @keyframes blink {
@@ -394,6 +384,20 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+  }
+}
+
+/* The hero poster's bob, which the mesh keeps time with once it takes over.
+   Top and bottom only: the period, the rise (--bob-rise) and a sine easing
+   come from the element's style, built from the constants the mesh's cosine
+   uses (BOB_PERIOD in skull-interaction). */
+@keyframes skull-bob {
+  0%,
+  100% {
+    transform: translateY(calc(-1 * var(--bob-rise)));
+  }
+  50% {
+    transform: translateY(var(--bob-rise));
   }
 }
 
