@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next"
 
 import { siteConfig } from "@/config/site"
+import type { BlogListItem } from "@/features/blog/blog"
+import { getBlogPosts } from "@/features/blog/server/sanity"
 import { PRODUCTS } from "@/features/catalog/catalog"
 import { POLICIES } from "@/features/policies/policies"
 
@@ -22,9 +24,40 @@ const UPDATED = {
   product: "2026-09-28",
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+/** Rebuilt at most once an hour, which is how soon a new post is listed. */
+export const revalidate = 3600
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const url = (path: string) => `${siteConfig.url}${path}`
   const on = (iso: string) => new Date(`${iso}T00:00:00Z`)
+
+  // The blog, and each post with the date Sanity last saw it change. None
+  // of it is listed while there are no posts, and a Sanity that cannot be
+  // reached costs the sitemap its posts, not the rest of it.
+  let posts: BlogListItem[] = []
+  try {
+    posts = await getBlogPosts()
+  } catch (err) {
+    console.error("[SITEMAP] could not read the blog posts", err)
+  }
+  const stamp = (post: BlogListItem) => new Date(post.updatedAt ?? post.publishedAt ?? 0)
+  const blogPages: MetadataRoute.Sitemap =
+    posts.length === 0
+      ? []
+      : [
+          {
+            url: url("/blog"),
+            lastModified: new Date(Math.max(...posts.map((p) => stamp(p).getTime()))),
+            changeFrequency: "weekly",
+            priority: 0.6,
+          },
+          ...posts.map((post) => ({
+            url: url(`/blog/${post.slug}`),
+            lastModified: stamp(post),
+            changeFrequency: "monthly" as const,
+            priority: 0.5,
+          })),
+        ]
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: url("/"), lastModified: on(UPDATED.home), changeFrequency: "weekly", priority: 1 },
@@ -69,5 +102,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }))
 
-  return [...staticPages, ...productPages, ...policyPages]
+  return [...staticPages, ...productPages, ...policyPages, ...blogPages]
 }

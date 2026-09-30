@@ -60,6 +60,11 @@ const schema = z
     SHIPROCKET_PASSWORD: optionalString(),
     SHIPROCKET_PICKUP_LOCATION: optionalString(),
     SHIPROCKET_WEBHOOK_TOKEN: optionalString(),
+
+    // The blog. The console's Blog page needs it, with the Editor role, to
+    // read drafts and to publish; the site itself reads a public dataset
+    // without one. The project is named in config/site.ts.
+    SANITY_API_TOKEN: optionalString(),
   })
   .superRefine((env, ctx) => {
     // The database holds staff logins, and sessions are signed with this: a

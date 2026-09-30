@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
+import { isUnknownPost } from "@/features/blog/server/known-posts"
 import { isUnknownPage } from "@/lib/known-pages"
 
 /**
@@ -101,6 +102,8 @@ const json = (status: number, code: string, message: string) =>
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (isUnknownPage(pathname)) return NextResponse.rewrite(new URL("/not-found", req.url))
+  // Posts come from Sanity, so which ones exist is asked there (and kept for a minute).
+  if (await isUnknownPost(pathname)) return NextResponse.rewrite(new URL("/not-found", req.url))
 
   if (isCrossSiteWrite(req)) {
     return json(403, "FORBIDDEN", "That request came from another site, so it was refused.")
@@ -150,5 +153,6 @@ export const config = {
     "/api/me/:path*",
     "/product/:path*",
     "/policies/:path*",
+    "/blog/:path+",
   ],
 }

@@ -11,6 +11,7 @@ import {
   Mail,
   Menu,
   MessageSquare,
+  Newspaper,
   Package,
   Percent,
   Settings,
@@ -80,6 +81,7 @@ const NAV: NavItem[] = [
     scope: PERMISSIONS.NEWSLETTER_READ,
     children: [{ label: "Write an email", href: "/admin/newsletter/emails" }],
   },
+  { label: "Blog", href: "/admin/blog", icon: Newspaper, scope: PERMISSIONS.POST_READ },
   {
     label: "Settings",
     href: "/admin/settings",

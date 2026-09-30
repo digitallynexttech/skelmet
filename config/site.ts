@@ -38,6 +38,22 @@ export const siteConfig = {
   clarityProjectId: "ypbnwozfgy",
 
   /**
+   * Sanity, the CMS behind /blog and its editor at /studio. The project id
+   * and dataset are public by nature - they are in the URL of every image a
+   * post shows - so they live here, like the analytics ids. An empty id means
+   * there is no project yet: the blog shows its empty state and stays out of
+   * the menu, and /studio says what is missing instead of failing.
+   *
+   * `apiVersion` pins the API's behaviour to a date, so a change on Sanity's
+   * side changes nothing here until this is moved on purpose.
+   */
+  sanity: {
+    projectId: "j1yocufx" as string,
+    dataset: "production" as string,
+    apiVersion: "2025-02-19",
+  },
+
+  /**
    * The share card every page falls back to. Pages that set their own
    * openGraph replace the root layout's whole object, image included, so they
    * pass this back in rather than lose it.

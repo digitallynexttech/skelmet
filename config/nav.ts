@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site"
 import type { Permission } from "@/lib/constants"
 
 export type NavItem = {
@@ -10,6 +11,8 @@ export type NavItem = {
 export const primaryNav: NavItem[] = [
   { label: "Shop", href: "/product/flame-skull-mount" },
   { label: "Riders", href: "/riders" },
+  // In the menu once there is a Sanity project for it to read (config/site.ts).
+  ...(siteConfig.sanity.projectId ? [{ label: "Blog", href: "/blog" }] : []),
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ]
@@ -42,7 +45,6 @@ export const footerNav: Array<{ title: string; items: NavItem[] }> = [
       { label: "Privacy policy", href: "/policies/privacy" },
       { label: "Terms of service", href: "/policies/terms" },
       { label: "Returns, refunds & cancellation", href: "/policies/returns" },
-      { label: "About us", href: "/about" },
     ],
   },
 ]

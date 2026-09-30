@@ -19,6 +19,8 @@ export const PERMISSIONS = {
   INQUIRY_WRITE: "inquiry:write",
   NEWSLETTER_READ: "newsletter:read",
   NEWSLETTER_SEND: "newsletter:send",
+  POST_READ: "post:read",
+  POST_PUBLISH: "post:publish",
   SETTING_READ: "setting:read",
   SETTING_WRITE: "setting:write",
 } as const
@@ -49,6 +51,8 @@ export const PERMISSION_DEFINITIONS: Array<{
     label: "View newsletter subscribers",
   },
   { scope: PERMISSIONS.NEWSLETTER_SEND, module: "newsletter", label: "Send newsletters" },
+  { scope: PERMISSIONS.POST_READ, module: "post", label: "View blog posts" },
+  { scope: PERMISSIONS.POST_PUBLISH, module: "post", label: "Publish and schedule blog posts" },
   { scope: PERMISSIONS.SETTING_READ, module: "setting", label: "View settings" },
   { scope: PERMISSIONS.SETTING_WRITE, module: "setting", label: "Change settings" },
 ]
