@@ -1,11 +1,11 @@
 import { Suspense } from "react"
-import { Toaster } from "sonner"
 
 import { FloatingActions } from "@/components/layout/floating-actions"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SplashScreen } from "@/components/shared/splash-screen"
 import { siteConfig } from "@/config/site"
+import { CartDrawer } from "@/features/cart/components/cart-drawer"
 import { ConsentBar } from "@/features/visitors/components/consent-bar"
 import { CookieSettingsButton } from "@/features/visitors/components/cookie-settings-button"
 import { GoogleAnalytics } from "@/features/visitors/components/google-analytics"
@@ -46,20 +46,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <SiteFooter cookieSettings={<CookieSettingsButton />} />
       <FloatingActions />
       <ConsentBar />
-      {/* Beside the floating buttons, not over them: they keep the 72px
-          nearest the corner. On a phone a toast is full width and brief. */}
-      <Toaster
-        position="bottom-right"
-        offset={{ right: 88 }}
-        theme="dark"
-        toastOptions={{
-          style: {
-            background: "var(--color-graphite)",
-            border: "1px solid rgb(255 255 255 / 0.1)",
-            color: "var(--color-bone)",
-          },
-        }}
-      />
+      {/* On every storefront page, so the cart opens over wherever the visitor
+          is. The storefront's only toasts were "added to cart"; the drawer
+          opening says that now. */}
+      <CartDrawer />
     </div>
   )
 }

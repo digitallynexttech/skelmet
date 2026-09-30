@@ -3,18 +3,11 @@ import * as React from "react"
 /**
  * Cart → Details → Payment.
  *
- * Lived inside cart-view until checkout needed it too. Shared rather than
- * copied: two definitions would drift the moment either page changed a label,
- * and a progress indicator that disagrees with itself between steps is worse
- * than none at all.
+ * The cart is the drawer (features/cart/components/cart-drawer), so step one
+ * is behind the buyer by the time they see this: checkout shows it at step
+ * two.
  */
-export function CheckoutSteps({
-  current,
-  className,
-}: {
-  current: 1 | 2 | 3
-  className?: string
-}) {
+export function CheckoutSteps({ current, className }: { current: 1 | 2 | 3; className?: string }) {
   const steps = ["Cart", "Details", "Payment"] as const
   return (
     <div className={className}>

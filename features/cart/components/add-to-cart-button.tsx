@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import { Check, ShoppingBag } from "lucide-react"
-import { toast } from "sonner"
 
 import { Button, type ButtonProps } from "@/components/ui/button"
 import { useCart } from "@/features/cart/hooks/use-cart"
-import { getColourway, type ColourwayId } from "@/features/catalog/catalog"
+import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
+import type { ColourwayId } from "@/features/catalog/catalog"
 
 type Props = Omit<ButtonProps, "onClick" | "children"> & {
   colourway: ColourwayId
@@ -23,6 +23,7 @@ export function AddToCartButton({
   ...props
 }: Props) {
   const add = useCart((s) => s.add)
+  const showCart = useCartDrawer((s) => s.show)
   const [justAdded, setJustAdded] = React.useState(false)
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -32,16 +33,13 @@ export function AddToCartButton({
     }
   }, [])
 
-  function handleAdd() {
+  function handleAdd(e: React.MouseEvent<HTMLButtonElement>) {
     add(colourway, qty)
     setJustAdded(true)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setJustAdded(false), 1800)
-
-    const name = getColourway(colourway)?.name ?? "Mount"
-    toast.success(`${name} added to cart`, {
-      description: qty > 1 ? `${qty} × Flame Skull Helmet Mount` : "Flame Skull Helmet Mount",
-    })
+    // The cart itself is the confirmation: it opens with the mount in it.
+    showCart(e.currentTarget)
   }
 
   return (

@@ -37,7 +37,7 @@ const mono = JetBrains_Mono({
  * Runs as <body> is parsed, before anything in it can paint, and marks <html>
  * so CSS can decide before React exists: data-cart-empty when the saved cart
  * (use-cart's persisted store) is empty and this is not a Buy-now checkout, so
- * /cart and /checkout hold the place of their empty state rather than a full
+ * /checkout holds the place of its empty state rather than a full
  * page that then collapses.
  */
 const BEFORE_PAINT = `try{var c=JSON.parse(localStorage.getItem("skelmet.cart")||"null");if(!/[?&]buy=/.test(location.search)&&!(c&&c.state&&c.state.items&&c.state.items.length))document.documentElement.setAttribute("data-cart-empty","")}catch(e){}`

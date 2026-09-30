@@ -34,7 +34,7 @@ const productPages = () => PRODUCTS.map((p) => `/product/${p.slug}`)
 
 /** After a price, product or stock edit: every page showing a price or a stock count. */
 export function refreshStorefront(): void {
-  refresh(["/", "/cart", "/checkout", ...productPages()])
+  refresh(["/", "/checkout", ...productPages()])
 }
 
 /** After the shipping charge changes: every page that states it. */

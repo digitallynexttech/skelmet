@@ -4,13 +4,13 @@ import * as React from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Check, CreditCard, Minus, Package, Plus, ShieldCheck, Truck } from "lucide-react"
-import { toast } from "sonner"
 
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/features/cart/hooks/use-cart"
+import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-selection"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
@@ -70,6 +70,7 @@ export function ProductDetail({
   )
   const [shot, setShot] = React.useState(0)
   const add = useCart((s) => s.add)
+  const showCart = useCartDrawer((s) => s.show)
   const router = useRouter()
 
   const colourway = product.colourways.find((c) => c.id === colourwayId) ?? product.colourways[0]!
@@ -270,14 +271,12 @@ export function ProductDetail({
             full
             className="min-w-0 sm:flex-1"
             disabled={soldOut}
-            onClick={() => {
+            onClick={(e) => {
               add(colourwayId, qty)
               // The header's count was the only sign anything happened, and on
-              // a phone it is easy to miss. Say so, with the way to the cart.
+              // a phone it is easy to miss. The cart opens with the mount in it.
               setAdded(true)
-              toast.success(`${qty} × ${colourway.name} added to your cart`, {
-                action: { label: "View cart", onClick: () => router.push("/cart") },
-              })
+              showCart(e.currentTarget)
             }}
           >
             {soldOut ? (

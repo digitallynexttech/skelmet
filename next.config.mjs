@@ -101,6 +101,14 @@ const nextConfig = {
         destination: "/product/flame-skull-mount",
         permanent: true,
       },
+      {
+        // The cart is a drawer now, on every page. Old links and bookmarks to
+        // its page land on the home page with the drawer open (CartDrawer
+        // reads ?cart=open). Temporary: it is a way in, not a moved page.
+        source: "/cart",
+        destination: "/?cart=open",
+        permanent: false,
+      },
     ]
   },
 }

@@ -6,6 +6,7 @@ import { Check, Tag, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
+import { cn } from "@/lib/utils"
 
 export type AppliedCoupon = { code: string; discount: number; label: string }
 
@@ -30,6 +31,7 @@ export function CouponBox({
   code: ownCode,
   onCode,
   recheck = true,
+  className = "mb-6",
 }: {
   subtotal: number
   applied: AppliedCoupon | null
@@ -46,6 +48,8 @@ export function CouponBox({
    * the box twice (a phone layout and a desktop one) lets one of them do it.
    */
   recheck?: boolean
+  /** The space under the box: a page's summary and the cart drawer differ. */
+  className?: string
 }) {
   const cartCode = useCart((s) => s.couponCode)
   const setCartCode = useCart((s) => s.setCoupon)
@@ -121,7 +125,12 @@ export function CouponBox({
 
   if (shown) {
     return (
-      <div className="border-acid/35 bg-acid/[0.06] mb-6 flex h-13 items-center gap-2.5 rounded-lg border px-4">
+      <div
+        className={cn(
+          "border-acid/35 bg-acid/[0.06] flex h-13 items-center gap-2.5 rounded-lg border px-4",
+          className,
+        )}
+      >
         <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
         <span className="text-bone flex-1 font-mono text-[13px] tracking-[0.08em]">
           {shown.code}
@@ -142,7 +151,7 @@ export function CouponBox({
   }
 
   return (
-    <div className="mb-6">
+    <div className={className}>
       <div className="bg-void flex h-13 items-center gap-2.5 rounded-lg border border-white/[0.12] px-4">
         <Tag className="text-ember size-4 shrink-0" strokeWidth={1.8} />
         <Input

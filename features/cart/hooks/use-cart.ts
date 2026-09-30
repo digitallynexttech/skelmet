@@ -45,7 +45,7 @@ export type CartTotals = {
 type CartState = {
   items: CartLine[]
   /**
-   * The code accepted on /cart, so checkout can send it without the customer
+   * The code accepted in the cart drawer, so checkout can send it without the customer
    * typing it twice. The value is a claim, never an authority - checkout
    * re-validates it against the database and re-prices from scratch, so a
    * hand-edited localStorage entry buys nothing.
@@ -58,9 +58,10 @@ type CartState = {
   /**
    * Brings every line up to the live price, keyed by SKU. A line keeps the
    * price it was added at, which is the registry's - and an admin can change
-   * the database price that checkout actually charges. The cart and checkout
-   * pages read the live prices on the server and hand them in here, so the
-   * total on screen is the total that gets charged.
+   * the database price that checkout actually charges. The cart drawer asks
+   * for the live prices when it opens and the checkout page reads them on the
+   * server; both hand them in here, so the total on screen is the total that
+   * gets charged.
    */
   syncPrices: (prices: Record<string, string>) => void
   clear: () => void

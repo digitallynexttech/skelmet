@@ -624,7 +624,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       // Only SKUs and quantities cross the wire; the server prices the order.
       items: items.map((l) => ({ sku: l.sku, qty: l.qty })),
       // The field below lives in a `hidden lg:flex` rail, so on a phone it is
-      // present but invisible - which is why the code applied on /cart has to
+      // present but invisible - which is why the code applied in the cart has to
       // seed it rather than being re-typed somewhere it cannot be typed.
       // The named input is gone - CouponBox validates before anything is
       // applied, so the code that goes to the server is the one it accepted,

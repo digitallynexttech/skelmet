@@ -32,7 +32,7 @@ The storefront renders with no database. Orders, login and everything under
 | --------------------------------------------- | --------------------------------------------------- |
 | `/`                                           | Home: 3D hero, lineup, features, reviews, FAQ       |
 | `/product/[slug]`                             | Colourway switcher, qty, gallery, pincode check     |
-| `/cart`                                       | Live totals, qty, remove, coupon, empty state       |
+| cart drawer (any page; `/cart` opens it)      | Live totals, qty, remove, coupon, empty state       |
 | `/checkout`                                   | Contact, address, coupon, Razorpay; Buy now too     |
 | `/checkout/thank-you`                         | The order as it stands: paid, processing, cancelled |
 | `/about` `/contact` `/riders` `/faq` `/track` | Live                                                |

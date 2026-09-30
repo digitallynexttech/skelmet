@@ -14,7 +14,7 @@ sees. This lists what exists. Anything not here is not built.
 | --------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `/`                   | Home        | 3D hero · ticker · trust strip · lineup · features · anatomy · finish · comparison · rider wall · reviews · FAQ · drop list |
 | `/product/[slug]`     | Product     | Gallery · colourway switcher · price and qty · pincode check · Buy now · product information · the sections below           |
-| `/cart`               | Cart        | Lines, quantity, coupon, summary                                                                                            |
+| (drawer, every page)  | Cart        | Lines, quantity, coupon, summary. Not a page: `/cart` redirects to `/` with the drawer open                                 |
 | `/checkout`           | Checkout    | Contact → delivery (pincode) → payment (Razorpay). `?buy=<colourway>&qty=<n>` buys one line, cart untouched                 |
 | `/checkout/thank-you` | Thank you   | The order as it stands: paid, payment processing, or cancelled                                                              |
 | `/track`              | Track order | Order number + email, no login                                                                                              |
@@ -98,7 +98,7 @@ admin/settings · payment · shipping · shiprocket (+ /test)   GET · PATCH · 
 ## 5. Conversion path
 
 ```
-/  ──▶  /product/flame-skull-mount  ──▶  /cart  ──▶  /checkout  ──▶  /checkout/thank-you
+/  ──▶  /product/flame-skull-mount  ──▶  cart drawer  ──▶  /checkout  ──▶  /checkout/thank-you
                   │                                      ▲
                   └── Buy now ───────────────────────────┘  (one line, cart untouched)
 ```

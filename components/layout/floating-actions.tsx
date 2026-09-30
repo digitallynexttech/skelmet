@@ -32,8 +32,8 @@ function onScroll(notify: () => void) {
  * stuck to the bottom of a phone (`data-sticky-bar`, the product page's Buy
  * now). The pair rides above that bar, and when the bar lets go and scrolls
  * up through them it passes over them, not under. A page that needs the
- * corner to itself on a phone says so with `data-clear-corner`: the cart and
- * checkout, where the buttons would sit on Checkout and Pay.
+ * corner to itself on a phone says so with `data-clear-corner`: checkout,
+ * where the buttons would sit on the fields and on Pay.
  */
 export function FloatingActions() {
   // Read from the scroll position, not kept in state: React re-renders only

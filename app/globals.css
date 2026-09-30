@@ -460,9 +460,9 @@
   }
 }
 
-/* The /cart and /checkout placeholders (see BEFORE_PAINT in app/layout.tsx):
- * each renders both its full layout and its empty state, and shows the one
- * the saved cart says the page is about to become. */
+/* The /checkout placeholder (see BEFORE_PAINT in app/layout.tsx): it renders
+ * both its full layout and its empty state, and shows the one the saved cart
+ * says the page is about to become. */
 html[data-cart-empty] [data-when-cart="full"],
 html:not([data-cart-empty]) [data-when-cart="empty"] {
   display: none;

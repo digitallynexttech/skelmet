@@ -115,6 +115,11 @@ export async function getLivePrices(): Promise<Record<string, string>> {
   }
 }
 
+/** The same, as a service answer: what the cart drawer asks for when it opens. */
+export async function livePrices(): Promise<ActionResult<Record<string, string>>> {
+  return runAction(async () => ok(await getLivePrices()))
+}
+
 export async function getFeaturedProduct(): Promise<ActionResult<Product>> {
   return runAction(async () => {
     if (!hasDatabase()) return ok(FLAME_SKULL_MOUNT)
