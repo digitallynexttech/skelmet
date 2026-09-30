@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/button"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
+import { SKULL_POSTER } from "@/components/marketing/skull-interaction"
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
 import { apiFetch } from "@/lib/api-fetch"
@@ -102,7 +103,10 @@ export function CartDrawer() {
         panel.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input") ??
           [],
       )
-    panel.current?.querySelector<HTMLElement>("[data-first-focus]")?.focus()
+    // preventScroll: the button is still off the right edge when this runs,
+    // and a plain focus() scrolls the drawer's box to show it - the panel
+    // snapped into place at once while its slide played on unseen.
+    panel.current?.querySelector<HTMLElement>("[data-first-focus]")?.focus({ preventScroll: true })
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -155,7 +159,8 @@ export function CartDrawer() {
     // making the page wider than the screen.
     <div
       className={cn(
-        "fixed inset-0 z-[70] overflow-hidden",
+        // clip, not hidden: a hidden box can still be scrolled by the browser.
+        "fixed inset-0 z-[70] overflow-clip",
         open ? "pointer-events-auto" : "pointer-events-none",
       )}
       inert={!open}
@@ -166,8 +171,8 @@ export function CartDrawer() {
         aria-label="Close cart"
         onClick={() => hide()}
         className={cn(
-          "bg-void/80 absolute inset-0 transition-opacity ease-out",
-          open ? "opacity-100 duration-500" : "opacity-0 duration-300",
+          "bg-void/80 absolute inset-0 transition-opacity ease-in-out",
+          open ? "opacity-100 duration-[450ms]" : "opacity-0 duration-[350ms]",
         )}
       />
       <div
@@ -176,12 +181,14 @@ export function CartDrawer() {
         aria-modal="true"
         aria-label="Your cart"
         className={cn(
-          // A transform on a layer of its own, so the compositor slides it. In
-          // on a long, soft deceleration; out quicker, easing away.
-          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-transform will-change-transform sm:max-w-[440px]",
+          // A plain transform on a layer of its own, so the compositor slides
+          // it, right to left. The curve is an even one: a steep ease-out
+          // covered most of the distance in the first few frames, and the
+          // panel read as jumping in while the backdrop faded.
+          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px]",
           open
-            ? "translate-x-0 duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
-            : "translate-x-full duration-[380ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+            ? "[transform:translate3d(0,0,0)] duration-[450ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+            : "[transform:translate3d(100%,0,0)] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
         )}
       >
         {used ? <CartContents onClose={() => hide()} /> : null}
@@ -229,14 +236,9 @@ function CartContents({ onClose }: { onClose: () => void }) {
 
       {!mounted ? null : lines.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center">
-          <div className="relative mb-6 size-28 shrink-0 opacity-70">
-            <Image
-              src="/product/hero-skull.jpg"
-              alt=""
-              fill
-              sizes="112px"
-              className="screen object-cover"
-            />
+          {/* The 3D skull's own front-facing frame, the hero's poster. */}
+          <div className="relative mb-5 aspect-[4/5] w-36 shrink-0">
+            <Image src={SKULL_POSTER} alt="" fill sizes="144px" className="object-contain" />
           </div>
           <div className="font-display text-bone mb-3 text-[34px] leading-[1.0] uppercase">
             Nothing in here
