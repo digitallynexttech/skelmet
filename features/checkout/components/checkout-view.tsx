@@ -988,7 +988,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             </h2>
             <Lines items={items} />
             {buyNow && cartItems.length > 0 ? (
-              <CartKept lines={cartItems} className="mb-5" />
+              <CartKept lines={cartItems} className="mb-3" />
             ) : null}
 
             <CouponBox
