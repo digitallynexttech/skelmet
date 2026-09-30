@@ -310,23 +310,10 @@ function CartContents({
         </div>
       ) : (
         // Cards on the page's own black, as a delivery app's cart is laid out:
-        // offers, the shipment, the bill, the policy, then what else there
-        // is. All of it scrolls; the way to checkout stays at the foot.
+        // the shipment and its items, offers, the recommendations, the bill,
+        // then the policy. All of it scrolls; the way to checkout stays at the foot.
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="bg-void flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3">
-            <section aria-labelledby="cart-offers" className={CARD}>
-              <h3 id="cart-offers" className={`${CARD_TITLE} mb-3.5`}>
-                Coupons &amp; offers
-              </h3>
-              <CouponBox
-                subtotal={totals.subtotal}
-                applied={coupon}
-                onApplied={setCoupon}
-                offers={offers}
-                className=""
-              />
-            </section>
-
             <section aria-labelledby="cart-shipment" className={cn(CARD, "p-0")}>
               <div className="flex items-center gap-3 p-4 pb-2">
                 <div className="bg-void flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08]">
@@ -431,6 +418,21 @@ function CartContents({
               </div>
             </section>
 
+            <section aria-labelledby="cart-offers" className={CARD}>
+              <h3 id="cart-offers" className={`${CARD_TITLE} mb-3.5`}>
+                Coupons &amp; offers
+              </h3>
+              <CouponBox
+                subtotal={totals.subtotal}
+                applied={coupon}
+                onApplied={setCoupon}
+                offers={offers}
+                className=""
+              />
+            </section>
+
+            <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
+
             <section aria-labelledby="cart-bill" className={CARD}>
               <h3 id="cart-bill" className={`${CARD_TITLE} mb-3`}>
                 Bill details
@@ -497,8 +499,6 @@ function CartContents({
                 pay the return pickup.
               </p>
             </section>
-
-            <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
           </div>
 
           <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
