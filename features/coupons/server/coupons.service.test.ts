@@ -8,16 +8,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const mocks = vi.hoisted(() => ({
   db: {
     coupon: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+    auditLog: { findMany: vi.fn() },
+    order: { findMany: vi.fn() },
   },
 }))
 
 vi.mock("@/server/db", () => ({ db: mocks.db }))
 vi.mock("@/lib/env", () => ({ hasDatabase: () => true }))
-vi.mock("@/server/action-guard", () => ({ requirePermission: async () => ({ user: { id: "a" } }) }))
+const viewer = vi.hoisted(() => ({ permissions: ["coupon:read", "order:read"] }))
+vi.mock("@/server/action-guard", () => ({
+  requirePermission: async () => ({ user: { id: "a", permissions: viewer.permissions } }),
+  can: (session: { user: { permissions: string[] } }, scope: string) =>
+    session.user.permissions.includes(scope),
+}))
 vi.mock("@/server/audit", () => ({ createAuditLog: vi.fn(), getAuditMeta: async () => ({}) }))
 
-const { createCoupon, listCartOffers, listCoupons, renewCoupon, updateCoupon, validateCoupon } =
-  await import("@/features/coupons/server/coupons.service")
+const {
+  createCoupon,
+  getCouponHistory,
+  listCartOffers,
+  listCoupons,
+  renewCoupon,
+  updateCoupon,
+  validateCoupon,
+} = await import("@/features/coupons/server/coupons.service")
 const { createCouponSchema, updateCouponSchema } =
   await import("@/features/coupons/schemas/coupon.schema")
 
@@ -202,5 +216,78 @@ describe("an old code run again", () => {
     const result = await renewCoupon("D", { kind: "FLAT", value: 200, expiresAt: "2020-01-01" })
     expect(result).toMatchObject({ ok: false, status: 422 })
     expect(mocks.db.coupon.update).not.toHaveBeenCalled()
+  })
+})
+
+describe("getCouponHistory", () => {
+  const setUp = () => {
+    mocks.db.coupon.findUnique.mockResolvedValue(
+      row("DIWALI200", { createdAt: new Date("2025-10-20"), value: "300" }),
+    )
+    mocks.db.auditLog.findMany.mockResolvedValue([
+      {
+        action: "coupon:create",
+        meta: { kind: "FLAT", value: "200" },
+        createdAt: new Date("2025-10-20"),
+        actor: { name: "Diwakar", email: "d@x" },
+      },
+      {
+        action: "coupon:renew",
+        meta: { kind: "FLAT", value: "300", previousUses: 1 },
+        createdAt: new Date("2026-10-15"),
+        actor: null,
+      },
+    ])
+    mocks.db.order.findMany.mockResolvedValue([
+      {
+        id: "o2",
+        number: "SKM-2",
+        status: "PAID",
+        email: "b@x",
+        shippingAddress: { firstName: "Bo" },
+        subtotal: "3499",
+        discount: "300",
+        total: "3199",
+        placedAt: new Date("2026-10-20"),
+        createdAt: new Date("2026-10-20"),
+      },
+      {
+        id: "o1",
+        number: "SKM-1",
+        status: "DELIVERED",
+        email: "a@x",
+        shippingAddress: {},
+        subtotal: "3499",
+        discount: "200",
+        total: "3299",
+        placedAt: new Date("2025-10-25"),
+        createdAt: new Date("2025-10-25"),
+      },
+    ])
+  }
+
+  it("gives the runs newest first, and each order its run", async () => {
+    setUp()
+    const result = await getCouponHistory("DIWALI200")
+    if (!result.ok) throw new Error(result.error)
+    expect(result.data.runs.map((r) => [r.index, r.orders, r.discount])).toEqual([
+      [2, 1, 300],
+      [1, 1, 200],
+    ])
+    expect(result.data.orders.map((o) => [o.number, o.run, o.customer])).toEqual([
+      ["SKM-2", 2, "Bo"],
+      ["SKM-1", 1, "Guest"],
+    ])
+  })
+
+  it("keeps the orders from staff who may not see orders, but not the totals", async () => {
+    setUp()
+    viewer.permissions = ["coupon:read"]
+    const result = await getCouponHistory("DIWALI200")
+    viewer.permissions = ["coupon:read", "order:read"]
+    if (!result.ok) throw new Error(result.error)
+    expect(result.data.orders).toEqual([])
+    expect(result.data.canSeeOrders).toBe(false)
+    expect(result.data.runs.reduce((n, r) => n + r.orders, 0)).toBe(2)
   })
 })

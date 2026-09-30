@@ -49,6 +49,63 @@ export function useCoupons(params: { page: number; q: string; view: CouponView }
   })
 }
 
+export type CouponTerms = {
+  kind: "PERCENT" | "FLAT"
+  value: string
+  minSubtotal: string | null
+  maxUses: number | null
+}
+
+export type CouponRun = {
+  index: number
+  startedBy: "created" | "renewed"
+  start: string
+  end: string | null
+  expiresAt: string | null
+  terms: CouponTerms | null
+  orders: number
+  discount: number
+  sales: number
+  refunded: number
+}
+
+export type CouponHistoryOrder = {
+  id: string
+  number: string
+  status: string
+  customer: string
+  email: string
+  at: string
+  subtotal: string
+  discount: string
+  total: string
+  run: number
+}
+
+export type CouponEvent = {
+  action: string
+  at: string
+  by: string | null
+  meta: Record<string, unknown> | null
+}
+
+export type CouponHistory = {
+  coupon: CouponRow
+  runs: CouponRun[]
+  orders: CouponHistoryOrder[]
+  canSeeOrders: boolean
+  events: CouponEvent[]
+}
+
+/** One code, with its runs, orders and log. Shares ["coupons"], so any change refreshes it. */
+export function useCouponHistory(id: string) {
+  return useQuery({
+    queryKey: ["coupons", "history", id],
+    queryFn: () => apiFetch<CouponHistory>(`/api/admin/coupons/${id}`),
+    staleTime: 30_000,
+  })
+}
+
 /** Invalidates: ["coupons"] */
 export function useCouponMutations() {
   const qc = useQueryClient()

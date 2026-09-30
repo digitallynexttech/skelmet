@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Archive, Percent, Plus, RotateCcw, Search, Ticket, X } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
@@ -371,8 +372,14 @@ export function CouponManager() {
       key: "code",
       header: "Code",
       value: (c) => c.code,
+      // Opens the code's own page: its runs, its orders and its log.
       cell: (c) => (
-        <span className="font-display text-bone text-[20px] tracking-[0.08em]">{c.code}</span>
+        <Link
+          href={`/admin/coupons/${c.id}`}
+          className="font-display text-bone hover:text-blaze text-[20px] tracking-[0.08em] underline-offset-4 transition-colors hover:underline"
+        >
+          {c.code}
+        </Link>
       ),
     },
     {

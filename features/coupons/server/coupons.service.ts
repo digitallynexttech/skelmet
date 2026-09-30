@@ -2,6 +2,12 @@ import "server-only"
 
 import { couponReduction } from "@/features/cart/server/cart-pricing"
 import {
+  splitRuns,
+  type CouponEvent,
+  type CouponRun,
+  type HistoryOrder,
+} from "@/features/coupons/coupon-history"
+import {
   createCouponSchema,
   PERCENT_TOO_HIGH,
   percentTooHigh,
@@ -19,7 +25,7 @@ import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
-import { requirePermission } from "@/server/action-guard"
+import { can, requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
 const COUPON_SELECT = {
@@ -234,7 +240,14 @@ export async function createCoupon(raw: unknown): Promise<ActionResult<CouponRow
       action: "coupon:create",
       module: "coupon",
       entityId: row.id,
-      meta: { code: row.code, kind: row.kind, value: row.value.toString() },
+      meta: {
+        code: row.code,
+        kind: row.kind,
+        value: row.value.toString(),
+        minSubtotal: row.minSubtotal.toString(),
+        maxUses: row.maxUses,
+        expiresAt: row.expiresAt?.toISOString() ?? null,
+      },
       ...(await getAuditMeta()),
     })
 
@@ -327,11 +340,124 @@ export async function renewCoupon(id: string, raw: unknown): Promise<ActionResul
         previousUses: before.usedCount,
         previousExpiry: before.expiresAt?.toISOString() ?? null,
         wasArchived: before.archivedAt !== null,
+        // What this run starts on, for the code's history.
+        kind: row.kind,
+        value: row.value.toString(),
+        minSubtotal: row.minSubtotal.toString(),
+        maxUses: row.maxUses,
+        expiresAt: row.expiresAt?.toISOString() ?? null,
       },
       ...(await getAuditMeta()),
     })
 
     return ok(serialize(row))
+  })
+}
+
+export type CouponHistory = {
+  coupon: CouponRow
+  runs: CouponRun[]
+  /** Every order placed with the code, newest first; empty without order access. */
+  orders: (HistoryOrder & { run: number })[]
+  /** Whether the viewer may see the orders themselves, not only their totals. */
+  canSeeOrders: boolean
+  events: CouponEvent[]
+}
+
+/**
+ * Everything that has happened to one code: its runs, the orders placed with
+ * it, and who did what to it when (features/coupons/coupon-history).
+ */
+export async function getCouponHistory(id: string): Promise<ActionResult<CouponHistory>> {
+  return runAction(async () => {
+    const session = await requirePermission(PERMISSIONS.COUPON_READ)
+    if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    const row = await db.coupon.findUnique({ where: { id }, select: COUPON_SELECT })
+    if (!row) return fail("Coupon not found.", undefined, 404)
+    const coupon = serialize(row)
+
+    const [logs, placed] = await Promise.all([
+      db.auditLog.findMany({
+        where: { module: "coupon", entityId: id },
+        select: {
+          action: true,
+          meta: true,
+          createdAt: true,
+          actor: { select: { name: true, email: true } },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 500,
+      }),
+      db.order.findMany({
+        where: { couponId: id },
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          email: true,
+          shippingAddress: true,
+          subtotal: true,
+          discount: true,
+          total: true,
+          placedAt: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 2000,
+      }),
+    ])
+
+    const events: CouponEvent[] = logs.map((l) => ({
+      action: l.action,
+      at: l.createdAt.toISOString(),
+      by: l.actor?.name ?? l.actor?.email ?? null,
+      meta: (l.meta ?? null) as Record<string, unknown> | null,
+    }))
+
+    const orders: HistoryOrder[] = placed.map((o) => {
+      const address = (o.shippingAddress ?? {}) as { firstName?: string; lastName?: string }
+      return {
+        id: o.id,
+        number: o.number,
+        status: o.status,
+        customer: [address.firstName, address.lastName].filter(Boolean).join(" ") || "Guest",
+        email: o.email,
+        at: (o.placedAt ?? o.createdAt).toISOString(),
+        subtotal: o.subtotal.toString(),
+        discount: o.discount.toString(),
+        total: o.total.toString(),
+      }
+    })
+
+    const runs = splitRuns({
+      createdAt: coupon.createdAt,
+      current: {
+        kind: coupon.kind,
+        value: coupon.value,
+        minSubtotal: coupon.minSubtotal,
+        maxUses: coupon.maxUses,
+        expiresAt: coupon.expiresAt,
+      },
+      events,
+      orders,
+    })
+
+    // The totals are the code's; the orders carry customers' names and
+    // emails, which are for staff who may see orders.
+    const canSeeOrders = can(session, PERMISSIONS.ORDER_READ)
+    const runAt = (at: string) => {
+      for (let i = runs.length - 1; i >= 0; i--) if (at >= runs[i]!.start) return runs[i]!.index
+      return 1
+    }
+
+    return ok({
+      coupon,
+      runs: [...runs].reverse(),
+      orders: canSeeOrders ? orders.map((o) => ({ ...o, run: runAt(o.at) })) : [],
+      canSeeOrders,
+      events: [...events].reverse(),
+    })
   })
 }
 
