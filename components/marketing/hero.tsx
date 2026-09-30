@@ -59,6 +59,12 @@ export function Hero() {
           <div
             className={cn(
               "relative aspect-[4/5] w-full max-w-[410px] sm:max-w-[480px]",
+              // On a phone the skull gives way to the screen's height, so the
+              // headline, the skull, the paragraph and Grab yours all fit on
+              // the first screen: 380px is the header, the strip and what
+              // stacks under the skull; 0.8 turns the height left into the
+              // 4:5 canvas's width.
+              "max-sm:max-w-[max(240px,min(410px,calc((100svh-380px)*0.8)))]",
               "lg:h-[var(--stage)] lg:w-auto lg:max-w-none",
             )}
           >
@@ -131,11 +137,8 @@ export function Hero() {
           {/* Pitch: bottom left of the model. The flanks are anchored to the
               container edges and clear the *visible* skull, not the canvas -
               the canvas is mostly transparent, so overlapping it is free. They
-              outrank it on z so the buttons stay clickable.
-
-              Below xl, where they stack, the button comes before this: on a
-              phone the paragraph pushed it off the first screen. */}
-          <div className="mt-6 flex flex-col items-center max-xl:order-2 xl:absolute xl:bottom-0 xl:left-0 xl:z-30 xl:mt-0 xl:items-start">
+              outrank it on z so the buttons stay clickable. */}
+          <div className="mt-4 flex flex-col items-center sm:mt-6 xl:absolute xl:bottom-0 xl:left-0 xl:z-30 xl:mt-0 xl:items-start">
             <p className="text-ash max-w-[540px] text-[15.5px] leading-[1.62] text-pretty sm:text-[17.5px] xl:max-w-[min(480px,33vw)] xl:text-left">
               Give your helmet the same love as your bike. Mount it in style, flaunt the gear, and
               make your helmet look as thrilling as your rides.
@@ -148,7 +151,7 @@ export function Hero() {
           </div>
 
           {/* Buy: bottom right of the model. */}
-          <div className="mt-5 flex w-full flex-col items-center max-xl:order-1 sm:w-auto xl:absolute xl:right-0 xl:bottom-0 xl:z-30 xl:mt-0 xl:items-end">
+          <div className="mt-5 flex w-full flex-col items-center sm:mt-7 sm:w-auto xl:absolute xl:right-0 xl:bottom-0 xl:z-30 xl:mt-0 xl:items-end">
             <ButtonLink
               href={`/product/${product.slug}`}
               variant="primary"
