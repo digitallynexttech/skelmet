@@ -3,7 +3,17 @@
 import * as React from "react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { ArrowRight, Minus, Plus, ShieldCheck, Tag, Trash2, X } from "lucide-react"
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Plus,
+  ShieldCheck,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { ButtonLink } from "@/components/ui/button"
@@ -11,9 +21,10 @@ import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { SKULL_POSTER } from "@/components/marketing/skull-interaction"
-import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { COLOURWAYS, FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
 import { apiFetch } from "@/lib/api-fetch"
+import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
@@ -138,12 +149,15 @@ export function CartDrawer() {
   // A line keeps the price it was added at; an admin can have changed it
   // since. Read the live ones each time the drawer opens.
   const syncPrices = useCart((s) => s.syncPrices)
+  const [prices, setPrices] = React.useState<Record<string, string>>({})
   React.useEffect(() => {
     if (!open) return
     let cancelled = false
     void apiFetch<Record<string, string>>("/api/public/catalog/prices")
-      .then((prices) => {
-        if (!cancelled) syncPrices(prices)
+      .then((live) => {
+        if (cancelled) return
+        syncPrices(live)
+        setPrices(live)
       })
       .catch(() => {
         // The saved prices stand; checkout prices the order again anyway.
@@ -185,19 +199,28 @@ export function CartDrawer() {
           // it, right to left. The curve is an even one: a steep ease-out
           // covered most of the distance in the first few frames, and the
           // panel read as jumping in while the backdrop faded.
-          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px]",
+          // Rounded on its open side from sm, where it stops short of the left
+          // edge; a phone's is the whole screen.
+          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px] sm:rounded-l-[28px]",
           open
             ? "[transform:translate3d(0,0,0)] duration-[450ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             : "[transform:translate3d(100%,0,0)] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
         )}
       >
-        {used ? <CartContents onClose={() => hide()} /> : null}
+        {used ? <CartContents prices={prices} onClose={() => hide()} /> : null}
       </div>
     </div>
   )
 }
 
-function CartContents({ onClose }: { onClose: () => void }) {
+function CartContents({
+  prices,
+  onClose,
+}: {
+  /** Live prices by SKU, once the drawer has asked; the registry's until then. */
+  prices: Record<string, string>
+  onClose: () => void
+}) {
   // Persisted store: nothing decision-shaped until it has been read.
   const mounted = useHydrated()
   const items = useCart((s) => s.items)
@@ -235,26 +258,29 @@ function CartContents({ onClose }: { onClose: () => void }) {
       </div>
 
       {!mounted ? null : lines.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center">
-          {/* The 3D skull's own front-facing frame, the hero's poster. */}
-          <div className="relative mb-5 aspect-[4/5] w-36 shrink-0">
-            <Image src={SKULL_POSTER} alt="" fill sizes="144px" className="object-contain" />
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="rounded-card bg-void/60 mx-5 mt-5 flex flex-col items-center border border-white/[0.08] px-6 pt-7 pb-8 text-center">
+            {/* The 3D skull's own front-facing frame, the hero's poster. */}
+            <div className="relative mb-4 aspect-[4/5] w-28 shrink-0">
+              <Image src={SKULL_POSTER} alt="" fill sizes="112px" className="object-contain" />
+            </div>
+            <div className="font-display text-bone mb-2.5 text-[30px] leading-[1.0] uppercase">
+              Nothing in here
+            </div>
+            <p className="text-ash mb-6 max-w-[290px] text-[14.5px] leading-[1.6]">
+              Your cart is as empty as the wall above your desk. Let&apos;s fix one of those.
+            </p>
+            <ButtonLink
+              href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+              variant="primary"
+              size="sm"
+              onClick={onClose}
+            >
+              Shop the mount
+              <ArrowRight className="size-4" strokeWidth={2.4} />
+            </ButtonLink>
           </div>
-          <div className="font-display text-bone mb-3 text-[34px] leading-[1.0] uppercase">
-            Nothing in here
-          </div>
-          <p className="text-ash mb-7 max-w-[300px] text-[15px] leading-[1.6]">
-            Your cart is as empty as the wall above your desk. Let&apos;s fix one of those.
-          </p>
-          <ButtonLink
-            href={`/product/${FLAME_SKULL_MOUNT.slug}`}
-            variant="primary"
-            size="md"
-            onClick={onClose}
-          >
-            Shop the mount
-            <ArrowRight className="size-4" strokeWidth={2.4} />
-          </ButtonLink>
+          <Recommendations inCart={[]} prices={prices} />
         </div>
       ) : (
         // One scroller for the lines and the summary. The summary sticks to its
@@ -352,6 +378,8 @@ function CartContents({ onClose }: { onClose: () => void }) {
             </li>
           </ul>
 
+          <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
+
           <div className="bg-carbon sticky bottom-0 shrink-0 border-t border-white/[0.08] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] [@media(max-height:560px)]:static">
             {codeOpen || couponCode ? (
               <CouponBox
@@ -432,5 +460,115 @@ function CartContents({ onClose }: { onClose: () => void }) {
         </div>
       )}
     </>
+  )
+}
+
+/** Each card's width plus the gap, for the arrows' step. */
+const CARD_STEP = 162
+
+/**
+ * "Complete the lineup": the colourways not in the cart yet, as a rail of
+ * cards with their own Add button, as a bag drawer suggests what goes with
+ * what is in it. There is one product, so what goes with it is its other
+ * colours. Adding keeps the drawer open and puts the line straight in, and
+ * the card leaves the rail; with all three in the cart the rail is gone.
+ *
+ * Swiped on a touch screen, with arrows where a pointer can use them.
+ */
+function Recommendations({
+  inCart,
+  prices,
+}: {
+  inCart: ColourwayId[]
+  prices: Record<string, string>
+}) {
+  const add = useCart((s) => s.add)
+  const rail = React.useRef<HTMLDivElement>(null)
+  const picks = COLOURWAYS.filter((c) => !inCart.includes(c.id))
+  if (picks.length === 0) return null
+
+  const step = (direction: 1 | -1) =>
+    rail.current?.scrollBy({ left: direction * CARD_STEP, behavior: "smooth" })
+
+  return (
+    <section aria-labelledby="cart-lineup" className="pt-6 pb-5">
+      <div className="mb-3.5 flex items-center justify-between gap-3 px-5">
+        <h3 id="cart-lineup" className="text-dim font-mono text-[11px] tracking-[0.22em] uppercase">
+          Complete the lineup
+        </h3>
+        {picks.length > 2 ? (
+          <div className="hidden gap-2 [@media(hover:hover)]:flex">
+            {([-1, 1] as const).map((direction) => (
+              <button
+                key={direction}
+                type="button"
+                onClick={() => step(direction)}
+                aria-label={direction < 0 ? "Previous colourways" : "Next colourways"}
+                className="text-bone hover:border-blaze flex size-8 items-center justify-center rounded-full border border-white/[0.16] transition-colors"
+              >
+                {direction < 0 ? (
+                  <ChevronLeft className="size-4" strokeWidth={2} />
+                ) : (
+                  <ChevronRight className="size-4" strokeWidth={2} />
+                )}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        ref={rail}
+        className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto overscroll-x-contain px-5"
+      >
+        {picks.map((c) => {
+          const price = prices[c.sku] ?? c.price
+          const off = discountPercent(FLAME_SKULL_MOUNT.compareAtPrice, price)
+          return (
+            <article
+              key={c.id}
+              className="rounded-tile bg-void/60 flex w-[150px] shrink-0 snap-start flex-col border border-white/[0.08] p-2.5"
+            >
+              <div className="bg-graphite relative aspect-square overflow-hidden rounded-xl">
+                <Image
+                  src={c.image}
+                  alt={`${c.name} mount`}
+                  fill
+                  sizes="130px"
+                  className="object-cover"
+                />
+                {off > 0 ? (
+                  <span className="bg-acid text-void absolute top-2 left-2 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold">
+                    −{off}%
+                  </span>
+                ) : null}
+              </div>
+              <div className="text-dim mt-2.5 flex items-center gap-1.5 font-mono text-[10px] tracking-[0.1em] uppercase">
+                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: c.hex }} />
+                <span className="truncate">{c.name}</span>
+              </div>
+              <div className="text-bone mt-1 line-clamp-2 text-[13px] leading-tight font-semibold">
+                {FLAME_SKULL_MOUNT.name}
+              </div>
+              <div className="mt-1.5 mb-auto flex flex-wrap items-baseline gap-x-1.5">
+                <Money value={price} className="text-bone font-mono text-[13.5px] font-bold" />
+                {off > 0 ? (
+                  <Money value={FLAME_SKULL_MOUNT.compareAtPrice} strike className="text-[11px]" />
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => add(c.id)}
+                aria-label={`Add ${c.name} to cart`}
+                className="text-bone hover:border-blaze hover:bg-blaze hover:text-void mt-2.5 flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/[0.18] font-mono text-[11px] font-bold tracking-[0.12em] transition-colors"
+              >
+                <Plus className="size-3.5" strokeWidth={2.4} />
+                ADD
+              </button>
+            </article>
+          )
+        })}
+      </div>
+    </section>
   )
 }
