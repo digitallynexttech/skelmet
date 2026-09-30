@@ -537,17 +537,19 @@ function CartContents({
             <Link
               href="/checkout"
               onClick={onClose}
-              className="bg-blaze text-void hover:bg-ember flex min-h-[60px] items-center justify-between gap-4 rounded-2xl px-5 py-2.5 transition-colors"
+              // Plain type at one size, as a shop app's bar has it: the display
+              // face at 24px and a mono label read as two different buttons.
+              className="bg-blaze text-void hover:bg-ember flex min-h-[54px] items-center justify-between gap-4 rounded-xl px-4 py-2 transition-colors"
             >
-              <span className="flex flex-col leading-tight">
-                <Money value={totals.total} className="font-display text-[24px] leading-none" />
-                <span className="mt-1 font-mono text-[10px] font-bold tracking-[0.14em] uppercase opacity-75">
+              <span className="flex flex-col">
+                <Money value={totals.total} className="text-[16px] leading-tight font-bold" />
+                <span className="text-[11px] leading-tight font-medium uppercase opacity-80">
                   Total
                 </span>
               </span>
-              <span className="flex items-center gap-1.5 text-[15px] font-bold whitespace-nowrap">
+              <span className="flex items-center gap-1 text-[15.5px] font-medium whitespace-nowrap">
                 Proceed to checkout
-                <ArrowRight className="size-4" strokeWidth={2.4} />
+                <ChevronRight className="size-[18px]" strokeWidth={2} />
               </span>
             </Link>
           </div>
