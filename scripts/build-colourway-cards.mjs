@@ -15,7 +15,7 @@
  * filaments - so the row is three of one thing.
  *
  * It drives the real site in headless Chrome, as build-hero-poster does: the
- * model is served recoloured (the request for skull.glb is answered from
+ * model is served recoloured (the request for the model is answered from
  * memory, nothing on disk changes), the skull is flown down to the orange
  * card and left to seat, and the canvas is captured alone - the seated skull,
  * under the studio rig, with nothing else - at the photo's own resolution.
@@ -31,6 +31,7 @@ import os from "node:os"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { assetFile, readAssets } from "./skull-assets.mjs"
 import { NodeIO } from "@gltf-transform/core"
 import { EXTMeshoptCompression, KHRMeshQuantization } from "@gltf-transform/extensions"
 import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer"
@@ -40,7 +41,8 @@ import sharp from "sharp"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const BASE = process.argv[2] ?? "http://localhost:3000"
 const PRODUCT = path.join(ROOT, "public/product")
-const MODEL = path.join(PRODUCT, "skull.glb")
+const MODEL_URL = readAssets().model
+const MODEL = assetFile(MODEL_URL)
 /** The photo the skull seats in, and the plate that takes its own skull out. */
 const PHOTO = "/product/product-front.jpg"
 const PLATE = "/product/product-front-plate.webp"
@@ -206,7 +208,7 @@ try {
     }
 
     // The model, in this card's colour, from memory.
-    await page("Fetch.enable", { patterns: [{ urlPattern: "*/product/skull.glb*" }] })
+    await page("Fetch.enable", { patterns: [{ urlPattern: `*${MODEL_URL}*` }] })
     cdp.on((msg) => {
       if (msg.sessionId !== sessionId || msg.method !== "Fetch.requestPaused") return
       void page("Fetch.fulfillRequest", {

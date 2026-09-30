@@ -1,3 +1,5 @@
+import SKULL_ASSETS from "@/components/marketing/skull-assets.json"
+
 /**
  * Mutable interaction state for the hero skull, deliberately kept outside React.
  *
@@ -58,10 +60,17 @@ export const BOB_PERIOD = 11.4
 export const BOB_RISE = 0.045 / 3.096
 
 /**
- * The model file. Here rather than in skull-canvas so the stage can ask the
- * browser's cache for it without pulling three.js into its own chunk.
+ * The model file, and the poster of it. Here rather than in skull-canvas so
+ * the stage can ask the browser's cache for the model without pulling
+ * three.js into its own chunk.
+ *
+ * Both names carry a hash of the file and come from skull-assets.json, which
+ * the build scripts write (scripts/skull-assets.mjs). Everything under
+ * /product is served to be kept for a month without asking again, so a new
+ * model under the old name is one no returning visitor ever sees.
  */
-export const SKULL_MODEL = "/product/skull.glb"
+export const SKULL_MODEL = SKULL_ASSETS.model
+export const SKULL_POSTER = SKULL_ASSETS.poster
 
 /**
  * The halo at rest, facing the camera. The poster path never loads the canvas,

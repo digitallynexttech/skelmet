@@ -1,6 +1,6 @@
 /**
- * Builds public/product/hero-skull-poster.webp: a frame of the hero mesh at
- * rest, captured from the running site.
+ * Builds the hero's poster, public/product/hero-skull-poster-<hash>.webp: a
+ * frame of the hero mesh at rest, captured from the running site.
  *
  *   pnpm dev                       (or any server running this code)
  *   node scripts/build-hero-poster.mjs [http://localhost:3000]
@@ -31,6 +31,8 @@ import path from "node:path"
 import { createRequire } from "node:module"
 import { fileURLToPath } from "node:url"
 
+import { publishAsset } from "./skull-assets.mjs"
+
 const require = createRequire(import.meta.url)
 // fileURLToPath, not pathname: the URL form percent-encodes spaces in the path.
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
@@ -46,7 +48,6 @@ if (!sharpDir) throw new Error("sharp not found in the pnpm store")
 const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
 
 const BASE = process.argv[2] ?? "http://localhost:3000"
-const OUT = path.join(ROOT, "public/product/hero-skull-poster.webp")
 
 /** At xl the stage is min(720px, 100svh - 180px): 720px tall at this height. */
 const VIEWPORT = { width: 1600, height: 1000 }
@@ -256,7 +257,8 @@ try {
   if (cover < 0.2) throw new Error(`Only ${(cover * 100).toFixed(1)}% of the frame is skull`)
 
   const out = await sharp(png).webp({ quality: 90, alphaQuality: 100, effort: 6 }).toBuffer()
-  fs.writeFileSync(OUT, out)
+  // Named by its contents, as the model is: see skull-assets.mjs.
+  const OUT = publishAsset("poster", "hero-skull-poster", ".webp", out)
 
   console.log(`stage    ${clip.width}x${clip.height} css px at ${SCALE}x`)
   console.log(`frame    ${info.width}x${info.height}  skull ${(cover * 100).toFixed(1)}%`)

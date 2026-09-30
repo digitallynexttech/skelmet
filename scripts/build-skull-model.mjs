@@ -1,5 +1,5 @@
 /**
- * Builds public/product/skull.glb, the hero's 3D skull, from the print file.
+ * Builds public/product/skull-<hash>.glb, the hero's 3D skull, from the print file.
  *
  *   node scripts/build-skull-model.mjs [path/to/skelmet.stl]
  *
@@ -40,6 +40,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { publishAsset } from "./skull-assets.mjs"
 import { Document, Logger, NodeIO } from "@gltf-transform/core"
 import { EXTMeshoptCompression, KHRMeshQuantization } from "@gltf-transform/extensions"
 import { meshopt, quantize, reorder } from "@gltf-transform/functions"
@@ -51,7 +52,6 @@ const SRC = path.resolve(
   process.argv[2] ?? path.join(ROOT, "../FILES_SKELMET/website-source-media/skelmet.stl"),
 )
 if (!fs.existsSync(SRC)) throw new Error(`Print file not found: ${SRC}`)
-const OUT = path.join(ROOT, "public/product/skull.glb")
 
 /** Blaze Orange as the print renders under the site's lights, sRGB. */
 const FILAMENT = [254, 106, 16]
@@ -329,7 +329,8 @@ await doc.transform(
 const io = new NodeIO()
   .registerExtensions([EXTMeshoptCompression, KHRMeshQuantization])
   .registerDependencies({ "meshopt.encoder": MeshoptEncoder, "meshopt.decoder": MeshoptDecoder })
-await io.write(OUT, doc)
+// Named by its contents, so a rebuilt model is a file no browser has yet.
+const OUT = publishAsset("model", "skull", ".glb", await io.writeBinary(doc))
 
 // -- The numbers the code holds. skull-canvas: camera z 5.4, 32° fov, the
 // height normalised to SKULL_HEIGHT units, the model lifted by 0.06.

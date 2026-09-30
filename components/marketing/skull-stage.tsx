@@ -11,6 +11,7 @@ import {
   BOB_RISE,
   getSkullInteraction,
   SKULL_MODEL,
+  SKULL_POSTER,
 } from "@/components/marketing/skull-interaction"
 import { afterFirstInteraction } from "@/lib/first-interaction"
 import { cn } from "@/lib/utils"
@@ -401,7 +402,7 @@ export function SkullStage({ className }: { className?: string }) {
           straight runs into the mesh's cosine. */}
       <Image
         ref={posterRef}
-        src="/product/hero-skull-poster.webp"
+        src={SKULL_POSTER}
         alt=""
         fill
         // The page's main image: preloaded, and first in the queue.
