@@ -227,10 +227,12 @@ const unitsIn = (lines: CartLine[]) =>
   )
 
 /** "Buying just this" note for a Buy-now checkout over a non-empty cart. */
-function CartKept({ lines }: { lines: CartLine[] }) {
+function CartKept({ lines, className }: { lines: CartLine[]; className?: string }) {
   const n = unitsIn(lines)
   return (
-    <p className="text-dim mt-3 text-[12.5px] leading-[1.5]">
+    // Tucked up under the lines (their own margin is below them), so it reads
+    // as about them rather than floating between them and the code box.
+    <p className={cn("text-dim -mt-2 text-[12.5px] leading-[1.5]", className)}>
       Buying just this.{" "}
       {n === 1
         ? "The item in your cart stays there for later."
@@ -985,7 +987,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               Your order
             </h2>
             <Lines items={items} />
-            {buyNow && cartItems.length > 0 ? <CartKept lines={cartItems} /> : null}
+            {buyNow && cartItems.length > 0 ? (
+              <CartKept lines={cartItems} className="mb-5" />
+            ) : null}
 
             <CouponBox
               subtotal={totals.subtotal}
