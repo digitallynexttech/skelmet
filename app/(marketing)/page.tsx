@@ -5,7 +5,6 @@ import { Anatomy } from "@/components/marketing/anatomy"
 import { Bento } from "@/components/marketing/bento"
 import { ColourwayGrid } from "@/components/marketing/colourway-grid"
 import { Comparison } from "@/components/marketing/comparison"
-import { TICKER_ITEMS } from "@/components/marketing/content"
 import { DropList } from "@/components/marketing/drop-list"
 import { FaqSection } from "@/components/marketing/faq-section"
 import { Hero } from "@/components/marketing/hero"
@@ -17,7 +16,6 @@ import { Texture } from "@/components/marketing/texture"
 // import { TheHook } from "@/components/marketing/the-hook"   // hidden from this page
 // import { ThePoint } from "@/components/marketing/the-point"
 import { TrustStrip } from "@/components/marketing/trust-strip"
-import { MarqueeTicker } from "@/components/shared/marquee-ticker"
 import { siteConfig } from "@/config/site"
 
 export const metadata: Metadata = {
@@ -63,7 +61,6 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <MarqueeTicker items={TICKER_ITEMS} />
       <TrustStrip />
       {/* The eyebrow number is passed here rather than baked into each
           section, because it describes a position in THIS page's run - the

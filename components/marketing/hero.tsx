@@ -31,7 +31,7 @@ export function Hero() {
   const product = FLAME_SKULL_MOUNT
 
   return (
-    <section className="grain bg-void relative overflow-hidden lg:flex lg:min-h-[calc(100svh-74px)] lg:flex-col">
+    <section className="grain bg-void relative overflow-hidden lg:flex lg:min-h-[calc(100svh-74px-36px)] lg:flex-col">
       {/* Warm bloom behind the whole composition. */}
       <div
         aria-hidden

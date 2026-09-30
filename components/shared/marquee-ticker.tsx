@@ -29,10 +29,13 @@ export function MarqueeTicker({
   items,
   className,
   tone = "blaze",
+  slim = false,
 }: {
   items: string[]
   className?: string
   tone?: "blaze" | "acid"
+  /** The announcement bar's size: a thin strip above the header. */
+  slim?: boolean
 }) {
   const sequence = Array.from({ length: REPEATS }, () => items).flat()
 
@@ -42,11 +45,17 @@ export function MarqueeTicker({
   // -50% and shift the seam off the match.
   const track = (
     <div
-      className="flex w-max shrink-0 items-center font-mono text-[13px] font-bold tracking-[0.18em] whitespace-nowrap"
+      className={cn(
+        "flex w-max shrink-0 items-center font-mono font-bold whitespace-nowrap",
+        slim ? "text-[11px] tracking-[0.16em]" : "text-[13px] tracking-[0.18em]",
+      )}
       aria-hidden="true"
     >
       {sequence.map((item, i) => (
-        <span key={`${item}-${i}`} className="flex items-center gap-8 pr-8">
+        <span
+          key={`${item}-${i}`}
+          className={cn("flex items-center", slim ? "gap-6 pr-6" : "gap-8 pr-8")}
+        >
           {item}
           <span aria-hidden>✦</span>
         </span>
@@ -57,7 +66,8 @@ export function MarqueeTicker({
   return (
     <div
       className={cn(
-        "group relative h-15 overflow-hidden border-y border-black/30",
+        "group relative overflow-hidden",
+        slim ? "h-9" : "h-15 border-y border-black/30",
         tone === "blaze" ? "bg-blaze text-void" : "bg-acid text-void",
         className,
       )}

@@ -3,6 +3,8 @@ import { Suspense } from "react"
 import { FloatingActions } from "@/components/layout/floating-actions"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
+import { TICKER_ITEMS } from "@/components/marketing/content"
+import { MarqueeTicker } from "@/components/shared/marquee-ticker"
 import { SplashScreen } from "@/components/shared/splash-screen"
 import { siteConfig } from "@/config/site"
 import { CartDrawer } from "@/features/cart/components/cart-drawer"
@@ -34,6 +36,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <MicrosoftClarity id={siteConfig.clarityProjectId} />
         </>
       ) : null}
+      {/* The announcement strip, above the header. It scrolls away with the
+          page; the header below it is the part that sticks. It is 36px tall,
+          which hero.tsx and the thank-you page take off their first screen. */}
+      <MarqueeTicker items={TICKER_ITEMS} slim />
       <SiteHeader />
       {/* Nothing in a page may make the document wider than the screen: a phone
           then lays out everything `fixed` - the splash, the cookie card, the

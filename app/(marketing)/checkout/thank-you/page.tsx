@@ -192,7 +192,7 @@ export default async function ThankYouPage({
     // Hidden from Microsoft Clarity's recordings: it shows the buyer's email,
     // address and order.
     <div data-clarity-mask="true">
-      <div className="grain relative flex min-h-[calc(100dvh-74px)] flex-col justify-center overflow-hidden px-5 py-10 text-center sm:px-8">
+      <div className="grain relative flex min-h-[calc(100dvh-74px-36px)] flex-col justify-center overflow-hidden px-5 py-10 text-center sm:px-8">
         <div className="animate-bloom absolute top-16 left-1/2 size-[280px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(255_90_31_/_0.34),transparent_66%)] blur-[30px] sm:size-[420px]" />
         <div className="animate-spin-rev border-blaze/30 absolute top-20 left-1/2 size-[260px] -translate-x-1/2 rounded-full border border-dashed sm:size-[388px]" />
 
