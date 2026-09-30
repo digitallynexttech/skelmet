@@ -199,9 +199,7 @@ export function CartDrawer() {
           // it, right to left. The curve is an even one: a steep ease-out
           // covered most of the distance in the first few frames, and the
           // panel read as jumping in while the backdrop faded.
-          // Rounded on its open side from sm, where it stops short of the left
-          // edge; a phone's is the whole screen.
-          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px] sm:rounded-l-[28px]",
+          "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px]",
           open
             ? "[transform:translate3d(0,0,0)] duration-[450ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             : "[transform:translate3d(100%,0,0)] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
@@ -283,154 +281,161 @@ function CartContents({
           <Recommendations inCart={[]} prices={prices} />
         </div>
       ) : (
-        // One scroller for the lines and the summary. The summary sticks to its
-        // foot, so the lines pass under it - unless the screen is too short
-        // for both, where it takes its place at the end and scrolls.
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-          <ul className="flex-1 px-5">
-            {lines.map((line) => (
-              <li key={line.id} className="flex gap-4 border-b border-white/[0.07] py-5">
-                <div className="bg-void relative size-[76px] shrink-0 overflow-hidden rounded-xl">
-                  <Image
-                    src={line.image}
-                    alt={`${line.colourwayName} mount`}
-                    fill
-                    sizes="76px"
-                    className="object-cover"
-                  />
-                </div>
-
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-bone text-[15px] leading-tight font-bold">
-                      {line.productName}
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => remove(line.id)}
-                      aria-label={`Remove ${line.colourwayName}`}
-                      className="text-dim hover:text-magenta -mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center transition-colors"
-                    >
-                      <Trash2 className="size-[16px]" strokeWidth={1.9} />
-                    </button>
-                  </div>
-
-                  <div className="text-dim mt-1 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em]">
-                    <span
-                      className="size-2.5 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor:
-                          COLOURWAYS.find((c) => c.id === line.colourway)?.hex ?? "#FF5A1F",
-                      }}
+        // Everything scrolls - the lines, the price, the discount code, the
+        // recommendations - except the way to checkout, which stays at the
+        // foot. A whole summary pinned there took half a phone's screen.
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <ul className="px-5">
+              {lines.map((line) => (
+                <li key={line.id} className="flex gap-4 border-b border-white/[0.07] py-5">
+                  <div className="bg-void relative size-[76px] shrink-0 overflow-hidden rounded-xl">
+                    <Image
+                      src={line.image}
+                      alt={`${line.colourwayName} mount`}
+                      fill
+                      sizes="76px"
+                      className="object-cover"
                     />
-                    {line.colourwayName.toUpperCase()}
                   </div>
 
-                  {/* Wraps: on the narrowest phones the stepper and a
-                      five-figure total do not fit on one line. */}
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                    <div className="flex h-10 items-center gap-0.5 rounded-full border border-white/[0.16] px-1">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-bone text-[15px] leading-tight font-bold">
+                        {line.productName}
+                      </h3>
                       <button
                         type="button"
-                        onClick={() => setQty(line.id, line.qty - 1)}
-                        aria-label="Decrease quantity"
-                        className="text-bone flex size-8 items-center justify-center rounded-full"
+                        onClick={() => remove(line.id)}
+                        aria-label={`Remove ${line.colourwayName}`}
+                        className="text-dim hover:text-magenta -mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center transition-colors"
                       >
-                        <Minus className="size-3.5" strokeWidth={2.2} />
-                      </button>
-                      <span className="text-bone min-w-6 text-center font-mono text-sm font-bold">
-                        {line.qty}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setQty(line.id, line.qty + 1)}
-                        aria-label="Increase quantity"
-                        className="text-bone flex size-8 items-center justify-center rounded-full"
-                      >
-                        <Plus className="size-3.5" strokeWidth={2.2} />
+                        <Trash2 className="size-[16px]" strokeWidth={1.9} />
                       </button>
                     </div>
 
-                    <div className="ml-auto text-right">
-                      <Money
-                        value={Number(line.unitPrice) * line.qty}
-                        className="font-display text-bone text-[22px] leading-[1.08]"
+                    <div className="text-dim mt-1 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em]">
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor:
+                            COLOURWAYS.find((c) => c.id === line.colourway)?.hex ?? "#FF5A1F",
+                        }}
                       />
-                      {line.qty > 1 ? (
-                        <div className="text-dim mt-0.5 font-mono text-[11px]">
-                          <Money value={line.unitPrice} /> each
-                        </div>
-                      ) : null}
+                      {line.colourwayName.toUpperCase()}
+                    </div>
+
+                    {/* Wraps: on the narrowest phones the stepper and a
+                      five-figure total do not fit on one line. */}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                      <div className="flex h-10 items-center gap-0.5 rounded-full border border-white/[0.16] px-1">
+                        <button
+                          type="button"
+                          onClick={() => setQty(line.id, line.qty - 1)}
+                          aria-label="Decrease quantity"
+                          className="text-bone flex size-8 items-center justify-center rounded-full"
+                        >
+                          <Minus className="size-3.5" strokeWidth={2.2} />
+                        </button>
+                        <span className="text-bone min-w-6 text-center font-mono text-sm font-bold">
+                          {line.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(line.id, line.qty + 1)}
+                          aria-label="Increase quantity"
+                          className="text-bone flex size-8 items-center justify-center rounded-full"
+                        >
+                          <Plus className="size-3.5" strokeWidth={2.2} />
+                        </button>
+                      </div>
+
+                      <div className="ml-auto text-right">
+                        <Money
+                          value={Number(line.unitPrice) * line.qty}
+                          className="font-display text-bone text-[22px] leading-[1.08]"
+                        />
+                        {line.qty > 1 ? (
+                          <div className="text-dim mt-0.5 font-mono text-[11px]">
+                            <Money value={line.unitPrice} /> each
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              ))}
 
-            <li className="text-ash flex items-start gap-3 py-5 text-[13px] leading-[1.5]">
-              <ShieldCheck className="text-acid mt-0.5 size-[18px] shrink-0" strokeWidth={1.7} />
-              {/* Unused and undrilled, because a mount that has been drilled in
+              <li className="text-ash flex items-start gap-3 py-5 text-[13px] leading-[1.5]">
+                <ShieldCheck className="text-acid mt-0.5 size-[18px] shrink-0" strokeWidth={1.7} />
+                {/* Unused and undrilled, because a mount that has been drilled in
                   cannot come back (the returns policy). */}
-              <span>
-                Doesn&apos;t fit your wall? Send it back unused and undrilled within 7 days - we pay
-                the return pickup.
-              </span>
-            </li>
-          </ul>
+                <span>
+                  Doesn&apos;t fit your wall? Send it back unused and undrilled within 7 days - we
+                  pay the return pickup.
+                </span>
+              </li>
+            </ul>
 
-          <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
+            <section aria-label="Order summary" className="border-b border-white/[0.07] px-5 pb-6">
+              {codeOpen || couponCode ? (
+                <CouponBox
+                  subtotal={totals.subtotal}
+                  applied={coupon}
+                  onApplied={setCoupon}
+                  className="mb-4"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCodeOpen(true)}
+                  className="text-ash hover:text-bone mb-3 flex min-h-9 items-center gap-2 text-[13.5px] transition-colors"
+                >
+                  <Tag className="text-ember size-4" strokeWidth={1.8} />
+                  Have a discount code?
+                </button>
+              )}
 
-          <div className="bg-carbon sticky bottom-0 shrink-0 border-t border-white/[0.08] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] [@media(max-height:560px)]:static">
-            {codeOpen || couponCode ? (
-              <CouponBox
-                subtotal={totals.subtotal}
-                applied={coupon}
-                onApplied={setCoupon}
-                className="mb-4"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setCodeOpen(true)}
-                className="text-ash hover:text-bone mb-3 flex min-h-9 items-center gap-2 text-[13.5px] transition-colors"
-              >
-                <Tag className="text-ember size-4" strokeWidth={1.8} />
-                Have a discount code?
-              </button>
-            )}
-
-            <dl className="flex flex-col gap-2 text-[14px]">
-              <div className="flex justify-between gap-4">
-                <dt className="text-ash">Subtotal</dt>
-                <dd className="text-bone font-mono">
-                  <Money value={totals.subtotal} />
-                </dd>
-              </div>
-              {coupon && totals.couponOff > 0 ? (
+              <dl className="flex flex-col gap-2 text-[14px]">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-ash">{coupon.label}</dt>
-                  <dd className="text-acid font-mono">
-                    − <Money value={totals.couponOff} />
+                  <dt className="text-ash">Subtotal</dt>
+                  <dd className="text-bone font-mono">
+                    <Money value={totals.subtotal} />
                   </dd>
                 </div>
-              ) : null}
-              {/* Shipping depends on the delivery pincode (free, or a flat fee
-                  where couriers cost more), which the cart does not have.
-                  Checkout shows it as soon as the pincode is typed. */}
-              <div className="flex justify-between gap-4">
-                <dt className="text-ash">Shipping</dt>
-                <dd className="text-dim text-right text-[13px]">By pincode, at checkout</dd>
+                {coupon && totals.couponOff > 0 ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-ash">{coupon.label}</dt>
+                    <dd className="text-acid font-mono">
+                      − <Money value={totals.couponOff} />
+                    </dd>
+                  </div>
+                ) : null}
+                {/* Shipping depends on the delivery pincode (free, or a flat fee
+                    where couriers cost more), which the cart does not have.
+                    Checkout shows it as soon as the pincode is typed. */}
+                <div className="flex justify-between gap-4">
+                  <dt className="text-ash">Shipping</dt>
+                  <dd className="text-dim text-right text-[13px]">By pincode, at checkout</dd>
+                </div>
+              </dl>
+
+              <div className="flex items-baseline justify-between gap-4 pt-3">
+                <span className="text-bone text-[14.5px] font-semibold">Total before shipping</span>
+                <Money
+                  value={totals.total}
+                  className="font-display text-bone text-[30px] leading-[1.04]"
+                />
               </div>
-            </dl>
+              <div className="text-dim pt-2 text-right font-mono text-[10.5px] tracking-[0.1em]">
+                UPI · CARDS · NETBANKING
+              </div>
+            </section>
 
-            <div className="flex items-baseline justify-between gap-4 pt-3 pb-4">
-              <span className="text-bone text-[14.5px] font-semibold">Total before shipping</span>
-              <Money
-                value={totals.total}
-                className="font-display text-bone text-[30px] leading-[1.04]"
-              />
-            </div>
+            <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
+          </div>
 
+          <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <ButtonLink
               href="/checkout"
               variant="primary"
@@ -439,23 +444,9 @@ function CartContents({
               onClick={onClose}
               className="bg-blaze bg-none shadow-none hover:shadow-none"
             >
-              Checkout
+              Proceed to checkout
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </ButtonLink>
-
-            <div className="flex items-center justify-between gap-3 pt-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-ash hover:text-bone flex min-h-9 items-center text-[13.5px] transition-colors"
-              >
-                Continue shopping
-              </button>
-              {/* Left off the narrowest phones, where the two do not fit on a line. */}
-              <span className="text-dim font-mono text-[10.5px] tracking-[0.1em] max-[359px]:hidden">
-                UPI · CARDS · NETBANKING
-              </span>
-            </div>
           </div>
         </div>
       )}
@@ -467,7 +458,7 @@ function CartContents({
 const CARD_STEP = 162
 
 /**
- * "Complete the lineup": the colourways not in the cart yet, as a rail of
+ * "Recommended products": the colourways not in the cart yet, as a rail of
  * cards with their own Add button, as a bag drawer suggests what goes with
  * what is in it. There is one product, so what goes with it is its other
  * colours. Adding keeps the drawer open and puts the line straight in, and
@@ -494,7 +485,7 @@ function Recommendations({
     <section aria-labelledby="cart-lineup" className="pt-6 pb-5">
       <div className="mb-3.5 flex items-center justify-between gap-3 px-5">
         <h3 id="cart-lineup" className="text-dim font-mono text-[11px] tracking-[0.22em] uppercase">
-          Complete the lineup
+          Recommended products
         </h3>
         {picks.length > 2 ? (
           <div className="hidden gap-2 [@media(hover:hover)]:flex">
