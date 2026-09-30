@@ -3,6 +3,8 @@ import "server-only"
 import { ZodError, flattenError } from "zod"
 
 import { AppError } from "@/lib/errors"
+import { validationMessage } from "@/lib/validation-message"
+import "@/server/zod-messages"
 
 /**
  * Every service export returns an ActionResult. Expected failures `return fail(…)`
@@ -35,7 +37,7 @@ export async function runAction<T>(body: () => Promise<ActionResult<T>>): Promis
     // here rather than at the route wrapper. Map it, or every bad form field
     // in the app reads as a 500.
     if (err instanceof ZodError) {
-      return fail("Some of those details are not right.", flattenError(err), 422)
+      return fail(validationMessage(err), flattenError(err), 422)
     }
 
     console.error("[ACTION]", err)

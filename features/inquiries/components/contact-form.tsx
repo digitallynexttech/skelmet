@@ -51,6 +51,8 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
   const [sent, setSent] = React.useState(false)
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  // Under each box, what the server said is wrong with it.
+  const [fields, setFields] = React.useState<Record<string, string>>({})
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -58,6 +60,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
 
     setPending(true)
     setError(null)
+    setFields({})
 
     try {
       await apiFetch("/api/public/contact", {
@@ -75,6 +78,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
       setSent(true)
     } catch (err) {
       setPending(false)
+      if (err instanceof ApiFetchError) setFields(err.fieldErrors)
       // A 4xx names what is wrong with the message, so it is worth showing as
       // is. Anything else - our side down, the connection dropped - gets a
       // way round the form.
@@ -115,10 +119,10 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
 
       <div className="flex flex-col gap-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Your name">
+          <Field label="Your name" error={fields.name}>
             <Input name="name" required autoComplete="name" placeholder="Rohan Mehta" />
           </Field>
-          <Field label="Email">
+          <Field label="Email" error={fields.email}>
             <Input
               name="email"
               type="email"
@@ -130,10 +134,10 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Phone (optional)">
+          <Field label="Phone (optional)" error={fields.phone}>
             <Input name="phone" type="tel" autoComplete="tel" placeholder="+91" />
           </Field>
-          <Field label="Order number (optional)">
+          <Field label="Order number (optional)" error={fields.orderNumber}>
             <Input name="orderNumber" placeholder="SKM-2026-XXXX" className="font-mono text-sm" />
           </Field>
         </div>
@@ -173,7 +177,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
           <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
         </div>
 
-        <Field label="Message">
+        <Field label="Message" error={fields.message}>
           <Textarea
             name="message"
             required

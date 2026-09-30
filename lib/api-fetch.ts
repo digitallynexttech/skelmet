@@ -1,4 +1,5 @@
 import type { ApiEnvelope } from "@/lib/api-response"
+import { fieldErrorsOf } from "@/lib/validation-message"
 
 export class ApiFetchError extends Error {
   readonly status: number
@@ -11,6 +12,11 @@ export class ApiFetchError extends Error {
     this.status = status
     this.code = code
     this.details = details
+  }
+
+  /** What the server said is wrong with each field, `{ field: message }`, for a form to show under it. */
+  get fieldErrors(): Record<string, string> {
+    return fieldErrorsOf(this.details)
   }
 }
 

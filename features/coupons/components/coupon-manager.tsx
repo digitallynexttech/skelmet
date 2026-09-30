@@ -19,6 +19,7 @@ import {
 } from "@/features/coupons/hooks/use-coupons"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
+import { ApiFetchError } from "@/lib/api-fetch"
 import { cn } from "@/lib/utils"
 
 const STATE_TONE = {
@@ -77,6 +78,9 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   const { create } = useCouponMutations()
   const [kind, setKind] = React.useState<"PERCENT" | "FLAT">("FLAT")
   const [error, setError] = React.useState<string | null>(null)
+  // What is wrong with each field, shown under it: from the checks below
+  // before sending, or from the server's answer.
+  const [fields, setFields] = React.useState<Record<string, string>>({})
 
   // The amounts are held here rather than read off the form on submit. They
   // used to be <input type="number">, which brought two problems with it: a
@@ -92,22 +96,41 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setFields({})
     const form = new FormData(event.currentTarget)
+    const code = String(form.get("code") ?? "")
+      .trim()
+      .toUpperCase()
 
-    if (!amount) {
-      setError(kind === "FLAT" ? "Enter an amount to take off." : "Enter a percentage.")
-      return
+    // The server's own rules, checked here first so the answer is instant
+    // and sits under the box it is about.
+    const found: Record<string, string> = {}
+    if (!/^[A-Z0-9-]{3,24}$/.test(code)) {
+      found.code =
+        code.length < 3
+          ? "At least 3 characters - letters, numbers and dashes"
+          : code.length > 24
+            ? "24 characters at most"
+            : "Letters, numbers and dashes only - no spaces or symbols"
     }
-    if (kind === "PERCENT" && Number(amount) > 100) {
-      setError("A percentage cannot be over 100.")
+    if (!amount) {
+      found.value = kind === "FLAT" ? "Enter an amount to take off" : "Enter a percentage"
+    } else if (kind === "PERCENT" && Number(amount) > 90) {
+      found.value = "90% at most - above that is almost always a typo for a flat amount"
+    }
+    if (Object.keys(found).length > 0) {
+      setFields(found)
+      setError(
+        Object.keys(found).length === 1
+          ? "Fix the field marked below."
+          : "Fix the fields marked below.",
+      )
       return
     }
 
     try {
       await create.mutateAsync({
-        code: String(form.get("code") ?? "")
-          .trim()
-          .toUpperCase(),
+        code,
         kind,
         value: Number(amount),
         // Blank means no minimum, which is zero.
@@ -120,8 +143,14 @@ function CreateForm({ onDone }: { onDone: () => void }) {
         showInCart,
       })
       onDone()
-    } catch {
-      setError("Check the fields and try again.")
+    } catch (err) {
+      // The server's own words: which field, and what is wrong with it.
+      if (err instanceof ApiFetchError) {
+        setFields(err.fieldErrors)
+        setError(err.message)
+      } else {
+        setError("The code was not created - the connection may have dropped. Try again.")
+      }
     }
   }
 
@@ -165,10 +194,10 @@ function CreateForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Code">
+        <Field label="Code" error={fields.code} hint="3 to 24 letters, numbers or dashes">
           <Input name="code" required placeholder="SKULL250" className="font-mono uppercase" />
         </Field>
-        <Field label={kind === "FLAT" ? "Amount off (₹)" : "Percent off"}>
+        <Field label={kind === "FLAT" ? "Amount off (₹)" : "Percent off"} error={fields.value}>
           <Input
             value={amount}
             onChange={(e) => setAmount(onlyDigits(e.target.value))}
@@ -178,7 +207,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
             className="font-mono"
           />
         </Field>
-        <Field label="Minimum subtotal (₹)">
+        <Field label="Minimum subtotal (₹)" error={fields.minSubtotal}>
           {/* Placeholder, not a value. It held a literal 0 before, so typing
               500 into it gave 0500 unless you deleted the zero first. */}
           <Input
@@ -190,7 +219,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
             className="font-mono"
           />
         </Field>
-        <Field label="Max uses (blank = unlimited)">
+        <Field label="Max uses (blank = unlimited)" error={fields.maxUses}>
           <Input
             value={maxUses}
             onChange={(e) => setMaxUses(onlyDigits(e.target.value))}
@@ -200,7 +229,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
             className="font-mono"
           />
         </Field>
-        <Field label="Expires (blank = never)" className="sm:col-span-2">
+        <Field label="Expires (blank = never)" className="sm:col-span-2" error={fields.expiresAt}>
           <DateField
             name="expiresAt"
             value={expiresAt}

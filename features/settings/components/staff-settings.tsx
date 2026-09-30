@@ -15,10 +15,14 @@ import {
   type StaffRow,
 } from "@/features/settings/hooks/use-settings"
 import { useConfirm, type Ask } from "@/hooks/use-confirm"
+import { ApiFetchError } from "@/lib/api-fetch"
 
 function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void }) {
   const { create } = useStaffMutations()
   const [roleIds, setRoleIds] = React.useState<string[]>([])
+  // Under each box, what the server said is wrong with it. The toast says
+  // it too; this puts it where the fix goes.
+  const [fields, setFields] = React.useState<Record<string, string>>({})
 
   const toggle = (id: string) =>
     setRoleIds((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]))
@@ -28,6 +32,7 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
       onSubmit={(e) => {
         e.preventDefault()
         const form = new FormData(e.currentTarget)
+        setFields({})
         create.mutate(
           {
             name: String(form.get("name") ?? ""),
@@ -35,7 +40,12 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
             password: String(form.get("password") ?? ""),
             roleIds,
           },
-          { onSuccess: onDone },
+          {
+            onSuccess: onDone,
+            onError: (err) => {
+              if (err instanceof ApiFetchError) setFields(err.fieldErrors)
+            },
+          },
         )
       }}
       className="rounded-card bg-carbon border border-white/[0.09] p-6"
@@ -45,15 +55,16 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
       </h2>
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Name">
+        <Field label="Name" error={fields.name}>
           <Input name="name" required placeholder="Priya Sharma" />
         </Field>
-        <Field label="Work email">
+        <Field label="Work email" error={fields.email}>
           <Input name="email" type="email" required placeholder="priya@skelmet.in" />
         </Field>
         <Field
           label="Temporary password"
-          hint="They will be asked to change it the first time they sign in"
+          hint="10 characters at least. They change it the first time they sign in"
+          error={fields.password}
         >
           <Input
             name="password"

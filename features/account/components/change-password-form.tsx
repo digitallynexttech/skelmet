@@ -11,11 +11,14 @@ import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 
 export function ChangePasswordForm({ next = "/admin", email }: { next?: string; email: string }) {
   const [error, setError] = React.useState<string | null>(null)
+  // Under each box, what the server said is wrong with it.
+  const [fields, setFields] = React.useState<Record<string, string>>({})
   const [pending, setPending] = React.useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setFields({})
     setPending(true)
 
     const form = new FormData(event.currentTarget)
@@ -30,7 +33,12 @@ export function ChangePasswordForm({ next = "/admin", email }: { next?: string; 
         }),
       })
     } catch (err) {
-      setError(err instanceof ApiFetchError ? err.message : "That didn't work. Try again.")
+      if (err instanceof ApiFetchError) setFields(err.fieldErrors)
+      setError(
+        err instanceof ApiFetchError
+          ? err.message
+          : "The password was not changed - the connection may have dropped. Try again.",
+      )
       setPending(false)
       return
     }
@@ -57,10 +65,10 @@ export function ChangePasswordForm({ next = "/admin", email }: { next?: string; 
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <Field label="Current password">
+      <Field label="Current password" error={fields.currentPassword}>
         <Input name="currentPassword" type="password" required autoComplete="current-password" />
       </Field>
-      <Field label="New password">
+      <Field label="New password" hint="10 characters at least" error={fields.newPassword}>
         <Input
           name="newPassword"
           type="password"
@@ -69,7 +77,7 @@ export function ChangePasswordForm({ next = "/admin", email }: { next?: string; 
           autoComplete="new-password"
         />
       </Field>
-      <Field label="New password again">
+      <Field label="New password again" error={fields.confirmPassword}>
         <Input name="confirmPassword" type="password" required autoComplete="new-password" />
       </Field>
 

@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { ZodError, flattenError } from "zod"
 
 import { AppError } from "@/lib/errors"
+import { validationMessage } from "@/lib/validation-message"
+import "@/server/zod-messages"
 
 type Ctx<P> = { params: P }
 type Handler<P> = (req: NextRequest, ctx: Ctx<P>) => Promise<NextResponse> | NextResponse
@@ -49,7 +51,7 @@ export function withErrorHandler<P = Record<string, never>>(handler: Handler<P>)
             success: false,
             error: {
               code: "UNPROCESSABLE",
-              message: "Some of those details aren't right.",
+              message: validationMessage(err),
               details: flattenError(err),
             },
           },
