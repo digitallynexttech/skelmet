@@ -8,6 +8,7 @@ const current = {
   minSubtotal: "0",
   maxUses: 500,
   expiresAt: "2026-11-05T18:29:59.000Z",
+  usedCount: 1,
 }
 const order = (at: string, status = "PAID", discount = "200", total = "3299") => ({
   at,
@@ -75,8 +76,8 @@ describe("splitRuns", () => {
   })
 
   it("counts placed orders only, and refunds apart", () => {
-    expect(runs[0]).toMatchObject({ orders: 2, discount: 400, sales: 6598, refunded: 1 })
-    expect(runs[1]).toMatchObject({ orders: 1, discount: 300, sales: 3199, refunded: 0 })
+    expect(runs[0]).toMatchObject({ orders: 2, discount: 400, sales: 6598, refunded: 1, uses: 3 })
+    expect(runs[1]).toMatchObject({ orders: 1, discount: 300, sales: 3199, refunded: 0, uses: 1 })
     expect(runOf(runs, "2026-10-20T10:00:00.000Z")).toBe(2)
     expect(runOf(runs, "2025-10-25T10:00:00.000Z")).toBe(1)
   })

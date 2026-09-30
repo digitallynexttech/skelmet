@@ -375,7 +375,7 @@ export function CouponManager() {
       // Opens the code's own page: its runs, its orders and its log.
       cell: (c) => (
         <Link
-          href={`/admin/coupons/${c.id}`}
+          href={`/admin/coupons/${encodeURIComponent(c.code)}`}
           className="font-display text-bone hover:text-blaze text-[20px] tracking-[0.08em] underline-offset-4 transition-colors hover:underline"
         >
           {c.code}

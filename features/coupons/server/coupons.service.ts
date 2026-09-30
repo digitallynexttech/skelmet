@@ -368,14 +368,20 @@ export type CouponHistory = {
  * Everything that has happened to one code: its runs, the orders placed with
  * it, and who did what to it when (features/coupons/coupon-history).
  */
-export async function getCouponHistory(id: string): Promise<ActionResult<CouponHistory>> {
+export async function getCouponHistory(
+  key: { id: string } | { code: string },
+): Promise<ActionResult<CouponHistory>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.COUPON_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    const row = await db.coupon.findUnique({ where: { id }, select: COUPON_SELECT })
-    if (!row) return fail("Coupon not found.", undefined, 404)
+    // The console's address names the code (/admin/coupons/DIWALI200), in
+    // whatever case it was typed.
+    const where = "code" in key ? { code: key.code.trim().toUpperCase() } : { id: key.id }
+    const row = await db.coupon.findUnique({ where, select: COUPON_SELECT })
+    if (!row) return fail("No code by that name.", undefined, 404)
     const coupon = serialize(row)
+    const id = row.id
 
     const [logs, placed] = await Promise.all([
       db.auditLog.findMany({
@@ -438,6 +444,7 @@ export async function getCouponHistory(id: string): Promise<ActionResult<CouponH
         minSubtotal: coupon.minSubtotal,
         maxUses: coupon.maxUses,
         expiresAt: coupon.expiresAt,
+        usedCount: coupon.usedCount,
       },
       events,
       orders,
@@ -453,7 +460,8 @@ export async function getCouponHistory(id: string): Promise<ActionResult<CouponH
 
     return ok({
       coupon,
-      runs: [...runs].reverse(),
+      // Oldest first, so the table's own row number is the run's.
+      runs,
       orders: canSeeOrders ? orders.map((o) => ({ ...o, run: runAt(o.at) })) : [],
       canSeeOrders,
       events: [...events].reverse(),

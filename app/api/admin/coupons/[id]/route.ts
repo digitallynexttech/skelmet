@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 /** The code with its runs, its orders and its log. */
 export const GET = withErrorHandler<{ id: string }>(async (_req, { params }) =>
-  respond(await getCouponHistory(params.id)),
+  respond(await getCouponHistory({ id: params.id })),
 )
 
 export const PATCH = withErrorHandler<{ id: string }>(async (req, { params }) =>

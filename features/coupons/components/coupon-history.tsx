@@ -98,8 +98,8 @@ function eventDetail(e: CouponEvent): string | null {
  * be renewed, year after year), the orders placed with it, and who did what
  * to it when. Opened from its row in Offers & codes.
  */
-export function CouponHistoryView({ id }: { id: string }) {
-  const { data, isLoading, isError, error } = useCouponHistory(id)
+export function CouponHistoryView({ code }: { code: string }) {
+  const { data, isLoading, isError, error } = useCouponHistory(code)
 
   const back = (
     <Link
@@ -150,8 +150,9 @@ export function CouponHistoryView({ id }: { id: string }) {
       value: (r) => r.index,
       cell: (r) => (
         <div>
-          <div className="text-bone text-[14px] font-semibold">
-            {r.end === null ? "Now" : `Run ${r.index}`}
+          <div className="text-bone flex items-center gap-2 text-[14px] font-semibold">
+            Run {r.index}
+            {r.end === null ? <Badge variant="acid">Now</Badge> : null}
           </div>
           <div className="text-dim text-[12px]">
             {r.startedBy === "created" ? "Created" : "Renewed"} {day(r.start)}
@@ -174,6 +175,21 @@ export function CouponHistoryView({ id }: { id: string }) {
       header: "Terms",
       value: (r) => termsText(r.terms),
       cell: (r) => <span className="text-bone text-[13.5px]">{termsText(r.terms)}</span>,
+    },
+    {
+      key: "uses",
+      header: "Uses",
+      align: "right",
+      value: (r) => r.uses ?? -1,
+      // Against that run's own limit, as the code counted them.
+      cell: (r) => (
+        <span className="text-bone font-mono text-[13px]">
+          {r.uses === null ? "-" : r.uses}
+          {r.uses !== null && r.terms?.maxUses ? (
+            <span className="text-dim"> / {r.terms.maxUses}</span>
+          ) : null}
+        </span>
+      ),
     },
     {
       key: "orders",
@@ -240,7 +256,8 @@ export function CouponHistoryView({ id }: { id: string }) {
       value: (o) => o.run,
       cell: (o) => (
         <span className="text-dim font-mono text-[12px]">
-          {o.run === runs[0]?.index ? "now" : `run ${o.run}`}
+          run {o.run}
+          {o.run === runs.at(-1)?.index ? " · now" : ""}
         </span>
       ),
     },

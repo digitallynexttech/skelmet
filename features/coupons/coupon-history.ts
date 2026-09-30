@@ -47,6 +47,12 @@ export type CouponRun = {
   expiresAt: string | null
   /** The terms it ran on; null for a run older than its record. */
   terms: CouponTerms | null
+  /**
+   * Uses claimed in that run, as the code counted them - the figure its max
+   * uses was held to. The run now: the code's own count; an earlier one: what
+   * the renewal after it found. Null for a run older than its record.
+   */
+  uses: number | null
   orders: number
   discount: number
   sales: number
@@ -82,7 +88,7 @@ function termsOf(meta: Record<string, unknown> | null): CouponTerms | null {
 
 export function splitRuns(input: {
   createdAt: string
-  current: CouponTerms & { expiresAt: string | null }
+  current: CouponTerms & { expiresAt: string | null; usedCount: number }
   events: CouponEvent[]
   orders: Pick<HistoryOrder, "status" | "at" | "discount" | "total">[]
 }): CouponRun[] {
@@ -120,6 +126,11 @@ export function splitRuns(input: {
             maxUses: input.current.maxUses,
           }
         : termsOf(start.event?.meta ?? null),
+      uses: last
+        ? input.current.usedCount
+        : typeof next.event?.meta?.previousUses === "number"
+          ? next.event.meta.previousUses
+          : null,
       orders: counted.length,
       discount: counted.reduce((s, o) => s + Number(o.discount), 0),
       sales: counted.reduce((s, o) => s + Number(o.total), 0),

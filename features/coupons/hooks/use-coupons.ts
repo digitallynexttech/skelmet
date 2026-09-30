@@ -63,6 +63,7 @@ export type CouponRun = {
   end: string | null
   expiresAt: string | null
   terms: CouponTerms | null
+  uses: number | null
   orders: number
   discount: number
   sales: number
@@ -98,10 +99,10 @@ export type CouponHistory = {
 }
 
 /** One code, with its runs, orders and log. Shares ["coupons"], so any change refreshes it. */
-export function useCouponHistory(id: string) {
+export function useCouponHistory(code: string) {
   return useQuery({
-    queryKey: ["coupons", "history", id],
-    queryFn: () => apiFetch<CouponHistory>(`/api/admin/coupons/${id}`),
+    queryKey: ["coupons", "history", code.toUpperCase()],
+    queryFn: () => apiFetch<CouponHistory>(`/api/admin/coupons/code/${encodeURIComponent(code)}`),
     staleTime: 30_000,
   })
 }

@@ -266,13 +266,14 @@ describe("getCouponHistory", () => {
     ])
   }
 
-  it("gives the runs newest first, and each order its run", async () => {
+  it("finds the code by name, gives the runs oldest first, and each order its run", async () => {
     setUp()
-    const result = await getCouponHistory("DIWALI200")
+    const result = await getCouponHistory({ code: "diwali200" })
     if (!result.ok) throw new Error(result.error)
-    expect(result.data.runs.map((r) => [r.index, r.orders, r.discount])).toEqual([
-      [2, 1, 300],
-      [1, 1, 200],
+    expect(mocks.db.coupon.findUnique.mock.calls[0]![0].where).toEqual({ code: "DIWALI200" })
+    expect(result.data.runs.map((r) => [r.index, r.orders, r.discount, r.uses])).toEqual([
+      [1, 1, 200, 1],
+      [2, 1, 300, 0],
     ])
     expect(result.data.orders.map((o) => [o.number, o.run, o.customer])).toEqual([
       ["SKM-2", 2, "Bo"],
@@ -283,7 +284,7 @@ describe("getCouponHistory", () => {
   it("keeps the orders from staff who may not see orders, but not the totals", async () => {
     setUp()
     viewer.permissions = ["coupon:read"]
-    const result = await getCouponHistory("DIWALI200")
+    const result = await getCouponHistory({ id: "DIWALI200" })
     viewer.permissions = ["coupon:read", "order:read"]
     if (!result.ok) throw new Error(result.error)
     expect(result.data.orders).toEqual([])
