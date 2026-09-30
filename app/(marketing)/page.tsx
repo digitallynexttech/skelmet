@@ -1,3 +1,4 @@
+import { Fragment } from "react"
 import type { Metadata } from "next"
 
 import { Anatomy } from "@/components/marketing/anatomy"
@@ -49,47 +50,71 @@ export const revalidate = 60
  * Only sections the flying skull never lands on: those it docks on are
  * measured on load and must be laid out.
  */
-function Deferred({ size, children }: { size: number; children: React.ReactNode }) {
+function Deferred({
+  size,
+  no,
+  children,
+}: {
+  size: number
+  /** This section's number in the page's run (see RUN). */
+  no: number
+  children: React.ReactNode
+}) {
+  // content-visibility brings style containment with it, and that walls CSS
+  // counters in: a section inside started its own count, so four sections of
+  // the home page were each "01". The outer box counts this section in the
+  // page's sequence, so the ones after it carry on correctly. Inside, a box
+  // of its own starts the count one short of this section's number, so its
+  // label reads right - on the contained box itself Chrome ignores it.
   return (
-    <div style={{ contentVisibility: "auto", containIntrinsicSize: `auto ${size}px` }}>
-      {children}
+    <div style={{ counterIncrement: "section" }}>
+      <div style={{ contentVisibility: "auto", containIntrinsicSize: `auto ${size}px` }}>
+        <div style={{ counterReset: `section ${no - 1}` }}>{children}</div>
+      </div>
     </div>
   )
 }
+
+/**
+ * The numbered sections, in order. Each carries one numbered label, which is
+ * what makes the position in this list its number - 01 / THE LINEUP. A size
+ * marks one to render late (Deferred).
+ */
+const RUN: { key: string; node: React.ReactNode; defer?: number }[] = [
+  { key: "lineup", node: <ColourwayGrid /> },
+  { key: "bento", node: <Bento />, defer: 720 },
+  { key: "anatomy", node: <Anatomy /> },
+  { key: "texture", node: <Texture /> },
+  { key: "comparison", node: <Comparison />, defer: 880 },
+  { key: "riders", node: <RiderWall />, defer: 760 },
+  { key: "reviews", node: <Reviews /> },
+  { key: "faq", node: <FaqSection />, defer: 820 },
+  { key: "drop", node: <DropList /> },
+]
 
 export default function HomePage() {
   return (
     <>
       <Hero />
       <TrustStrip />
-      {/* The eyebrow number is passed here rather than baked into each
-          section, because it describes a position in THIS page's run - the
-          same block is 05 here and 03 on the product page. Commenting a
-          section out therefore only means deleting a line and closing the
-          numbers up, with no component edited and no other page disturbed. */}
+      {/* The eyebrow numbers come from this page's run (RUN), not from the
+          sections - the same block is 05 here and 03 on the product page.
+          Taking a section out is deleting its line from RUN. */}
       {/* No Suspense boundary, here or as a loading.tsx: the page is
           prerendered, so nobody waits on its database read. A boundary made
           the saved HTML open with its fallback and carry the real section at
           the end, swapped in by a script - on a slow connection the footer
           painted first and was then shoved down the screen (layout shift
           0.3-0.6), and the hero painted seconds late. */}
-      <ColourwayGrid />
-      <Deferred size={720}>
-        <Bento />
-      </Deferred>
-      <Anatomy />
-      <Texture />
-      <Deferred size={880}>
-        <Comparison />
-      </Deferred>
-      <Deferred size={760}>
-        <RiderWall />
-      </Deferred>
-      <Reviews />
-      <Deferred size={820}>
-        <FaqSection />
-      </Deferred>
-      <DropList />
+      {RUN.map((section, i) =>
+        section.defer ? (
+          <Deferred key={section.key} size={section.defer} no={i + 1}>
+            {section.node}
+          </Deferred>
+        ) : (
+          <Fragment key={section.key}>{section.node}</Fragment>
+        ),
+      )}
 
       {/* Hidden, not deleted - all five still render on other routes and are
           one uncomment away from returning. Put a section back in its place in
