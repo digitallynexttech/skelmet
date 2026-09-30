@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   ArrowRight,
@@ -9,13 +10,16 @@ import {
   ChevronRight,
   Minus,
   Plus,
-  ShieldCheck,
+  ReceiptText,
   Tag,
+  Timer,
   Trash2,
+  Truck,
   X,
 } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
+import { siteConfig } from "@/config/site"
 import { ButtonLink } from "@/components/ui/button"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
@@ -223,15 +227,16 @@ function CartContents({
   const mounted = useHydrated()
   const items = useCart((s) => s.items)
   const setQty = useCart((s) => s.setQty)
-  const remove = useCart((s) => s.remove)
-  const couponCode = useCart((s) => s.couponCode)
 
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
-  const [codeOpen, setCodeOpen] = React.useState(false)
   // The coupon comes off the total here as it does at checkout and on the
   // server.
   const totals = calculateTotals(items, coupon?.discount ?? 0)
   const lines = mounted ? items : []
+  // Against the MRP printed on the product page, as the bill in a shop app
+  // shows what the prices beside it are already taking off.
+  const mrpTotal = Number(FLAME_SKULL_MOUNT.compareAtPrice) * totals.itemCount
+  const saving = Math.max(0, mrpTotal - totals.total)
 
   return (
     <>
@@ -256,8 +261,8 @@ function CartContents({
       </div>
 
       {!mounted ? null : lines.length === 0 ? (
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="rounded-card bg-void/60 mx-5 mt-5 flex flex-col items-center border border-white/[0.08] px-6 pt-7 pb-8 text-center">
+        <div className="bg-void flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="rounded-tile bg-carbon flex flex-col items-center border border-white/[0.07] px-6 pt-7 pb-8 text-center">
             {/* The 3D skull's own front-facing frame, the hero's poster. */}
             <div className="relative mb-4 aspect-[4/5] w-28 shrink-0">
               <Image src={SKULL_POSTER} alt="" fill sizes="112px" className="object-contain" />
@@ -281,131 +286,150 @@ function CartContents({
           <Recommendations inCart={[]} prices={prices} />
         </div>
       ) : (
-        // Everything scrolls - the lines, the price, the discount code, the
-        // recommendations - except the way to checkout, which stays at the
-        // foot. A whole summary pinned there took half a phone's screen.
+        // Cards on the page's own black, as a delivery app's cart is laid out:
+        // offers, the shipment, the bill, the policy, then what else there
+        // is. All of it scrolls; the way to checkout stays at the foot.
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <ul className="px-5">
-              {lines.map((line) => (
-                <li key={line.id} className="flex gap-4 border-b border-white/[0.07] py-5">
-                  <div className="bg-void relative size-[76px] shrink-0 overflow-hidden rounded-xl">
-                    <Image
-                      src={line.image}
-                      alt={`${line.colourwayName} mount`}
-                      fill
-                      sizes="76px"
-                      className="object-cover"
-                    />
-                  </div>
+          <div className="bg-void flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3">
+            <section aria-labelledby="cart-offers" className={CARD}>
+              <h3 id="cart-offers" className={`${CARD_TITLE} mb-3.5`}>
+                Coupons &amp; offers
+              </h3>
+              <CouponBox
+                subtotal={totals.subtotal}
+                applied={coupon}
+                onApplied={setCoupon}
+                className=""
+              />
+            </section>
 
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-bone text-[15px] leading-tight font-bold">
-                        {line.productName}
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => remove(line.id)}
-                        aria-label={`Remove ${line.colourwayName}`}
-                        className="text-dim hover:text-magenta -mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center transition-colors"
-                      >
-                        <Trash2 className="size-[16px]" strokeWidth={1.9} />
-                      </button>
-                    </div>
+            <section aria-labelledby="cart-shipment" className={cn(CARD, "p-0")}>
+              <div className="flex items-center gap-3 p-4 pb-2">
+                <div className="bg-void flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08]">
+                  <Timer className="text-ember size-5" strokeWidth={1.8} />
+                </div>
+                <div className="min-w-0">
+                  <h3 id="cart-shipment" className={CARD_TITLE}>
+                    Ships in {siteConfig.promise.dispatchHours} hours
+                  </h3>
+                  <p className="text-dim mt-0.5 text-[12.5px]">
+                    Shipment of {totals.itemCount} {totals.itemCount === 1 ? "item" : "items"} ·
+                    delivered in {siteConfig.promise.deliveryDays}
+                  </p>
+                </div>
+              </div>
 
-                    <div className="text-dim mt-1 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em]">
-                      <span
-                        className="size-2.5 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor:
-                            COLOURWAYS.find((c) => c.id === line.colourway)?.hex ?? "#FF5A1F",
-                        }}
-                      />
-                      {line.colourwayName.toUpperCase()}
-                    </div>
+              <ul className="px-4">
+                {lines.map((line) => {
+                  const hex = COLOURWAYS.find((c) => c.id === line.colourway)?.hex ?? "#FF5A1F"
+                  const mrp = Number(FLAME_SKULL_MOUNT.compareAtPrice) * line.qty
+                  const price = Number(line.unitPrice) * line.qty
+                  return (
+                    <li
+                      key={line.id}
+                      className="flex items-center gap-3 border-b border-white/[0.06] py-3.5 last:border-b-0 max-[359px]:gap-2.5"
+                    >
+                      <div className="bg-void relative size-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.06] max-[359px]:size-13">
+                        <Image
+                          src={line.image}
+                          alt={`${line.colourwayName} mount`}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
 
-                    {/* Wraps: on the narrowest phones the stepper and a
-                      five-figure total do not fit on one line. */}
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                      <div className="flex h-10 items-center gap-0.5 rounded-full border border-white/[0.16] px-1">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-bone line-clamp-2 text-[14px] leading-snug font-semibold">
+                          {line.productName}
+                        </h4>
+                        <div className="text-dim mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.1em] uppercase">
+                          <span
+                            className="size-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: hex }}
+                          />
+                          <span className="truncate">{line.colourwayName}</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
+                          <Money
+                            value={price}
+                            className="text-bone font-mono text-[14px] font-bold"
+                          />
+                          {mrp > price ? (
+                            <Money value={mrp} strike className="text-[11.5px]" />
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* The stepper is the whole control: down from one takes
+                          the line out, as the minus says. */}
+                      <div className="bg-blaze text-void flex h-9 shrink-0 items-center rounded-lg">
                         <button
                           type="button"
                           onClick={() => setQty(line.id, line.qty - 1)}
-                          aria-label="Decrease quantity"
-                          className="text-bone flex size-8 items-center justify-center rounded-full"
+                          aria-label={
+                            line.qty === 1 ? `Remove ${line.colourwayName}` : "Decrease quantity"
+                          }
+                          className="flex h-full w-8 items-center justify-center"
                         >
-                          <Minus className="size-3.5" strokeWidth={2.2} />
+                          {line.qty === 1 ? (
+                            <Trash2 className="size-3.5" strokeWidth={2.2} />
+                          ) : (
+                            <Minus className="size-3.5" strokeWidth={2.6} />
+                          )}
                         </button>
-                        <span className="text-bone min-w-6 text-center font-mono text-sm font-bold">
+                        <span className="min-w-5 text-center font-mono text-[14px] font-bold">
                           {line.qty}
                         </span>
                         <button
                           type="button"
                           onClick={() => setQty(line.id, line.qty + 1)}
                           aria-label="Increase quantity"
-                          className="text-bone flex size-8 items-center justify-center rounded-full"
+                          className="flex h-full w-8 items-center justify-center"
                         >
-                          <Plus className="size-3.5" strokeWidth={2.2} />
+                          <Plus className="size-3.5" strokeWidth={2.6} />
                         </button>
                       </div>
+                    </li>
+                  )
+                })}
+              </ul>
 
-                      <div className="ml-auto text-right">
-                        <Money
-                          value={Number(line.unitPrice) * line.qty}
-                          className="font-display text-bone text-[22px] leading-[1.08]"
-                        />
-                        {line.qty > 1 ? (
-                          <div className="text-dim mt-0.5 font-mono text-[11px]">
-                            <Money value={line.unitPrice} /> each
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-
-              <li className="text-ash flex items-start gap-3 py-5 text-[13px] leading-[1.5]">
-                <ShieldCheck className="text-acid mt-0.5 size-[18px] shrink-0" strokeWidth={1.7} />
-                {/* Unused and undrilled, because a mount that has been drilled in
-                  cannot come back (the returns policy). */}
-                <span>
-                  Doesn&apos;t fit your wall? Send it back unused and undrilled within 7 days - we
-                  pay the return pickup.
-                </span>
-              </li>
-            </ul>
-
-            <section aria-label="Order summary" className="border-b border-white/[0.07] px-5 pb-6">
-              {codeOpen || couponCode ? (
-                <CouponBox
-                  subtotal={totals.subtotal}
-                  applied={coupon}
-                  onApplied={setCoupon}
-                  className="mb-4"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setCodeOpen(true)}
-                  className="text-ash hover:text-bone mb-3 flex min-h-9 items-center gap-2 text-[13.5px] transition-colors"
+              <div className="text-ash border-t border-white/[0.06] px-4 py-3.5 text-center text-[13.5px]">
+                Forgot something?{" "}
+                <Link
+                  href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+                  onClick={onClose}
+                  className="text-blaze hover:text-ember font-semibold transition-colors"
                 >
-                  <Tag className="text-ember size-4" strokeWidth={1.8} />
-                  Have a discount code?
-                </button>
-              )}
+                  Add more items
+                </Link>
+              </div>
+            </section>
 
-              <dl className="flex flex-col gap-2 text-[14px]">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-ash">Subtotal</dt>
-                  <dd className="text-bone font-mono">
-                    <Money value={totals.subtotal} />
+            <section aria-labelledby="cart-bill" className={CARD}>
+              <h3 id="cart-bill" className={`${CARD_TITLE} mb-3`}>
+                Bill details
+              </h3>
+              <dl className="flex flex-col gap-2.5 text-[13.5px]">
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-ash flex items-center gap-2">
+                    <ReceiptText className="size-4 shrink-0" strokeWidth={1.7} />
+                    Items total
+                  </dt>
+                  <dd className="flex items-baseline gap-1.5 font-mono">
+                    {mrpTotal > totals.subtotal ? (
+                      <Money value={mrpTotal} strike className="text-[11.5px]" />
+                    ) : null}
+                    <Money value={totals.subtotal} className="text-bone" />
                   </dd>
                 </div>
                 {coupon && totals.couponOff > 0 ? (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-ash">{coupon.label}</dt>
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-ash flex items-center gap-2">
+                      <Tag className="size-4 shrink-0" strokeWidth={1.7} />
+                      {coupon.label}
+                    </dt>
                     <dd className="text-acid font-mono">
                       − <Money value={totals.couponOff} />
                     </dd>
@@ -414,28 +438,46 @@ function CartContents({
                 {/* Shipping depends on the delivery pincode (free, or a flat fee
                     where couriers cost more), which the cart does not have.
                     Checkout shows it as soon as the pincode is typed. */}
-                <div className="flex justify-between gap-4">
-                  <dt className="text-ash">Shipping</dt>
-                  <dd className="text-dim text-right text-[13px]">By pincode, at checkout</dd>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-ash flex items-center gap-2">
+                    <Truck className="size-4 shrink-0" strokeWidth={1.7} />
+                    Shipping
+                  </dt>
+                  <dd className="text-dim text-right text-[12.5px]">By pincode, at checkout</dd>
                 </div>
               </dl>
-
-              <div className="flex items-baseline justify-between gap-4 pt-3">
-                <span className="text-bone text-[14.5px] font-semibold">Total before shipping</span>
+              <div className="mt-3.5 flex items-baseline justify-between gap-4 border-t border-white/[0.07] pt-3.5">
+                <span className="text-bone text-[15px] font-bold">Total before shipping</span>
                 <Money
                   value={totals.total}
-                  className="font-display text-bone text-[30px] leading-[1.04]"
+                  className="font-display text-bone text-[26px] leading-none"
                 />
               </div>
-              <div className="text-dim pt-2 text-right font-mono text-[10.5px] tracking-[0.1em]">
-                UPI · CARDS · NETBANKING
-              </div>
+              {saving > 0 ? (
+                <div className="bg-acid/[0.08] text-acid mt-3 rounded-lg px-3 py-2 text-[12.5px] font-semibold">
+                  You save <Money value={saving} /> on this order
+                </div>
+              ) : null}
+            </section>
+
+            <section aria-labelledby="cart-policy" className={CARD}>
+              <h3 id="cart-policy" className={`${CARD_TITLE} mb-1.5`}>
+                Cancellation &amp; returns
+              </h3>
+              {/* The policies' own terms: free cancellation until dispatch, and
+                  unused and undrilled, because a mount that has been drilled in
+                  cannot come back. */}
+              <p className="text-ash text-[13px] leading-[1.55]">
+                Cancel free any time before dispatch for a full refund. Doesn&apos;t fit your wall?
+                Send it back unused and undrilled within {siteConfig.promise.returnDays} days - we
+                pay the return pickup.
+              </p>
             </section>
 
             <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
           </div>
 
-          <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <ButtonLink
               href="/checkout"
               variant="primary"
@@ -453,6 +495,10 @@ function CartContents({
     </>
   )
 }
+
+/** A card of the drawer, on its black. */
+const CARD = "rounded-tile bg-carbon border border-white/[0.07] p-4"
+const CARD_TITLE = "text-bone text-[15px] font-bold"
 
 /** Each card's width plus the gap, for the arrows' step. */
 const CARD_STEP = 162
@@ -482,9 +528,9 @@ function Recommendations({
     rail.current?.scrollBy({ left: direction * CARD_STEP, behavior: "smooth" })
 
   return (
-    <section aria-labelledby="cart-lineup" className="pt-6 pb-5">
-      <div className="mb-3.5 flex items-center justify-between gap-3 px-5">
-        <h3 id="cart-lineup" className="text-dim font-mono text-[11px] tracking-[0.22em] uppercase">
+    <section aria-labelledby="cart-lineup" className={cn(CARD, "px-0")}>
+      <div className="mb-3.5 flex items-center justify-between gap-3 px-4">
+        <h3 id="cart-lineup" className={CARD_TITLE}>
           Recommended products
         </h3>
         {picks.length > 2 ? (
@@ -510,7 +556,7 @@ function Recommendations({
 
       <div
         ref={rail}
-        className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto overscroll-x-contain px-5"
+        className="flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4"
       >
         {picks.map((c) => {
           const price = prices[c.sku] ?? c.price
