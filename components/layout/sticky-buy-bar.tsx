@@ -29,8 +29,13 @@ export function StickyBuyBar({
   // Near-opaque rather than blurred: a backdrop blur recomputed on every
   // scroll frame was costing phones smoothness behind a bar you can barely
   // see through.
+  //
+  // `data-sticky-bar` is for the floating buttons, which move up to clear it.
   return (
-    <div className="bg-void/97 sticky bottom-0 z-40 flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden">
+    <div
+      data-sticky-bar
+      className="bg-void/97 sticky bottom-0 z-40 flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden"
+    >
       <div className="shrink-0">
         <Money value={picked} className="font-display text-bone text-[26px] leading-none" />
         <div className="text-dim mt-1 font-mono text-[10px] tracking-[0.1em] uppercase">

@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 
+import LOCKUP from "@/components/shared/lockup-mono.json"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +19,22 @@ import { cn } from "@/lib/utils"
  * hide - so the markup ships in the HTML and the client's only job is to take
  * it away again.
  *
+ * Nothing on it waits for this file, or for anything else. The wordmark is
+ * drawn inline (it was an image, and on a slow connection the curtain opened
+ * before it had arrived), and the fill and the count are CSS animations
+ * (globals.css) that start with the first paint. Both are transforms and
+ * nothing else, which the browser runs off the main thread: the splash is up
+ * during the busiest second of the page's life - hydration, and the 3D skull
+ * starting behind it - and a fill stepped from requestAnimationFrame
+ * stuttered through every long task, sat at 0% until the script arrived, or
+ * was cut off half way. That is also why the count is a column of figures
+ * rolling past a window rather than a number being rewritten.
+ *
+ * On its own the fill runs most of the way, holds, and then completes: the
+ * last stretch belongs to the real load. When the page is in, this file
+ * finishes the fill from wherever it has got to and only then opens the
+ * curtain, so it always opens on a full wordmark at 100%.
+ *
  * Shown on every full page load - a first visit, a reload, a new tab - and
  * never on a move within the site. It lives in a layout, so client navigation
  * does not replay it, and `splashCompleted` covers bouncing out to /admin and
@@ -31,14 +47,12 @@ import { cn } from "@/lib/utils"
  * than from hydration: on a slow phone the JavaScript alone can take seconds,
  * and the curtain must not add its whole hold on top of that. MIN_HOLD stops a
  * warm cache flashing it for two frames; MAX_HOLD opens it however the load is
- * going. A click, tap or keypress skips the rest, and a CSS-only failsafe
+ * going. A click, tap or keypress hurries the rest, and a CSS-only failsafe
  * (globals.css) lifts it even if the JavaScript never arrives.
  *
- * Nothing holds it down any more. The hero's 3D model used to, so the swap
- * from poster to model happened behind the curtain - but that made every
- * visitor wait for a megabyte they may never see. The poster is the model's
- * own frame; the model takes over from it later, and behind the curtain on a
- * visit where the browser already holds the file (see SkullStage).
+ * Nothing holds it down. The hero's 3D model takes over from its poster
+ * behind the curtain on a visit where the browser already holds the file, and
+ * later otherwise (see SkullStage); either way the curtain does not wait.
  */
 
 /** Brand beat floor, from navigation start, so a warm cache does not flash it and vanish. */
@@ -50,20 +64,13 @@ const MAX_HOLD_MS = 2000
 const EXIT_MS = 950
 
 /**
- * How far the fill creeps while the page is still loading. It never reaches the
- * end on its own: the last stretch belongs to the real load event, so the
- * number stays a genuine signal rather than a timed fiction.
+ * Finishing the fill once the page is in: this long for the whole wordmark,
+ * in proportion for what is left of it, and never so short it snaps.
  */
-const CREEP_CEILING = 0.92
-/** Per-frame approach rate toward the target. Faster once the page is in. */
-const CREEP_RATE = 0.03
-const SETTLE_RATE = 0.14
+const FINISH_MS = { whole: 2200, least: 180, most: 460, hurried: 160 }
 
-/**
- * The single-colour lockup, not the two-tone one: that version's skull is blaze
- * orange and would disappear into the panel behind it.
- */
-const LOCKUP = { src: "/brand/skelmet-lockup-mono.png", width: 997, height: 347 }
+/** The count's figures, 0 to 100, one to a row. */
+const FIGURES = Array.from({ length: 101 }, (_, n) => n)
 
 /**
  * Set only once the splash has actually finished, never on mount: StrictMode's
@@ -85,13 +92,15 @@ const useBeforePaint = typeof window === "undefined" ? React.useEffect : React.u
 
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 type Phase = "intro" | "exit" | "done"
 
 export function SplashScreen() {
   const [phase, setPhase] = React.useState<Phase>("intro")
 
   const fillRef = React.useRef<HTMLDivElement>(null)
-  const readoutRef = React.useRef<HTMLSpanElement>(null)
+  const figuresRef = React.useRef<HTMLSpanElement>(null)
 
   // The ways to never play at all. CSS has already hidden the markup for
   // reduced motion; this takes it out of the tree and releases the scroll lock.
@@ -104,87 +113,84 @@ export function SplashScreen() {
     if (splashCompleted || prefersReducedMotion()) setPhase("done")
   }, [])
 
-  // The whole intro: loading signals, the fill ramp, and the two clocks that
-  // decide when the curtain opens. One effect, because they are one sequence -
-  // splitting them would mean sharing `loaded` through a ref for no gain.
+  // The intro's one decision: when the page is in, run the fill out and open.
   React.useEffect(() => {
     if (phase !== "intro") return
 
     const abort = new AbortController()
+    let cancelled = false
 
     // What "ready" means here: the document has finished loading and the
     // display face is resolved. Anton arriving late is the one swap the visitor
-    // would notice, since the count is set in it.
-    const signals: Promise<unknown>[] = [
+    // would notice, since the count is set in it. A rejected font promise is
+    // still an answer: show the page either way.
+    const loaded = Promise.all([
       document.readyState === "complete"
         ? Promise.resolve()
         : new Promise<void>((resolve) => {
-            window.addEventListener("load", () => resolve(), {
-              once: true,
-              signal: abort.signal,
-            })
+            window.addEventListener("load", () => resolve(), { once: true, signal: abort.signal })
           }),
-    ]
-    if (document.fonts) signals.push(document.fonts.ready)
+      document.fonts ? document.fonts.ready : Promise.resolve(),
+    ]).catch(() => {})
 
-    let loaded = false
-    const markLoaded = () => {
-      loaded = true
+    // Anything the visitor does to get past it counts.
+    let hurried = false
+    const hurry = new Promise<void>((resolve) => {
+      const skip = () => {
+        hurried = true
+        resolve()
+      }
+      window.addEventListener("pointerdown", skip, { signal: abort.signal })
+      window.addEventListener("keydown", skip, { signal: abort.signal })
+    })
+
+    /**
+     * Run the fill and the count out to the end from wherever the CSS has got
+     * them. Read off the fill's own transform, so the two never disagree.
+     */
+    const finish = async () => {
+      const fill = fillRef.current
+      const inner = fill?.firstElementChild
+      const figures = figuresRef.current
+      if (!fill || !inner || !figures || typeof fill.animate !== "function") return
+      const x = new DOMMatrixReadOnly(getComputedStyle(fill).transform).m41
+      const hidden = Math.min(1, Math.max(0, -x / (fill.offsetWidth || 1)))
+      if (hidden < 0.002) return
+      const timing = {
+        duration: hurried
+          ? FINISH_MS.hurried
+          : Math.min(FINISH_MS.most, Math.max(FINISH_MS.least, hidden * FINISH_MS.whole)),
+        easing: "cubic-bezier(0.33, 1, 0.68, 1)",
+        fill: "forwards" as const,
+      }
+      const to = { transform: "translateX(0)" }
+      const done = fill.animate([{ transform: `translateX(${-hidden * 100}%)` }, to], timing)
+      inner.animate([{ transform: `translateX(${hidden * 100}%)` }, to], timing)
+      // A hundred rows up is the last of the hundred and one.
+      const row = 100 / FIGURES.length
+      figures.animate(
+        [
+          { transform: `translateY(${-(1 - hidden) * 100 * row}%)` },
+          { transform: `translateY(${-100 * row}%)` },
+        ],
+        timing,
+      )
+      await done.finished.catch(() => {})
     }
-    // A rejected font promise is still an answer: show the page either way.
-    void Promise.all(signals).then(markLoaded, markLoaded)
 
-    // Driven straight into the DOM rather than through state. This runs during
-    // the busiest part of the page load - hydration and the three.js chunk are
-    // competing for the same main thread - and a clip write costs no React
-    // render and no layout.
-    let value = 0
-    let frame = 0
+    // performance.now() counts from navigation start, not from this effect.
+    const ceiling = wait(Math.max(0, MAX_HOLD_MS - performance.now()))
+    void Promise.race([loaded, ceiling, hurry]).then(async () => {
+      if (cancelled) return
+      await finish()
+      if (!hurried) await Promise.race([hurry, wait(Math.max(0, MIN_HOLD_MS - performance.now()))])
+      if (!cancelled) setPhase("exit")
+    })
 
-    const tick = (now: number) => {
-      // rAF's timestamp counts from navigation start, not from this effect.
-      const elapsed = now
-      // The ceiling is a backstop for a load event that never fires, and it is
-      // treated exactly like a real one so the fill still runs out instead of
-      // snapping.
-      const settled = loaded || elapsed >= MAX_HOLD_MS
-
-      const target = settled ? 1 : CREEP_CEILING
-      value += (target - value) * (settled ? SETTLE_RATE : CREEP_RATE)
-      // Asymptotes never arrive; close enough is the end.
-      if (target - value < 0.004) value = target
-
-      if (fillRef.current) {
-        fillRef.current.style.clipPath = `inset(0 ${((1 - value) * 100).toFixed(2)}% 0 0)`
-      }
-      const percent = `${Math.round(value * 100)}%`
-      if (readoutRef.current && readoutRef.current.textContent !== percent) {
-        readoutRef.current.textContent = percent
-      }
-
-      // Being full already implies settled - the target is only ever 1 then.
-      if (value >= 1 && elapsed >= MIN_HOLD_MS) {
-        setPhase("exit")
-        return
-      }
-      frame = requestAnimationFrame(tick)
-    }
-
-    frame = requestAnimationFrame(tick)
     return () => {
+      cancelled = true
       abort.abort()
-      cancelAnimationFrame(frame)
     }
-  }, [phase])
-
-  // Skip. Anything the visitor does to get past it counts.
-  React.useEffect(() => {
-    if (phase !== "intro") return
-    const abort = new AbortController()
-    const skip = () => setPhase("exit")
-    window.addEventListener("pointerdown", skip, { signal: abort.signal })
-    window.addEventListener("keydown", skip, { signal: abort.signal })
-    return () => abort.abort()
   }, [phase])
 
   // Unmount once the halves have finished travelling.
@@ -210,6 +216,7 @@ export function SplashScreen() {
   if (phase === "done") return null
 
   const exiting = phase === "exit"
+  const viewBox = `0 0 ${LOCKUP.width} ${LOCKUP.height}`
 
   return (
     <div
@@ -256,50 +263,49 @@ export function SplashScreen() {
         )}
       >
         {/* The wordmark is the progress bar. A dimmed copy underneath, the solid
-            one clipped over it from the left, so the brand fills in as the page
-            actually loads - the reference's outline-and-fill mechanic, with the
-            real lockup standing in for its outlined type. */}
-        <div className="relative w-[min(560px,82vw)]">
-          {/* Lazy, so on a page load where the splash is skipped (display:
-              none) it is never fetched at all. High priority once it is: while
-              the splash is up it is the largest thing on screen, and at low
-              priority it queued behind every script and held LCP to 2.5 s on
-              a phone. */}
-          <Image
-            src={LOCKUP.src}
-            width={LOCKUP.width}
-            height={LOCKUP.height}
-            alt=""
-            loading="lazy"
-            fetchPriority="high"
-            sizes="(min-width: 640px) 560px, 82vw"
-            className="h-auto w-full opacity-30"
-          />
-          <div ref={fillRef} className="absolute inset-0 [clip-path:inset(0_100%_0_0)]">
-            <Image
-              src={LOCKUP.src}
-              width={LOCKUP.width}
-              height={LOCKUP.height}
-              alt=""
-              loading="lazy"
-              fetchPriority="high"
-              sizes="(min-width: 640px) 560px, 82vw"
-              className="h-auto w-full"
-            />
+            one revealed over it from the left, so the brand fills in as the page
+            loads - the reference's outline-and-fill mechanic, with the real
+            lockup standing in for its outlined type.
+
+            The reveal is a window sliding in from the left with the wordmark
+            inside it sliding the other way, so the wordmark stands still and
+            only its visible part grows: two transforms, where a clip-path or a
+            width would be redrawn on the main thread every frame. */}
+        <div
+          className="text-bone relative w-[min(560px,82vw)]"
+          style={{ aspectRatio: `${LOCKUP.width} / ${LOCKUP.height}` }}
+        >
+          <svg viewBox={viewBox} className="block size-full opacity-30">
+            <path id="splash-lockup" fill="currentColor" fillRule="evenodd" d={LOCKUP.d} />
+          </svg>
+          <div ref={fillRef} data-splash-fill="" className="absolute inset-0 overflow-hidden">
+            <div className="size-full">
+              <svg viewBox={viewBox} className="block size-full">
+                <use href="#splash-lockup" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Tagline and count share one baseline across the wordmark's width,
-            pushed to opposite ends. */}
-        <div className="mt-4 flex w-[min(560px,82vw)] items-baseline justify-between gap-6">
+        {/* Tagline and count sit at opposite ends of the wordmark's width. The
+            count is every figure from 0 to 100 in a column, rolled up past a
+            window one row tall (globals.css), so it counts before this file
+            has loaded and keeps counting while the page hydrates. */}
+        <div className="mt-4 flex w-[min(560px,82vw)] items-end justify-between gap-6">
           <span className="text-void/70 font-mono text-[10px] tracking-[0.2em] uppercase sm:text-[12px]">
             {siteConfig.tagline}
           </span>
-          <span
-            ref={readoutRef}
-            className="text-void font-display text-[clamp(1.2rem,3vw,2rem)] leading-none tabular-nums"
-          >
-            0%
+          <span className="text-void font-display flex text-[clamp(1.2rem,3vw,2rem)] leading-none tabular-nums">
+            <span className="block h-[1em] overflow-hidden">
+              <span ref={figuresRef} data-splash-count="" className="flex flex-col items-end">
+                {FIGURES.map((n) => (
+                  <span key={n} className="block h-[1em]">
+                    {n}
+                  </span>
+                ))}
+              </span>
+            </span>
+            %
           </span>
         </div>
       </div>

@@ -40,7 +40,9 @@ export function Bento() {
           </div>
         </article>
 
-        <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 sm:p-6">
+        {/* Side by side from 360px. On a 320px phone each would be 90px
+            inside - narrower than INSTALLATION - so there they stack. */}
+        <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 max-[359px]:col-span-2 sm:p-6">
           <Wrench className="text-acid size-[26px]" strokeWidth={1.6} />
           <div>
             <h3 className="font-display text-bone mb-2 text-[20px] leading-[1.08] uppercase sm:text-[23px]">
@@ -52,7 +54,7 @@ export function Bento() {
           </div>
         </article>
 
-        <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 sm:p-6">
+        <article className="rounded-card bg-carbon flex flex-col justify-between gap-6 border border-white/[0.09] p-5 max-[359px]:col-span-2 sm:p-6">
           <ShieldCheck className="text-violet size-[26px]" strokeWidth={1.6} />
           <div>
             <h3 className="font-display text-bone mb-2 text-[20px] leading-[1.08] uppercase sm:text-[23px]">

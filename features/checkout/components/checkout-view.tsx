@@ -669,8 +669,11 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     // noValidate: the browser's own bubbles would fire before, and instead of,
     // the messages under each field. data-clarity-mask hides the whole form -
     // name, phone, email, address - from Microsoft Clarity's recordings.
+    // data-clear-corner keeps the floating buttons off a phone's screen here:
+    // they would sit on the fields and the Pay button.
     <form
       data-clarity-mask="true"
+      data-clear-corner
       ref={formRef}
       onSubmit={handleSubmit}
       onBlur={handleBlur}
@@ -753,7 +756,8 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
                     const clean = normalizeMobileInput(e.currentTarget.value)
                     if (clean !== e.currentTarget.value) e.currentTarget.value = clean
                   }}
-                  className="font-mono tracking-[0.06em]"
+                  // Untracked on a 320px phone, where the placeholder is a letter too long.
+                  className="font-mono tracking-[0.06em] max-[359px]:tracking-normal"
                 />
               </Field>
             </div>

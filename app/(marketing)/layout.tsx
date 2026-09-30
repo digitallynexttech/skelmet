@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Toaster } from "sonner"
 
+import { FloatingActions } from "@/components/layout/floating-actions"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SplashScreen } from "@/components/shared/splash-screen"
@@ -34,11 +35,22 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </>
       ) : null}
       <SiteHeader />
-      <main className="flex-1">{children}</main>
+      {/* Nothing in a page may make the document wider than the screen: a phone
+          then lays out everything `fixed` - the splash, the cookie card, the
+          floating buttons - against the wider page, off centre and partly off
+          screen. It happens without anything looking wrong here: a one-line
+          heading sized for the display face is wider in the fallback face
+          until the font arrives. `clip`, not `hidden`, so `sticky` still
+          works inside. */}
+      <main className="flex-1 overflow-x-clip">{children}</main>
       <SiteFooter cookieSettings={<CookieSettingsButton />} />
+      <FloatingActions />
       <ConsentBar />
+      {/* Beside the floating buttons, not over them: they keep the 72px
+          nearest the corner. On a phone a toast is full width and brief. */}
       <Toaster
         position="bottom-right"
+        offset={{ right: 88 }}
         theme="dark"
         toastOptions={{
           style: {

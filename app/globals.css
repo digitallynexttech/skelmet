@@ -20,6 +20,9 @@
   --color-violet: #7b5cff;
   --color-magenta: #ff3d9a;
 
+  /* somebody else's: WhatsApp's own green, on the button that opens a chat */
+  --color-whatsapp: #25d366;
+
   /* filament colourways (product, not UI) */
   --color-olive: #8a9a5b;
   --color-ghost: #98979e;
@@ -478,6 +481,79 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
+/* The splash's wordmark filling and its count, from the first paint and with
+ * no script. Most of the way in a second and a half, a hold, then the rest -
+ * so even if the script never comes the curtain lifts (above) on a full
+ * wordmark. When the page is in, splash-screen.tsx takes all three over from
+ * wherever they have got to and runs them out.
+ *
+ * All three are transforms, so they keep moving while the main thread is busy
+ * hydrating the page. The fill is a window sliding in over the dimmed wordmark
+ * with the solid one inside it sliding back by the same amount. The count is
+ * a column of the figures 0 to 100 rolling up past a window one row tall. They
+ * share every offset and easing, which is what keeps the figure on the fill. */
+[data-splash-fill] {
+  animation: splash-fill 3.2s linear both;
+}
+[data-splash-fill] > * {
+  animation: splash-fill-back 3.2s linear both;
+}
+[data-splash-count] {
+  animation: splash-count 3.2s linear both;
+}
+@keyframes splash-fill {
+  0% {
+    transform: translateX(-100%);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  50% {
+    transform: translateX(-8%);
+    animation-timing-function: linear;
+  }
+  80% {
+    transform: translateX(-8%);
+    animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes splash-fill-back {
+  0% {
+    transform: translateX(100%);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  50% {
+    transform: translateX(8%);
+    animation-timing-function: linear;
+  }
+  80% {
+    transform: translateX(8%);
+    animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+/* A row is a 101st of the column: 92 rows up shows 92, 100 shows 100. */
+@keyframes splash-count {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  50% {
+    transform: translateY(calc(-92 / 101 * 100%));
+    animation-timing-function: linear;
+  }
+  80% {
+    transform: translateY(calc(-92 / 101 * 100%));
+    animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  100% {
+    transform: translateY(calc(-100 / 101 * 100%));
+  }
+}
+
 /* The hero poster's bob, which the mesh keeps time with once it takes over.
    Top and bottom only: the period, the rise (--bob-rise) and a sine easing
    come from the element's style, built from the constants the mesh's cosine
@@ -490,6 +566,12 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   50% {
     transform: translateY(var(--bob-rise));
   }
+}
+
+/* The hero's atmosphere rests while the hero is off screen (skull-stage sets
+   data-away). Not the poster: its bob is the clock the mesh keeps time with. */
+[data-skull-home][data-away] > [aria-hidden] {
+  animation-play-state: paused;
 }
 
 /* Everything ambient stops when the visitor asks it to. */

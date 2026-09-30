@@ -13,10 +13,15 @@
  *
  * So this drives the real component in headless Chrome over the DevTools
  * protocol - Node's own WebSocket, no puppeteer - rather than rebuilding the
- * scene here, which would drift from skull-canvas the first time anyone relit
+ * scene here, which would drift from skull-scene the first time anyone relit
  * it. It waits for the model to take over, stops the clock where the bob
  * crosses its middle, hides everything but the canvas and screenshots the
  * stage with a transparent background.
+ *
+ * The scene normally draws in a worker, whose clock this script cannot reach.
+ * So it takes away the browser's means of handing a canvas to a worker before
+ * the page loads, and the scene runs on the page's own thread instead - the
+ * same code, the same picture (see skull-renderer).
  *
  * The frame is the whole 4:5 stage, so the poster and the canvas fill the same
  * box and line up at every size with no numbers to keep in step. It is taken
@@ -161,6 +166,10 @@ try {
     deviceScaleFactor: SCALE,
     mobile: false,
   })
+  // The scene on the page's thread, where its clock can be stopped below.
+  await page("Page.addScriptToEvaluateOnNewDocument", {
+    source: "delete HTMLCanvasElement.prototype.transferControlToOffscreen",
+  })
   const loaded = new Promise((resolve) =>
     cdp.on(
       (msg) => msg.sessionId === sessionId && msg.method === "Page.loadEventFired" && resolve(),
@@ -212,10 +221,11 @@ try {
 
   // Only the canvas, on nothing.
   const clip = await evaluate(`(() => {
-    const canvas = document.querySelector("canvas")
-    let flight = canvas
-    while (flight.parentElement !== document.body) flight = flight.parentElement
-    flight.setAttribute("data-poster-capture", "")
+    // The box that is flown down the page, and the body's child it sits in.
+    const flight = document.querySelector("[data-skull-flight]")
+    let top = flight
+    while (top.parentElement !== document.body) top = top.parentElement
+    top.setAttribute("data-poster-capture", "")
     const style = document.createElement("style")
     style.textContent = \`
       html, body { background: transparent !important; }

@@ -22,6 +22,17 @@ export const BRAND_LOCKUP = {
   height: 312,
 } as const
 
+/**
+ * The same lockup as outlines, for anywhere it is drawn wider than the PNG's
+ * 896px - the footer's full-width copy - where the PNG would go soft. Traced
+ * from that PNG by scripts/build-brand-assets.mjs.
+ */
+export const BRAND_LOCKUP_VECTOR = {
+  src: "/brand/skelmet-lockup.svg",
+  width: 896,
+  height: 312,
+} as const
+
 export function Wordmark({
   className,
   size = "md",

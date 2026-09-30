@@ -156,7 +156,8 @@ export function CouponBox({
             e.preventDefault()
             void apply()
           }}
-          className="h-full min-w-0 flex-1 border-0 bg-transparent px-0 font-mono text-[15px] tracking-[0.08em] focus:ring-0"
+          // Tighter on a 320px phone, where "Discount code" is otherwise cut short.
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-0 font-mono text-[15px] tracking-[0.08em] focus:ring-0 max-[359px]:text-[13.5px] max-[359px]:tracking-normal"
         />
         <button
           type="button"

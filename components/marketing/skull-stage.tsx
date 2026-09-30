@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import { createPortal } from "react-dom"
-import dynamic from "next/dynamic"
 import Image from "next/image"
 
 import { SkullBoundary } from "@/components/marketing/skull-boundary"
+import { SkullCanvas } from "@/components/marketing/skull-canvas"
 import {
   BOB_PERIOD,
   BOB_RISE,
   getSkullInteraction,
-  SKULL_MODEL,
   SKULL_POSTER,
+  strugglesWithModel,
 } from "@/components/marketing/skull-interaction"
+import { modelStored, rendersOffThread, skullWarm } from "@/components/marketing/skull-renderer"
 import { afterFirstInteraction } from "@/lib/first-interaction"
 import { cn } from "@/lib/utils"
 
@@ -34,27 +35,36 @@ import { cn } from "@/lib/utils"
  * the stage - see BLEED in skull-canvas), so the mesh lands on it pixel for
  * pixel at every size.
  *
- * That ordering is what makes the slow path bearable. The model is about 1MB
- * (meshopt) on top of a ~650KB three.js chunk, so there are plenty of visitors
- * who should never be asked to download it: a metered connection, 2G, reduced
- * motion, a low-end phone, a device with no WebGL, or a fetch that simply
- * fails. Every one of those lands on the poster, which is a finished hero
- * rather than a placeholder - and it is the page's main image, so it is the one
- * thing preloaded at high priority.
+ * That ordering is what makes the slow path bearable. The model is most of a
+ * megabyte (meshopt) on top of three.js's 650KB, so there are plenty of
+ * visitors who should never be asked to download it: a metered connection, 2G,
+ * reduced motion, a low-end phone, a device with no WebGL, or a fetch that
+ * simply fails. Every one of those lands on the poster, which is a finished
+ * hero rather than a placeholder - and it is the page's main image, so it is
+ * the one thing preloaded at high priority.
  *
- * The model waits its turn: nothing is fetched until the page has loaded and
- * gone idle, so it never competes with the poster, the fonts or hydration. It
- * then takes over in a single frame. The two are the same picture bobbing to
- * the same clock (see BOB_PERIOD), and a cross-fade between identical images
- * only thins them both, showing the headline through the skull halfway.
+ * The model takes over from it in a single frame. The two are the same
+ * picture bobbing to the same clock (see BOB_PERIOD), and a cross-fade between
+ * identical images only thins them both, showing the headline through the
+ * skull halfway.
  *
- * How long it waits depends on what the browser already has. A first visit
- * waits for a sign of a person too, since that is a megabyte to download. A
- * browser holding the file from an earlier visit loads it as soon as the page
- * settles, behind the splash; one that has shown it in this page's lifetime,
- * coming back from another page, loads it at once from the copy skull-canvas
- * keeps. The poster stays up until the model is ready every time: it used to
- * be left out on a return, and the stage stood empty until the model faded in.
+ * When it starts depends on what the browser already has:
+ *
+ *   - A first visit waits for a sign of a person, since that is a megabyte to
+ *     download; then the file and three.js come down side by side.
+ *   - A browser holding the file from an earlier visit (skull-renderer keeps
+ *     it) starts at once, while the splash is still up, and is on screen by
+ *     the time the curtain opens.
+ *   - One that has shown it in this page's lifetime, coming back from another
+ *     page, still has the canvas with the skull drawn on it. It goes straight
+ *     back in the hero.
+ *
+ * None of that is work for this thread where the browser can give a worker a
+ * canvas - nearly everywhere - which is why it no longer waits for the page to
+ * settle first. Where it cannot, the scene runs here, and does wait.
+ *
+ * The poster stays up until the model is ready every time: it used to be left
+ * out on a return, and the stage stood empty until the model faded in.
  *
  * The canvas is not drawn inside this box. It is portalled to the body, into
  * a box the size of this one, and flown down the page by skull-journey: it
@@ -62,15 +72,7 @@ import { cn } from "@/lib/utils"
  * skull further down (see SkullDock). This element stays behind as its home -
  * `data-skull-home` is how the route finds it - along with the atmosphere and
  * the poster, which never leave the hero.
- *
- * `ssr: false` is rejected inside a Server Component in Next 16, which is why
- * this wrapper exists at all: the hero stays a Server Component and only this
- * leaf ships the three.js bundle.
  */
-const SkullCanvas = dynamic(() => import("@/components/marketing/skull-canvas"), {
-  ssr: false,
-  loading: () => null,
-})
 
 /** Radians of spin per pixel dragged. */
 const DRAG_SENSITIVITY = 0.008
@@ -103,17 +105,13 @@ function prefersLessData(): boolean {
   return connection.effectiveType === "slow-2g" || connection.effectiveType === "2g"
 }
 
-/**
- * A phone that would struggle: 4 GB or less of memory, or 4 cores or fewer, on
- * a touch screen. It keeps the poster - the model would cost it a megabyte and
- * seconds of main thread for a decoration. Absent APIs (Safari has no
- * deviceMemory) count as capable.
- */
+/** This device, as strugglesWithModel wants it. */
 function lowEndPhone(): boolean {
-  if (!window.matchMedia("(pointer: coarse)").matches) return false
-  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
-  const cores = navigator.hardwareConcurrency
-  return (memory !== undefined && memory <= 4) || (cores !== undefined && cores <= 4)
+  return strugglesWithModel({
+    touch: window.matchMedia("(pointer: coarse)").matches,
+    memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
+    cores: navigator.hardwareConcurrency,
+  })
 }
 
 /** After the load event, then the next idle moment - or a second, where idle callbacks don't exist. */
@@ -137,29 +135,6 @@ function afterPageSettles(run: () => void): () => void {
   }
 }
 
-/**
- * Whether this browser already holds the model, asked without touching the
- * network: `only-if-cached` answers from the HTTP cache or not at all. The file
- * is served immutable for a month, so anyone who saw the model on an earlier
- * visit has it on disk. Browsers without the mode reject it, which reads as no
- * and leaves them on the first-visit path.
- */
-async function modelCached(): Promise<boolean> {
-  try {
-    const response = await fetch(SKULL_MODEL, { cache: "only-if-cached", mode: "same-origin" })
-    response.body?.cancel().catch(() => {})
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
-/**
- * The model has been on screen at least once in this page's lifetime. Client
- * code only; a module binding on the server would be shared between visitors.
- */
-let modelShown = false
-
 /** Is this viewport point on the skull, wherever it currently is on the page. */
 function onSkull(x: number, y: number): boolean {
   const hit = getSkullInteraction().hit
@@ -170,6 +145,7 @@ function onSkull(x: number, y: number): boolean {
 }
 
 export function SkullStage({ className }: { className?: string }) {
+  const homeRef = useRef<HTMLDivElement>(null)
   const flightRef = useRef<HTMLDivElement>(null)
   const posterRef = useRef<HTMLImageElement>(null)
 
@@ -179,7 +155,6 @@ export function SkullStage({ className }: { className?: string }) {
   const [live, setLive] = useState(false)
 
   const onReady = useCallback(() => {
-    modelShown = true
     setLive(true)
   }, [])
 
@@ -204,28 +179,33 @@ export function SkullStage({ className }: { className?: string }) {
         setAttempt(false)
         return
       }
-      // Back from another page: the file is parsed and kept, so there is
-      // nothing to wait for.
-      if (modelShown) {
-        setAttempt(true)
+      const begin = () => setAttempt(true)
+      // Back from another page: the skull is still drawn on its canvas, so
+      // there is nothing to wait for.
+      if (skullWarm()) {
+        begin()
         return
       }
-      // Otherwise not before the page has settled, and on a first visit not
-      // before the visitor does something either. The model is a megabyte and
-      // a second of main thread on a phone; the poster already fills the hero,
-      // so the first screen - and its speed - is the page's own, and the model
-      // arrives while they are reading. A browser that already has the file
-      // has nothing to download, so it skips the wait for a person.
+      // On a first visit, not before the visitor does something: the model is
+      // most of a megabyte, the poster already fills the hero, and the first
+      // screen - and its speed - is the page's own. A browser that already has
+      // the file has nothing to download, so it skips the wait for a person.
+      //
+      // Started on a worker it costs this thread nothing, so it starts at
+      // once. Started here it is a second of main thread on a phone, so it
+      // waits for the page to settle.
       let stopped = false
       let waiting = () => {}
       let settle = () => {}
-      const load = () => {
-        settle = afterPageSettles(() => setAttempt(true))
-      }
-      void modelCached().then((cached) => {
+      const start = rendersOffThread()
+        ? begin
+        : () => {
+            settle = afterPageSettles(begin)
+          }
+      void modelStored().then((stored) => {
         if (stopped) return
-        if (cached) load()
-        else waiting = afterFirstInteraction(load)
+        if (stored) start()
+        else waiting = afterFirstInteraction(start)
       })
       cancel = () => {
         stopped = true
@@ -240,6 +220,20 @@ export function SkullStage({ className }: { className?: string }) {
       cancel()
       motion.removeEventListener("change", decide)
     }
+  }, [])
+
+  // The atmosphere - the bloom, the arcs, the embers - only runs while the
+  // hero is on screen (globals.css pauses it by this attribute). Fourteen
+  // endless animations otherwise kept being worked out on every frame of
+  // every scroll further down the page, for nobody.
+  useEffect(() => {
+    const home = homeRef.current
+    if (!home) return
+    const seen = new IntersectionObserver(([entry]) => {
+      if (entry) home.toggleAttribute("data-away", !entry.isIntersecting)
+    })
+    seen.observe(home)
+    return () => seen.disconnect()
   }, [])
 
   // Hand the mesh the poster's bob before the canvas draws its first frame. A
@@ -270,8 +264,22 @@ export function SkullStage({ className }: { className?: string }) {
       else delete root.dataset.skull
     }
 
+    // For the hero's "Drag to spin", which is only true from here on: the
+    // poster is a picture, and a visitor who never gets the model - reduced
+    // motion, data saver, a weak phone - is not told to drag it.
+    root.dataset.skullLive = ""
+
+    // The skull looks at a cursor, which is somewhere at every moment. A
+    // finger is not, and a touch screen has no cursor - but it does have the
+    // mouse events browsers make up after a tap, and again whenever the page
+    // under that spot changes. Those left the skull staring at wherever the
+    // page was last touched, usually a bottom corner, turned away from the
+    // pose its poster had just been showing. So it only follows a pointer
+    // that can hover.
+    const hovers = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+
     const onMove = (e: PointerEvent) => {
-      i.cursor = { x: e.clientX, y: e.clientY }
+      if (hovers && e.pointerType !== "touch") i.cursor = { x: e.clientX, y: e.clientY }
       if (!i.dragging || !last) {
         if (e.pointerType === "mouse") setCursor(onSkull(e.clientX, e.clientY) ? "grab" : null)
         return
@@ -343,11 +351,13 @@ export function SkullStage({ className }: { className?: string }) {
       // poster is: it eases toward the last pointer even before it is shown.
       for (const v of [i.pointer, i.userRot, i.vel]) v.x = v.y = 0
       setCursor(null)
+      delete root.dataset.skullLive
     }
   }, [live])
 
   return (
     <div
+      ref={homeRef}
       data-skull-home=""
       className={cn("relative select-none", className)}
       // pan-y keeps vertical page scrolling working on touch while still
@@ -424,20 +434,35 @@ export function SkullStage({ className }: { className?: string }) {
           so that docked it scrolls with its photograph natively instead of a
           frame behind it. Above the page (z-30) but under the sticky header
           and buy bar. Never takes pointer events itself: grabbing it is the
-          window listeners' job, so it cannot block what it floats over. */}
+          window listeners' job, so it cannot block what it floats over.
+
+          The outer box is the page's width and no height: it cuts the skull
+          off at the screen's edges and lets it run as far down as it likes.
+          Without it the canvas, which on a phone is wider than the screen,
+          made the document wider too - and a phone then lays out everything
+          `fixed` (the cookie card, the floating buttons) against that wider
+          page, part of it off the screen. `overflow-x: hidden` on the body
+          hides such overflow without stopping it counting. */}
       {attempt
         ? createPortal(
             <div
-              ref={flightRef}
               aria-hidden
-              className="pointer-events-none absolute top-0 left-0 z-30 origin-top-left"
+              className="pointer-events-none absolute inset-x-0 top-0 h-0 overflow-x-clip"
             >
-              <SkullBoundary onError={onFailed}>
-                {/* Straight over the poster, which is this same frame. */}
-                <div className={cn("size-full", live ? "opacity-100" : "opacity-0")}>
-                  <SkullCanvas flightRef={flightRef} onReady={onReady} onError={onFailed} />
-                </div>
-              </SkullBoundary>
+              {/* will-change: a layer of its own from the start, so the route
+                  can be run by the compositor (see skull-canvas). */}
+              <div
+                ref={flightRef}
+                data-skull-flight=""
+                className="absolute top-0 left-0 z-30 origin-top-left will-change-transform"
+              >
+                <SkullBoundary onError={onFailed}>
+                  {/* Straight over the poster, which is this same frame. */}
+                  <div className={cn("size-full", live ? "opacity-100" : "opacity-0")}>
+                    <SkullCanvas flightRef={flightRef} onReady={onReady} onError={onFailed} />
+                  </div>
+                </SkullBoundary>
+              </div>
             </div>,
             document.body,
           )

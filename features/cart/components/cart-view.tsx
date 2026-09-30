@@ -77,7 +77,9 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
             </div>
             <CheckoutSteps current={1} />
           </div>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          {/* minmax(0, ...) at every width: a plain column grows to fit its widest
+          line and takes the page wider than the phone with it. */}
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="rounded-card bg-carbon h-[150px] border border-white/[0.09] sm:h-[190px]" />
             <div className="rounded-card bg-carbon h-[520px] border border-white/10" />
           </div>
@@ -91,7 +93,9 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
   }
 
   return (
-    <div className="px-5 pb-24 sm:px-8 xl:px-14">
+    // data-clear-corner: no floating buttons over this page on a phone, where
+    // they would sit on the Checkout button.
+    <div data-clear-corner className="px-5 pb-24 sm:px-8 xl:px-14">
       <div className="flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="text-ember mb-3.5 font-mono text-[11.5px] tracking-[0.22em] uppercase">
@@ -148,7 +152,9 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
                   {line.colourwayName.toUpperCase()} · {line.sku}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
+                {/* Wraps: beside an 88px picture on a 320-360px phone the
+                    stepper and a five-figure total do not fit on one line. */}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5">
                   <div className="flex h-10 items-center gap-0.5 rounded-full border border-white/[0.16] px-1.5">
                     <button
                       type="button"
@@ -171,7 +177,7 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
                     </button>
                   </div>
 
-                  <div className="text-right">
+                  <div className="ml-auto text-right">
                     <Money
                       value={Number(line.unitPrice) * line.qty}
                       className="font-display text-bone text-[24px] leading-[1.08] sm:text-[30px]"

@@ -208,6 +208,213 @@ function reverse(img) {
   return { img: { ...img, px }, repainted }
 }
 
+// ---------- vector ----------
+//
+// The footer draws the lockup across the width of the page, several times the
+// size of the sheet it was delivered on, and a PNG stretched that far goes
+// soft along every edge. The artwork is two flat colours, so its outlines can
+// be read straight off the pixels: each colour's coverage is traced at the
+// half-covered line, which the antialiasing places to a fraction of a pixel.
+
+/** How covered each pixel is by one colour, 0..1, with a clear border a pixel wide. */
+function coverage(img, colour, other) {
+  const W = img.w + 2
+  const H = img.h + 2
+  const field = new Float32Array(W * H)
+  for (let y = 0; y < img.h; y++) {
+    for (let x = 0; x < img.w; x++) {
+      const i = (y * img.w + x) * 4
+      if (img.px[i + 3] === 0) continue
+      if (dist(img.px, i, colour) < dist(img.px, i, other)) {
+        field[(y + 1) * W + x + 1] = img.px[i + 3] / 255
+      }
+    }
+  }
+  return { field, W, H }
+}
+
+/** Marching squares at half coverage: the closed outlines of a field, in image pixels. */
+function outlines({ field, W, H }) {
+  const at = (x, y) => field[y * W + x]
+  const inside = (x, y) => at(x, y) >= 0.5
+  // Where the half-covered line crosses the grid edge from a to b.
+  const cross = (ax, ay, bx, by) => {
+    const va = at(ax, ay)
+    const t = (0.5 - va) / (at(bx, by) - va)
+    // The field's samples sit at pixel centres, and carry the border's offset.
+    return [ax + (bx - ax) * t - 0.5, ay + (by - ay) * t - 0.5]
+  }
+  const H_EDGE = (x, y) => `h${x},${y}`
+  const V_EDGE = (x, y) => `v${x},${y}`
+
+  // Every crossing joins two cells, so each has at most two neighbours.
+  const point = new Map()
+  const next = new Map()
+  const link = (a, b) => {
+    for (const [from, to] of [
+      [a, b],
+      [b, a],
+    ]) {
+      if (!next.has(from)) next.set(from, [])
+      next.get(from).push(to)
+    }
+  }
+
+  for (let y = 0; y < H - 1; y++) {
+    for (let x = 0; x < W - 1; x++) {
+      const tl = inside(x, y)
+      const tr = inside(x + 1, y)
+      const br = inside(x + 1, y + 1)
+      const bl = inside(x, y + 1)
+      const code = (tl ? 8 : 0) | (tr ? 4 : 0) | (br ? 2 : 0) | (bl ? 1 : 0)
+      if (code === 0 || code === 15) continue
+
+      const top = H_EDGE(x, y)
+      const bottom = H_EDGE(x, y + 1)
+      const left = V_EDGE(x, y)
+      const right = V_EDGE(x + 1, y)
+      if (tl !== tr) point.set(top, cross(x, y, x + 1, y))
+      if (bl !== br) point.set(bottom, cross(x, y + 1, x + 1, y + 1))
+      if (tl !== bl) point.set(left, cross(x, y, x, y + 1))
+      if (tr !== br) point.set(right, cross(x + 1, y, x + 1, y + 1))
+
+      // Two opposite corners inside: joined through the middle or not, by
+      // what the middle of the cell is.
+      const middle = (at(x, y) + at(x + 1, y) + at(x + 1, y + 1) + at(x, y + 1)) / 4 >= 0.5
+      switch (code) {
+        case 1:
+        case 14:
+          link(left, bottom)
+          break
+        case 2:
+        case 13:
+          link(bottom, right)
+          break
+        case 3:
+        case 12:
+          link(left, right)
+          break
+        case 4:
+        case 11:
+          link(top, right)
+          break
+        case 6:
+        case 9:
+          link(top, bottom)
+          break
+        case 7:
+        case 8:
+          link(top, left)
+          break
+        case 5:
+          if (middle) {
+            link(top, left)
+            link(bottom, right)
+          } else {
+            link(top, right)
+            link(left, bottom)
+          }
+          break
+        case 10:
+          if (middle) {
+            link(top, right)
+            link(left, bottom)
+          } else {
+            link(top, left)
+            link(bottom, right)
+          }
+          break
+      }
+    }
+  }
+
+  const loops = []
+  const seen = new Set()
+  for (const start of next.keys()) {
+    if (seen.has(start)) continue
+    const loop = []
+    let prev = null
+    let here = start
+    while (here && !seen.has(here)) {
+      seen.add(here)
+      loop.push(point.get(here))
+      const onward = next.get(here).find((k) => k !== prev && !seen.has(k))
+      prev = here
+      here = onward
+    }
+    if (loop.length > 2) loops.push(loop)
+  }
+  return loops
+}
+
+/** Douglas-Peucker on an open run: drops every point within `tolerance` of the line kept. */
+function thin(points, tolerance) {
+  const keep = new Uint8Array(points.length)
+  keep[0] = keep[points.length - 1] = 1
+  const stack = [[0, points.length - 1]]
+  while (stack.length) {
+    const [a, b] = stack.pop()
+    const [ax, ay] = points[a]
+    const [bx, by] = points[b]
+    const len = Math.hypot(bx - ax, by - ay) || 1
+    let worst = 0
+    let at = -1
+    for (let i = a + 1; i < b; i++) {
+      const d = Math.abs((bx - ax) * (ay - points[i][1]) - (ax - points[i][0]) * (by - ay)) / len
+      if (d > worst) {
+        worst = d
+        at = i
+      }
+    }
+    if (worst > tolerance) {
+      keep[at] = 1
+      stack.push([a, at], [at, b])
+    }
+  }
+  return points.filter((_, i) => keep[i])
+}
+
+/** The same for a closed outline, split at its two furthest-apart points. */
+function thinLoop(loop, tolerance) {
+  let far = 0
+  for (let i = 1; i < loop.length; i++) {
+    if (
+      Math.hypot(loop[i][0] - loop[0][0], loop[i][1] - loop[0][1]) >
+      Math.hypot(loop[far][0] - loop[0][0], loop[far][1] - loop[0][1])
+    )
+      far = i
+  }
+  const first = thin(loop.slice(0, far + 1), tolerance)
+  const second = thin([...loop.slice(far), loop[0]], tolerance)
+  return [...first, ...second.slice(1, -1)]
+}
+
+const hex = (c) => `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`
+
+/** One colour of the artwork as SVG path data: every outline of it, closed. */
+function pathOf(img, colour, other) {
+  const n = (v) => String(Math.round(v * 100) / 100)
+  return (
+    outlines(coverage(img, colour, other))
+      // A fifth of a pixel: under what the eye can find at four times the size.
+      .map((loop) => thinLoop(loop, 0.2))
+      .map((loop) => `M${loop.map(([x, y]) => `${n(x)} ${n(y)}`).join("L")}Z`)
+      .join("")
+  )
+}
+
+/** The two-colour lockup as an SVG the size of its sheet, one path a colour. */
+function vector(img) {
+  const layer = (colour, other) =>
+    `<path fill="${hex(colour)}" fill-rule="evenodd" d="${pathOf(img, colour, other)}"/>`
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${img.w} ${img.h}" width="${img.w}" height="${img.h}">` +
+    layer(BONE, ORANGE) +
+    layer(ORANGE, BONE) +
+    `</svg>\n`
+  )
+}
+
 // ---------- run ----------
 mkdirSync(OUT, { recursive: true })
 
@@ -231,4 +438,24 @@ for (const [srcName, outName] of [
       `  trimmed to ${cropped.w}x${cropped.h}, repainted ${repainted} px as bone\n` +
       `  ${(out.length / 1024).toFixed(1)} KB`,
   )
+
+  // The two-colour lockup again as outlines, for the footer's full-width copy.
+  if (outName === "skelmet-lockup.png") {
+    const svg = vector(reversed)
+    writeFileSync(`${OUT}/skelmet-lockup.svg`, svg)
+    console.log(`  -> skelmet-lockup.svg  ${(svg.length / 1024).toFixed(1)} KB`)
+  }
+
+  // The single-colour lockup as path data, for the splash screen to draw
+  // inline. It is the first thing on the page and the progress bar of the
+  // load: as an image it was one more request, and on a slow connection the
+  // curtain opened before it had arrived.
+  if (outName === "skelmet-lockup-mono.png") {
+    const mono = { width: reversed.w, height: reversed.h, d: pathOf(reversed, BONE, ORANGE) }
+    const file = resolve(ROOT, "components/shared/lockup-mono.json")
+    writeFileSync(file, `${JSON.stringify(mono, null, 2)}\n`)
+    console.log(
+      `  -> components/shared/lockup-mono.json  ${(mono.d.length / 1024).toFixed(1)} KB of path`,
+    )
+  }
 }

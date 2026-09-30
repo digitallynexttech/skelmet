@@ -73,6 +73,34 @@ export const SKULL_MODEL = SKULL_ASSETS.model
 export const SKULL_POSTER = SKULL_ASSETS.poster
 
 /**
+ * A phone that would struggle with the model, and keeps the poster: a touch
+ * screen reporting 2 GB of memory or less, or four cores or fewer. The model
+ * would cost it most of a megabyte and seconds of main thread for a
+ * decoration.
+ *
+ * Judged only where the browser reports memory at all - Chrome and its
+ * relatives - because neither number means what it says elsewhere:
+ *
+ *   - Safari reports no memory, and answers 4 cores on every iPhone whatever
+ *     it has. Counting cores there kept the model from every iPhone made.
+ *   - The memory figure is rounded to a power of two, so a 6 GB phone says 4.
+ *     "4 or less" was most Android phones sold, not the weak ones.
+ *
+ * A phone that reports nothing is taken to be capable.
+ */
+export function strugglesWithModel(device: {
+  /** `(pointer: coarse)`: a touch screen. */
+  touch: boolean
+  /** `navigator.deviceMemory`, in GB; undefined where the browser has none. */
+  memory: number | undefined
+  /** `navigator.hardwareConcurrency`. */
+  cores: number | undefined
+}): boolean {
+  if (!device.touch || device.memory === undefined) return false
+  return device.memory <= 2 || (device.cores !== undefined && device.cores <= 4)
+}
+
+/**
  * The halo at rest, facing the camera. The poster path never loads the canvas,
  * so nothing ever overwrites this - it has to be where the mesh would put it,
  * or the burn would sit off the skull for every visitor on the fallback.

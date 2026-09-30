@@ -52,7 +52,7 @@ config/               site.ts (identity, contacts, promises), nav, shipping, inv
 hooks/                use-hydrated, use-debounce, use-url-state, use-confirm
 prisma/               schema.prisma, migrations/ (hand-written SQL), seed, sync-permissions
 scripts/              one-off image builders (colourways, plates, icons, brand)
-public/               product photos, the skull model (skull.glb), brand marks
+public/               product photos, the skull model and its poster (named by their contents), brand marks
 assets/               files the server reads at run time (invoice fonts and lockup)
 test/stubs/           server-only stub for Vitest
 docs/                 this file, sitemap.md, dn-nextjs-standard.md

@@ -101,9 +101,16 @@ export function Hero() {
           </div>
 
           {/* Sits in the canvas's transparent margin below the chin at xl, so
-              the affordance costs nothing from the height budget. */}
+              the affordance costs nothing from the height budget.
+
+              Shown once the 3D model is on screen (skull-stage marks <html>),
+              and not before: until then the skull is a picture, and on a phone
+              that never loads the model it stays one. Its space is kept either
+              way, so nothing moves when it appears. */}
           <span
+            aria-hidden
             className={cn(
+              "opacity-0 transition-opacity duration-500 [html[data-skull-live]_&]:opacity-100",
               // No plate behind it any more, so rounding, fill and blur all go
               // with the border. The vertical padding stays: at xl the bottom
               // edge is what is pinned, so dropping it would slide the label
