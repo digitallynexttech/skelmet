@@ -438,6 +438,7 @@ describe("placeOrder", () => {
       expect(mocks.db.coupon.updateMany).toHaveBeenCalledWith({
         where: {
           id: "coupon-1",
+          archivedAt: null,
           AND: [
             { OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }] },
             { OR: [{ maxUses: null }, { usedCount: { lt: mocks.db.coupon.fields.maxUses } }] },

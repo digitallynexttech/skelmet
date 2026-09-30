@@ -5,7 +5,7 @@ import { listParams, pageParam, pageSizeParam, textParam } from "@/server/list-p
 
 export const dynamic = "force-dynamic"
 
-const QUERY = { page: pageParam, pageSize: pageSizeParam, q: textParam }
+const QUERY = { page: pageParam, pageSize: pageSizeParam, q: textParam, view: textParam }
 
 export const GET = withErrorHandler(async (req) =>
   respond(await listCoupons(listParams(req.nextUrl.searchParams, QUERY))),

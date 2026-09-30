@@ -486,6 +486,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           maxUses: true,
           usedCount: true,
           expiresAt: true,
+          archivedAt: true,
         },
       })
 

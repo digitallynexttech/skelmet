@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Percent, Plus, Search, Ticket, X } from "lucide-react"
+import { Archive, Percent, Plus, RotateCcw, Search, Ticket, X } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import { DateField } from "@/components/ui/date-field"
 import { Field, Input } from "@/components/ui/input"
-import { useCouponMutations, useCoupons, type CouponRow } from "@/features/coupons/hooks/use-coupons"
+import {
+  useCouponMutations,
+  useCoupons,
+  type CouponRow,
+  type CouponView,
+} from "@/features/coupons/hooks/use-coupons"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { cn } from "@/lib/utils"
@@ -21,6 +26,49 @@ const STATE_TONE = {
   EXPIRED: "muted",
   EXHAUSTED: "ember",
 } as const
+
+const TABS: { id: CouponView; label: string }[] = [
+  { id: "codes", label: "Codes" },
+  { id: "archived", label: "Archive" },
+]
+
+// Stable, since useUrlState memoises on it.
+const DEFAULTS = { q: "", view: "codes" }
+
+/** An on/off switch, for whether a code is offered in the cart. */
+function CartSwitch({
+  on,
+  label,
+  disabled,
+  onChange,
+}: {
+  on: boolean
+  label: string
+  disabled?: boolean
+  onChange: (on: boolean) => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors disabled:opacity-40",
+        on ? "border-blaze bg-blaze" : "border-white/[0.18] bg-white/[0.06]",
+      )}
+    >
+      <span
+        className={cn(
+          "bg-bone block size-[18px] rounded-full shadow transition-transform",
+          on ? "translate-x-[22px]" : "translate-x-[3px]",
+        )}
+      />
+    </button>
+  )
+}
 
 /** Digits only, so `onlyDigits("1a2") === "12"` and an empty box stays empty. */
 const onlyDigits = (s: string) => s.replace(/[^0-9]/g, "")
@@ -39,6 +87,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   const [minSubtotal, setMinSubtotal] = React.useState("")
   const [maxUses, setMaxUses] = React.useState("")
   const [expiresAt, setExpiresAt] = React.useState("")
+  const [showInCart, setShowInCart] = React.useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -68,6 +117,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
         // The field hands back local YYYY-MM-DD; end the day rather than
         // start it, or a code set to expire today dies at midnight.
         expiresAt: expiresAt ? new Date(expiresAt + "T23:59:59").toISOString() : null,
+        showInCart,
       })
       onDone()
     } catch {
@@ -78,7 +128,7 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-md border-blaze/30 bg-carbon border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
+      className="border-blaze/30 bg-carbon rounded-md border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
     >
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-display text-bone text-[22px] uppercase">New discount code</h2>
@@ -158,6 +208,15 @@ function CreateForm({ onDone }: { onDone: () => void }) {
             placeholder="Never expires"
           />
         </Field>
+        <div className="flex items-center justify-between gap-4 rounded-md border border-white/[0.1] px-4 py-3 sm:col-span-2">
+          <div>
+            <div className="text-bone text-[14px] font-semibold">Show in cart</div>
+            <div className="text-dim text-[12.5px]">
+              Offered in the cart under Coupons &amp; offers, for the buyer to apply with a tap.
+            </div>
+          </div>
+          <CartSwitch on={showInCart} label="Show in cart" onChange={setShowInCart} />
+        </div>
       </div>
 
       {error ? <p className="text-magenta mt-4 text-[13.5px]">{error}</p> : null}
@@ -177,7 +236,8 @@ function CreateForm({ onDone }: { onDone: () => void }) {
 export function CouponManager() {
   // Search lives in the URL so a filtered view is shareable; paging is the
   // table's job now, over the window the server sent.
-  const [state, setState] = useUrlState({ q: "" })
+  const [state, setState] = useUrlState(DEFAULTS)
+  const view: CouponView = state.view === "archived" ? "archived" : "codes"
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const [creating, setCreating] = React.useState(false)
   const debounced = useDebounce(rawQuery, 350)
@@ -186,8 +246,8 @@ export function CouponManager() {
     if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  const { data, isLoading, isError, error } = useCoupons({ page: 1, q: state.q })
-  const { expire } = useCouponMutations()
+  const { data, isLoading, isError, error } = useCoupons({ page: 1, q: state.q, view })
+  const { expire, archive, restore, showInCart } = useCouponMutations()
 
   const columns: Column<CouponRow>[] = [
     {
@@ -257,22 +317,67 @@ export function CouponManager() {
         </span>
       ),
     },
+    ...(view === "codes"
+      ? [
+          {
+            key: "cart",
+            header: "In cart",
+            align: "right",
+            value: (c: CouponRow) => (c.showInCart ? 1 : 0),
+            // A code that cannot be used is not offered, whatever the switch
+            // says; it is shown off, and can be switched on again after an edit.
+            cell: (c: CouponRow) => (
+              <CartSwitch
+                on={c.showInCart && c.state === "ACTIVE"}
+                label={`Show ${c.code} in cart`}
+                disabled={c.state !== "ACTIVE" || showInCart.isPending}
+                onChange={(on) => showInCart.mutate({ id: c.id, show: on })}
+              />
+            ),
+          } satisfies Column<CouponRow>,
+        ]
+      : []),
     {
       // No value: a button is not data.
       key: "actions",
       header: "",
       align: "right",
       cell: (c) =>
-        c.state === "ACTIVE" ? (
+        view === "archived" ? (
           <Button
             variant="ghost"
             size="sm"
-            disabled={expire.isPending}
-            onClick={() => expire.mutate(c.id)}
+            disabled={restore.isPending}
+            onClick={() => restore.mutate(c.id)}
           >
-            Expire
+            <RotateCcw className="size-4" strokeWidth={2} />
+            Restore
           </Button>
-        ) : null,
+        ) : (
+          <div className="flex justify-end gap-2">
+            {c.state === "ACTIVE" ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={expire.isPending}
+                onClick={() => expire.mutate(c.id)}
+              >
+                Expire
+              </Button>
+            ) : null}
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={archive.isPending}
+              onClick={() => archive.mutate(c.id)}
+              aria-label={`Archive ${c.code}`}
+              title="Archive"
+            >
+              <Archive className="size-4" strokeWidth={1.9} />
+              Archive
+            </Button>
+          </div>
+        ),
     },
   ]
 
@@ -281,7 +386,7 @@ export function CouponManager() {
       <PageHeader
         eyebrow="Console"
         title="Offers & codes"
-        description="Discount codes customers can enter at checkout. Codes are validated server-side, so a stale one cannot be forced through."
+        description="Discount codes customers can enter at checkout, or apply in the cart when In cart is on. Archived codes stop working and move to the Archive tab."
         actions={
           !creating ? (
             <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
@@ -293,6 +398,38 @@ export function CouponManager() {
       />
 
       {creating ? <CreateForm onDone={() => setCreating(false)} /> : null}
+
+      <div
+        role="tablist"
+        aria-label="Offers and codes"
+        className="flex gap-1 overflow-x-auto border-b border-white/[0.09]"
+      >
+        {TABS.map((tab) => {
+          const selected = tab.id === view
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setState({ view: tab.id })}
+              className={cn(
+                "-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-[14px] whitespace-nowrap transition-colors",
+                selected
+                  ? "border-blaze text-bone font-semibold"
+                  : "text-ash hover:text-bone border-transparent",
+              )}
+            >
+              {tab.label}
+              {selected && typeof data?.pagination?.total === "number" ? (
+                <span className="text-dim font-mono text-[11px] font-normal">
+                  {data.pagination.total}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
 
       <div className="relative max-w-[380px]">
         <Search
@@ -321,7 +458,11 @@ export function CouponManager() {
           exportName="discount-codes"
           loading={isLoading}
           total={data?.pagination?.total}
-          empty="No discount codes yet. Create one and it works at checkout immediately."
+          empty={
+            view === "archived"
+              ? "Nothing archived. Archive a code from the Codes tab to put it away here."
+              : "No discount codes yet. Create one and it works at checkout immediately."
+          }
           exportColumns={[
             { header: "Code", value: (c) => c.code },
             { header: "State", value: (c) => c.state },
@@ -330,6 +471,7 @@ export function CouponManager() {
             { header: "Minimum", value: (c) => Number(c.minSubtotal) },
             { header: "Used", value: (c) => c.usedCount },
             { header: "Max uses", value: (c) => c.maxUses ?? "" },
+            { header: "In cart", value: (c) => (c.showInCart ? "yes" : "no") },
             {
               header: "Expires",
               value: (c) => (c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : ""),

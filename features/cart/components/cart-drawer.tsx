@@ -21,7 +21,11 @@ import {
 import { Money } from "@/components/shared/money"
 import { siteConfig } from "@/config/site"
 import { ButtonLink } from "@/components/ui/button"
-import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
+import {
+  CouponBox,
+  type AppliedCoupon,
+  type CartOffer,
+} from "@/features/cart/components/coupon-box"
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { SKULL_POSTER } from "@/components/marketing/skull-interaction"
@@ -154,6 +158,22 @@ export function CartDrawer() {
   // since. Read the live ones each time the drawer opens.
   const syncPrices = useCart((s) => s.syncPrices)
   const [prices, setPrices] = React.useState<Record<string, string>>({})
+  // The codes staff switched on for the cart, asked for each time it opens.
+  const [offers, setOffers] = React.useState<CartOffer[]>([])
+  React.useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void apiFetch<CartOffer[]>("/api/public/coupons/offers")
+      .then((list) => {
+        if (!cancelled) setOffers(list)
+      })
+      .catch(() => {
+        // No offers to show; the code box still takes one typed in.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
   React.useEffect(() => {
     if (!open) return
     let cancelled = false
@@ -209,7 +229,7 @@ export function CartDrawer() {
             : "[transform:translate3d(100%,0,0)] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
         )}
       >
-        {used ? <CartContents prices={prices} onClose={() => hide()} /> : null}
+        {used ? <CartContents prices={prices} offers={offers} onClose={() => hide()} /> : null}
       </div>
     </div>
   )
@@ -217,10 +237,13 @@ export function CartDrawer() {
 
 function CartContents({
   prices,
+  offers,
   onClose,
 }: {
   /** Live prices by SKU, once the drawer has asked; the registry's until then. */
   prices: Record<string, string>
+  /** The codes offered in the cart. */
+  offers: CartOffer[]
   onClose: () => void
 }) {
   // Persisted store: nothing decision-shaped until it has been read.
@@ -299,6 +322,7 @@ function CartContents({
                 subtotal={totals.subtotal}
                 applied={coupon}
                 onApplied={setCoupon}
+                offers={offers}
                 className=""
               />
             </section>

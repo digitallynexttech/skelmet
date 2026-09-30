@@ -22,6 +22,7 @@ export const createCouponSchema = z
     minSubtotal: z.coerce.number().min(0).default(0),
     maxUses: z.coerce.number().int().positive().nullable().optional(),
     expiresAt: z.coerce.date().nullable().optional(),
+    showInCart: z.boolean().default(false),
   })
   .refine((c) => !percentTooHigh(c.kind, c.value), { message: PERCENT_TOO_HIGH, path: ["value"] })
 
@@ -38,6 +39,7 @@ export const updateCouponSchema = z
     minSubtotal: z.coerce.number().min(0).optional(),
     maxUses: z.coerce.number().int().positive().nullable().optional(),
     expiresAt: z.coerce.date().nullable().optional(),
+    showInCart: z.boolean().optional(),
   })
   .refine(
     (c) => c.kind === undefined || c.value === undefined || !percentTooHigh(c.kind, c.value),

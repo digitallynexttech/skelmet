@@ -427,12 +427,17 @@ model Coupon {
   maxUses     Int?       @map("max_uses")
   usedCount   Int        @default(0) @map("used_count")
   expiresAt   DateTime?  @map("expires_at")
+  /// Put away by staff: out of the console's list and no longer accepted.
+  archivedAt  DateTime?  @map("archived_at")
+  /// Offered in the cart for the buyer to apply, not only typed in.
+  showInCart  Boolean    @default(false) @map("show_in_cart")
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
   orders Order[]
 
   @@index([expiresAt])
+  @@index([showInCart, archivedAt])
   @@map("coupons")
 }
 

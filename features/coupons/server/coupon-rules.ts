@@ -22,11 +22,20 @@ export function minimumSpendMessage(minSubtotal: { toString(): string } | number
   return `Spend at least ${formatMoney(Number(minSubtotal.toString()))} to use that code.`
 }
 
-/** Not expired and not used up, as of `now`. For the early, friendly check only. */
+/**
+ * Not archived, not expired and not used up, as of `now`. For the early,
+ * friendly check only.
+ */
 export function couponIsLive(
-  coupon: { expiresAt: Date | null; maxUses: number | null; usedCount: number },
+  coupon: {
+    expiresAt: Date | null
+    maxUses: number | null
+    usedCount: number
+    archivedAt?: Date | null
+  },
   now: Date = new Date(),
 ): boolean {
+  if (coupon.archivedAt) return false
   if (coupon.expiresAt && coupon.expiresAt.getTime() <= now.getTime()) return false
   if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) return false
   return true
@@ -50,6 +59,7 @@ export async function claimCouponUse(
   const claimed = await tx.coupon.updateMany({
     where: {
       id: couponId,
+      archivedAt: null,
       AND: [
         { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
         { OR: [{ maxUses: null }, { usedCount: { lt: db.coupon.fields.maxUses } }] },

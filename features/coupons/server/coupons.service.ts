@@ -30,6 +30,8 @@ const COUPON_SELECT = {
   maxUses: true,
   usedCount: true,
   expiresAt: true,
+  archivedAt: true,
+  showInCart: true,
   createdAt: true,
 } as const
 
@@ -42,9 +44,22 @@ export type CouponRow = {
   maxUses: number | null
   usedCount: number
   expiresAt: string | null
+  archivedAt: string | null
+  showInCart: boolean
   createdAt: string
   state: "ACTIVE" | "EXPIRED" | "EXHAUSTED"
 }
+
+/** A code as the cart offers it: what it takes off, and from what spend. */
+export type CartOffer = {
+  code: string
+  label: string
+  minSubtotal: string
+  expiresAt: string | null
+}
+
+const offerLabel = (c: { kind: string; value: { toString(): string } }) =>
+  c.kind === "PERCENT" ? `${Number(c.value)}% off` : `₹${Number(c.value)} off`
 
 function serialize(row: {
   id: string
@@ -55,6 +70,8 @@ function serialize(row: {
   maxUses: number | null
   usedCount: number
   expiresAt: Date | null
+  archivedAt: Date | null
+  showInCart: boolean
   createdAt: Date
 }): CouponRow {
   const expired = row.expiresAt !== null && row.expiresAt.getTime() < Date.now()
@@ -68,15 +85,21 @@ function serialize(row: {
     maxUses: row.maxUses,
     usedCount: row.usedCount,
     expiresAt: row.expiresAt?.toISOString() ?? null,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
+    showInCart: row.showInCart,
     createdAt: row.createdAt.toISOString(),
     state: expired ? "EXPIRED" : exhausted ? "EXHAUSTED" : "ACTIVE",
   }
 }
 
+/** Live codes first, then used up, then expired; newest first within each. */
+const STATE_ORDER: Record<CouponRow["state"], number> = { ACTIVE: 0, EXHAUSTED: 1, EXPIRED: 2 }
+
 export async function listCoupons(params: {
   page?: number
   pageSize?: number
   q?: string | null
+  view?: string | null
 }): Promise<ActionResult<{ data: CouponRow[]; pagination: unknown }>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.COUPON_READ)
@@ -85,20 +108,89 @@ export async function listCoupons(params: {
     const page = Math.max(1, params.page ?? 1)
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
-    const where = q ? { code: { contains: q.toUpperCase() } } : {}
+    const archived = params.view === "archived"
+    const where = {
+      archivedAt: archived ? { not: null } : null,
+      ...(q ? { code: { contains: q.toUpperCase() } } : {}),
+    }
 
-    const [rows, total] = await Promise.all([
-      db.coupon.findMany({
-        where,
-        select: COUPON_SELECT,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * size,
-        take: size,
-      }),
-      db.coupon.count({ where }),
-    ])
+    // The state is worked out from the row, so the order is too: every code
+    // is read (a shop has tens, not thousands) and sorted here, then paged.
+    const rows = (
+      await db.coupon.findMany({ where, select: COUPON_SELECT, orderBy: { createdAt: "desc" } })
+    ).map(serialize)
+    if (!archived) rows.sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state])
 
-    return ok(paginate(rows.map(serialize), page, size, total))
+    return ok(paginate(rows.slice((page - 1) * size, page * size), page, size, rows.length))
+  })
+}
+
+/**
+ * The codes the cart offers: switched on for it, not archived, and still
+ * usable. Public - the cart asks when it opens - and only ever codes staff
+ * chose to show, so it tells nobody anything they were not meant to see.
+ */
+export async function listCartOffers(): Promise<ActionResult<CartOffer[]>> {
+  return runAction(async () => {
+    if (!hasDatabase()) return ok([])
+    const rows = await db.coupon.findMany({
+      where: { showInCart: true, archivedAt: null },
+      select: {
+        code: true,
+        kind: true,
+        value: true,
+        minSubtotal: true,
+        maxUses: true,
+        usedCount: true,
+        expiresAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    })
+    return ok(
+      rows
+        .filter((c) => couponIsLive(c))
+        .map((c) => ({
+          code: c.code,
+          label: offerLabel(c),
+          minSubtotal: c.minSubtotal.toString(),
+          expiresAt: c.expiresAt?.toISOString() ?? null,
+        })),
+    )
+  })
+}
+
+/**
+ * Archive or restore. Archived, a code leaves the list for the Archive tab,
+ * stops being offered in the cart and is no longer accepted anywhere;
+ * restored, it is exactly what it was.
+ */
+export async function setCouponArchived(
+  id: string,
+  archived: boolean,
+): Promise<ActionResult<CouponRow>> {
+  return runAction(async () => {
+    const session = await requirePermission(PERMISSIONS.COUPON_WRITE)
+    if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    const exists = await db.coupon.findUnique({ where: { id }, select: { id: true } })
+    if (!exists) return fail("Coupon not found.", undefined, 404)
+
+    const row = await db.coupon.update({
+      where: { id },
+      data: { archivedAt: archived ? new Date() : null },
+      select: COUPON_SELECT,
+    })
+
+    await createAuditLog(session, {
+      action: archived ? "coupon:archive" : "coupon:restore",
+      module: "coupon",
+      entityId: id,
+      meta: { code: row.code },
+      ...(await getAuditMeta()),
+    })
+
+    return ok(serialize(row))
   })
 }
 
@@ -120,6 +212,7 @@ export async function createCoupon(raw: unknown): Promise<ActionResult<CouponRow
         minSubtotal: input.minSubtotal,
         maxUses: input.maxUses ?? null,
         expiresAt: input.expiresAt ?? null,
+        showInCart: input.showInCart,
       },
       select: COUPON_SELECT,
     })
@@ -162,6 +255,7 @@ export async function updateCoupon(id: string, raw: unknown): Promise<ActionResu
         ...(input.minSubtotal !== undefined ? { minSubtotal: input.minSubtotal } : {}),
         ...(input.maxUses !== undefined ? { maxUses: input.maxUses } : {}),
         ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        ...(input.showInCart !== undefined ? { showInCart: input.showInCart } : {}),
       },
       select: COUPON_SELECT,
     })
@@ -222,21 +316,17 @@ export async function validateCoupon(
         maxUses: true,
         usedCount: true,
         expiresAt: true,
+        archivedAt: true,
       },
     })
 
-    // Missing, expired and used up all read the same, so this cannot be used
+    // Missing, archived, expired and used up all read the same, so this cannot be used
     // to find out which codes exist (coupon-rules.ts).
     if (!coupon || !couponIsLive(coupon)) return fail(COUPON_UNUSABLE, undefined, 422)
 
     const discount = couponReduction(coupon, input.subtotal)
     if (discount <= 0) return fail(minimumSpendMessage(coupon.minSubtotal), undefined, 422)
 
-    return ok({
-      code: coupon.code,
-      discount,
-      label:
-        coupon.kind === "PERCENT" ? `${Number(coupon.value)}% off` : `₹${Number(coupon.value)} off`,
-    })
+    return ok({ code: coupon.code, discount, label: offerLabel(coupon) })
   })
 }

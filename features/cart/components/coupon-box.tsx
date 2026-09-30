@@ -3,12 +3,21 @@
 import * as React from "react"
 import { Check, Tag, X } from "lucide-react"
 
+import { Money } from "@/components/shared/money"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 import { cn } from "@/lib/utils"
 
 export type AppliedCoupon = { code: string; discount: number; label: string }
+
+/** A code the shop offers in the cart (listCartOffers), for the buyer to apply with a tap. */
+export type CartOffer = {
+  code: string
+  label: string
+  minSubtotal: string
+  expiresAt: string | null
+}
 
 /** A code the server has actually refused, as opposed to a check that failed. */
 function refused(err: unknown) {
@@ -32,6 +41,7 @@ export function CouponBox({
   onCode,
   recheck = true,
   className = "mb-6",
+  offers = [],
 }: {
   subtotal: number
   applied: AppliedCoupon | null
@@ -50,6 +60,8 @@ export function CouponBox({
   recheck?: boolean
   /** The space under the box: a page's summary and the cart drawer differ. */
   className?: string
+  /** Codes to list under the box, each with its own Apply. */
+  offers?: CartOffer[]
 }) {
   const cartCode = useCart((s) => s.couponCode)
   const setCartCode = useCart((s) => s.setCoupon)
@@ -94,8 +106,8 @@ export function CouponBox({
 
   const [draft, setDraft] = React.useState("")
 
-  async function apply() {
-    const code = draft.trim()
+  async function apply(given?: string) {
+    const code = (given ?? draft).trim()
     if (code === "" || pending) return
 
     setError(null)
@@ -123,29 +135,85 @@ export function CouponBox({
   // on the cart, so removing one cannot leave a stale panel behind.
   const shown = couponCode ? applied : null
 
+  const list =
+    offers.length > 0 ? (
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {offers.map((offer) => {
+          const on = shown?.code === offer.code
+          const short = Number(offer.minSubtotal) - subtotal
+          return (
+            <li
+              key={offer.code}
+              className={cn(
+                "flex items-center gap-3 rounded-lg border border-dashed px-3.5 py-3",
+                on ? "border-acid/45 bg-acid/[0.05]" : "border-white/[0.16]",
+              )}
+            >
+              <Tag
+                className={cn("size-4 shrink-0", on ? "text-acid" : "text-ember")}
+                strokeWidth={1.8}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-bone truncate font-mono text-[13px] font-bold tracking-[0.08em]">
+                  {offer.code}
+                </div>
+                <div className="text-dim mt-0.5 text-[12px] leading-snug">
+                  {offer.label}
+                  {Number(offer.minSubtotal) > 0 ? (
+                    <>
+                      {" "}
+                      on orders over <Money value={offer.minSubtotal} />
+                    </>
+                  ) : null}
+                  {short > 0 ? (
+                    <span className="text-ember block">
+                      Add <Money value={short} /> more to use it
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              {on ? (
+                <span className="text-acid shrink-0 font-mono text-[11px] font-bold tracking-[0.12em]">
+                  APPLIED
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void apply(offer.code)}
+                  disabled={pending}
+                  aria-label={`Apply ${offer.code}`}
+                  className="text-acid hover:text-bone shrink-0 font-mono text-[11.5px] font-bold tracking-[0.12em] transition-colors disabled:opacity-50"
+                >
+                  APPLY
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    ) : null
+
   if (shown) {
     return (
-      <div
-        className={cn(
-          "border-acid/35 bg-acid/[0.06] flex h-13 items-center gap-2.5 rounded-lg border px-4",
-          className,
-        )}
-      >
-        <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
-        <span className="text-bone flex-1 font-mono text-[13px] tracking-[0.08em]">
-          {shown.code}
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            onApplied(null)
-            setCoupon(null)
-          }}
-          aria-label={`Remove discount code ${shown.code}`}
-          className="text-dim hover:text-bone shrink-0"
-        >
-          <X className="size-4" strokeWidth={2.2} />
-        </button>
+      <div className={className}>
+        <div className="border-acid/35 bg-acid/[0.06] flex h-13 items-center gap-2.5 rounded-lg border px-4">
+          <Check className="text-acid size-4 shrink-0" strokeWidth={2.4} />
+          <span className="text-bone flex-1 font-mono text-[13px] tracking-[0.08em]">
+            {shown.code}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              onApplied(null)
+              setCoupon(null)
+            }}
+            aria-label={`Remove discount code ${shown.code}`}
+            className="text-dim hover:text-bone shrink-0"
+          >
+            <X className="size-4" strokeWidth={2.2} />
+          </button>
+        </div>
+        {list}
       </div>
     )
   }
@@ -178,6 +246,7 @@ export function CouponBox({
         </button>
       </div>
       {error ? <p className="text-magenta mt-2 text-[12.5px] leading-[1.45]">{error}</p> : null}
+      {list}
     </div>
   )
 }

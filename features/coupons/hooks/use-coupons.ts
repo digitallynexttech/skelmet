@@ -15,6 +15,8 @@ export type CouponRow = {
   maxUses: number | null
   usedCount: number
   expiresAt: string | null
+  archivedAt: string | null
+  showInCart: boolean
   createdAt: string
   state: "ACTIVE" | "EXPIRED" | "EXHAUSTED"
 }
@@ -24,17 +26,21 @@ type Paginated<T> = {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
-const getCoupons = (params: { page: number; q: string }) => {
+/** Codes, or the archive. */
+export type CouponView = "codes" | "archived"
+
+const getCoupons = (params: { page: number; q: string; view: CouponView }) => {
   const search = new URLSearchParams({
     page: String(params.page),
     // Sorting and export run over what is loaded, so take the window.
     pageSize: String(MAX_PAGE_SIZE),
   })
   if (params.q) search.set("q", params.q)
+  if (params.view === "archived") search.set("view", "archived")
   return apiFetch<Paginated<CouponRow>>(`/api/admin/coupons?${search}`)
 }
 
-export function useCoupons(params: { page: number; q: string }) {
+export function useCoupons(params: { page: number; q: string; view: CouponView }) {
   return useQuery({
     queryKey: ["coupons", params],
     queryFn: () => getCoupons(params),
@@ -68,5 +74,33 @@ export function useCouponMutations() {
     onSuccess: invalidate,
   })
 
-  return { create, expire }
+  const archive = useMutation({
+    mutationFn: mutationWithToast(
+      (id: string) => apiFetch<CouponRow>(`/api/admin/coupons/${id}/archive`, { method: "POST" }),
+      { loading: "Archiving code…", success: "Code archived" },
+    ),
+    onSuccess: invalidate,
+  })
+
+  const restore = useMutation({
+    mutationFn: mutationWithToast(
+      (id: string) => apiFetch<CouponRow>(`/api/admin/coupons/${id}/archive`, { method: "DELETE" }),
+      { loading: "Restoring code…", success: "Code restored" },
+    ),
+    onSuccess: invalidate,
+  })
+
+  const showInCart = useMutation({
+    mutationFn: mutationWithToast(
+      ({ id, show }: { id: string; show: boolean }) =>
+        apiFetch<CouponRow>(`/api/admin/coupons/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ showInCart: show }),
+        }),
+      { loading: "Saving…", success: "Saved" },
+    ),
+    onSuccess: invalidate,
+  })
+
+  return { create, expire, archive, restore, showInCart }
 }
