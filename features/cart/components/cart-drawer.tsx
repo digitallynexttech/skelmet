@@ -250,7 +250,9 @@ function CartContents({
   const mounted = useHydrated()
   const items = useCart((s) => s.items)
   const setQty = useCart((s) => s.setQty)
-  const remove = useCart((s) => s.remove)
+  const clear = useCart((s) => s.clear)
+  // Emptying the cart asks once: one tap on the bin, then Clear or Keep.
+  const [clearing, setClearing] = React.useState(false)
 
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
   // The coupon comes off the total here as it does at checkout and on the
@@ -320,7 +322,7 @@ function CartContents({
                 <div className="bg-void flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08]">
                   <Timer className="text-ember size-5" strokeWidth={1.8} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h3 id="cart-shipment" className={CARD_TITLE}>
                     Ships in {siteConfig.promise.dispatchHours} hours
                   </h3>
@@ -329,6 +331,37 @@ function CartContents({
                     delivered in {siteConfig.promise.deliveryDays}
                   </p>
                 </div>
+                {clearing ? (
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clear()
+                        setClearing(false)
+                      }}
+                      className="bg-magenta text-void rounded-full px-3 py-1.5 text-[12px] font-bold"
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClearing(false)}
+                      className="text-ash hover:text-bone rounded-full border border-white/[0.16] px-3 py-1.5 text-[12px] font-semibold"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setClearing(true)}
+                    aria-label="Remove everything from the cart"
+                    title="Empty the cart"
+                    className="text-dim hover:text-magenta -mr-1 flex size-9 shrink-0 items-center justify-center transition-colors"
+                  >
+                    <Trash2 className="size-[17px]" strokeWidth={1.9} />
+                  </button>
+                )}
               </div>
 
               <ul className="px-4">
@@ -352,22 +385,9 @@ function CartContents({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        {/* The bin beside the name takes the whole line out,
-                            however many are in it. */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-bone line-clamp-2 text-[14px] leading-snug font-semibold">
-                            {line.productName}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => remove(line.id)}
-                            aria-label={`Remove ${line.colourwayName} from the cart`}
-                            title="Remove"
-                            className="text-dim hover:text-magenta -mt-1.5 -mr-1 flex size-8 shrink-0 items-center justify-center transition-colors"
-                          >
-                            <Trash2 className="size-4" strokeWidth={1.9} />
-                          </button>
-                        </div>
+                        <h4 className="text-bone line-clamp-2 text-[14px] leading-snug font-semibold">
+                          {line.productName}
+                        </h4>
                         <div className="text-dim mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.1em] uppercase">
                           <span
                             className="size-2 shrink-0 rounded-full"
@@ -386,15 +406,16 @@ function CartContents({
                         </div>
                       </div>
 
-                      {/* Quantity only; the bin by the name removes the line. It
-                          stops at one rather than doubling as a remove. */}
+                      {/* Minus at one takes this item out; the bin above empties
+                          the whole cart. */}
                       <div className="bg-blaze text-void flex h-9 shrink-0 items-center rounded-lg">
                         <button
                           type="button"
                           onClick={() => setQty(line.id, line.qty - 1)}
-                          disabled={line.qty <= 1}
-                          aria-label="Decrease quantity"
-                          className="flex h-full w-8 items-center justify-center disabled:opacity-40"
+                          aria-label={
+                            line.qty === 1 ? `Remove ${line.colourwayName}` : "Decrease quantity"
+                          }
+                          className="flex h-full w-8 items-center justify-center"
                         >
                           <Minus className="size-3.5" strokeWidth={2.6} />
                         </button>
