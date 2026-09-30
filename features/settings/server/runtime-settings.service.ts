@@ -5,10 +5,14 @@ import type { Session } from "next-auth"
 import { z } from "zod"
 
 import { siteConfig } from "@/config/site"
-import { refreshShippingTerms } from "@/features/catalog/server/refresh-storefront"
+import {
+  refreshPaymentTerms,
+  refreshShippingTerms,
+} from "@/features/catalog/server/refresh-storefront"
 import { checkGatewayKeys } from "@/features/checkout/server/payment-gateway"
 import {
   PAYMENT_MODES,
+  paymentOptionsSchema,
   paymentSettingsSchema,
   shippingChargeSchema,
   shiprocketSettingsSchema,
@@ -25,8 +29,10 @@ import {
   modeOfKey,
   SETTING_KEYS,
   resolvePayment,
+  resolvePaymentOptions,
   resolveShipping,
   resolveShiprocket,
+  savedPaymentOptions,
   savedShipping,
   storedSettings,
   type PaymentKeys,
@@ -51,8 +57,8 @@ import { can, requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
 /**
- * Settings > Payments, Shiprocket and Shipping charge: what the console shows
- * of them, and saving them.
+ * Settings > Payments, Shiprocket, Shipping charge and Pay on delivery: what
+ * the console shows of them, and saving them.
  *
  * A secret never leaves the server once saved. The console gets whether it is
  * set, where it comes from, and its last four characters - enough to tell
@@ -148,6 +154,10 @@ function view(
       ready: Boolean(shiprocket.email && shiprocket.password),
     },
     shipping: { ...resolveShipping(stored.shipping), source: saved ? "saved" : "default" },
+    checkout: {
+      ...resolvePaymentOptions(stored.checkout),
+      source: savedPaymentOptions(stored.checkout) ? "saved" : "default",
+    },
     versions,
     canWrite,
   }
@@ -160,7 +170,12 @@ async function settingVersions(): Promise<SettingVersions> {
     select: { key: true, updatedAt: true },
   })
   const at = (key: SettingKey) => rows.find((r) => r.key === key)?.updatedAt.toISOString() ?? null
-  return { payment: at("payment"), shiprocket: at("shiprocket"), shipping: at("shipping") }
+  return {
+    payment: at("payment"),
+    shiprocket: at("shiprocket"),
+    shipping: at("shipping"),
+    checkout: at("checkout"),
+  }
 }
 
 /** The whole view, from the rows as they are in the database now, not as last cached. */
@@ -445,6 +460,29 @@ export async function saveShippingCharge(raw: unknown): Promise<ActionResult<Run
     const saved = await save(session, "shipping", input, { from: before, to: input }, row.version)
     if (!saved) return fail(STALE_SETTINGS, undefined, 409)
     refreshShippingTerms()
+    return ok(saved)
+  })
+}
+
+/**
+ * Cash on delivery and the advance: who is offered each, and what each adds
+ * to an order. Checkout reads it on the next order; the FAQ and the terms,
+ * which say how to pay, are refreshed.
+ */
+export async function savePaymentOptions(raw: unknown): Promise<ActionResult<RuntimeSettingsView>> {
+  return runAction(async () => {
+    const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
+    if (!hasDatabase()) return fail(NO_DATABASE, undefined, 503)
+    const { version, body } = takeVersion(raw)
+    const input = paymentOptionsSchema.parse(body)
+
+    const row = await currentRow("checkout")
+    if (version !== undefined && version !== row.version)
+      return fail(STALE_SETTINGS, undefined, 409)
+    const before = resolvePaymentOptions(row.value)
+    const saved = await save(session, "checkout", input, { from: before, to: input }, row.version)
+    if (!saved) return fail(STALE_SETTINGS, undefined, 409)
+    refreshPaymentTerms()
     return ok(saved)
   })
 }

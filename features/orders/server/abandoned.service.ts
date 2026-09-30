@@ -18,8 +18,9 @@ import { db } from "@/server/db"
  * off. This list tells them apart, and says which of their buyers came back
  * and paid on another order, so nobody chases a sale that already happened.
  *
- * Online orders only. Cash on delivery was never paid at checkout, so an
- * unpaid COD order is a normal one waiting for its parcel, not a lost sale.
+ * Orders paid online only - in full, or an advance. Cash on delivery was
+ * never paid at checkout, so an unpaid COD order is a normal one waiting for
+ * its parcel, not a lost sale.
  */
 
 type Row = UnpaidOrderRow
@@ -34,7 +35,7 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
 
     const orders = await db.order.findMany({
       where: {
-        paymentMethod: "ONLINE",
+        paymentMethod: { in: ["ONLINE", "PARTIAL"] },
         status: { in: ["PENDING", "CANCELLED"] },
         placedAt: null,
         // A cancelled order that did take money is a refund question, not this.

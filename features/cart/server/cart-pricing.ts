@@ -1,7 +1,5 @@
 import "server-only"
 
-import { COD_FEE } from "@/lib/constants"
-
 /**
  * Pure pricing. The browser's copy in `use-cart.ts` is a preview only - this is
  * the authority, and checkout recomputes from the database rather than trusting
@@ -14,13 +12,14 @@ export type Priced = {
   subtotal: number
   discount: number
   shipping: number
-  codFee: number
+  /** What the way of paying adds - the cash-on-delivery charge. */
+  paymentFee: number
   total: number
 }
 
 export function priceCart(
   lines: PriceableLine[],
-  opts: { cod?: boolean; couponOff?: number; shippingFee?: number } = {},
+  opts: { couponOff?: number; shippingFee?: number; paymentFee?: number } = {},
 ): Priced {
   const itemCount = lines.reduce((n, l) => n + l.qty, 0)
   // Summed in paise and divided once: adding rupee floats line by line can
@@ -36,15 +35,17 @@ export function priceCart(
   // Set by the delivery pincode (shippingConfig.fee). placeOrder passes the fee
   // it worked out itself; nothing the browser sends reaches this.
   const shipping = Math.max(0, Math.round(opts.shippingFee ?? 0))
-  const codFee = opts.cod ? COD_FEE : 0
+  // Set in the console (Settings > Pay on delivery) and passed in by
+  // placeOrder for the method chosen; paying online adds nothing.
+  const paymentFee = Math.max(0, Math.round(opts.paymentFee ?? 0))
 
   return {
     itemCount,
     subtotal,
     discount,
     shipping,
-    codFee,
-    total: subtotal - discount + shipping + codFee,
+    paymentFee,
+    total: subtotal - discount + shipping + paymentFee,
   }
 }
 

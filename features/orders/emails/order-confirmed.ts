@@ -1,6 +1,7 @@
 import "server-only"
 
 import { siteConfig } from "@/config/site"
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 import { formatMoney } from "@/lib/money"
 
@@ -29,7 +30,9 @@ export type OrderConfirmedData = {
   number: string
   email: string
   total: string
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
+  /** What the courier collects: the total for COD, the balance for PARTIAL. */
+  dueOnDelivery?: string
   items: { name: string; qty: number }[]
 }
 
@@ -38,12 +41,16 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   text: string
   html: string
 } {
-  // Cash on delivery is withdrawn: this email now goes out only once an online
-  // payment is captured. The COD wording stays for orders placed before that,
-  // and only an order explicitly marked COD gets it - anything paid online
-  // must never read as pay-on-delivery.
+  // Sent when an online payment is captured - the whole order or its advance
+  // - and, for cash on delivery, when the order is placed. Only an order
+  // explicitly marked COD gets the pay-at-the-door wording for all of it, and
+  // only PARTIAL for its balance: anything paid online in full must never
+  // read as pay-on-delivery.
   const cod = data.paymentMethod === "COD"
+  const partial = data.paymentMethod === "PARTIAL"
   const paid = !cod
+  const due = cod ? data.total : (data.dueOnDelivery ?? "0")
+  const advance = Math.round((Number(data.total) - Number(due)) * 100) / 100
   const trackUrl = `${siteConfig.url}/track`
   const lines = data.items.map((i) => `${i.qty} x ${i.name}`)
   const { dispatchHours, deliveryDays } = siteConfig.promise
@@ -56,9 +63,16 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
     `Order number: ${data.number}`,
     ...lines,
     ``,
-    paid
-      ? `Paid: ${formatMoney(data.total)}`
-      : `Due on delivery: ${formatMoney(data.total)} (cash on delivery)`,
+    ...(partial
+      ? [
+          `Paid now: ${formatMoney(advance)}`,
+          `Due on delivery: ${formatMoney(due)} - pay the courier at the door`,
+        ]
+      : [
+          paid
+            ? `Paid: ${formatMoney(data.total)}`
+            : `Due on delivery: ${formatMoney(data.total)} (cash on delivery)`,
+        ]),
     ``,
     `We dispatch within ${dispatchHours} hours of ${paid ? "payment" : "your order"}, and delivery`,
     `takes up to ${deliveryDays} from dispatch.`,
@@ -96,7 +110,7 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   <!-- Inbox preview line. Hidden in the body, but it is what the list shows
        beside the subject, and without it clients grab the first stray text. -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-    ${escapeHtml(data.number)} &mdash; ${paid ? "paid" : "confirmed"}, dispatching within ${dispatchHours} hours.
+    ${escapeHtml(data.number)} &mdash; ${partial ? "advance paid" : paid ? "paid" : "confirmed"}, dispatching within ${dispatchHours} hours.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.void};">
@@ -143,12 +157,29 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
                 </tr>${items}
                 <tr>
                   <td style="padding:16px 0 0;font-family:${FONT};font-size:15px;font-weight:700;color:${C.bone};">
-                    ${paid ? "Paid" : "Due on delivery"}
+                    ${partial ? "Paid now" : paid ? "Paid" : "Due on delivery"}
                   </td>
                   <td align="right" style="padding:16px 0 0;font-family:${FONT};font-size:20px;font-weight:700;color:${paid ? C.acid : C.ember};white-space:nowrap;">
-                    ${formatMoney(data.total)}
+                    ${formatMoney(partial ? advance : data.total)}
                   </td>
                 </tr>${
+                  partial
+                    ? `
+                <tr>
+                  <td style="padding:8px 0 0;font-family:${FONT};font-size:15px;font-weight:700;color:${C.bone};">
+                    Due on delivery
+                  </td>
+                  <td align="right" style="padding:8px 0 0;font-family:${FONT};font-size:20px;font-weight:700;color:${C.ember};white-space:nowrap;">
+                    ${formatMoney(due)}
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding:4px 0 0;font-family:${FONT};font-size:13px;color:${C.ash};">
+                    Pay the courier the balance at the door.
+                  </td>
+                </tr>`
+                    : ""
+                }${
                   paid
                     ? ""
                     : `

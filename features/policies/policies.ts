@@ -11,6 +11,8 @@
 
 import { shippingConfig } from "@/config/shipping"
 import { siteConfig } from "@/config/site"
+import { DEFAULT_PAYMENT_OPTIONS, paymentCopy } from "@/features/checkout/payment-options"
+import type { PaymentOptions } from "@/features/settings/schemas/runtime-settings.schema"
 import { formatMoney } from "@/lib/money"
 
 const P = siteConfig.promise
@@ -320,6 +322,8 @@ const PRIVACY: Policy = {
   ],
 }
 
+const PAYMENT_SECTION = "Payment"
+
 const TERMS: Policy = {
   slug: "terms",
   title: "Terms of service",
@@ -409,11 +413,12 @@ const TERMS: Policy = {
     },
     {
       n: "07",
-      title: "Payment",
+      title: PAYMENT_SECTION,
       blocks: [
         {
           type: "p",
-          text: "We accept UPI, cards and netbanking, paid online at checkout; there is no cash on delivery. Payments are handled by Razorpay; we never see your card or UPI credentials.",
+          // For paying online only; termsPolicy() states what is switched on.
+          text: paymentCopy(DEFAULT_PAYMENT_OPTIONS).terms,
         },
       ],
     },
@@ -789,11 +794,28 @@ const RETURNS: Policy = {
 
 export const POLICIES: Policy[] = [PRIVACY, TERMS, SHIPPING, RETURNS]
 
-/** The policy, with the shipping policy stating `rule` - the charge checkout applies. */
+/** The terms, with their payment section stating the ways to pay in force. */
+function termsPolicy(payment: PaymentOptions): Policy {
+  return {
+    ...TERMS,
+    sections: TERMS.sections.map((section) =>
+      section.title === PAYMENT_SECTION
+        ? { ...section, blocks: [{ type: "p", text: paymentCopy(payment).terms }] }
+        : section,
+    ),
+  }
+}
+
+/**
+ * The policy, with the shipping policy stating `rule` - the charge checkout
+ * applies - and the terms stating `payment`, the ways to pay it offers.
+ */
 export function getPolicy(
   slug: string,
   rule: ShippingRule = shippingConfig.fee,
+  payment: PaymentOptions = DEFAULT_PAYMENT_OPTIONS,
 ): Policy | undefined {
   if (slug === SHIPPING.slug) return shippingPolicy(rule)
+  if (slug === TERMS.slug) return termsPolicy(payment)
   return POLICIES.find((p) => p.slug === slug)
 }

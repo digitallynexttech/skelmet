@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
-import { COD_FEE } from "@/lib/constants"
 
 /**
  * Pricing is the one pure module in the money path, and it is the authority -
@@ -27,15 +26,15 @@ describe("priceCart", () => {
     expect(priceCart([line("3499", 1), line("3499", 1)]).itemCount).toBe(2)
   })
 
-  it("adds the COD fee only when paying on delivery", () => {
-    expect(priceCart([line("3499", 1)], { cod: false }).codFee).toBe(0)
-    expect(priceCart([line("3499", 1)], { cod: true }).codFee).toBe(COD_FEE)
+  it("adds a charge for the way of paying only when given one", () => {
+    expect(priceCart([line("3499", 1)]).paymentFee).toBe(0)
+    expect(priceCart([line("3499", 1)], { paymentFee: 100 }).paymentFee).toBe(100)
+    expect(priceCart([line("3499", 1)], { paymentFee: -50 }).paymentFee).toBe(0)
   })
 
-  it("totals subtotal minus discount plus the COD fee", () => {
-    const p = priceCart([line("3499", 2)], { cod: true })
-    expect(p.total).toBe(6998 + COD_FEE)
-    expect(p.total).toBe(7047)
+  it("totals subtotal minus discount plus the charge for paying on delivery", () => {
+    const p = priceCart([line("3499", 2)], { paymentFee: 100 })
+    expect(p.total).toBe(7098)
   })
 
   it("applies a coupon and nothing else", () => {

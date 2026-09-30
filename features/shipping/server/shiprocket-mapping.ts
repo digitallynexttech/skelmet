@@ -1,4 +1,5 @@
 import { shippingConfig, type FeeBasis } from "@/config/shipping"
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 
 /**
  * Translation between our orders and Shiprocket's API, as pure functions.
@@ -20,7 +21,7 @@ export type ShippableOrder = {
   placedAt: Date
   email: string
   phone: string
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
   address: {
     firstName: string
     lastName: string
@@ -33,6 +34,11 @@ export type ShippableOrder = {
   subtotal: number
   discount: number
   shipping: number
+  /** The charge for paying on delivery, part of `total`. */
+  paymentFee: number
+  total: number
+  /** What the courier collects: all of `total` for COD, the balance for PARTIAL. */
+  dueOnDelivery: number
   items: Array<{
     name: string
     sku: string
@@ -102,10 +108,21 @@ export function parcelFor(items: ShippableOrder["items"]): Parcel {
  * label printed "Order Total: ₹1" - below zero, floored. Sent before the
  * coupon, the label reads what the customer actually paid, and that is also
  * the value the courier's liability for a lost parcel is capped at.
+ *
+ * An order paid for at the door goes as "COD", and the courier collects
+ * Shiprocket's order total: sub_total plus the charges, less total_discount.
+ * So the cash-on-delivery charge is sent as `transaction_charges`, which the
+ * total includes, and an advance already paid online is sent as part of
+ * `total_discount` - Shiprocket's API has no field for an amount already
+ * paid - which leaves exactly the balance to collect and to print on the
+ * label.
  */
 export function buildAdhocOrder(order: ShippableOrder, pickupLocation: string) {
   const parcel = parcelFor(order.items)
   const a = order.address
+  const collects = order.paymentMethod !== "ONLINE"
+  const advance =
+    order.paymentMethod === "PARTIAL" ? Math.max(0, round(order.total - order.dueOnDelivery, 2)) : 0
   return {
     order_id: order.number,
     order_date: istStamp(order.placedAt),
@@ -128,9 +145,10 @@ export function buildAdhocOrder(order: ShippableOrder, pickupLocation: string) {
       units: i.qty,
       selling_price: i.unitPrice,
     })),
-    payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
+    payment_method: collects ? "COD" : "Prepaid",
     shipping_charges: order.shipping,
-    total_discount: order.discount,
+    ...(order.paymentFee > 0 ? { transaction_charges: order.paymentFee } : {}),
+    total_discount: round(order.discount + advance, 2),
     sub_total: round(order.subtotal, 2),
     length: parcel.lengthCm,
     breadth: parcel.breadthCm,
@@ -366,6 +384,20 @@ export function courierOptions(body: unknown): {
     .sort((x, y) => Number(y.recommended) - Number(x.recommended) || x.rate - y.rate)
 
   return { options, recommendedId }
+}
+
+/**
+ * How many couriers in a serviceability answer collect payment at the door.
+ * Asked with `cod: 1`, Shiprocket lists the couriers for a COD parcel and
+ * marks each with `cod`; one that says 0 does not collect, and one that does
+ * not say is taken at the question's word.
+ */
+export function collectingCouriers(body: unknown): number {
+  const data = (body as { data?: Record<string, unknown> } | null)?.data
+  const list = Array.isArray(data?.available_courier_companies)
+    ? (data.available_courier_companies as Array<Record<string, unknown>>)
+    : []
+  return list.filter((c) => c.cod === undefined || c.cod === null || Number(c.cod) === 1).length
 }
 
 /**

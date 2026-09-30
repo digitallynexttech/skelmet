@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
     create: vi.fn(),
     updateMany: vi.fn(),
   },
+  refreshPaymentTerms: vi.fn(),
 }))
 
 vi.mock("@/server/db", () => ({ db: { setting: mocks.setting } }))
@@ -21,7 +22,10 @@ vi.mock("@/server/action-guard", () => ({
   can: () => true,
 }))
 vi.mock("@/server/audit", () => ({ createAuditLog: vi.fn(), getAuditMeta: async () => ({}) }))
-vi.mock("@/features/catalog/server/refresh-storefront", () => ({ refreshShippingTerms: vi.fn() }))
+vi.mock("@/features/catalog/server/refresh-storefront", () => ({
+  refreshShippingTerms: vi.fn(),
+  refreshPaymentTerms: mocks.refreshPaymentTerms,
+}))
 vi.mock("@/features/shipping/server/shiprocket", () => ({
   checkLogin: vi.fn(),
   pickupAddress: vi.fn(),
@@ -90,6 +94,48 @@ describe("saving a section", () => {
 
     mocks.setting.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }))
     expect(await service.saveShippingCharge(charge)).toMatchObject({ ok: false, status: 409 })
+  })
+})
+
+describe("the Pay on delivery section", () => {
+  const options = {
+    cod: { offer: "everyone", feeRupees: 100 },
+    partial: { offer: "staff", feeRupees: 0, advanceKind: "PERCENT", advanceValue: 20 },
+  }
+
+  it("shows paying online only until something is saved", async () => {
+    const service = await load()
+    const result = await service.getRuntimeSettings()
+    expect(result.ok && result.data.checkout).toEqual({
+      cod: { offer: "off", feeRupees: 0 },
+      partial: { offer: "off", feeRupees: 0, advanceKind: "PERCENT", advanceValue: 20 },
+      source: "default",
+    })
+  })
+
+  it("saves the ways to pay and refreshes the pages that state them", async () => {
+    const service = await load()
+    const result = await service.savePaymentOptions({ ...options, version: SAVED_AT.toISOString() })
+    expect(result.ok).toBe(true)
+    expect(mocks.setting.updateMany).toHaveBeenCalledWith({
+      where: { key: "checkout", updatedAt: SAVED_AT },
+      data: { value: options, updatedBy: "admin-1" },
+    })
+    expect(mocks.refreshPaymentTerms).toHaveBeenCalledTimes(1)
+  })
+
+  it("refuses a charge or an advance that is not a whole, sensible number", async () => {
+    const service = await load()
+    for (const bad of [
+      { ...options, cod: { offer: "everyone", feeRupees: -5 } },
+      { ...options, cod: { offer: "sometimes", feeRupees: 0 } },
+      { ...options, partial: { ...options.partial, advanceValue: 100 } },
+      { ...options, partial: { ...options.partial, advanceValue: 0 } },
+    ]) {
+      expect(await service.savePaymentOptions(bad)).toMatchObject({ ok: false, status: 422 })
+    }
+    expect(mocks.setting.updateMany).not.toHaveBeenCalled()
+    expect(mocks.refreshPaymentTerms).not.toHaveBeenCalled()
   })
 })
 

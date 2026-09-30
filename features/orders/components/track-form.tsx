@@ -14,12 +14,14 @@ import {
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { statusLabelFor } from "@/features/checkout/payment-options"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import type { TrackedOrder } from "@/features/orders/server/track.service"
 import { siteConfig } from "@/config/site"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import { formatDay, formatEta } from "@/lib/delivery"
 import type { OrderStatus } from "@/lib/constants"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const P = siteConfig.promise
@@ -151,6 +153,11 @@ function OrderResult({ order }: { order: TrackedOrder }) {
   const [copied, setCopied] = React.useState(false)
   const status = order.status as OrderStatus
   const placed = formatDay(order.placedAt)
+  // Still to be paid at the door: nothing once it is delivered, or called off.
+  const due =
+    Number(order.dueOnDelivery) > 0 && !order.deliveredAt && !OFF_PATH.has(status)
+      ? order.dueOnDelivery
+      : null
 
   // The courier's own estimate wins once it has given one: it knows where the
   // parcel is. Until then, the far end of the published window.
@@ -191,7 +198,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
     <div className="rounded-card bg-carbon border border-white/10 p-6 sm:p-7">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <span className="font-display text-bone text-[24px] tracking-[0.06em]">{order.number}</span>
-        <StatusBadge status={status} />
+        <StatusBadge status={status} label={statusLabelFor(status, order.paymentMethod)} />
       </div>
       {placed ? (
         <p className="text-dim mb-5 text-[12.5px]">
@@ -225,6 +232,17 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         </div>
       ) : null}
 
+      {due ? (
+        <div className="rounded-tile mb-6 flex items-center justify-between gap-3 border border-white/[0.12] px-4 py-3.5">
+          <span className="text-dim font-mono text-[11px] tracking-[0.14em] uppercase">
+            To pay the courier
+          </span>
+          <span className="text-bone font-mono text-[14px] font-bold tracking-[0.06em]">
+            {formatMoney(due)}
+          </span>
+        </div>
+      ) : null}
+
       <ul className="mb-6 flex flex-col gap-1.5">
         {order.items.map((item) => (
           <li key={item.name} className="text-ash text-[14px] leading-[1.5]">
@@ -241,6 +259,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         <div className="border-t border-white/[0.08] pt-5">
           <OrderTimeline
             status={status}
+            paymentMethod={order.paymentMethod}
             dates={{
               placedAt: order.placedAt,
               shippedAt: order.shippedAt,
@@ -294,7 +313,8 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         </div>
       ) : !OFF_PATH.has(status) ? (
         <p className="text-dim mt-5 border-t border-white/[0.08] pt-5 text-[13px] leading-[1.5]">
-          No courier assigned yet. We dispatch within {P.dispatchHours} hours of payment.
+          No courier assigned yet. We dispatch within {P.dispatchHours} hours of{" "}
+          {order.paymentMethod === "COD" ? "your order" : "payment"}.
         </p>
       ) : null}
     </div>

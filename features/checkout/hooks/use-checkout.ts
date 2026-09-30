@@ -125,10 +125,14 @@ export function useCheckout() {
 
         const rz = new window.Razorpay({
           key: started.gatewayKeyId!,
-          amount: Math.round(Number(started.total) * 100),
+          // The whole order, or only its advance when the rest is paid on delivery.
+          amount: Math.round(Number(started.payNow) * 100),
           currency: "INR",
           name: "SKELMET",
-          description: `Order ${started.orderNumber}`,
+          description:
+            started.paymentMethod === "PARTIAL"
+              ? `Advance for order ${started.orderNumber}`
+              : `Order ${started.orderNumber}`,
           order_id: started.gatewayOrderId,
           prefill: {
             name: `${input.address.firstName} ${input.address.lastName}`.trim(),

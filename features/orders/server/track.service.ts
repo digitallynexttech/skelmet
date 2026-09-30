@@ -1,5 +1,6 @@
 import "server-only"
 
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { trackOrderSchema } from "@/features/orders/schemas/track.schema"
 import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
 import { hasDatabase } from "@/lib/env"
@@ -21,12 +22,14 @@ import { db } from "@/server/db"
  *  - The email is compared, never returned. Nothing here echoes a field the
  *    caller did not already supply.
  *  - No address, no phone, no payment identifiers - a courier status is all
- *    anyone needs from this screen.
+ *    anyone needs from this screen, and what they still owe at the door.
  */
 export type TrackedOrder = {
   number: string
   status: string
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
+  /** What the courier collects on delivery; "0" when it was all paid online. */
+  dueOnDelivery: string
   placedAt: string | null
   itemCount: number
   items: { name: string; qty: number }[]
@@ -59,6 +62,7 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
         email: true,
         status: true,
         paymentMethod: true,
+        dueOnDelivery: true,
         placedAt: true,
         createdAt: true,
         items: { select: { nameSnapshot: true, qty: true } },
@@ -86,6 +90,7 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
       number: order.number,
       status: order.status,
       paymentMethod: order.paymentMethod,
+      dueOnDelivery: order.dueOnDelivery.toString(),
       placedAt: (order.placedAt ?? order.createdAt).toISOString(),
       itemCount: order.items.reduce((sum, i) => sum + i.qty, 0),
       items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),

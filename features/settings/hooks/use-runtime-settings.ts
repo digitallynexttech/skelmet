@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import type {
   PaymentMode,
+  PaymentOptions,
   PaymentSettingsInput,
   RuntimeSettingsView,
   SettingVersions,
@@ -75,6 +76,16 @@ export function useRuntimeSettingsMutations() {
     onError: reloadOnConflict,
   })
 
+  const saveCheckout = useMutation({
+    mutationFn: mutationWithToast(
+      (input: PaymentOptions) =>
+        patch("/api/admin/settings/checkout", { ...input, version: versionOf("checkout") }),
+      { loading: "Saving the ways to pay…", success: "Ways to pay saved" },
+    ),
+    onSuccess: put,
+    onError: reloadOnConflict,
+  })
+
   const testPayment = useMutation({
     mutationFn: mutationWithToast(
       (mode: PaymentMode) =>
@@ -97,5 +108,5 @@ export function useRuntimeSettingsMutations() {
     ),
   })
 
-  return { savePayment, saveShiprocket, saveShipping, testPayment, testShiprocket }
+  return { savePayment, saveShiprocket, saveShipping, saveCheckout, testPayment, testShiprocket }
 }

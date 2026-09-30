@@ -7,6 +7,11 @@ import { ArrowLeft, Mail, MapPin, Phone, ShoppingBag } from "lucide-react"
 import { Money } from "@/components/shared/money"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column } from "@/components/ui/data-table"
+import {
+  PAYMENT_METHOD_SHORT,
+  statusLabelFor,
+  type PaymentMethod,
+} from "@/features/checkout/payment-options"
 import type { CustomerDetail, CustomerOrder } from "@/features/customers/server/customers.service"
 import { apiFetch } from "@/lib/api-fetch"
 import type { OrderStatus } from "@/lib/constants"
@@ -22,6 +27,9 @@ const day = (iso: string | null) =>
     ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
     : "—"
 
+/** The order's way of paying, as the orders table names it. */
+const paymentLabel = (method: string) => PAYMENT_METHOD_SHORT[method as PaymentMethod] ?? method
+
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", {
     day: "2-digit",
@@ -32,7 +40,7 @@ const when = (iso: string) =>
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md bg-carbon border border-white/[0.09] px-5 py-4">
+    <div className="bg-carbon rounded-md border border-white/[0.09] px-5 py-4">
       <div className="text-dim mb-1.5 font-mono text-[10px] tracking-[0.16em] uppercase">
         {label}
       </div>
@@ -85,13 +93,20 @@ export function CustomerDetailView({ id }: { id: string }) {
       key: "status",
       header: "Status",
       value: (o) => o.status,
-      cell: (o) => <StatusBadge status={o.status as OrderStatus} />,
+      cell: (o) => (
+        <StatusBadge
+          status={o.status as OrderStatus}
+          label={statusLabelFor(o.status, o.paymentMethod as PaymentMethod)}
+        />
+      ),
     },
     {
       key: "payment",
       header: "Payment",
-      value: (o) => o.paymentMethod,
-      cell: (o) => <span className="text-ash font-mono text-[12px]">{o.paymentMethod}</span>,
+      value: (o) => paymentLabel(o.paymentMethod),
+      cell: (o) => (
+        <span className="text-ash font-mono text-[12px]">{paymentLabel(o.paymentMethod)}</span>
+      ),
     },
     {
       key: "items",
@@ -210,7 +225,7 @@ export function CustomerDetailView({ id }: { id: string }) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
-        <div className="rounded-md bg-carbon border border-white/[0.09] p-5">
+        <div className="bg-carbon rounded-md border border-white/[0.09] p-5">
           <div className="text-dim mb-4 flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] uppercase">
             <MapPin className="text-ember size-3.5" strokeWidth={1.9} />
             Ships to
@@ -259,7 +274,7 @@ export function CustomerDetailView({ id }: { id: string }) {
             exportColumns={[
               { header: "Order", value: (o) => o.number },
               { header: "Status", value: (o) => o.status },
-              { header: "Payment", value: (o) => o.paymentMethod },
+              { header: "Payment", value: (o) => paymentLabel(o.paymentMethod) },
               { header: "Items", value: (o) => o.itemCount },
               { header: "Total", value: (o) => Number(o.total) },
               { header: "Placed", value: (o) => when(o.placedAt ?? o.createdAt) },

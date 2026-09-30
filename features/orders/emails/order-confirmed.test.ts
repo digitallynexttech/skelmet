@@ -35,6 +35,18 @@ describe("renderOrderConfirmed", () => {
     expect(m.text).not.toMatch(/^Paid:/m)
   })
 
+  it("states both halves of an order with an advance, and never calls all of it paid", () => {
+    const m = renderOrderConfirmed({ ...base, paymentMethod: "PARTIAL", dueOnDelivery: "2838" })
+    for (const body of [m.text, m.html]) {
+      expect(body).toMatch(/Paid now/)
+      expect(body).toContain("₹710")
+      expect(body).toMatch(/Due on delivery/)
+      expect(body).toContain("₹2,838")
+    }
+    expect(m.text).not.toMatch(/^Paid:/m)
+    expect(m.text).not.toMatch(/cash on delivery/i)
+  })
+
   it("says paid for an online order", () => {
     const m = renderOrderConfirmed({ ...base, paymentMethod: "ONLINE" })
     expect(m.text).toMatch(/Paid:/)

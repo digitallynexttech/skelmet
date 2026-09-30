@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react"
 
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import type { OrderStatus } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
@@ -23,6 +24,17 @@ const LABELS: Record<(typeof FLOW)[number], string> = {
   DELIVERED: "Delivered",
 }
 
+/**
+ * The first step, by how the order is paid for: nothing has been paid on a
+ * cash-on-delivery order, and only part of one with an advance, so neither
+ * may read "Payment confirmed".
+ */
+const FIRST_STEP: Record<PaymentMethod, string> = {
+  ONLINE: LABELS.PAID,
+  PARTIAL: "Advance paid",
+  COD: "Order confirmed",
+}
+
 export type TimelineDates = {
   placedAt: string | null
   shippedAt: string | null
@@ -37,9 +49,18 @@ function formatDay(iso: string | null): string | null {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
 }
 
-export function OrderTimeline({ status, dates }: { status: OrderStatus; dates: TimelineDates }) {
+export function OrderTimeline({
+  status,
+  dates,
+  paymentMethod = "ONLINE",
+}: {
+  status: OrderStatus
+  dates: TimelineDates
+  paymentMethod?: PaymentMethod
+}) {
   // PENDING sits before the rail entirely - nothing has happened yet.
-  const reached = (FLOW as readonly string[]).indexOf(status)
+  // CONFIRMED is cash on delivery's first step, where PAID is everyone else's.
+  const reached = status === "CONFIRMED" ? 0 : (FLOW as readonly string[]).indexOf(status)
 
   // Only PACKED has no timestamp of its own on the order, so it borrows the
   // step's position rather than inventing a date.
@@ -75,7 +96,7 @@ export function OrderTimeline({ status, dates }: { status: OrderStatus; dates: T
                 "relative z-10 grid size-[23px] shrink-0 place-items-center rounded-full border transition-colors",
                 done
                   ? "border-ember/70 bg-ember/15 text-ember"
-                  : "border-white/[0.14] bg-carbon text-white/20",
+                  : "bg-carbon border-white/[0.14] text-white/20",
                 current && "ring-ember/20 ring-4",
               )}
             >
@@ -93,7 +114,7 @@ export function OrderTimeline({ status, dates }: { status: OrderStatus; dates: T
                   current ? "text-bone font-medium" : done ? "text-ash" : "text-dim",
                 )}
               >
-                {LABELS[step]}
+                {step === "PAID" ? FIRST_STEP[paymentMethod] : LABELS[step]}
               </span>
               <span className="text-dim shrink-0 font-mono text-[11px] tracking-[0.04em]">
                 {day ?? "-"}

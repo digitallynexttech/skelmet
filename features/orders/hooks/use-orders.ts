@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { apiFetch } from "@/lib/api-fetch"
 import { MAX_PAGE_SIZE, type OrderScope, type OrderStatus } from "@/lib/constants"
 import { mutationWithToast } from "@/lib/query"
@@ -11,7 +12,7 @@ export type OrderRow = {
   id: string
   number: string
   status: OrderStatus
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
   email: string
   phone: string
   total: string
@@ -26,14 +27,18 @@ export type OrderDetail = {
   id: string
   number: string
   status: OrderStatus
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
   email: string
   phone: string
   subtotal: string
   discount: string
   shipping: string
+  /** The charge for paying on delivery, part of `total`. */
+  paymentFee: string
   tax: string
   total: string
+  /** What the courier collects: the total for COD, the balance for PARTIAL. */
+  dueOnDelivery: string
   shippingAddress: Record<string, string | boolean>
   createdAt: string
   placedAt: string | null

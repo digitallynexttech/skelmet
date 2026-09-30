@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { pageMetadata } from "@/components/marketing/page-metadata"
 import { PolicyPage } from "@/features/policies/components/policy-page"
 import { POLICIES, getPolicy } from "@/features/policies/policies"
-import { shippingCharge } from "@/features/settings/server/runtime-settings"
+import { paymentOptions, shippingCharge } from "@/features/settings/server/runtime-settings"
 
 type Params = { slug: string }
 
@@ -16,8 +16,9 @@ type Params = { slug: string }
  * /policies/referral became exactly that when the referral programme went.
  *
  * Not `dynamicParams = false`, which did that job before: the shipping policy
- * states the shipping charge set in Settings, a change there refreshes this
- * page, and a refreshed page limited to its prerendered params 404s itself.
+ * states the shipping charge set in Settings and the terms the ways to pay, a
+ * change there refreshes this page, and a refreshed page limited to its
+ * prerendered params 404s itself.
  */
 export const revalidate = 60
 
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function PolicyRoute({ params }: { params: Promise<Params> }) {
   const { slug } = await params
-  const policy = getPolicy(slug, await shippingCharge())
+  const policy = getPolicy(slug, await shippingCharge(), await paymentOptions())
   if (!policy) notFound()
 
   return <PolicyPage policy={policy} />

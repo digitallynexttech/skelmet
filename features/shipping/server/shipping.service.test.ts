@@ -95,3 +95,44 @@ describe("checkPincode", () => {
     expect(mocks.serviceability.mock.calls.length).toBe(calls + 1)
   })
 })
+
+describe("collectsOnDelivery", () => {
+  const couriers = (...cod: number[]) => ({
+    data: {
+      available_courier_companies: cod.map((c, i) => ({ courier_company_id: i + 1, cod: c })),
+    },
+  })
+
+  it("asks Shiprocket for a COD parcel, and says whether any courier collects", async () => {
+    mocks.serviceability.mockResolvedValue(couriers(0, 1))
+    expect(await service.collectsOnDelivery("302001", 2)).toBe(true)
+    expect(mocks.serviceability).toHaveBeenCalledWith(
+      expect.objectContaining({ delivery_postcode: "302001", pickup_postcode: "201301", cod: 1 }),
+    )
+
+    mocks.serviceability.mockResolvedValue(couriers(0))
+    expect(await service.collectsOnDelivery("302002", 1)).toBe(false)
+  })
+
+  it("keeps the answer, and forgets it with the pincode checks", async () => {
+    mocks.serviceability.mockResolvedValue(couriers(1))
+    await service.collectsOnDelivery("302001", 1)
+    await service.collectsOnDelivery("302001", 1)
+    expect(mocks.serviceability).toHaveBeenCalledTimes(1)
+
+    service.forgetPincodeChecks()
+    await service.collectsOnDelivery("302001", 1)
+    expect(mocks.serviceability).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not know, rather than refusing, when Shiprocket fails or is slow", async () => {
+    mocks.serviceability.mockRejectedValue(new Error("Shiprocket: 502"))
+    expect(await service.collectsOnDelivery("302001", 1)).toBeNull()
+
+    vi.useFakeTimers()
+    mocks.serviceability.mockReturnValue(new Promise(() => {}))
+    const pending = service.collectsOnDelivery("302003", 1)
+    await vi.advanceTimersByTimeAsync(service.PINCODE_BUDGET_MS + 10)
+    expect(await pending).toBeNull()
+  })
+})

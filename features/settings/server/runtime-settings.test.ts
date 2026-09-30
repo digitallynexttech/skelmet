@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
 import { shippingConfig } from "@/config/shipping"
+import { DEFAULT_PAYMENT_OPTIONS } from "@/features/checkout/payment-options"
 import {
   modeOfKey,
   resolvePayment,
+  resolvePaymentOptions,
   resolveShipping,
   resolveShiprocket,
 } from "@/features/settings/server/runtime-settings"
@@ -199,5 +201,44 @@ describe("resolveShipping", () => {
     ]) {
       expect(resolveShipping(bad)).toEqual(shippingConfig.fee)
     }
+  })
+})
+
+describe("resolvePaymentOptions", () => {
+  const saved = {
+    cod: { offer: "everyone" as const, feeRupees: 100 },
+    partial: {
+      offer: "staff" as const,
+      feeRupees: 0,
+      advanceKind: "FLAT" as const,
+      advanceValue: 500,
+    },
+  }
+
+  it("is paying online only until something is saved", () => {
+    expect(resolvePaymentOptions(undefined)).toEqual(DEFAULT_PAYMENT_OPTIONS)
+    expect(resolvePaymentOptions(undefined).cod.offer).toBe("off")
+  })
+
+  it("is what was saved once saved", () => {
+    expect(resolvePaymentOptions(saved)).toEqual(saved)
+  })
+
+  it("never switches paying on delivery on from a row it cannot read as a whole", () => {
+    for (const bad of [
+      { cod: saved.cod },
+      { ...saved, cod: { offer: "everyone", feeRupees: -1 } },
+      { ...saved, cod: { offer: "yes", feeRupees: 0 } },
+      { ...saved, partial: { ...saved.partial, advanceKind: "PERCENT", advanceValue: 120 } },
+      "everyone",
+      [],
+    ]) {
+      expect(resolvePaymentOptions(bad)).toEqual(DEFAULT_PAYMENT_OPTIONS)
+    }
+  })
+
+  it("hands back a copy, so nothing can edit the default", () => {
+    resolvePaymentOptions(undefined).cod.offer = "everyone"
+    expect(resolvePaymentOptions(undefined).cod.offer).toBe("off")
   })
 })

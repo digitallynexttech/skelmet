@@ -202,6 +202,7 @@ async function loadInvoiceOrder(orderId: string, issued: Issued): Promise<Invoic
       shippingAddress: true,
       discount: true,
       shipping: true,
+      paymentFee: true,
       total: true,
       createdAt: true,
       placedAt: true,
@@ -250,6 +251,7 @@ async function loadInvoiceOrder(orderId: string, issued: Issued): Promise<Invoic
     })),
     discount: Number(order.discount),
     shipping: Number(order.shipping),
+    paymentFee: Number(order.paymentFee),
     total: Number(order.total),
     couponCode: order.coupon?.code ?? null,
     payment: {

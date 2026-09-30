@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { PAYMENT_METHOD_SHORT, statusLabelFor } from "@/features/checkout/payment-options"
 import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
 import {
   ORDER_STATUS_COLORS,
@@ -25,9 +26,9 @@ import { useUrlState } from "@/hooks/use-url-state"
 import { cn } from "@/lib/utils"
 
 /**
- * The two boards one table serves. Orders is the working list - paid, and
- * everything that happens after. All orders adds the ones never paid for,
- * which Abandoned carts follows up on.
+ * The two boards one table serves. Orders is the working list - paid, or
+ * cash on delivery accepted, and everything that happens after. All orders
+ * adds the ones never paid for, which Abandoned carts follows up on.
  */
 const SCOPES: Record<
   OrderScope,
@@ -36,18 +37,18 @@ const SCOPES: Record<
   paid: {
     title: "Orders",
     description:
-      "Paid orders and every stage after, newest first. Unpaid ones are under All orders and Abandoned carts. Search by order number, email or phone.",
-    all: "All paid",
+      "Orders to fulfil - paid, or cash on delivery - and every stage after, newest first. Ones still waiting for an online payment are under All orders and Abandoned carts. Search by order number, email or phone.",
+    all: "All to fulfil",
     exportName: "orders",
-    // Seven tiles: four then three, or one row once there is room.
-    tiles: "lg:grid-cols-4 xl:grid-cols-7",
+    // Eight tiles: two rows of four, or one row once there is room.
+    tiles: "lg:grid-cols-4 xl:grid-cols-8",
   },
   all: {
     title: "All orders",
     description: "Every order, paid or not, newest first. Search by order number, email or phone.",
     all: "All",
     exportName: "all-orders",
-    // Nine tiles: five then four. Nine in a row left each too narrow for its label.
+    // Ten tiles: two rows of five. In one row each was too narrow for its label.
     tiles: "lg:grid-cols-5",
   },
 }
@@ -73,7 +74,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   const copy = SCOPES[scope]
   const statuses = statusesIn(scope)
   const filters: Array<{ label: string; value: OrderStatus | "ALL" }> = [
-    { label: scope === "paid" ? "All paid orders" : "All orders", value: "ALL" },
+    { label: scope === "paid" ? "All orders to fulfil" : "All orders", value: "ALL" },
     ...statuses.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s })),
   ]
 
@@ -114,7 +115,19 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       key: "status",
       header: "Status",
       value: (o) => o.status,
-      cell: (o) => <StatusBadge status={o.status} />,
+      cell: (o) => (
+        <StatusBadge status={o.status} label={statusLabelFor(o.status, o.paymentMethod)} />
+      ),
+    },
+    {
+      key: "payment",
+      header: "Payment",
+      value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod],
+      cell: (o) => (
+        <span className="text-ash font-mono text-[12px]">
+          {PAYMENT_METHOD_SHORT[o.paymentMethod]}
+        </span>
+      ),
     },
     {
       key: "customer",
@@ -241,7 +254,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           exportColumns={[
             { header: "Order", value: (o) => o.number },
             { header: "Status", value: (o) => o.status },
-            { header: "Payment", value: (o) => o.paymentMethod },
+            { header: "Payment", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
             { header: "Customer", value: (o) => o.customer },
             { header: "Email", value: (o) => o.email },
             { header: "Phone", value: (o) => o.phone },

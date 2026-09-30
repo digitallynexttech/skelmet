@@ -4,6 +4,7 @@ import { shippingConfig } from "@/config/shipping"
 import {
   bareMobile,
   buildAdhocOrder,
+  collectingCouriers,
   courierOptions,
   deliveryEstimate,
   istStamp,
@@ -44,6 +45,9 @@ const order: ShippableOrder = {
   subtotal: 3499,
   discount: 500,
   shipping: 0,
+  paymentFee: 0,
+  total: 2999,
+  dueOnDelivery: 0,
   items: [
     {
       name: "Flame Skull Mount · Blaze",
@@ -79,6 +83,44 @@ describe("buildAdhocOrder", () => {
   it("is prepaid for an online order and COD for a cash one", () => {
     expect(payload.payment_method).toBe("Prepaid")
     expect(buildAdhocOrder({ ...order, paymentMethod: "COD" }, "x").payment_method).toBe("COD")
+  })
+
+  /** What Shiprocket makes the order total, which is what a COD courier collects. */
+  const collected = (p: ReturnType<typeof buildAdhocOrder>) =>
+    p.sub_total + p.shipping_charges + (p.transaction_charges ?? 0) - p.total_discount
+
+  it("has the courier collect the whole total of a cash order, its charge included", () => {
+    const cod: ShippableOrder = {
+      ...order,
+      paymentMethod: "COD",
+      shipping: 60,
+      paymentFee: 100,
+      total: 3159,
+      dueOnDelivery: 3159,
+    }
+    const p = buildAdhocOrder(cod, "x")
+    expect(p.transaction_charges).toBe(100)
+    expect(p.total_discount).toBe(500)
+    expect(collected(p)).toBe(3159)
+  })
+
+  it("has the courier collect only the balance of an order with an advance paid", () => {
+    const partial: ShippableOrder = {
+      ...order,
+      paymentMethod: "PARTIAL",
+      total: 2999,
+      dueOnDelivery: 2399,
+    }
+    const p = buildAdhocOrder(partial, "x")
+    expect(p.payment_method).toBe("COD")
+    // The coupon's 500 and the 600 already paid online.
+    expect(p.total_discount).toBe(1100)
+    expect(collected(p)).toBe(2399)
+  })
+
+  it("sends no charge, and only the coupon, for an order paid online", () => {
+    expect(payload).not.toHaveProperty("transaction_charges")
+    expect(payload.total_discount).toBe(500)
   })
 
   it("sends the sub-total before the coupon, which Shiprocket takes off itself", () => {
@@ -365,5 +407,31 @@ describe("what shipping costs, and what the buyer pays", () => {
     expect(shippingConfig.fee).toMatchObject({ aboveRupees: 300, sharePercent: 50 })
     expect(shippingFeeFor(500)).toBe(100)
     expect(shippingFeeFor(300)).toBe(0)
+  })
+})
+
+describe("collectingCouriers", () => {
+  const couriers = (...list: unknown[]) => ({ data: { available_courier_companies: list } })
+
+  it("counts the couriers that take payment at the door", () => {
+    expect(
+      collectingCouriers(
+        couriers(
+          { courier_company_id: 1, cod: 1 },
+          { courier_company_id: 2, cod: "1" },
+          { courier_company_id: 3, cod: 0 },
+        ),
+      ),
+    ).toBe(2)
+  })
+
+  it("takes a courier that does not say at the question's word", () => {
+    expect(collectingCouriers(couriers({ courier_company_id: 1 }))).toBe(1)
+  })
+
+  it("is none when nobody delivers, or the answer is not one", () => {
+    expect(collectingCouriers(couriers())).toBe(0)
+    expect(collectingCouriers({ data: {} })).toBe(0)
+    expect(collectingCouriers(null)).toBe(0)
   })
 })

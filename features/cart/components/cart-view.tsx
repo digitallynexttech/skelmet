@@ -54,7 +54,7 @@ export function CartView({ prices }: { prices: Record<string, string> }) {
   const [coupon, setCouponApplied] = React.useState<AppliedCoupon | null>(null)
   // The coupon comes off the total here as it does at checkout and on the
   // server. The cart used to list the discount and leave the total alone.
-  const totals = calculateTotals(items, false, coupon?.discount ?? 0)
+  const totals = calculateTotals(items, coupon?.discount ?? 0)
 
   if (!mounted) {
     // The page's own heading and blocks the size of a line and the summary -

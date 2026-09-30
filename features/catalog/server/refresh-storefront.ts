@@ -41,3 +41,8 @@ export function refreshStorefront(): void {
 export function refreshShippingTerms(): void {
   refresh([...productPages(), "/policies/shipping"])
 }
+
+/** After the ways to pay change: every page with the FAQ on it, and the terms. */
+export function refreshPaymentTerms(): void {
+  refresh(["/", "/faq", "/contact", ...productPages(), "/policies/terms"])
+}

@@ -1,4 +1,5 @@
 import { invoiceConfig } from "@/config/invoice"
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { rupeesInWords } from "@/lib/amount-in-words"
 import { GST_STATE_CODE, matchState } from "@/lib/india"
 
@@ -6,8 +7,9 @@ import { GST_STATE_CODE, matchState } from "@/lib/india"
  * A tax invoice for one order, worked out from what the customer paid.
  *
  * Prices on the site include GST, so nothing is added on top: every amount
- * the order charged - each line, shipping, less the discount - is taken back
- * to its value before tax, and the tax is the rest. The invoice total is
+ * the order charged - each line, shipping, the charge for paying on delivery,
+ * less the discount - is taken back to its value before tax, and the tax is
+ * the rest. The invoice total is
  * therefore always exactly the order total, to the paisa.
  *
  * Tax is IGST when the goods go to another state than the seller's, and CGST
@@ -34,9 +36,11 @@ export type InvoiceOrder = {
   items: Array<{ name: string; sku: string; qty: number; unitPrice: number }>
   discount: number
   shipping: number
+  /** The charge for paying on delivery, part of `total`. */
+  paymentFee: number
   total: number
   couponCode: string | null
-  payment: { method: "ONLINE" | "COD"; reference: string | null }
+  payment: { method: PaymentMethod; reference: string | null }
   shipment: { courier: string; awb: string | null } | null
 }
 
@@ -91,6 +95,15 @@ export function buildInvoice(order: InvoiceOrder): Invoice {
       qty: null,
       rate: null,
       amount: beforeTax(order.shipping),
+    })
+  }
+  if (order.paymentFee > 0) {
+    rows.push({
+      description: "Pay-on-delivery charges",
+      hsn: null,
+      qty: null,
+      rate: null,
+      amount: beforeTax(order.paymentFee),
     })
   }
   if (order.discount > 0) {
@@ -168,8 +181,10 @@ export function creditNoteNumber(fy: string, sequence: number): string {
 /**
  * How the invoice states the terms of payment. Money that came through the
  * gateway is prepaid, whatever the order's method field says - an online
- * payment must never read as cash on delivery on a tax document.
+ * payment must never read as cash on delivery on a tax document. An advance
+ * is the one case that is both: part prepaid, the rest at the door.
  */
 export function paymentTerms(payment: InvoiceOrder["payment"]): string {
+  if (payment.method === "PARTIAL") return "Advance online, balance on delivery"
   return payment.method === "COD" && !payment.reference ? "Cash on delivery" : "Prepaid online"
 }

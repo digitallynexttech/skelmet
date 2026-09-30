@@ -36,27 +36,41 @@ export const metadata: Metadata = {
  *
  * It used to treat every PENDING order as cash on delivery and everything
  * else as paid - so an online payment still clearing read "pay the courier on
- * delivery", and a cancelled order read "Payment confirmed". Cash on delivery
- * is withdrawn; its wording stays only for orders placed as COD before that.
+ * delivery", and a cancelled order read "Payment confirmed". Now the way the
+ * order is paid for decides: cash on delivery is never "paid" until it has
+ * been delivered, and an advance is only ever called an advance.
  */
-type Stage = "paid" | "processing" | "cod" | "cancelled"
+type Stage = "paid" | "advance" | "processing" | "cod" | "cancelled"
 
 function stageOf(order: Confirmation): Stage {
   if (order.status === "CANCELLED") return "cancelled"
-  if (order.status !== "PENDING") return "paid"
-  return order.paymentMethod === "COD" ? "cod" : "processing"
+  if (order.paymentMethod === "COD" && order.status !== "DELIVERED") return "cod"
+  if (order.status === "PENDING") return "processing"
+  return order.paymentMethod === "PARTIAL" && order.status !== "DELIVERED" ? "advance" : "paid"
 }
 
 const HEADLINE: Record<Exclude<Stage, "cancelled">, string> = {
   paid: "Payment confirmed",
+  advance: "Advance paid · balance on delivery",
   cod: "Order confirmed · pay on delivery",
   processing: "Payment processing",
 }
 
 const AMOUNT_LABEL: Record<Exclude<Stage, "cancelled">, string> = {
   paid: "Total paid",
+  advance: "Paid now",
   cod: "Due on delivery",
   processing: "Amount due",
+}
+
+/**
+ * The amount beside that label. What is paid online for an order with an
+ * advance is the advance - paid, or still clearing - not the order's total.
+ */
+function amountFor(order: Confirmation, stage: Stage): number {
+  const total = Number(order.total)
+  if (order.paymentMethod !== "PARTIAL" || stage === "paid") return total
+  return Math.round((total - Number(order.dueOnDelivery)) * 100) / 100
 }
 
 /**
@@ -74,9 +88,11 @@ function timelineFor(order: Confirmation, stage: Stage) {
       body:
         stage === "paid"
           ? "Payment cleared and your mount is reserved."
-          : stage === "cod"
-            ? "Your mount is reserved. You pay the courier on delivery."
-            : "Your payment is clearing. We email you as soon as it does.",
+          : stage === "advance"
+            ? `Your advance cleared and your mount is reserved. The remaining ${formatMoney(order.dueOnDelivery)} is paid to the courier on delivery.`
+            : stage === "cod"
+              ? "Your mount is reserved. You pay the courier on delivery."
+              : "Your payment is clearing. We email you as soon as it does.",
       done: true,
     },
     {
@@ -251,7 +267,12 @@ export default async function ThankYouPage({
                 {AMOUNT_LABEL[stage]}
               </dt>
               <dd className="font-display text-bone text-[20px] leading-[1.12]">
-                {formatMoney(order.total)}
+                {formatMoney(amountFor(order, stage))}
+                {order.paymentMethod === "PARTIAL" && stage !== "paid" ? (
+                  <span className="text-ash block font-sans text-[12px] leading-[1.4] tracking-normal">
+                    + {formatMoney(order.dueOnDelivery)} on delivery
+                  </span>
+                ) : null}
               </dd>
             </div>
           </dl>

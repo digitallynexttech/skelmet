@@ -4,7 +4,6 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 import { COLOURWAYS, FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
-import { COD_FEE } from "@/lib/constants"
 
 /**
  * Guest cart.
@@ -38,7 +37,8 @@ export type CartTotals = {
   /** The coupon's share of `discount`, so a screen can name it separately. */
   couponOff: number
   shipping: number
-  codFee: number
+  /** What the way of paying adds - the cash-on-delivery charge. */
+  paymentFee: number
   total: number
 }
 
@@ -154,9 +154,9 @@ export const useCart = create<CartState>()(
  */
 export function calculateTotals(
   items: CartLine[],
-  codSelected = false,
   couponOff = 0,
   shippingFee = 0,
+  paymentFee = 0,
 ): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
   // In paise, as the server sums it, so the preview and the charge agree.
@@ -169,7 +169,8 @@ export function calculateTotals(
 
   // From the pincode check at checkout; 0 until a pincode has been checked.
   const shipping = Math.max(0, Math.round(shippingFee))
-  const codFee = codSelected ? COD_FEE : 0
+  // The charge for the way of paying chosen at checkout; 0 anywhere else.
+  const fee = Math.max(0, Math.round(paymentFee))
 
   return {
     itemCount,
@@ -177,8 +178,8 @@ export function calculateTotals(
     discount,
     couponOff: discount,
     shipping,
-    codFee,
-    total: subtotal - discount + shipping + codFee,
+    paymentFee: fee,
+    total: subtotal - discount + shipping + fee,
   }
 }
 

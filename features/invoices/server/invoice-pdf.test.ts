@@ -26,6 +26,7 @@ const order: InvoiceOrder = {
   items: [{ name: "Flame Skull Helmet Mount", sku: "SKM-BLZ", qty: 1, unitPrice: 3499 }],
   discount: 0,
   shipping: 0,
+  paymentFee: 0,
   total: 3499,
   couponCode: null,
   payment: { method: "ONLINE", reference: "pay_X" },

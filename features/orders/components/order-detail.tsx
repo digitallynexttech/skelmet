@@ -26,6 +26,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import {
+  PAYMENT_METHOD_LABEL,
+  statusLabelFor,
+  type PaymentMethod,
+} from "@/features/checkout/payment-options"
+import {
   useCourierOptions,
   useOrder,
   useOrderAction,
@@ -43,7 +48,16 @@ const TIMELINE: Array<{ status: OrderStatus; label: string; Icon: typeof Truck }
   { status: "DELIVERED", label: "Delivered", Icon: Home },
 ]
 
-const ORDER_OF = (s: OrderStatus) => TIMELINE.findIndex((t) => t.status === s)
+/** CONFIRMED is cash on delivery's first step, where PAID is everyone else's. */
+const ORDER_OF = (s: OrderStatus) =>
+  s === "CONFIRMED" ? 0 : TIMELINE.findIndex((t) => t.status === s)
+
+/** The first step's name: nothing is paid on a COD order, and only part with an advance. */
+const FIRST_STEP: Record<PaymentMethod, string> = {
+  ONLINE: "Paid",
+  PARTIAL: "Advance paid",
+  COD: "Confirmed",
+}
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -535,6 +549,10 @@ export function OrderDetailView({ id }: { id: string }) {
   const unitsText = `${units} item${units === 1 ? "" : "s"}`
   // Refund restocks what never left; the server makes the same call.
   const unshipped = order.status === "PAID" || order.status === "PACKED"
+  // What came through Razorpay - all a refund can send back through it - and
+  // what the courier is to collect, or has.
+  const captured = order.payments.find((p) => p.status === "CAPTURED")
+  const due = Number(order.dueOnDelivery)
   // Back to the list this order is on: Orders only shows it once it is paid.
   const back = (PAID_ORDER_STATUSES as readonly OrderStatus[]).includes(order.status)
     ? { href: "/admin/orders", label: "Orders" }
@@ -556,9 +574,12 @@ export function OrderDetailView({ id }: { id: string }) {
           <h1 className="font-display text-bone text-[34px] leading-[1.04] sm:text-[42px]">
             {order.number}
           </h1>
-          <StatusBadge status={order.status} />
-          <Badge variant={order.paymentMethod === "COD" ? "violet" : "muted"}>
-            {order.paymentMethod === "COD" ? "Cash on delivery" : "Paid online"}
+          <StatusBadge
+            status={order.status}
+            label={statusLabelFor(order.status, order.paymentMethod)}
+          />
+          <Badge variant={order.paymentMethod === "ONLINE" ? "muted" : "violet"}>
+            {PAYMENT_METHOD_LABEL[order.paymentMethod]}
           </Badge>
           {order.coupon ? <Badge variant="acid">{order.coupon.code}</Badge> : null}
         </div>
@@ -588,7 +609,7 @@ export function OrderDetailView({ id }: { id: string }) {
                     />
                   </span>
                   <span className={done ? "text-bone text-[14px]" : "text-dim text-[14px]"}>
-                    {step.label}
+                    {i === 0 ? FIRST_STEP[order.paymentMethod] : step.label}
                   </span>
                 </li>
               )
@@ -601,6 +622,7 @@ export function OrderDetailView({ id }: { id: string }) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2.5">
           {order.status === "PAID" ||
+          order.status === "CONFIRMED" ||
           (order.status === "PENDING" && order.paymentMethod === "COD") ? (
             <Button
               variant="primary"
@@ -639,7 +661,7 @@ export function OrderDetailView({ id }: { id: string }) {
           ) : null}
           {/* Unpaid only - a paid order comes back through Refund, which
               returns the money as well as the stock. */}
-          {order.status === "PENDING" ? (
+          {order.status === "PENDING" || order.status === "CONFIRMED" ? (
             <Button
               variant="ghost"
               size="sm"
@@ -647,7 +669,9 @@ export function OrderDetailView({ id }: { id: string }) {
               onClick={() =>
                 ask({
                   title: "Cancel this order?",
-                  body: `${order.number} was never paid, so there is nothing to refund. It is cancelled and its ${unitsText} go back into stock. This cannot be undone.`,
+                  body: `${order.number} was never paid, so there is nothing to refund. It is cancelled and its ${unitsText} go back into stock.${
+                    order.shiprocket.orderId ? " It is cancelled in Shiprocket too." : ""
+                  } This cannot be undone.`,
                   confirmLabel: "Cancel order",
                   tone: "danger",
                   run: (done) => actions.cancel.mutate(undefined, { onSettled: done }),
@@ -666,11 +690,16 @@ export function OrderDetailView({ id }: { id: string }) {
               disabled={busy}
               onClick={() =>
                 ask({
-                  title: `Refund ${formatMoney(order.total)}?`,
+                  title: captured ? `Refund ${formatMoney(captured.amount)}?` : "Mark as refunded?",
                   body: [
-                    order.payments.some((p) => p.status === "CAPTURED")
-                      ? `The full ${formatMoney(order.total)} goes back to the customer's original payment method through Razorpay.`
+                    captured
+                      ? order.paymentMethod === "PARTIAL"
+                        ? `The advance of ${formatMoney(captured.amount)} goes back to the customer's original payment method through Razorpay.`
+                        : `The full ${formatMoney(captured.amount)} goes back to the customer's original payment method through Razorpay.`
                       : "No captured payment is on file, so no money moves through Razorpay. The order is only marked refunded.",
+                    due > 0 && !unshipped
+                      ? `If the courier collected the ${formatMoney(due)} due on delivery, that has to be returned to the customer by hand.`
+                      : "",
                     unshipped ? `Its ${unitsText} go back into stock.` : "Stock is not changed.",
                     unshipped && order.shiprocket.orderId
                       ? "The order is cancelled in Shiprocket too."
@@ -679,7 +708,9 @@ export function OrderDetailView({ id }: { id: string }) {
                   ]
                     .filter(Boolean)
                     .join(" "),
-                  confirmLabel: `Refund ${formatMoney(order.total)}`,
+                  confirmLabel: captured
+                    ? `Refund ${formatMoney(captured.amount)}`
+                    : "Mark refunded",
                   tone: "danger",
                   run: (done) => actions.refund.mutate(undefined, { onSettled: done }),
                 })
@@ -752,10 +783,31 @@ export function OrderDetailView({ id }: { id: string }) {
                 )
               }
             />
+            {Number(order.paymentFee) > 0 ? (
+              <Row label="Pay-on-delivery charge" value={<Money value={order.paymentFee} />} />
+            ) : null}
             <div className="mt-2 flex items-baseline justify-between border-t border-white/[0.07] pt-4">
               <span className="text-bone text-[15px] font-semibold">Total</span>
               <Money value={order.total} className="font-display text-bone text-[28px]" />
             </div>
+            {due > 0 ? (
+              <>
+                {order.paymentMethod === "PARTIAL" ? (
+                  <Row
+                    label="Advance, online"
+                    value={<Money value={Number(order.total) - due} />}
+                  />
+                ) : null}
+                <Row
+                  label="To collect on delivery"
+                  value={
+                    <span className="text-ember">
+                      <Money value={due} />
+                    </span>
+                  }
+                />
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -800,12 +852,23 @@ export function OrderDetailView({ id }: { id: string }) {
                 Payment
               </h2>
             </div>
-            {order.payments.length === 0 ? (
-              <p className="text-ash text-[13.5px]">
-                Cash on delivery. Collect{" "}
-                <Money value={order.total} className="text-bone font-mono" /> at the door.
+            {order.paymentMethod !== "ONLINE" ? (
+              <p className={cn("text-ash text-[13.5px]", order.payments.length > 0 && "mb-4")}>
+                {order.paymentMethod === "PARTIAL"
+                  ? "An advance online, the rest on delivery."
+                  : "Cash on delivery."}{" "}
+                {order.status === "DELIVERED"
+                  ? "The courier collected"
+                  : dead || order.status === "RETURNED"
+                    ? "The courier was to collect"
+                    : "The courier collects"}{" "}
+                <Money value={due > 0 ? due : order.total} className="text-bone font-mono" /> at the
+                door.
               </p>
-            ) : (
+            ) : order.payments.length === 0 ? (
+              <p className="text-ash text-[13.5px]">No payment was started for this order.</p>
+            ) : null}
+            {order.payments.length === 0 ? null : (
               <ul className="flex flex-col gap-3">
                 {order.payments.map((p) => (
                   <li key={p.gatewayOrderId} className="flex flex-col gap-1">
@@ -815,7 +878,12 @@ export function OrderDetailView({ id }: { id: string }) {
                         {/* Test money never arrives, so say so once live payments exist beside it. */}
                         {p.mode === "test" ? <Badge variant="violet">Test mode</Badge> : null}
                       </span>
-                      <Badge variant={p.status === "CAPTURED" ? "acid" : "muted"}>{p.status}</Badge>
+                      <span className="flex items-center gap-2.5">
+                        <Money value={p.amount} className="text-bone font-mono text-[13px]" />
+                        <Badge variant={p.status === "CAPTURED" ? "acid" : "muted"}>
+                          {p.status}
+                        </Badge>
+                      </span>
                     </div>
                     <span className="text-dim font-mono text-[11px] break-all">
                       {p.gatewayPaymentId ?? p.gatewayOrderId}

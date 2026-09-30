@@ -6,9 +6,11 @@ import { useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
   ArrowRight,
+  Banknote,
   Check,
   ChevronDown,
   CreditCard,
+  HandCoins,
   ShieldCheck,
   Truck,
 } from "lucide-react"
@@ -28,7 +30,17 @@ import {
   NothingToCheckOut,
 } from "@/features/checkout/components/checkout-skeleton"
 import { useCheckout } from "@/features/checkout/hooks/use-checkout"
+import {
+  advanceLabel,
+  splitPayment,
+  type PaymentMethod,
+  type Split,
+} from "@/features/checkout/payment-options"
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
+import type {
+  CheckoutOptions,
+  OfferedMethod,
+} from "@/features/checkout/server/payment-options.service"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
 import { reportCheckout, reportContact } from "@/features/visitors/lib/tracker"
 import { apiFetch } from "@/lib/api-fetch"
@@ -40,6 +52,8 @@ import {
   type IndianState,
 } from "@/lib/india"
 import { useHydrated } from "@/hooks/use-hydrated"
+import { formatMoney } from "@/lib/money"
+import { cn } from "@/lib/utils"
 
 const PROMISES = [
   { Icon: Truck, text: "Dispatched within 48 hours" },
@@ -103,6 +117,107 @@ type Reach =
    * payment, and an outage must neither refuse nor charge anyone.
    */
   | { status: "unknown"; pin: string }
+
+/**
+ * What is offered before the server has said, and whenever it cannot be
+ * asked: paying online, which is always there. The server decides anyway.
+ */
+const ONLINE_ONLY: OfferedMethod[] = [
+  { id: "ONLINE", fee: 0, advance: null, available: true, staffOnly: false },
+]
+
+const METHOD_ICON: Record<PaymentMethod, typeof CreditCard> = {
+  ONLINE: CreditCard,
+  PARTIAL: HandCoins,
+  COD: Banknote,
+}
+
+/** A way of paying with what it comes to for this order; `split` null when it cannot be used. */
+type Quoted = { method: OfferedMethod; total: number; split: Split | null }
+
+/**
+ * The ways to pay, as a choice. Only drawn when there is more than one: with
+ * paying online alone, the page states it rather than asking.
+ */
+function PaymentChoice({
+  quotes,
+  chosen,
+  onChoose,
+}: {
+  quotes: Quoted[]
+  chosen: PaymentMethod
+  onChoose: (method: PaymentMethod) => void
+}) {
+  const anyCharge = quotes.some((q) => q.method.fee > 0)
+
+  return (
+    <div role="radiogroup" aria-label="How to pay" className="flex flex-col gap-3">
+      {quotes.map(({ method, total, split }) => {
+        const Icon = METHOD_ICON[method.id]
+        const on = method.id === chosen
+        const usable = method.available && split !== null
+
+        const title =
+          method.id === "ONLINE"
+            ? "Pay now"
+            : method.id === "COD"
+              ? "Cash on delivery"
+              : split
+                ? `Pay ${formatMoney(split.payNow)} now, ${formatMoney(split.dueOnDelivery)} on delivery`
+                : "Pay part now, the rest on delivery"
+
+        const detail = !method.available
+          ? "Couriers don't collect payment at this pincode."
+          : method.id === "ONLINE"
+            ? "UPI, cards and netbanking via Razorpay"
+            : method.id === "COD"
+              ? split
+                ? `Pay the courier ${formatMoney(total)} when it arrives.`
+                : "There is nothing to collect on this order."
+              : split && method.advance
+                ? `${advanceLabel(method.advance)} online now as an advance; the rest to the courier when it arrives.`
+                : "This order is too small to split into an advance and a balance."
+
+        return (
+          <button
+            key={method.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            disabled={!usable}
+            onClick={() => onChoose(method.id)}
+            className={cn(
+              "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-colors",
+              on ? "border-blaze bg-blaze/[0.08]" : "border-white/[0.12] hover:border-white/25",
+              !usable && "cursor-not-allowed opacity-55 hover:border-white/[0.12]",
+            )}
+          >
+            <Icon
+              className={cn("mt-0.5 size-5 shrink-0", on ? "text-blaze" : "text-dim")}
+              strokeWidth={1.8}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="text-bone flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14.5px] font-semibold">
+                {title}
+                {method.fee > 0 ? (
+                  <span className="text-ember font-mono text-[11.5px] font-normal tracking-[0.04em]">
+                    + {formatMoney(method.fee)}
+                  </span>
+                ) : anyCharge ? (
+                  <span className="text-acid font-mono text-[11.5px] font-normal tracking-[0.04em]">
+                    NO EXTRA CHARGE
+                  </span>
+                ) : null}
+                {method.staffOnly ? <Badge variant="violet">Test · staff only</Badge> : null}
+              </span>
+              <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">{detail}</span>
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 /** Mounts in the cart: the parcel the pincode check prices. */
 const unitsIn = (lines: CartLine[]) =>
@@ -401,7 +516,47 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   const pincodeChecked =
     (reach.status === "ok" || reach.status === "unknown") && reach.pin === pincode
   const shippingFee = reach.status === "ok" && reach.pin === pincode ? reach.fee : 0
-  const totals = calculateTotals(items, false, coupon?.discount ?? 0, shippingFee)
+
+  // The ways to pay on offer, asked again whenever the pincode or the parcel
+  // changes: paying on delivery depends on a courier collecting there.
+  const [methods, setMethods] = React.useState<OfferedMethod[]>(ONLINE_ONLY)
+  const [wanted, setWanted] = React.useState<PaymentMethod>("ONLINE")
+  const units = unitsIn(items)
+  const askedPin = PINCODE.test(pincode) ? pincode : ""
+  React.useEffect(() => {
+    if (!mounted) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const query = new URLSearchParams({ units: String(units) })
+        if (askedPin) query.set("pincode", askedPin)
+        const answer = await apiFetch<CheckoutOptions>(`/api/public/checkout/options?${query}`)
+        if (!cancelled && answer.methods.length > 0) setMethods(answer.methods)
+      } catch {
+        // Rate-limited or offline. Paying online is always there, and the
+        // server checks the way of paying again when the order is placed.
+        if (!cancelled) setMethods(ONLINE_ONLY)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [mounted, askedPin, units])
+
+  // Each way of paying, priced for this order with the arithmetic the server
+  // uses. The one in force is the one chosen while it can still be used -
+  // a changed pincode or cart can take it away - and paying online otherwise.
+  const beforeCharge = calculateTotals(items, coupon?.discount ?? 0, shippingFee)
+  const quotes: Quoted[] = methods.map((method) => {
+    const total = beforeCharge.total + method.fee
+    const split = splitPayment(method.id, total, method.advance)
+    // Nothing to collect is nothing to pay on delivery.
+    return { method, total, split: method.id === "COD" && total < 1 ? null : split }
+  })
+  const chosen =
+    quotes.find((q) => q.method.id === wanted && q.method.available && q.split) ?? quotes[0]!
+  const totals = calculateTotals(items, coupon?.discount ?? 0, shippingFee, chosen.method.fee)
+  const split = chosen.split ?? { payNow: totals.total, dueOnDelivery: 0 }
 
   /** Focuses the first control inside a field, which also scrolls it into view. */
   function reveal(name: FieldName) {
@@ -475,7 +630,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       // applied, so the code that goes to the server is the one it accepted,
       // falling back to whatever the cart is still carrying.
       couponCode: coupon?.code ?? (buyNow ? buyNowCode : couponCode) ?? "",
-      paymentMethod: "ONLINE",
+      paymentMethod: chosen.method.id,
       saveAddress: false,
     })
 
@@ -720,16 +875,49 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               </h2>
             </div>
 
-            {/* One method, so this states it rather than asking. */}
-            <div className="border-blaze bg-blaze/[0.08] flex items-start gap-3.5 rounded-xl border p-4">
-              <CreditCard className="text-blaze mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
-              <span>
-                <span className="text-bone block text-[14.5px] font-semibold">Pay now</span>
-                <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
-                  UPI, cards and netbanking via Razorpay
+            {quotes.length > 1 ? (
+              <PaymentChoice quotes={quotes} chosen={chosen.method.id} onChoose={setWanted} />
+            ) : (
+              // One method, so this states it rather than asking.
+              <div className="border-blaze bg-blaze/[0.08] flex items-start gap-3.5 rounded-xl border p-4">
+                <CreditCard className="text-blaze mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
+                <span>
+                  <span className="text-bone block text-[14.5px] font-semibold">Pay now</span>
+                  <span className="text-ash mt-1 block text-[12.5px] leading-[1.45]">
+                    UPI, cards and netbanking via Razorpay
+                  </span>
                 </span>
-              </span>
-            </div>
+              </div>
+            )}
+
+            {/* On a phone the summary rail is hidden, so the charge and the
+                split are said here, where the choice was just made. */}
+            {totals.paymentFee > 0 || split.dueOnDelivery > 0 ? (
+              <dl className="text-ash mt-4 flex flex-col gap-1.5 text-[13px] lg:hidden">
+                {totals.paymentFee > 0 ? (
+                  <div className="flex justify-between">
+                    <dt>Pay-on-delivery charge</dt>
+                    <dd className="text-bone font-mono">
+                      <Money value={totals.paymentFee} />
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between">
+                  <dt>Total</dt>
+                  <dd className="text-bone font-mono">
+                    <Money value={totals.total} />
+                  </dd>
+                </div>
+                {split.dueOnDelivery > 0 ? (
+                  <div className="flex justify-between">
+                    <dt>To pay the courier</dt>
+                    <dd className="text-bone font-mono">
+                      <Money value={split.dueOnDelivery} />
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
           </section>
 
           {/* The desktop rail has its own box. This one is for phones, where
@@ -768,9 +956,15 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
           >
             {pending ? (
               "Working…"
+            ) : chosen.method.id === "COD" ? (
+              <>
+                Place order
+                <ArrowRight className="size-4" strokeWidth={2.4} />
+              </>
             ) : (
               <>
-                Pay <Money value={totals.total} />
+                Pay <Money value={split.payNow} />
+                {split.dueOnDelivery > 0 ? " now" : null}
                 <ArrowRight className="size-4" strokeWidth={2.4} />
               </>
             )}
@@ -823,12 +1017,38 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
                   <dd className="text-acid font-mono">FREE</dd>
                 )}
               </div>
+              {totals.paymentFee > 0 ? (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-ash">Pay-on-delivery charge</dt>
+                  <dd className="text-bone font-mono">
+                    <Money value={totals.paymentFee} />
+                  </dd>
+                </div>
+              ) : null}
             </dl>
 
             <div className="flex items-baseline justify-between pt-5">
               <span className="text-bone text-[15px] font-semibold">Total</span>
               <Money value={totals.total} className="font-display text-bone text-[38px]" />
             </div>
+            {split.dueOnDelivery > 0 ? (
+              <dl className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
+                {split.payNow > 0 ? (
+                  <div className="flex justify-between text-sm">
+                    <dt className="text-ash">Pay now</dt>
+                    <dd className="text-bone font-mono">
+                      <Money value={split.payNow} />
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between text-sm">
+                  <dt className="text-ash">To pay the courier</dt>
+                  <dd className="text-ember font-mono">
+                    <Money value={split.dueOnDelivery} />
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
           </div>
 
           <ul className="rounded-tile bg-carbon flex flex-col gap-3 border border-white/[0.08] p-5">

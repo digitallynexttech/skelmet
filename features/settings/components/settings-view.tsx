@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
+import { PaymentOptionsSettings } from "@/features/settings/components/payment-options-settings"
 import { PaymentSettings } from "@/features/settings/components/payment-settings"
 import { ShippingChargeSettings } from "@/features/settings/components/shipping-charge-settings"
 import { ShiprocketSettings } from "@/features/settings/components/shiprocket-settings"
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils"
 
 const TABS = [
   { id: "payments", label: "Payments" },
+  { id: "checkout", label: "Pay on delivery" },
   { id: "shiprocket", label: "Shiprocket" },
   { id: "shipping", label: "Shipping charge" },
   { id: "team", label: "Team" },
@@ -99,6 +101,8 @@ export function SettingsView() {
     )
   } else if (active === "payments") {
     panel = <PaymentSettings payment={data.payment} canWrite={data.canWrite} ask={ask} />
+  } else if (active === "checkout") {
+    panel = <PaymentOptionsSettings checkout={data.checkout} canWrite={data.canWrite} ask={ask} />
   } else if (active === "shiprocket") {
     panel = <ShiprocketSettings shiprocket={data.shiprocket} canWrite={data.canWrite} ask={ask} />
   } else {
@@ -111,7 +115,7 @@ export function SettingsView() {
       <PageHeader
         eyebrow="Console"
         title="Settings"
-        description="Payment keys, the Shiprocket login and the shipping charge. A change here takes effect straight away, without a deploy, and every save is logged."
+        description="Payment keys, paying on delivery, the Shiprocket login and the shipping charge. A change here takes effect straight away, without a deploy, and every save is logged."
       />
 
       <Tabs active={active} onChange={(tab) => setState({ tab })} />

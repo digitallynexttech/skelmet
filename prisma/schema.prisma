@@ -23,6 +23,8 @@ enum ProductStatus {
 
 enum OrderStatus {
   PENDING
+  /// Cash on delivery, accepted: nothing is paid yet, and it is ready to pack.
+  CONFIRMED
   PAID
   PACKED
   SHIPPED
@@ -35,6 +37,8 @@ enum OrderStatus {
 enum PaymentMethod {
   ONLINE
   COD
+  /// An advance paid online, the rest collected by the courier.
+  PARTIAL
 }
 
 enum PaymentStatus {
@@ -292,6 +296,12 @@ model Order {
   status          OrderStatus @default(PENDING)
   /// COD orders are packed while still unpaid, so fulfilment has to know which.
   paymentMethod   PaymentMethod @default(ONLINE) @map("payment_method")
+  /// What paying this way added to the order - the cash-on-delivery charge.
+  /// Part of `total`.
+  paymentFee      Decimal     @default(0) @map("payment_fee") @db.Decimal(12, 2)
+  /// What the courier collects at the door: all of `total` for COD, the
+  /// balance after the advance for PARTIAL, nothing for ONLINE.
+  dueOnDelivery   Decimal     @default(0) @map("due_on_delivery") @db.Decimal(12, 2)
   email           String
   phone           String
   shippingAddress Json        @map("shipping_address")

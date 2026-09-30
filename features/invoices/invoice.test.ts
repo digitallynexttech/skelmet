@@ -31,6 +31,7 @@ const order = (over: Partial<InvoiceOrder> = {}): InvoiceOrder => ({
   ],
   discount: 0,
   shipping: 0,
+  paymentFee: 0,
   total: 3499,
   couponCode: null,
   payment: { method: "ONLINE", reference: "pay_X" },
@@ -119,11 +120,30 @@ describe("invoice numbers", () => {
   })
 })
 
+describe("the charge for paying on delivery", () => {
+  it("is a line of its own, taxed like the rest, and the invoice still totals the order", () => {
+    const inv = buildInvoice(
+      order({ paymentFee: 100, total: 3599, payment: { method: "COD", reference: null } }),
+    )
+    expect(inv.rows.map((r) => r.description)).toContain("Pay-on-delivery charges")
+    expect(inv.rows.at(-1)!.amount).toBe(84.75)
+    expect(inv.total).toBe(3599)
+    expect(Math.round((inv.taxable + inv.totalTax) * 100) / 100).toBe(3599)
+  })
+
+  it("adds no line to an order that was not charged one", () => {
+    expect(buildInvoice(order()).rows).toHaveLength(1)
+  })
+})
+
 describe("paymentTerms", () => {
   it("never calls money that came through the gateway cash on delivery", () => {
     expect(paymentTerms({ method: "ONLINE", reference: "pay_X" })).toBe("Prepaid online")
     expect(paymentTerms({ method: "COD", reference: "pay_X" })).toBe("Prepaid online")
     expect(paymentTerms({ method: "ONLINE", reference: null })).toBe("Prepaid online")
     expect(paymentTerms({ method: "COD", reference: null })).toBe("Cash on delivery")
+    expect(paymentTerms({ method: "PARTIAL", reference: "pay_X" })).toBe(
+      "Advance online, balance on delivery",
+    )
   })
 })

@@ -30,11 +30,13 @@ const SECURITY_HEADERS = [
 /**
  * Answers that carry personal data - the console's API, a buyer's saved
  * address, an order looked up by email - must never be kept by a browser or
- * a proxy between it and here.
+ * a proxy between it and here. Nor may the ways to pay, which differ for a
+ * signed-in member of staff while one is on test.
  */
 const PRIVATE_ROUTES = [
   "/api/admin/:path*",
   "/api/public/checkout/prefill",
+  "/api/public/checkout/options",
   "/api/public/track",
   "/api/me/:path*",
 ]

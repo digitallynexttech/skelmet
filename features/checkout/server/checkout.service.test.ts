@@ -37,6 +37,9 @@ const mocks = vi.hoisted(() => {
       verifyPaymentSignature: vi.fn(),
     },
     checkPincode: vi.fn(),
+    collectsOnDelivery: vi.fn(),
+    offeredMethods: vi.fn(),
+    rateLimit: vi.fn(),
     queueShiprocketOrder: vi.fn(),
     attachCustomer: vi.fn(),
     rememberCustomerDetails: vi.fn(),
@@ -73,8 +76,13 @@ vi.mock("@/features/checkout/server/recent-order", () => ({
 }))
 vi.mock("@/features/shipping/server/shipping.service", () => ({
   checkPincode: mocks.checkPincode,
+  collectsOnDelivery: mocks.collectsOnDelivery,
   queueShiprocketOrder: mocks.queueShiprocketOrder,
 }))
+vi.mock("@/features/checkout/server/payment-options.service", () => ({
+  offeredMethods: mocks.offeredMethods,
+}))
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit }))
 vi.mock("@/features/visitors/server/tracking.service", () => ({ attachOrderToVisitor: vi.fn() }))
 vi.mock("@/lib/mailer", () => ({ sendMail: mocks.sendMail }))
 vi.mock("@/server/audit", () => ({
@@ -109,6 +117,12 @@ const ORDER_INPUT = {
   },
   items: [{ sku: "SKM-FLAME-ORANGE", qty: 1 }],
 }
+
+/** What the console offers: paying online alone, unless a test switches more on. */
+const ONLINE = { id: "ONLINE", fee: 0, advance: null, staffOnly: false }
+const COD = { id: "COD", fee: 100, advance: null, staffOnly: false }
+const PARTIAL = { id: "PARTIAL", fee: 0, advance: { kind: "PERCENT", value: 20 }, staffOnly: false }
+const offer = (...methods: unknown[]) => mocks.offeredMethods.mockResolvedValue({ methods })
 
 const signed = {
   orderId: "5f6e7d8c-9b0a-4c1d-8e2f-3a4b5c6d7e8f",
@@ -145,6 +159,8 @@ beforeEach(() => {
     ok: true,
     data: { live: false, serviceable: true, found: true, shippingFee: 0 },
   })
+  mocks.collectsOnDelivery.mockResolvedValue(null)
+  offer(ONLINE)
   mocks.attachCustomer.mockResolvedValue("customer-1")
   mocks.gateway.isGatewayConfigured.mockResolvedValue(true)
   mocks.gateway.createGatewayOrder.mockResolvedValue({
@@ -222,9 +238,126 @@ describe("placeOrder", () => {
     expect(mocks.db.order.count).toHaveBeenCalledWith({
       where: expect.objectContaining({
         status: "PENDING",
-        paymentMethod: "ONLINE",
+        paymentMethod: { in: ["ONLINE", "PARTIAL"] },
         OR: [{ email: "rider@example.in" }, { phone: "9876543210" }],
       }),
+    })
+  })
+
+  describe("paying on delivery", () => {
+    const cod = { ...ORDER_INPUT, paymentMethod: "COD" }
+    const partial = { ...ORDER_INPUT, paymentMethod: "PARTIAL" }
+
+    it("refuses a way of paying the console has not switched on, before anything else", async () => {
+      for (const input of [cod, partial]) {
+        const result = await service.placeOrder(input)
+        expect(result).toMatchObject({ ok: false, status: 422 })
+      }
+      expect(mocks.db.order.count).not.toHaveBeenCalled()
+      expect(mocks.db.order.create).not.toHaveBeenCalled()
+    })
+
+    it("accepts a cash-on-delivery order as it is placed: charged for, confirmed, nothing taken online", async () => {
+      offer(ONLINE, COD)
+      const result = await service.placeOrder(cod)
+
+      expect(result).toMatchObject({
+        ok: true,
+        data: { paymentMethod: "COD", payNow: "0", gatewayOrderId: null },
+      })
+      expect(mocks.db.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            paymentMethod: "COD",
+            status: "CONFIRMED",
+            paymentFee: 100,
+            total: 3599,
+            dueOnDelivery: 3599,
+          }),
+        }),
+      )
+      expect(mocks.gateway.createGatewayOrder).not.toHaveBeenCalled()
+      expect(mocks.db.payment.create).not.toHaveBeenCalled()
+      // Everything a capture does for a paid order, done now.
+      expect(mocks.rememberCustomerDetails).toHaveBeenCalledWith("order-1")
+      expect(mocks.queueShiprocketOrder).toHaveBeenCalledWith("order-1")
+      expect(mocks.later).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not need Razorpay to be set up for cash on delivery", async () => {
+      offer(ONLINE, COD)
+      mocks.gateway.isGatewayConfigured.mockResolvedValue(false)
+      expect(await service.placeOrder(cod)).toMatchObject({ ok: true })
+      expect(await service.placeOrder(ORDER_INPUT)).toMatchObject({ ok: false, status: 503 })
+    })
+
+    it("holds one buyer to two cash-on-delivery orders waiting to be sent, and one address to a few an hour", async () => {
+      offer(ONLINE, COD)
+      await service.placeOrder(cod)
+      expect(mocks.db.order.count).toHaveBeenCalledWith({
+        where: {
+          paymentMethod: "COD",
+          status: { in: ["CONFIRMED", "PACKED"] },
+          OR: [{ email: "rider@example.in" }, { phone: "9876543210" }],
+        },
+      })
+      expect(mocks.rateLimit).toHaveBeenCalledWith("cod-order:198.51.100.1", 6, 3_600_000)
+
+      mocks.db.order.count.mockResolvedValue(2)
+      expect(await service.placeOrder(cod)).toMatchObject({ ok: false, status: 409 })
+      expect(mocks.db.order.create).toHaveBeenCalledTimes(1)
+    })
+
+    it("refuses it where no courier collects payment, and only on a definite no", async () => {
+      offer(ONLINE, PARTIAL, COD)
+      mocks.collectsOnDelivery.mockResolvedValue(false)
+      for (const input of [cod, partial]) {
+        const result = await service.placeOrder(input)
+        expect(result).toMatchObject({ ok: false, status: 422 })
+        expect(result.ok === false && result.error).toMatch(/paid for online/)
+      }
+      expect(mocks.db.order.create).not.toHaveBeenCalled()
+      // Paying online never asks.
+      expect(await service.placeOrder(ORDER_INPUT)).toMatchObject({ ok: true })
+      expect(mocks.collectsOnDelivery).toHaveBeenCalledTimes(2)
+    })
+
+    it("takes only the advance through Razorpay and leaves the balance for the courier", async () => {
+      offer(ONLINE, PARTIAL)
+      const result = await service.placeOrder(partial)
+
+      // 20% of 3499 is 699.80: the courier collects whole rupees, so 2799
+      // at the door and 700 now.
+      expect(result).toMatchObject({
+        ok: true,
+        data: { paymentMethod: "PARTIAL", payNow: "700", gatewayOrderId: "order_RZ1" },
+      })
+      expect(mocks.db.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            paymentMethod: "PARTIAL",
+            status: "PENDING",
+            total: 3499,
+            dueOnDelivery: 2799,
+          }),
+        }),
+      )
+      expect(mocks.gateway.createGatewayOrder).toHaveBeenCalledWith(
+        expect.objectContaining({ amountRupees: 700 }),
+      )
+      expect(mocks.db.payment.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ amount: 700, status: "CREATED" }),
+      })
+      // Not confirmed until the advance is captured.
+      expect(mocks.queueShiprocketOrder).not.toHaveBeenCalled()
+      expect(mocks.later).not.toHaveBeenCalled()
+    })
+
+    it("refuses an advance that would cover the whole order", async () => {
+      offer(ONLINE, { ...PARTIAL, advance: { kind: "FLAT", value: 5000 } })
+      const result = await service.placeOrder(partial)
+      expect(result).toMatchObject({ ok: false, status: 422 })
+      expect(mocks.db.order.create).not.toHaveBeenCalled()
     })
   })
 

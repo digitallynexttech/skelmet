@@ -1,6 +1,7 @@
 /** Homepage copy in one place, so the page component stays composition only. */
 
 import { siteConfig } from "@/config/site"
+import { DEFAULT_PAYMENT_OPTIONS, paymentCopy } from "@/features/checkout/payment-options"
 
 const P = siteConfig.promise
 
@@ -12,6 +13,8 @@ export const TICKER_ITEMS = [
   "7-DAY RETURNS",
   "SHIPS IN 48 HOURS",
 ]
+
+const PAY_QUESTION = "How do I pay?"
 
 /**
  * The figures in these answers come from siteConfig.promise, the same place
@@ -57,9 +60,10 @@ export const FAQ_ITEMS = [
       "It depends on your pincode. Where the courier charges us up to a set amount to reach it, shipping is free. Where it costs more, you pay a share of the difference and we pay the rest. The shipping policy has the current figures, and checkout shows the exact charge as soon as you enter your pincode, before you pay.",
   },
   {
-    question: "How do I pay?",
-    answer:
-      "Online at checkout, by UPI, card or netbanking, through Razorpay. We never see your card or UPI details. There is no cash on delivery.",
+    // The answer for paying online only. With paying on delivery switched on
+    // in the console's Settings, faqItems() states that instead.
+    question: PAY_QUESTION,
+    answer: paymentCopy(DEFAULT_PAYMENT_OPTIONS).faq,
   },
   {
     question: "Can I return it?",
@@ -75,6 +79,13 @@ export const FAQ_ITEMS = [
     answer: `Photograph it before you unpack any further and send it to us within ${P.damageReportHours} hours of delivery. We replace it, and we do not ask for the damaged one back.`,
   },
 ]
+
+/** The FAQ, with "How do I pay?" answered for the ways to pay in force. */
+export function faqItems(howToPay: string) {
+  return FAQ_ITEMS.map((item) =>
+    item.question === PAY_QUESTION ? { ...item, answer: howToPay } : item,
+  )
+}
 
 export const REVIEWS = [
   {

@@ -1,5 +1,6 @@
 import "server-only"
 
+import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { creditNoteOnRefund, queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
@@ -43,7 +44,7 @@ export type OrderRow = {
   id: string
   number: string
   status: OrderStatus
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
   email: string
   phone: string
   total: string
@@ -78,7 +79,7 @@ function serializeRow(row: {
     id: row.id,
     number: row.number,
     status: row.status as OrderStatus,
-    paymentMethod: row.paymentMethod as "ONLINE" | "COD",
+    paymentMethod: row.paymentMethod as PaymentMethod,
     email: row.email,
     phone: row.phone,
     total: row.total.toString(),
@@ -191,8 +192,10 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
         subtotal: true,
         discount: true,
         shipping: true,
+        paymentFee: true,
         tax: true,
         total: true,
+        dueOnDelivery: true,
         shippingAddress: true,
         createdAt: true,
         placedAt: true,
@@ -251,8 +254,10 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
       subtotal: order.subtotal.toString(),
       discount: order.discount.toString(),
       shipping: order.shipping.toString(),
+      paymentFee: order.paymentFee.toString(),
       tax: order.tax.toString(),
       total: order.total.toString(),
+      dueOnDelivery: order.dueOnDelivery.toString(),
       createdAt: order.createdAt.toISOString(),
       placedAt: order.placedAt?.toISOString() ?? null,
       invoicedAt: order.invoicedAt?.toISOString() ?? null,
@@ -331,9 +336,11 @@ async function transition(
 }
 
 /**
- * Cash on delivery is packed while still PENDING, because the money arrives at
- * the door. An unpaid card order must never reach this state, so the COD case
- * is claimed by payment method rather than by widening the status list.
+ * Cash on delivery is packed while still unpaid, because the money arrives at
+ * the door: from CONFIRMED, the state it is placed in - and from PENDING for
+ * the COD orders placed before CONFIRMED existed. An unpaid card order must
+ * never reach this state, so the PENDING case is claimed by payment method
+ * rather than by widening the status list.
  */
 export async function markPacked(id: string) {
   const order = await db.order.findUnique({
@@ -341,7 +348,8 @@ export async function markPacked(id: string) {
     select: { paymentMethod: true },
   })
 
-  const from: OrderStatus[] = order?.paymentMethod === "COD" ? ["PAID", "PENDING"] : ["PAID"]
+  const from: OrderStatus[] =
+    order?.paymentMethod === "COD" ? ["PAID", "CONFIRMED", "PENDING"] : ["PAID", "CONFIRMED"]
   return transition(id, from, "PACKED", PERMISSIONS.ORDER_FULFIL, "order:pack")
 }
 
@@ -407,15 +415,16 @@ export async function markDelivered(id: string) {
   return result
 }
 
-export function cancelOrder(id: string) {
-  // Unpaid orders only. Cancelling a PAID one used to restock it and keep the
-  // customer's money, with no way to refund it afterwards - refund refused a
-  // CANCELLED order. A paid order is taken back with Refund, which returns the
-  // money and restocks what never shipped, and needs the refund permission
-  // that handing money back should need.
-  return transition(
+export async function cancelOrder(id: string) {
+  // Unpaid orders only: one still waiting for its online payment, or cash on
+  // delivery that has not been packed. Cancelling a PAID one used to restock
+  // it and keep the customer's money, with no way to refund it afterwards -
+  // refund refused a CANCELLED order. A paid order is taken back with Refund,
+  // which returns the money and restocks what never shipped, and needs the
+  // refund permission that handing money back should need.
+  const result = await transition(
     id,
-    ["PENDING"],
+    ["PENDING", "CONFIRMED"],
     "CANCELLED",
     PERMISSIONS.ORDER_WRITE,
     "order:cancel",
@@ -449,6 +458,10 @@ export function cancelOrder(id: string) {
       ])
     },
   )
+  // A cash-on-delivery order was sent to Shiprocket when it was placed, so it
+  // is called off there too. Nothing to do for one that never got that far.
+  if (result.ok) await cancelShiprocketOrder(id, null)
+  return result
 }
 
 /** Statuses whose goods never left the building, so a refund puts them back on sale. */
@@ -470,7 +483,7 @@ export async function refundOrder(
         items: { select: { variantId: true, qty: true } },
         payments: {
           where: { status: "CAPTURED" },
-          select: { gatewayPaymentId: true, mode: true },
+          select: { gatewayPaymentId: true, mode: true, amount: true },
           take: 1,
         },
       },
@@ -478,6 +491,10 @@ export async function refundOrder(
     if (!order) return fail("Order not found.", undefined, 404)
 
     const paymentId = order.payments[0]?.gatewayPaymentId ?? null
+    // What came through the gateway, which is all that can go back through
+    // it: the whole order, or only its advance. Anything paid to the courier
+    // is handed back outside Razorpay.
+    const paidOnline = order.payments[0]?.amount.toString() ?? "0"
     // Refunded from the account that took it, whichever is switched on now.
     const paymentMode = modeOfPayment(order.payments[0]?.mode, await paymentConfig())
 
@@ -509,7 +526,7 @@ export async function refundOrder(
       try {
         await refundPayment({
           gatewayPaymentId: paymentId,
-          amountRupees: order.total.toString(),
+          amountRupees: paidOnline,
           mode: paymentMode,
         })
       } catch (err) {
@@ -556,7 +573,8 @@ export async function refundOrder(
       module: "order",
       entityId: id,
       meta: {
-        amount: order.total.toString(),
+        amount: paymentId ? paidOnline : "0",
+        total: order.total.toString(),
         gateway: Boolean(paymentId),
         from: order.status,
         restocked: UNSHIPPED.includes(order.status),
@@ -592,16 +610,31 @@ export async function getDashboard(): Promise<ActionResult<unknown>> {
     const startOfWeek = new Date(startOfToday.getTime() - 6 * 86_400_000)
 
     const [todayCount, weekRevenue, awaiting, lowStock, recent] = await Promise.all([
-      // Orders paid for today. Counting every order written counted each
-      // closed payment window as a sale.
+      // Orders paid for today, and cash on delivery accepted today - an order
+      // from the moment it is placed, though not revenue until the door.
+      // Counting every order written counted each closed payment window as a
+      // sale.
       db.order.count({
-        where: { placedAt: { gte: startOfToday }, status: { in: [...PAID_ORDER_STATUSES] } },
+        where: {
+          OR: [
+            {
+              paymentMethod: { not: "COD" },
+              placedAt: { gte: startOfToday },
+              status: { in: [...PAID_ORDER_STATUSES] },
+            },
+            {
+              paymentMethod: "COD",
+              createdAt: { gte: startOfToday },
+              status: { notIn: ["PENDING", "CANCELLED"] },
+            },
+          ],
+        },
       }),
       db.order.aggregate({
         _sum: { total: true },
         where: { placedAt: { gte: startOfWeek }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       }),
-      db.order.count({ where: { status: { in: ["PAID", "PACKED"] } } }),
+      db.order.count({ where: { status: { in: ["CONFIRMED", "PAID", "PACKED"] } } }),
       db.variant.findMany({
         where: { stock: { lte: 5 } },
         select: { sku: true, colourway: true, stock: true },

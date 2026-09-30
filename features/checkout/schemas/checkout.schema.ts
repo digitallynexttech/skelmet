@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { PAYMENT_METHODS } from "@/features/checkout/payment-options"
 import { INDIAN_STATES } from "@/lib/india"
 
 /**
@@ -53,14 +54,12 @@ export const placeOrderSchema = z.object({
     .max(20),
   couponCode: z.string().trim().max(40).optional().or(z.literal("")),
   /**
-   * Cash on delivery is not offered. This is a literal rather than a narrowed
-   * enum so the refusal lives at the boundary: hiding the button alone would
-   * still let a hand-made request place an order that never pays.
-   *
-   * PaymentMethod in the schema keeps COD, because orders already placed with
-   * it still have to pack, ship and display.
+   * How it is paid for. The enum only says what exists: which of these a
+   * buyer may choose is set in the console (Settings > Pay on delivery) and
+   * checked by placeOrder, since hiding a button alone would still let a
+   * hand-made request place an order that never pays.
    */
-  paymentMethod: z.literal("ONLINE").default("ONLINE"),
+  paymentMethod: z.enum(PAYMENT_METHODS).default("ONLINE"),
   saveAddress: z.boolean().default(false),
 })
 

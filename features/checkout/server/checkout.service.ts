@@ -1,7 +1,9 @@
 import "server-only"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
+import { splitPayment, type PaymentMethod } from "@/features/checkout/payment-options"
 import { placeOrderSchema, verifyPaymentSchema } from "@/features/checkout/schemas/checkout.schema"
+import { offeredMethods } from "@/features/checkout/server/payment-options.service"
 import {
   captureGatewayPayment,
   createGatewayOrder,
@@ -25,13 +27,18 @@ import {
 } from "@/features/customers/server/customers.service"
 import { rememberOrder, rememberedOrder } from "@/features/checkout/server/recent-order"
 import { renderOrderConfirmed } from "@/features/orders/emails/order-confirmed"
-import { checkPincode, queueShiprocketOrder } from "@/features/shipping/server/shipping.service"
+import {
+  checkPincode,
+  collectsOnDelivery,
+  queueShiprocketOrder,
+} from "@/features/shipping/server/shipping.service"
 import { attachOrderToVisitor } from "@/features/visitors/server/tracking.service"
 import type { PaymentMode } from "@/features/settings/schemas/runtime-settings.schema"
 import { sendMail } from "@/lib/mailer"
 import { orderNumber } from "@/lib/crypto"
 import { hasDatabase } from "@/lib/env"
 import { ConflictError } from "@/lib/errors"
+import { rateLimit } from "@/lib/rate-limit"
 import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { optionalSession } from "@/server/action-guard"
@@ -42,11 +49,16 @@ export type StartedCheckout = {
   orderId: string
   orderNumber: string
   total: string
+  /** What Razorpay takes now: the total, the advance, or 0 for cash on delivery. */
+  payNow: string
   /** Null for COD - nothing to hand the gateway. */
   gatewayOrderId: string | null
   gatewayKeyId: string | null
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
 }
+
+/** The ways of paying that take money through Razorpay when the order is placed. */
+const PAYS_ONLINE: PaymentMethod[] = ["ONLINE", "PARTIAL"]
 
 /**
  * True only for a unique-constraint violation on the order number.
@@ -139,6 +151,18 @@ const UNPAID_HOLD_MS = 60 * 60_000
  * more than a real buyer retrying a declined card ever needs.
  */
 const OPEN_UNPAID_LIMIT = 3
+
+/**
+ * How many cash-on-delivery orders one email or phone may have waiting to be
+ * sent, and how many one address may place in an hour.
+ *
+ * A COD order takes its stock the moment it is written and nothing gives it
+ * back by itself - there is no payment to wait an hour for - so these are the
+ * only ceiling on someone ordering the shop empty without paying a rupee.
+ * Staff cancel the ones that turn out not to be real.
+ */
+const OPEN_COD_LIMIT = 2
+const COD_PER_HOUR = 6
 
 /** Stale orders looked at per run, and how long each Razorpay question may take. */
 const STALE_BATCH = 10
@@ -239,7 +263,7 @@ export async function releaseStaleOrders(options: { budgetMs?: number } = {}): P
     const stale = await db.order.findMany({
       where: {
         status: "PENDING",
-        paymentMethod: "ONLINE",
+        paymentMethod: { in: PAYS_ONLINE },
         createdAt: { lt: new Date(Date.now() - UNPAID_HOLD_MS) },
         ...(skip.length ? { id: { notIn: skip } } : {}),
       },
@@ -307,34 +331,68 @@ export async function releaseStaleOrders(options: { budgetMs?: number } = {}): P
 }
 
 /**
- * Places the order and, for online payment, opens a Razorpay order.
+ * Places the order and, unless it is cash on delivery, opens a Razorpay order
+ * for what is paid now - all of it, or the advance.
  *
- * The client sends SKUs and quantities only. Prices, the bundle discount and
- * any coupon are recomputed here from the database, so a tampered cart cannot
- * change what is charged.
+ * The client sends SKUs, quantities and the way of paying it chose. Prices,
+ * any coupon, the charge for paying on delivery and the advance are worked
+ * out here from the database and the console's settings, so a tampered cart
+ * cannot change what is charged.
  */
 export async function placeOrder(raw: unknown): Promise<ActionResult<StartedCheckout>> {
   return runAction(async () => {
     const input = placeOrderSchema.parse(raw)
     if (!hasDatabase()) return fail("Checkout is not available yet.", undefined, 503)
     const email = input.email.toLowerCase()
+    const method = input.paymentMethod
+    const paysOnline = PAYS_ONLINE.includes(method)
 
-    // First, before any stock is looked at or Shiprocket asked: the ceiling on
-    // unpaid orders one buyer may hold (OPEN_UNPAID_LIMIT).
-    const openUnpaid = await db.order.count({
-      where: {
-        status: "PENDING",
-        paymentMethod: "ONLINE",
-        createdAt: { gte: new Date(Date.now() - UNPAID_HOLD_MS) },
-        OR: [{ email }, { phone: input.phone }],
-      },
-    })
-    if (openUnpaid >= OPEN_UNPAID_LIMIT) {
+    // Whether this buyer is offered this way of paying at all. The page only
+    // shows what is on offer, but the page is only a courtesy.
+    const chosen = (await offeredMethods()).methods.find((m) => m.id === method)
+    if (!chosen) {
       return fail(
-        "You already have orders waiting to be paid for. Finish paying for one of those, or try again in an hour.",
+        "That way of paying is not available. Choose another and try again.",
         undefined,
-        409,
+        422,
       )
+    }
+
+    // Then, before any stock is looked at or Shiprocket asked: the ceiling on
+    // orders one buyer may hold without having paid for them
+    // (OPEN_UNPAID_LIMIT, OPEN_COD_LIMIT).
+    if (paysOnline) {
+      const openUnpaid = await db.order.count({
+        where: {
+          status: "PENDING",
+          paymentMethod: { in: PAYS_ONLINE },
+          createdAt: { gte: new Date(Date.now() - UNPAID_HOLD_MS) },
+          OR: [{ email }, { phone: input.phone }],
+        },
+      })
+      if (openUnpaid >= OPEN_UNPAID_LIMIT) {
+        return fail(
+          "You already have orders waiting to be paid for. Finish paying for one of those, or try again in an hour.",
+          undefined,
+          409,
+        )
+      }
+    } else {
+      const openCod = await db.order.count({
+        where: {
+          paymentMethod: "COD",
+          status: { in: ["CONFIRMED", "PACKED"] },
+          OR: [{ email }, { phone: input.phone }],
+        },
+      })
+      if (openCod >= OPEN_COD_LIMIT) {
+        return fail(
+          "You already have cash-on-delivery orders waiting to be sent. Place another once one is on its way, or pay for this one online.",
+          undefined,
+          409,
+        )
+      }
+      rateLimit(`cod-order:${(await getAuditMeta()).ip}`, COD_PER_HOUR, 60 * 60_000)
     }
 
     // The checkout page has already told the buyer this, but the page is only
@@ -355,6 +413,16 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         reach.data.found
           ? `Couriers don't reach pincode ${pin} yet, so we can't take this order. Message us and we'll try to arrange it.`
           : `We couldn't find pincode ${pin}. Check the number and try again.`,
+        undefined,
+        422,
+      )
+    }
+
+    // Paying at the door needs a courier that collects there. Again only a
+    // definite no refuses; not knowing leaves it to booking to find out.
+    if (method !== "ONLINE" && (await collectsOnDelivery(pin, units)) === false) {
+      return fail(
+        `Couriers don't collect payment at pincode ${pin}, so this order has to be paid for online.`,
         undefined,
         422,
       )
@@ -432,13 +500,28 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // Before the transaction, not after: failing here once the order exists
     // leaves an orphan holding stock nobody can buy.
-    if (input.paymentMethod === "ONLINE" && !(await isGatewayConfigured())) {
+    if (paysOnline && !(await isGatewayConfigured())) {
       return fail("Payments are temporarily unavailable. Please try again shortly.", undefined, 503)
     }
 
-    // cod stays in priceCart for the orders already placed with it and for
-    // the day it comes back; nothing reaching here can select it now.
-    const priced = priceCart(lines, { cod: false, couponOff, shippingFee })
+    // The charge for paying this way is the console's, as is the advance;
+    // checkout showed both from the same settings and the same arithmetic.
+    const priced = priceCart(lines, { couponOff, shippingFee, paymentFee: chosen.fee })
+    const split = splitPayment(method, priced.total, chosen.advance)
+    if (!split) {
+      return fail(
+        "This order is too small to split into an advance and a balance. Choose another way to pay.",
+        undefined,
+        422,
+      )
+    }
+    if (method === "COD" && split.dueOnDelivery < 1) {
+      return fail(
+        "There is nothing to collect on this order, so it cannot be cash on delivery.",
+        undefined,
+        422,
+      )
+    }
 
     // ── write the order and claim stock in one transaction ──
     const writeOrder = (number: string) =>
@@ -452,20 +535,24 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         const created = await tx.order.create({
           data: {
             number,
-            paymentMethod: input.paymentMethod,
+            paymentMethod: method,
             // A signed-in staff id wins when there is one, so an admin placing an
             // order on someone's behalf still owns it. Otherwise the order points
             // at the customer record checkout just wrote.
             userId: session?.user?.id ?? customerId,
-            status: "PENDING",
+            // Cash on delivery is accepted as it is placed: there is no
+            // payment to wait for. Anything paid online waits for its money.
+            status: paysOnline ? "PENDING" : "CONFIRMED",
             email,
             phone: input.phone,
             shippingAddress: { ...input.address },
             subtotal: priced.subtotal,
             discount: priced.discount,
             shipping: priced.shipping,
+            paymentFee: priced.paymentFee,
             tax: 0,
             total: priced.total,
+            dueOnDelivery: split.dueOnDelivery,
             couponId,
             items: {
               create: lines.map((l) => ({
@@ -531,10 +618,10 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // redemption nobody used.
     let gatewayOrderId: string | null = null
     let gatewayKeyId: string | null = null
-    if (input.paymentMethod === "ONLINE") {
+    if (paysOnline) {
       try {
         const gw = await createGatewayOrder({
-          amountRupees: priced.total,
+          amountRupees: split.payNow,
           receipt: order.number,
           notes: { orderId: order.id, orderNumber: order.number },
         })
@@ -547,7 +634,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
             gateway: "razorpay",
             gatewayOrderId: gw.order.id,
             status: "CREATED",
-            amount: priced.total,
+            amount: split.payNow,
             mode: gw.mode,
           },
         })
@@ -562,7 +649,13 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       action: "order:place",
       module: "order",
       entityId: order.id,
-      meta: { number: order.number, total: priced.total, method: input.paymentMethod },
+      meta: {
+        number: order.number,
+        total: priced.total,
+        method,
+        payNow: split.payNow,
+        dueOnDelivery: split.dueOnDelivery,
+      },
       ...(await getAuditMeta()),
     })
 
@@ -578,18 +671,40 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       name: `${input.address.firstName} ${input.address.lastName}`.trim(),
     })
 
-    // No receipt from here any more. With cash on delivery withdrawn, placing
-    // an order is no longer a commitment to anything - an order is real when
-    // its payment clears, so confirmPayment and the webhook own the email.
-    // Sending one here would confirm an abandoned payment page.
+    // An order paid online is real when its payment clears, so confirmPayment
+    // and the webhook own its receipt: sending one here would confirm an
+    // abandoned payment page. Cash on delivery is real now - nothing more
+    // comes from the buyer until the door - so what a capture does for a paid
+    // order is done here for it.
+    if (method === "COD") {
+      await rememberCustomerDetails(order.id)
+
+      const mail = renderOrderConfirmed({
+        number: order.number,
+        email,
+        total: order.total.toString(),
+        paymentMethod: "COD",
+        dueOnDelivery: String(split.dueOnDelivery),
+        items: lines.map((l) => ({
+          name: `${l.variant.product.name} · ${l.variant.colourway}`,
+          qty: l.qty,
+        })),
+      })
+      later(async () => {
+        await sendMail({ to: email, ...mail })
+      })
+
+      queueShiprocketOrder(order.id)
+    }
 
     return ok({
       orderId: order.id,
       orderNumber: order.number,
       total: order.total.toString(),
+      payNow: String(split.payNow),
       gatewayOrderId,
       gatewayKeyId,
-      paymentMethod: input.paymentMethod,
+      paymentMethod: method,
     })
   })
 }
@@ -683,6 +798,8 @@ async function capturePayment(input: {
       status: true,
       email: true,
       total: true,
+      paymentMethod: true,
+      dueOnDelivery: true,
       couponId: true,
       items: { select: { nameSnapshot: true, qty: true } },
     },
@@ -715,7 +832,10 @@ async function capturePayment(input: {
       number: order.number,
       email: order.email,
       total: order.total.toString(),
-      paymentMethod: "ONLINE",
+      // Money came through the gateway, so this is never the cash-on-delivery
+      // wording, whatever the order's method field says.
+      paymentMethod: order.paymentMethod === "PARTIAL" ? "PARTIAL" : "ONLINE",
+      dueOnDelivery: order.paymentMethod === "PARTIAL" ? order.dueOnDelivery.toString() : "0",
       items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
     })
     const to = order.email
@@ -924,8 +1044,12 @@ export type Confirmation = {
   number: string
   email: string
   total: string
+  /** The charge for paying on delivery, part of `total`. */
+  paymentFee: string
+  /** What the courier collects: the total for COD, the balance for PARTIAL. */
+  dueOnDelivery: string
   status: string
-  paymentMethod: "ONLINE" | "COD"
+  paymentMethod: PaymentMethod
   placedAt: string | null
   itemCount: number
   items: { name: string; qty: number }[]
@@ -955,6 +1079,8 @@ export async function getConfirmation(rawNumber: string): Promise<ActionResult<C
         number: true,
         email: true,
         total: true,
+        paymentFee: true,
+        dueOnDelivery: true,
         status: true,
         paymentMethod: true,
         placedAt: true,
@@ -975,6 +1101,8 @@ export async function getConfirmation(rawNumber: string): Promise<ActionResult<C
       number: order.number,
       email: order.email,
       total: order.total.toString(),
+      paymentFee: order.paymentFee.toString(),
+      dueOnDelivery: order.dueOnDelivery.toString(),
       status: order.status,
       paymentMethod: order.paymentMethod,
       placedAt: (order.placedAt ?? order.createdAt).toISOString(),

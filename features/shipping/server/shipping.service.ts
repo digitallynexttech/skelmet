@@ -11,6 +11,7 @@ import * as shiprocket from "@/features/shipping/server/shiprocket"
 import { ShippingError } from "@/features/shipping/server/shiprocket"
 import {
   buildAdhocOrder,
+  collectingCouriers,
   courierOptions,
   deliveryEstimate,
   parcelFor,
@@ -40,8 +41,8 @@ import { db } from "@/server/db"
  *
  * The flow, and who drives each step:
  *
- *  1. Payment captured      -> the order is sent to Shiprocket in the
- *                              background (queueShiprocketOrder). Best
+ *  1. Payment captured, or  -> the order is sent to Shiprocket in the
+ *     a COD order placed       background (queueShiprocketOrder). Best
  *                              effort: if it fails, step 2 sends it.
  *  2. Staff click "Book"    -> bookShipment: courier + AWB, pickup request,
  *                              manifest, label. The order becomes SHIPPED
@@ -99,7 +100,9 @@ async function loadShippable(orderId: string) {
       subtotal: true,
       discount: true,
       shipping: true,
+      paymentFee: true,
       total: true,
+      dueOnDelivery: true,
       shiprocketOrderId: true,
       shiprocketShipmentId: true,
       items: {
@@ -137,6 +140,9 @@ function toShippable(order: LoadedOrder): ShippableOrder {
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
     shipping: Number(order.shipping),
+    paymentFee: Number(order.paymentFee),
+    total: Number(order.total),
+    dueOnDelivery: Number(order.dueOnDelivery),
     items: order.items.map((i) => ({
       name: i.nameSnapshot,
       sku: i.variant.sku,
@@ -261,7 +267,7 @@ export async function getCourierOptions(
       await shiprocket.serviceability({
         pickup_postcode: await pickupPincode(),
         delivery_postcode: shippable.address.pincode,
-        cod: order.paymentMethod === "COD" ? 1 : 0,
+        cod: order.paymentMethod === "ONLINE" ? 0 : 1,
         weight: parcel.weightKg,
         length: parcel.lengthCm,
         breadth: parcel.breadthCm,
@@ -528,7 +534,7 @@ async function applyTrackingEvent(
   switch (trackingStage(event.status)) {
     case "in_transit": {
       const moved = await db.order.updateMany({
-        where: { id: orderId, status: { in: ["PAID", "PACKED"] } },
+        where: { id: orderId, status: { in: ["CONFIRMED", "PAID", "PACKED"] } },
         data: { status: "SHIPPED" },
       })
       if (moved.count > 0) {
@@ -540,7 +546,7 @@ async function applyTrackingEvent(
     }
     case "delivered": {
       const moved = await db.order.updateMany({
-        where: { id: orderId, status: { in: ["PAID", "PACKED", "SHIPPED"] } },
+        where: { id: orderId, status: { in: ["CONFIRMED", "PAID", "PACKED", "SHIPPED"] } },
         data: { status: "DELIVERED" },
       })
       if (moved.count > 0) {
@@ -618,6 +624,7 @@ export function notifyShipped(orderId: string): void {
         select: {
           number: true,
           email: true,
+          dueOnDelivery: true,
           items: { select: { nameSnapshot: true, qty: true } },
           shipment: { select: { courier: true, awb: true, provider: true } },
         },
@@ -629,6 +636,7 @@ export function notifyShipped(orderId: string): void {
         courier: s.courier,
         awb: s.awb,
         trackingUrl: s.provider === "shiprocket" && s.awb ? trackingUrl(s.awb) : null,
+        dueOnDelivery: order.dueOnDelivery.toString(),
         items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
       })
       await sendMail({ to: order.email, ...mail })
@@ -743,6 +751,7 @@ function remember(key: string, reach: Reach, now: number): Reach {
  */
 export function forgetPincodeChecks(): void {
   pincodeCache.clear()
+  collectCache.clear()
 }
 
 /** The fee for a cached or fresh answer, under the shipping charge in force now. */
@@ -897,4 +906,65 @@ async function askShiprocket(
   }
   // Without the place, not remembered: the next check can still fill it in.
   return { reach: where ? remember(key, found, now) : found }
+}
+
+// ── paying on delivery ─────────────────────────────────────────────────────
+
+const sharedCollect = globalThis as unknown as {
+  skelmetCollects?: Map<string, { collects: boolean; expiresAt: number }>
+}
+const collectCache = (sharedCollect.skelmetCollects ??= new Map())
+
+/**
+ * Whether a courier collects payment at the door for this pincode and parcel.
+ *
+ * Asked apart from checkPincode, and only when paying on delivery is on
+ * offer: most couriers that deliver to a pincode will not take money there,
+ * so it is its own question to Shiprocket, and one the shop need not spend
+ * while it sells online only.
+ *
+ * Null when Shiprocket is not set up, failed or took too long - "not known",
+ * which offers it, as an outage neither refuses nor charges anyone. Booking
+ * asks Shiprocket again for the couriers, so an order nobody will collect on
+ * is caught there. Cached for six hours, as the pincode check is.
+ */
+export async function collectsOnDelivery(pincode: string, units: number): Promise<boolean | null> {
+  const account = await shiprocketConfig()
+  if (!account.email || !account.password) return null
+
+  const key = `${account.email}|${account.pickupLocation ?? ""}|${pincode}:${units}`
+  const hit = collectCache.get(key)
+  if (hit && hit.expiresAt > Date.now()) return hit.collects
+
+  const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
+  // Carries on past the budget, as the pincode check does, so a slow answer
+  // is there for the next ask.
+  const lookup = pickupPincode()
+    .then((pickup) =>
+      shiprocket.serviceability({
+        pickup_postcode: pickup,
+        delivery_postcode: pincode,
+        cod: 1,
+        weight: parcel.weightKg,
+        length: parcel.lengthCm,
+        breadth: parcel.breadthCm,
+        height: parcel.heightCm,
+      }),
+    )
+    .then((body) => {
+      const collects = collectingCouriers(body) > 0
+      if (collectCache.size >= PINCODE_CACHE_MAX) collectCache.clear()
+      collectCache.set(key, { collects, expiresAt: Date.now() + PINCODE_TTL_MS })
+      return collects
+    })
+  lookup.catch((err: unknown) =>
+    console.warn("[SHIPPING] pay-on-delivery check failed", message(err)),
+  )
+
+  try {
+    const answer = await withinBudget(lookup, PINCODE_BUDGET_MS)
+    return answer === "late" ? null : answer
+  } catch {
+    return null
+  }
 }

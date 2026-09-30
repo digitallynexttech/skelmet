@@ -2,6 +2,7 @@ import "server-only"
 
 import { siteConfig } from "@/config/site"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
+import { formatMoney } from "@/lib/money"
 
 /**
  * "It's on its way." Sent once, when an order becomes SHIPPED - by a courier
@@ -21,6 +22,8 @@ export type OrderShippedData = {
   awb: string | null
   /** Shiprocket's tracking page, when the shipment was booked there. */
   trackingUrl: string | null
+  /** What the courier will ask for at the door; left out or 0 when it is all paid. */
+  dueOnDelivery?: string
   items: { name: string; qty: number }[]
 }
 
@@ -31,6 +34,7 @@ export function renderOrderShipped(data: OrderShippedData): {
 } {
   const ourTrackUrl = `${siteConfig.url}/track`
   const subject = `Order ${data.number} has shipped`
+  const due = Number(data.dueOnDelivery ?? 0) > 0 ? formatMoney(data.dueOnDelivery!) : null
 
   const text = [
     `Your order is on its way.`,
@@ -40,6 +44,7 @@ export function renderOrderShipped(data: OrderShippedData): {
     ...(data.awb ? [`Tracking number (AWB): ${data.awb}`] : []),
     ...data.items.map((i) => `${i.qty} x ${i.name}`),
     ``,
+    ...(due ? [`To pay the courier on delivery: ${due}`, ``] : []),
     ...(data.trackingUrl ? [`Live tracking: ${data.trackingUrl}`] : []),
     `Or track it at ${ourTrackUrl} with your order number and this email address.`,
     ``,
@@ -125,7 +130,19 @@ ${
                   <td colspan="2" style="font-family:${MONO};font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:${C.dim};padding-bottom:4px;">
                     In this parcel
                   </td>
-                </tr>${items}
+                </tr>${items}${
+                  due
+                    ? `
+                <tr>
+                  <td style="padding:16px 0 0;font-family:${FONT};font-size:15px;font-weight:700;color:${C.bone};">
+                    To pay the courier
+                  </td>
+                  <td align="right" style="padding:16px 0 0;font-family:${FONT};font-size:20px;font-weight:700;color:${C.ember};white-space:nowrap;">
+                    ${due}
+                  </td>
+                </tr>`
+                    : ""
+                }
               </table>
 ${data.trackingUrl ? button(data.trackingUrl, "Track your parcel") : button(ourTrackUrl, "Track your order")}
 

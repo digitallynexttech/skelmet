@@ -1,10 +1,13 @@
 import "server-only"
 
 import { FEE_BASES, shippingConfig } from "@/config/shipping"
+import { DEFAULT_PAYMENT_OPTIONS } from "@/features/checkout/payment-options"
 import {
   KEY_PREFIX,
   PAYMENT_MODES,
+  paymentOptionsSchema,
   type PaymentMode,
+  type PaymentOptions,
   type ShippingCharge,
 } from "@/features/settings/schemas/runtime-settings.schema"
 import { open } from "@/features/settings/server/secret-box"
@@ -23,7 +26,7 @@ import { db } from "@/server/db"
  * and any other process within seconds.
  */
 
-export const SETTING_KEYS = ["payment", "shiprocket", "shipping"] as const
+export const SETTING_KEYS = ["payment", "shiprocket", "shipping", "checkout"] as const
 export type SettingKey = (typeof SETTING_KEYS)[number]
 
 /** A key set as saved. The secrets are sealed (secret-box.ts). */
@@ -40,6 +43,7 @@ export type StoredSettings = {
   payment?: StoredPayment
   shiprocket?: StoredShiprocket
   shipping?: Partial<ShippingCharge>
+  checkout?: unknown
 }
 
 const SETTINGS_TTL_MS = 15_000
@@ -253,4 +257,26 @@ export function resolveShipping(stored: Partial<ShippingCharge> | undefined): Sh
 /** What the buyer pays for shipping, and when: saved in the console, or config/shipping.ts. */
 export async function shippingCharge(): Promise<ShippingCharge> {
   return resolveShipping((await storedSettings()).shipping)
+}
+
+// ── paying on delivery ──────────────────────────────────────
+
+/** The saved payment options, or null when none are saved or they do not read as a whole. */
+export function savedPaymentOptions(stored: unknown): PaymentOptions | null {
+  if (!stored) return null
+  const read = paymentOptionsSchema.safeParse(stored)
+  return read.success ? read.data : null
+}
+
+/**
+ * Anything unreadable is the default - online only - never a guess: a
+ * half-read row must not switch cash on delivery on.
+ */
+export function resolvePaymentOptions(stored: unknown): PaymentOptions {
+  return savedPaymentOptions(stored) ?? structuredClone(DEFAULT_PAYMENT_OPTIONS)
+}
+
+/** Cash on delivery and the advance: who is offered each, and what each adds. */
+export async function paymentOptions(): Promise<PaymentOptions> {
+  return resolvePaymentOptions((await storedSettings()).checkout)
 }

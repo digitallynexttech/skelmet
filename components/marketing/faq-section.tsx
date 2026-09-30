@@ -1,13 +1,22 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { FAQ_ITEMS } from "@/components/marketing/content"
+import { faqItems } from "@/components/marketing/content"
 import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
 import { siteConfig } from "@/config/site"
+import { paymentCopy } from "@/features/checkout/payment-options"
+import { paymentOptions } from "@/features/settings/server/runtime-settings"
 
-export function FaqSection() {
+/**
+ * Async only for "How do I pay?", which states the ways to pay switched on in
+ * the console. The pages it sits on are prerendered, and a save there
+ * refreshes them (refreshPaymentTerms).
+ */
+export async function FaqSection() {
+  const items = faqItems(paymentCopy(await paymentOptions()).faq)
+
   // Carbon, like rider-wall. The homepage has only one other darker band, so
   // without this one its last three sections run flat into each other. It is
   // also the only
@@ -44,7 +53,7 @@ export function FaqSection() {
           </div>
         </div>
 
-        <Accordion items={FAQ_ITEMS} />
+        <Accordion items={items} />
       </div>
     </Section>
   )

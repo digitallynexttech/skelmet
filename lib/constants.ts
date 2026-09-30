@@ -56,6 +56,7 @@ export const PERMISSION_DEFINITIONS: Array<{
 /** Order workflow: each transition is its own verb route with an atomic claim (§5). */
 export const ORDER_STATUSES = [
   "PENDING",
+  "CONFIRMED",
   "PAID",
   "PACKED",
   "SHIPPED",
@@ -68,11 +69,13 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
 /**
- * Orders that have been paid for, and every stage after: the console's Orders
- * page. Awaiting payment and the unpaid orders cancelled after an hour are
- * under All orders and Abandoned carts instead.
+ * Orders the shop has to act on, and every stage after: paid for, or cash on
+ * delivery accepted (CONFIRMED). The console's Orders page. Awaiting payment
+ * and the unpaid orders cancelled after an hour are under All orders and
+ * Abandoned carts instead.
  */
 export const PAID_ORDER_STATUSES = [
+  "CONFIRMED",
   "PAID",
   "PACKED",
   "SHIPPED",
@@ -81,7 +84,7 @@ export const PAID_ORDER_STATUSES = [
   "REFUNDED",
 ] as const satisfies readonly OrderStatus[]
 
-/** Which orders a list covers: paid onwards (the Orders page) or every one. */
+/** Which orders a list covers: paid or confirmed onwards (the Orders page) or every one. */
 export type OrderScope = "paid" | "all"
 
 export function statusesIn(scope: OrderScope): readonly OrderStatus[] {
@@ -90,6 +93,7 @@ export function statusesIn(scope: OrderScope): readonly OrderStatus[] {
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Awaiting payment",
+  CONFIRMED: "Confirmed · COD",
   PAID: "Paid",
   PACKED: "Packed",
   SHIPPED: "Shipped",
@@ -103,6 +107,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_COLORS: Record<OrderStatus, "neutral" | "accent" | "success" | "danger"> =
   {
     PENDING: "neutral",
+    CONFIRMED: "success",
     PAID: "success",
     PACKED: "accent",
     SHIPPED: "accent",
@@ -124,4 +129,3 @@ export const PAGE_SIZE = 20
  * stops being a safe request once the shop has years of orders.
  */
 export const MAX_PAGE_SIZE = 200
-export const COD_FEE = 49

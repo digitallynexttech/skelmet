@@ -4,8 +4,8 @@ import { FEE_BASES, type FeeBasis } from "@/config/shipping"
 
 /**
  * The settings the console changes without a deploy: which Razorpay account
- * takes payments and its keys, the Shiprocket login, and the shipping charge.
- * Client-safe: the forms validate with these too.
+ * takes payments and its keys, the Shiprocket login, the shipping charge, and
+ * paying on delivery. Client-safe: the forms validate with these too.
  *
  * In every input, a field left out is left as it is, and an empty string
  * clears what was saved, so that value comes from .env again.
@@ -98,6 +98,69 @@ export type ShippingCharge = z.infer<typeof shippingChargeSchema>
 
 export const testPaymentSchema = z.strictObject({ mode: z.enum(PAYMENT_MODES) })
 
+// ── paying on delivery ──────────────────────────────────────
+
+/**
+ * Who is offered a way of paying. "staff" is for trying it on the live site
+ * before customers see it: only someone signed in to the console gets it at
+ * checkout, and nothing the storefront says changes.
+ */
+export const OFFERS = ["off", "staff", "everyone"] as const
+export type Offer = (typeof OFFERS)[number]
+
+export const OFFER_LABEL: Record<Offer, string> = {
+  off: "Off",
+  staff: "Staff only, to test",
+  everyone: "Everyone",
+}
+
+/** How the advance is set: a share of the order's total, or a fixed amount. */
+export const ADVANCE_KINDS = ["PERCENT", "FLAT"] as const
+export type AdvanceKind = (typeof ADVANCE_KINDS)[number]
+
+/** The most an advance may be, as a share: past it, it is simply paying online. */
+export const ADVANCE_PERCENT_MAX = 95
+
+const charge = (label: string) =>
+  z.coerce
+    .number({ error: `Enter ${label} in rupees` })
+    .int(`${label} is a whole number of rupees`)
+    .min(0, `${label} cannot be negative`)
+    .max(5_000, `${label} is at most ₹5,000`)
+
+/**
+ * Cash on delivery, and an advance online with the rest on delivery. Each has
+ * who it is offered to and what it adds to the order; paying in full online
+ * is always offered and never charged for.
+ */
+export const paymentOptionsSchema = z.strictObject({
+  cod: z.strictObject({
+    offer: z.enum(OFFERS),
+    feeRupees: charge("The cash-on-delivery charge"),
+  }),
+  partial: z
+    .strictObject({
+      offer: z.enum(OFFERS),
+      feeRupees: charge("The charge"),
+      advanceKind: z.enum(ADVANCE_KINDS),
+      advanceValue: z.coerce
+        .number({ error: "Enter the advance" })
+        .int("The advance is a whole number")
+        .min(1, "The advance is at least 1")
+        .max(100_000, "The advance is at most ₹1,00,000"),
+    })
+    .superRefine((input, ctx) => {
+      if (input.advanceKind === "PERCENT" && input.advanceValue > ADVANCE_PERCENT_MAX) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["advanceValue"],
+          message: `A percentage advance is at most ${ADVANCE_PERCENT_MAX}%`,
+        })
+      }
+    }),
+})
+export type PaymentOptions = z.infer<typeof paymentOptionsSchema>
+
 // ── what the console is shown ────────────────────────────────
 
 /** Where a value in use comes from. */
@@ -139,6 +202,7 @@ export type RuntimeSettingsView = {
     ready: boolean
   }
   shipping: ShippingCharge & { source: "saved" | "default" }
+  checkout: PaymentOptions & { source: "saved" | "default" }
   /**
    * When each section was last saved (null: never). A save sends its
    * section's back as `version`, and is refused if someone else has saved
@@ -148,4 +212,7 @@ export type RuntimeSettingsView = {
   canWrite: boolean
 }
 
-export type SettingVersions = Record<"payment" | "shiprocket" | "shipping", string | null>
+export type SettingVersions = Record<
+  "payment" | "shiprocket" | "shipping" | "checkout",
+  string | null
+>
