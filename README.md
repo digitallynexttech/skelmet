@@ -235,8 +235,15 @@ may rewrite or re-encode POST bodies on that route.
 
 Migrations do not run inside `next build`. On the production server,
 `skelmet-deploy` resets to `origin/main`, installs with the frozen lockfile,
-runs `pnpm db:migrate`, builds into whichever of two dist directories is idle
-and restarts pm2, so a failed build leaves the live one serving.
+runs `pnpm db:migrate` and builds into whichever of two dist directories is
+idle. It then starts that build on whichever of two ports (3000, 3001) is
+idle, and reloads nginx onto it only once it answers its health check and its
+main pages - the process that is serving is never restarted, so a deploy
+drops no request and a failed one leaves the live build untouched. nginx
+serves `/_next/static` from disk, from the live build and the one before it,
+so a page opened before a deploy still finds its scripts. `skelmet-rollback`
+puts the previous build back the same way. Migrations have to stay additive:
+the old build runs on the new schema until the switch.
 
 ---
 

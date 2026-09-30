@@ -21,8 +21,15 @@ is the house standard and wins over habit.
 
 Push `main`, then run `skelmet-deploy` on the server (`ssh skelmet`). It resets to
 `origin/main`, installs with the frozen lockfile, applies migrations, builds into
-the idle of two dist dirs and restarts pm2. Check `/api/health` afterwards.
-Cloudflare sits in front; nginx passes the client IP as `X-Real-IP`.
+the idle of two dist dirs, starts that build on the idle of two ports (3000,
+3001) and reloads nginx onto it once it answers its health check and its main
+pages. The serving process is never restarted, so a deploy drops no request;
+`skelmet-rollback` switches back to the previous build the same way. Check
+`/api/health` afterwards. Cloudflare sits in front; nginx passes the client IP
+as `X-Real-IP`.
+
+Migrations stay additive: the old build keeps serving on the new schema until
+the switch, and again after a rollback.
 
 ## Rules that are easy to break
 
