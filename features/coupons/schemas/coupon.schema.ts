@@ -46,6 +46,25 @@ export const updateCouponSchema = z
     { message: PERCENT_TOO_HIGH, path: ["value"] },
   )
 
+/**
+ * Renewing a code: everything a new one takes except the code itself, which
+ * is kept. The new expiry, if any, has to be still to come.
+ */
+export const renewCouponSchema = z
+  .object({
+    kind: z.enum(["PERCENT", "FLAT"]),
+    value: z.coerce.number().positive("Must be more than zero"),
+    minSubtotal: z.coerce.number().min(0).default(0),
+    maxUses: z.coerce.number().int().positive().nullable().optional(),
+    expiresAt: z.coerce
+      .date()
+      .refine((d) => d.getTime() > Date.now(), "Pick a date still to come, or leave it blank")
+      .nullable()
+      .optional(),
+    showInCart: z.boolean().default(false),
+  })
+  .refine((c) => !percentTooHigh(c.kind, c.value), { message: PERCENT_TOO_HIGH, path: ["value"] })
+
 export const validateCouponSchema = z.object({
   code: z.string().trim().toUpperCase().min(1, "Enter a code").max(40),
   subtotal: z.coerce.number().min(0),

@@ -5,6 +5,7 @@ import {
   createCouponSchema,
   PERCENT_TOO_HIGH,
   percentTooHigh,
+  renewCouponSchema,
   updateCouponSchema,
   validateCouponSchema,
 } from "@/features/coupons/schemas/coupon.schema"
@@ -201,8 +202,20 @@ export async function createCoupon(raw: unknown): Promise<ActionResult<CouponRow
 
     const input = createCouponSchema.parse(raw)
 
-    const clash = await db.coupon.findUnique({ where: { code: input.code }, select: { id: true } })
-    if (clash) return fail("A coupon with that code already exists.", undefined, 409)
+    // A code is unique for good: past orders point at it. One that has run
+    // its course is renewed instead (renewCoupon), and the answer says so.
+    const clash = await db.coupon.findUnique({ where: { code: input.code }, select: COUPON_SELECT })
+    if (clash) {
+      const existing = serialize(clash)
+      const live = existing.state === "ACTIVE" && !existing.archivedAt
+      return fail(
+        live
+          ? `${existing.code} already exists and is live. Edit or expire it instead.`
+          : `${existing.code} was used before (${existing.archivedAt ? "archived" : existing.state.toLowerCase()}). Renew it to run it again with these settings.`,
+        { existing: { id: existing.id, code: existing.code, renewable: !live } },
+        409,
+      )
+    }
 
     const row = await db.coupon.create({
       data: {
@@ -265,6 +278,56 @@ export async function updateCoupon(id: string, raw: unknown): Promise<ActionResu
       module: "coupon",
       entityId: id,
       meta: input as Record<string, unknown>,
+      ...(await getAuditMeta()),
+    })
+
+    return ok(serialize(row))
+  })
+}
+
+/**
+ * Runs an old code again - DIWALI200 next Diwali - with new terms. The code
+ * and its row stay, so last year's orders still point at it; the uses start
+ * again from nought against the new limit (the old ones are still on those
+ * orders), and it comes out of the archive if it was there.
+ */
+export async function renewCoupon(id: string, raw: unknown): Promise<ActionResult<CouponRow>> {
+  return runAction(async () => {
+    const session = await requirePermission(PERMISSIONS.COUPON_WRITE)
+    if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
+
+    const input = renewCouponSchema.parse(raw)
+    const before = await db.coupon.findUnique({
+      where: { id },
+      select: { id: true, usedCount: true, expiresAt: true, archivedAt: true },
+    })
+    if (!before) return fail("Coupon not found.", undefined, 404)
+
+    const row = await db.coupon.update({
+      where: { id },
+      data: {
+        kind: input.kind,
+        value: input.value,
+        minSubtotal: input.minSubtotal,
+        maxUses: input.maxUses ?? null,
+        expiresAt: input.expiresAt ?? null,
+        showInCart: input.showInCart,
+        usedCount: 0,
+        archivedAt: null,
+      },
+      select: COUPON_SELECT,
+    })
+
+    await createAuditLog(session, {
+      action: "coupon:renew",
+      module: "coupon",
+      entityId: id,
+      meta: {
+        code: row.code,
+        previousUses: before.usedCount,
+        previousExpiry: before.expiresAt?.toISOString() ?? null,
+        wasArchived: before.archivedAt !== null,
+      },
       ...(await getAuditMeta()),
     })
 

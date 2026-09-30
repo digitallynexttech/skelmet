@@ -102,5 +102,17 @@ export function useCouponMutations() {
     onSuccess: invalidate,
   })
 
-  return { create, expire, archive, restore, showInCart }
+  const renew = useMutation({
+    mutationFn: mutationWithToast(
+      ({ id, input }: { id: string; input: Record<string, unknown> }) =>
+        apiFetch<CouponRow>(`/api/admin/coupons/${id}/renew`, {
+          method: "POST",
+          body: JSON.stringify(input),
+        }),
+      { loading: "Renewing code…", success: "Code renewed" },
+    ),
+    onSuccess: invalidate,
+  })
+
+  return { create, expire, archive, restore, showInCart, renew }
 }

@@ -16,7 +16,7 @@ vi.mock("@/lib/env", () => ({ hasDatabase: () => true }))
 vi.mock("@/server/action-guard", () => ({ requirePermission: async () => ({ user: { id: "a" } }) }))
 vi.mock("@/server/audit", () => ({ createAuditLog: vi.fn(), getAuditMeta: async () => ({}) }))
 
-const { listCartOffers, listCoupons, updateCoupon, validateCoupon } =
+const { createCoupon, listCartOffers, listCoupons, renewCoupon, updateCoupon, validateCoupon } =
   await import("@/features/coupons/server/coupons.service")
 const { createCouponSchema, updateCouponSchema } =
   await import("@/features/coupons/schemas/coupon.schema")
@@ -145,5 +145,62 @@ describe("listCartOffers", () => {
       ok: true,
       data: [{ code: "LIVE", label: "₹500 off", minSubtotal: "3000", expiresAt: null }],
     })
+  })
+})
+
+describe("an old code run again", () => {
+  it("creating a code that is over points to renewing it", async () => {
+    mocks.db.coupon.findUnique.mockResolvedValue(
+      row("DIWALI200", { expiresAt: new Date(Date.now() - 86_400_000), usedCount: 40 }),
+    )
+    const result = await createCoupon({ code: "diwali200", kind: "FLAT", value: 200 })
+    expect(result).toMatchObject({
+      ok: false,
+      status: 409,
+      details: { existing: { id: "DIWALI200", code: "DIWALI200", renewable: true } },
+    })
+    expect(!result.ok && result.error).toMatch(/Renew it/)
+  })
+
+  it("a live code is not offered for renewing", async () => {
+    mocks.db.coupon.findUnique.mockResolvedValue(row("RIDE350"))
+    const result = await createCoupon({ code: "RIDE350", kind: "FLAT", value: 350 })
+    expect(result).toMatchObject({ status: 409, details: { existing: { renewable: false } } })
+  })
+
+  it("renewing keeps the code, starts the uses again and unarchives it", async () => {
+    mocks.db.coupon.findUnique.mockResolvedValue({
+      id: "DIWALI200",
+      usedCount: 40,
+      expiresAt: new Date("2025-11-01"),
+      archivedAt: new Date("2025-11-02"),
+    })
+    mocks.db.coupon.update.mockResolvedValue(row("DIWALI200", { value: "200" }))
+    const expiresAt = new Date(Date.now() + 30 * 86_400_000).toISOString()
+    const result = await renewCoupon("DIWALI200", {
+      kind: "FLAT",
+      value: 200,
+      maxUses: 500,
+      expiresAt,
+    })
+    expect(result.ok).toBe(true)
+    expect(mocks.db.coupon.update.mock.calls[0]![0].data).toMatchObject({
+      value: 200,
+      maxUses: 500,
+      usedCount: 0,
+      archivedAt: null,
+    })
+  })
+
+  it("will not renew to an expiry already past", async () => {
+    mocks.db.coupon.findUnique.mockResolvedValue({
+      id: "D",
+      usedCount: 0,
+      expiresAt: null,
+      archivedAt: null,
+    })
+    const result = await renewCoupon("D", { kind: "FLAT", value: 200, expiresAt: "2020-01-01" })
+    expect(result).toMatchObject({ ok: false, status: 422 })
+    expect(mocks.db.coupon.update).not.toHaveBeenCalled()
   })
 })

@@ -74,9 +74,21 @@ function CartSwitch({
 /** Digits only, so `onlyDigits("1a2") === "12"` and an empty box stays empty. */
 const onlyDigits = (s: string) => s.replace(/[^0-9]/g, "")
 
-function CreateForm({ onDone }: { onDone: () => void }) {
-  const { create } = useCouponMutations()
-  const [kind, setKind] = React.useState<"PERCENT" | "FLAT">("FLAT")
+/** The form's amounts as the box shows them: digits, blank for none. */
+const asBox = (n: number | string | null | undefined) =>
+  n === null || n === undefined || Number(n) === 0 ? "" : String(Math.round(Number(n)))
+
+/**
+ * A new code, or - given `renewing` - an old one run again with new terms.
+ * Renewing keeps the code (past orders point at it), starts the uses again
+ * and brings it out of the archive; the old expiry is not carried over.
+ */
+function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: CouponRow }) {
+  const { create, renew } = useCouponMutations()
+  const [kind, setKind] = React.useState<"PERCENT" | "FLAT">(renewing?.kind ?? "FLAT")
+  // A code typed here that turned out to exist and to be over: the way to
+  // renew it instead, with what is in the form.
+  const [clash, setClash] = React.useState<{ id: string; code: string } | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   // What is wrong with each field, shown under it: from the checks below
   // before sending, or from the server's answer.
@@ -87,20 +99,53 @@ function CreateForm({ onDone }: { onDone: () => void }) {
   // spinner that invites clicking a value up one press at a time, and a wheel
   // that quietly edits a focused field while you scroll past — 250 became 251
   // on one notch. Plain text boxes filtered to digits have neither.
-  const [amount, setAmount] = React.useState("")
-  const [minSubtotal, setMinSubtotal] = React.useState("")
-  const [maxUses, setMaxUses] = React.useState("")
+  const [amount, setAmount] = React.useState(asBox(renewing?.value))
+  const [minSubtotal, setMinSubtotal] = React.useState(asBox(renewing?.minSubtotal))
+  const [maxUses, setMaxUses] = React.useState(asBox(renewing?.maxUses))
   const [expiresAt, setExpiresAt] = React.useState("")
-  const [showInCart, setShowInCart] = React.useState(false)
+  const [showInCart, setShowInCart] = React.useState(renewing?.showInCart ?? false)
+
+  /** The form's terms as the API takes them. */
+  const terms = () => ({
+    kind,
+    value: Number(amount),
+    // Blank means no minimum, which is zero.
+    minSubtotal: Number(minSubtotal || 0),
+    // Blank means unlimited, which the service reads as null.
+    maxUses: maxUses ? Number(maxUses) : null,
+    // The field hands back local YYYY-MM-DD; end the day rather than
+    // start it, or a code set to expire today dies at midnight.
+    expiresAt: expiresAt ? new Date(expiresAt + "T23:59:59").toISOString() : null,
+    showInCart,
+  })
+
+  async function renewInstead(id: string) {
+    setError(null)
+    setFields({})
+    try {
+      await renew.mutateAsync({ id, input: terms() })
+      onDone()
+    } catch (err) {
+      if (err instanceof ApiFetchError) {
+        setFields(err.fieldErrors)
+        setError(err.message)
+      } else {
+        setError("The code was not renewed - the connection may have dropped. Try again.")
+      }
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     setFields({})
+    setClash(null)
     const form = new FormData(event.currentTarget)
-    const code = String(form.get("code") ?? "")
-      .trim()
-      .toUpperCase()
+    const code = renewing
+      ? renewing.code
+      : String(form.get("code") ?? "")
+          .trim()
+          .toUpperCase()
 
     // The server's own rules, checked here first so the answer is instant
     // and sits under the box it is about.
@@ -128,26 +173,23 @@ function CreateForm({ onDone }: { onDone: () => void }) {
       return
     }
 
+    if (renewing) {
+      await renewInstead(renewing.id)
+      return
+    }
+
     try {
-      await create.mutateAsync({
-        code,
-        kind,
-        value: Number(amount),
-        // Blank means no minimum, which is zero.
-        minSubtotal: Number(minSubtotal || 0),
-        // Blank means unlimited, which the service reads as null.
-        maxUses: maxUses ? Number(maxUses) : null,
-        // The field hands back local YYYY-MM-DD; end the day rather than
-        // start it, or a code set to expire today dies at midnight.
-        expiresAt: expiresAt ? new Date(expiresAt + "T23:59:59").toISOString() : null,
-        showInCart,
-      })
+      await create.mutateAsync({ code, ...terms() })
       onDone()
     } catch (err) {
       // The server's own words: which field, and what is wrong with it.
       if (err instanceof ApiFetchError) {
         setFields(err.fieldErrors)
         setError(err.message)
+        const existing = (
+          err.details as { existing?: { id: string; code: string; renewable: boolean } }
+        )?.existing
+        if (existing?.renewable) setClash({ id: existing.id, code: existing.code })
       } else {
         setError("The code was not created - the connection may have dropped. Try again.")
       }
@@ -160,7 +202,9 @@ function CreateForm({ onDone }: { onDone: () => void }) {
       className="border-blaze/30 bg-carbon rounded-md border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
     >
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-bone text-[22px] uppercase">New discount code</h2>
+        <h2 className="font-display text-bone text-[22px] uppercase">
+          {renewing ? `Renew ${renewing.code}` : "New discount code"}
+        </h2>
         <button
           type="button"
           onClick={onDone}
@@ -194,8 +238,24 @@ function CreateForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Code" error={fields.code} hint="3 to 24 letters, numbers or dashes">
-          <Input name="code" required placeholder="SKULL250" className="font-mono uppercase" />
+        <Field
+          label="Code"
+          error={fields.code}
+          hint={
+            renewing
+              ? `Kept as it is. Uses start again from 0; ${renewing.usedCount} were used before.`
+              : "3 to 24 letters, numbers or dashes"
+          }
+        >
+          <Input
+            name="code"
+            required
+            placeholder="SKULL250"
+            defaultValue={renewing?.code}
+            readOnly={Boolean(renewing)}
+            onChange={() => setClash(null)}
+            className="font-mono uppercase read-only:opacity-70"
+          />
         </Field>
         <Field label={kind === "FLAT" ? "Amount off (₹)" : "Percent off"} error={fields.value}>
           <Input
@@ -250,10 +310,28 @@ function CreateForm({ onDone }: { onDone: () => void }) {
 
       {error ? <p className="text-magenta mt-4 text-[13.5px]">{error}</p> : null}
 
-      <div className="mt-6 flex gap-2.5">
-        <Button type="submit" variant="primary" size="md" disabled={create.isPending}>
-          Create code
-        </Button>
+      <div className="mt-6 flex flex-wrap gap-2.5">
+        {clash ? (
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            disabled={renew.isPending}
+            onClick={() => void renewInstead(clash.id)}
+          >
+            <RotateCcw className="size-4" strokeWidth={2.2} />
+            Renew {clash.code}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={create.isPending || renew.isPending}
+          >
+            {renewing ? "Renew code" : "Create code"}
+          </Button>
+        )}
         <Button type="button" variant="ghost" size="md" onClick={onDone}>
           Cancel
         </Button>
@@ -269,6 +347,16 @@ export function CouponManager() {
   const view: CouponView = state.view === "archived" ? "archived" : "codes"
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const [creating, setCreating] = React.useState(false)
+  const [renewing, setRenewing] = React.useState<CouponRow | null>(null)
+  const openForm = (row: CouponRow | null) => {
+    setRenewing(row)
+    setCreating(true)
+    window.scrollTo({ top: 0 })
+  }
+  const closeForm = () => {
+    setCreating(false)
+    setRenewing(null)
+  }
   const debounced = useDebounce(rawQuery, 350)
 
   React.useEffect(() => {
@@ -373,17 +461,27 @@ export function CouponManager() {
       align: "right",
       cell: (c) =>
         view === "archived" ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={restore.isPending}
-            onClick={() => restore.mutate(c.id)}
-          >
-            <RotateCcw className="size-4" strokeWidth={2} />
-            Restore
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => openForm(c)}>
+              Renew
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={restore.isPending}
+              onClick={() => restore.mutate(c.id)}
+            >
+              <RotateCcw className="size-4" strokeWidth={2} />
+              Restore
+            </Button>
+          </div>
         ) : (
           <div className="flex justify-end gap-2">
+            {c.state !== "ACTIVE" ? (
+              <Button variant="ghost" size="sm" onClick={() => openForm(c)}>
+                Renew
+              </Button>
+            ) : null}
             {c.state === "ACTIVE" ? (
               <Button
                 variant="ghost"
@@ -418,7 +516,7 @@ export function CouponManager() {
         description="Discount codes customers can enter at checkout, or apply in the cart when In cart is on. Archived codes stop working and move to the Archive tab."
         actions={
           !creating ? (
-            <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
+            <Button variant="primary" size="sm" onClick={() => openForm(null)}>
               <Plus className="size-4" strokeWidth={2.2} />
               New code
             </Button>
@@ -426,7 +524,13 @@ export function CouponManager() {
         }
       />
 
-      {creating ? <CreateForm onDone={() => setCreating(false)} /> : null}
+      {creating ? (
+        <CreateForm
+          key={renewing?.id ?? "new"}
+          renewing={renewing ?? undefined}
+          onDone={closeForm}
+        />
+      ) : null}
 
       <div
         role="tablist"
