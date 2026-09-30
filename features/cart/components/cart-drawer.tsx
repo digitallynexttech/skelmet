@@ -250,6 +250,7 @@ function CartContents({
   const mounted = useHydrated()
   const items = useCart((s) => s.items)
   const setQty = useCart((s) => s.setQty)
+  const remove = useCart((s) => s.remove)
 
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
   // The coupon comes off the total here as it does at checkout and on the
@@ -351,9 +352,22 @@ function CartContents({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-bone line-clamp-2 text-[14px] leading-snug font-semibold">
-                          {line.productName}
-                        </h4>
+                        {/* The bin beside the name takes the whole line out,
+                            however many are in it. */}
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="text-bone line-clamp-2 text-[14px] leading-snug font-semibold">
+                            {line.productName}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => remove(line.id)}
+                            aria-label={`Remove ${line.colourwayName} from the cart`}
+                            title="Remove"
+                            className="text-dim hover:text-magenta -mt-1.5 -mr-1 flex size-8 shrink-0 items-center justify-center transition-colors"
+                          >
+                            <Trash2 className="size-4" strokeWidth={1.9} />
+                          </button>
+                        </div>
                         <div className="text-dim mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.1em] uppercase">
                           <span
                             className="size-2 shrink-0 rounded-full"
@@ -372,22 +386,17 @@ function CartContents({
                         </div>
                       </div>
 
-                      {/* The stepper is the whole control: down from one takes
-                          the line out, as the minus says. */}
+                      {/* Quantity only; the bin by the name removes the line. It
+                          stops at one rather than doubling as a remove. */}
                       <div className="bg-blaze text-void flex h-9 shrink-0 items-center rounded-lg">
                         <button
                           type="button"
                           onClick={() => setQty(line.id, line.qty - 1)}
-                          aria-label={
-                            line.qty === 1 ? `Remove ${line.colourwayName}` : "Decrease quantity"
-                          }
-                          className="flex h-full w-8 items-center justify-center"
+                          disabled={line.qty <= 1}
+                          aria-label="Decrease quantity"
+                          className="flex h-full w-8 items-center justify-center disabled:opacity-40"
                         >
-                          {line.qty === 1 ? (
-                            <Trash2 className="size-3.5" strokeWidth={2.2} />
-                          ) : (
-                            <Minus className="size-3.5" strokeWidth={2.6} />
-                          )}
+                          <Minus className="size-3.5" strokeWidth={2.6} />
                         </button>
                         <span className="min-w-5 text-center font-mono text-[14px] font-bold">
                           {line.qty}
@@ -502,17 +511,24 @@ function CartContents({
           </div>
 
           <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <ButtonLink
+            {/* The total and the way on, in one bar: what they will pay before
+                shipping on the left, where it goes on the right. */}
+            <Link
               href="/checkout"
-              variant="primary"
-              size="md"
-              full
               onClick={onClose}
-              className="bg-blaze bg-none shadow-none hover:shadow-none"
+              className="bg-blaze text-void hover:bg-ember flex min-h-[60px] items-center justify-between gap-4 rounded-2xl px-5 py-2.5 transition-colors"
             >
-              Proceed to checkout
-              <ArrowRight className="size-4" strokeWidth={2.4} />
-            </ButtonLink>
+              <span className="flex flex-col leading-tight">
+                <Money value={totals.total} className="font-display text-[24px] leading-none" />
+                <span className="mt-1 font-mono text-[10px] font-bold tracking-[0.14em] uppercase opacity-75">
+                  Total
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5 text-[15px] font-bold whitespace-nowrap">
+                Proceed to checkout
+                <ArrowRight className="size-4" strokeWidth={2.4} />
+              </span>
+            </Link>
           </div>
         </div>
       )}
