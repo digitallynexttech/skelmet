@@ -43,8 +43,8 @@ export function Hero() {
           className={cn(
             "relative flex w-full flex-col items-center",
             "[--hw:14.4vw] [--stage:512px] sm:[--stage:600px]",
-            "lg:[--hw:14vw] lg:[--stage:min(660px,calc(100svh_-_415px))]",
-            "xl:[--hw:18.8vw] xl:[--stage:min(720px,calc(100svh_-_180px))]",
+            "lg:[--hw:14vw] lg:[--stage:min(660px,calc(100svh_-_451px))]",
+            "xl:[--hw:18.8vw] xl:[--stage:min(720px,calc(100svh_-_216px))]",
             // Tail: the flanks anchor to this wrapper, which otherwise stops at
             // the chin and strands them mid-section. It reaches into the slack
             // the section min-height leaves below, so bottom-0 lands where the
