@@ -5,9 +5,15 @@
  *   node scripts/build-rider-wall.mjs [source-dir]
  *
  * Real photographs, on purpose: the rendered scenes that were here read as
- * made up. So nothing is painted in or taken out. Each is cropped square for
- * its tile and toned a little down - a touch of contrast, five per cent less
- * light - so a white office wall does not glare out of the dark page.
+ * made up. Each is cropped square for its tile and toned a little down - a
+ * touch of contrast, five per cent less light - so a white office wall does
+ * not glare out of the dark page.
+ *
+ * One change to what was photographed: every shot had the same black helmet,
+ * so two are repainted, olive green and blue (rider-wall-edits/ beside the
+ * photographs). An image model repainted the shell only, and everything else
+ * - the skull, the mount, the straps, the gloves, the wall - was put back
+ * from the photograph pixel for pixel, so the product is never the model's.
  *
  * A changed photograph needs a new file name: /product is cached for 30 days
  * as immutable.
@@ -39,9 +45,19 @@ const MAX = 1400
  * height, and the square's side as a fraction of its width.
  */
 const SHOTS = [
-  { from: "IMG_0777.JPG.jpeg", to: "rider-full-kit.jpg", crop: [0, 0, 1] },
+  // IMG_0777, cropped [0, 0, 1] before the repaint.
+  {
+    from: "rider-wall-edits/IMG_0777-olive-helmet.png",
+    to: "rider-olive-helmet.jpg",
+    crop: [0, 0, 1],
+  },
   { from: "IMG_0788.JPG.jpeg", to: "rider-bare-skull.jpg", crop: [0.07, 0.12, 0.9] },
-  { from: "IMG_0790.JPG.jpeg", to: "rider-three-quarter.jpg", crop: [0, 0.1, 1] },
+  // IMG_0790, cropped [0, 0.1, 1] before the repaint.
+  {
+    from: "rider-wall-edits/IMG_0790-blue-helmet.png",
+    to: "rider-blue-helmet.jpg",
+    crop: [0, 0, 1],
+  },
   { from: "6.jpeg", to: "rider-dark-door.jpg", crop: [0, 0.08, 1] },
 ]
 

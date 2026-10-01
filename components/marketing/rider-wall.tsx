@@ -6,22 +6,23 @@ import { siteConfig } from "@/config/site"
 
 /**
  * Our own photographs for now - real ones, taken on a phone, of the mount in
- * use on two of our walls (scripts/build-rider-wall.mjs) - and the alt text
- * says so rather than passing them off as customers' walls. Riders' shots go
- * here once people tag us and agree to be featured.
+ * use on two of our walls, two of them with the helmet repainted so the wall
+ * is not one helmet four times (scripts/build-rider-wall.mjs) - and the alt
+ * text says so rather than passing them off as customers' walls. Riders'
+ * shots go here once people tag us and agree to be featured.
  */
 const SHOTS = [
   {
-    src: "/product/rider-full-kit.jpg",
-    alt: "Our mount with a helmet over the skull, gloves on the hook and a riding jacket below",
+    src: "/product/rider-olive-helmet.jpg",
+    alt: "Our mount with an olive-green helmet over the skull, gloves on the hook and a riding jacket below",
   },
   {
     src: "/product/rider-bare-skull.jpg",
     alt: "The flame skull on its arm with no helmet, gloves hanging from the hook",
   },
   {
-    src: "/product/rider-three-quarter.jpg",
-    alt: "A helmet on our mount from the side, the skull showing through the visor",
+    src: "/product/rider-blue-helmet.jpg",
+    alt: "A blue helmet on our mount from the side, the skull showing through the visor",
   },
   {
     src: "/product/rider-dark-door.jpg",
