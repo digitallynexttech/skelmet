@@ -1,19 +1,16 @@
 /**
- * The product gallery's use-case shots, each in all three colourways, and
- * the colourway picker's skull swatches.
+ * The product gallery's use-case shots, each in all three colourways.
  *
  *   node scripts/build-gallery-shots.mjs [owner-photo-dir]
  *
  * Every shot shows the real mount - the skull on its arm, the plate on the
  * wall - in use: helmet and riding gear hung on it, a garage at night, the
- * owner's own photograph of the bare skull with gloves on its hook, and
- * screwing it up. They are the scenes the home page already uses (their
- * provenance is in bento.tsx and build-rider-wall.mjs), cropped square for
- * the gallery. The orange is the scene as made; the olive and the grey are
+ * owner's own photograph of the bare skull with gloves on its hook (also the
+ * side view: it shows the arm as it ships), and screwing it up. They are the
+ * scenes the home page already uses (their provenance is in bento.tsx and
+ * build-rider-wall.mjs), cropped square for the gallery. The orange is the scene as made; the olive and the grey are
  * recoloured from it (recolour-skull.mjs), so all three finishes share
  * framing pixel for pixel and switching colourway does not shift the image.
- *
- * The swatches are the three real prints, cut out of colourway-lineup.jpg.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -93,28 +90,4 @@ for (const shot of SHOTS) {
     const kb = (fs.statSync(file).size / 1024).toFixed(0)
     console.log(`${path.basename(file).padEnd(36)} ${out}x${out}  ${kb} KB`)
   }
-}
-
-/** Each print's face in colourway-lineup.jpg: centre x as a fraction of the width. */
-const SWATCHES = [
-  { id: "blaze", cx: 0.19 },
-  { id: "olive", cx: 0.5 },
-  { id: "ghost", cx: 0.81 },
-]
-const lineup = path.join(DIR, "colourway-lineup.jpg")
-const { width: LW, height: LH } = await sharp(lineup).metadata()
-for (const s of SWATCHES) {
-  const size = Math.round(LW * 0.25)
-  const file = path.join(DIR, `swatch-${s.id}.jpg`)
-  await sharp(lineup)
-    .extract({
-      left: Math.round(s.cx * LW - size / 2),
-      top: Math.round(LH * 0.45 - size / 2),
-      width: size,
-      height: size,
-    })
-    .resize(192, 192, { kernel: "lanczos3" })
-    .jpeg({ quality: 86, mozjpeg: true })
-    .toFile(file)
-  console.log(`${path.basename(file).padEnd(36)} 192x192`)
 }

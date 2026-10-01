@@ -3,7 +3,17 @@
 import * as React from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Check, CreditCard, Minus, Package, Plus, ShieldCheck, Truck } from "lucide-react"
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Minus,
+  Package,
+  Plus,
+  ShieldCheck,
+  Truck,
+} from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { Stars } from "@/components/shared/stars"
@@ -83,10 +93,49 @@ export function ProductDetail({
       product.gallery.map((shot) => ({
         src: shot.src[colourway.id],
         alt: `${colourway.name} — ${shot.alt}`,
+        caption: shot.caption,
       })),
     [colourway, product.gallery],
   )
   const active = gallery[Math.min(shot, gallery.length - 1)]!
+
+  // The thumbnail row shows five at a time and scrolls within itself; the
+  // arrows step it one thumbnail at a time and fade out at either end.
+  const thumbs = React.useRef<HTMLDivElement>(null)
+  const [canScroll, setCanScroll] = React.useState({ back: false, forward: false })
+  const measureThumbs = React.useCallback(() => {
+    const el = thumbs.current
+    if (!el) return
+    setCanScroll({
+      back: el.scrollLeft > 1,
+      forward: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+    })
+  }, [])
+  React.useEffect(() => {
+    measureThumbs()
+    window.addEventListener("resize", measureThumbs)
+    return () => window.removeEventListener("resize", measureThumbs)
+  }, [measureThumbs, gallery.length])
+  const stepThumbs = (direction: 1 | -1) => {
+    const el = thumbs.current
+    const first = el?.firstElementChild as HTMLElement | null
+    if (!el || !first) return
+    el.scrollBy({ left: direction * (first.offsetWidth + 10), behavior: "smooth" })
+  }
+  // The picked shot stays in view: a new colourway goes back to the first.
+  React.useEffect(() => {
+    const el = thumbs.current
+    const thumb = el?.children[shot] as HTMLElement | undefined
+    if (!el || !thumb) return
+    if (thumb.offsetLeft < el.scrollLeft) {
+      el.scrollTo({ left: thumb.offsetLeft, behavior: "smooth" })
+    } else if (thumb.offsetLeft + thumb.offsetWidth > el.scrollLeft + el.clientWidth) {
+      el.scrollTo({
+        left: thumb.offsetLeft + thumb.offsetWidth - el.clientWidth,
+        behavior: "smooth",
+      })
+    }
+  }, [shot])
 
   const lineTotal = Number(colourway.price) * qty
   // Checkout refuses a sold-out colourway anyway; say so before anyone tries.
@@ -131,28 +180,63 @@ export function ProductDetail({
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">
             {colourway.inStock ? <Badge variant="solid">In stock</Badge> : null}
           </div>
+          {/* A use-case shot says what it shows. */}
+          {active.caption ? (
+            <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(7_6_10_/_0.92)_0%,rgb(7_6_10_/_0.7)_45%,rgb(7_6_10_/_0)_100%)] px-5 pt-16 pb-5 sm:px-7 sm:pb-6">
+              <p className="font-display text-bone text-[22px] leading-[1.1] uppercase sm:text-[28px]">
+                {active.caption.title}
+              </p>
+              <p className="text-ash mt-1.5 max-w-[460px] text-[14px] leading-[1.55] sm:text-[15px]">
+                {active.caption.body}
+              </p>
+            </div>
+          ) : null}
         </div>
 
-        {/* Fixed height rather than aspect-square: at this column width square
-            thumbs are ~160px tall and push the gallery past the fold. Seven
-            shots: one row from sm; on a phone the row scrolls sideways within
-            itself (never the page) rather than shrinking thumbs below a tap. */}
-        <div className="flex w-full gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-7 sm:gap-2.5 sm:overflow-visible sm:pb-0">
-          {gallery.map((g, i) => (
-            <button
-              key={g.src + i}
-              type="button"
-              onClick={() => setShot(i)}
-              aria-label={`View ${g.alt}`}
-              aria-current={i === shot}
-              className={cn(
-                "relative aspect-square max-h-[84px] w-16 shrink-0 overflow-hidden rounded-xl border transition-colors sm:w-auto",
-                i === shot ? "border-blaze" : "border-white/10 hover:border-white/25",
-              )}
-            >
-              <Image src={g.src} alt="" fill sizes="120px" className="object-cover" />
-            </button>
-          ))}
+        {/* Five thumbnails at a time, arrows either side. The row scrolls
+            within itself - never the page - with its scrollbar hidden; the
+            arrows are the way along it. Fixed height rather than square: at
+            this column width square thumbs push the gallery past the fold. */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => stepThumbs(-1)}
+            disabled={!canScroll.back}
+            aria-label="Previous pictures"
+            className="text-bone hover:border-blaze grid size-9 shrink-0 place-items-center rounded-full border border-white/15 transition-colors disabled:pointer-events-none disabled:opacity-30"
+          >
+            <ChevronLeft className="size-4" strokeWidth={2} aria-hidden />
+          </button>
+          <div
+            ref={thumbs}
+            onScroll={measureThumbs}
+            className="flex min-w-0 flex-1 snap-x [scrollbar-width:none] gap-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+          >
+            {gallery.map((g, i) => (
+              <button
+                key={g.src + i}
+                type="button"
+                onClick={() => setShot(i)}
+                aria-label={`View ${g.alt}`}
+                aria-current={i === shot}
+                className={cn(
+                  "relative aspect-square max-h-[84px] w-[calc((100%-2.5rem)/5)] shrink-0 snap-start overflow-hidden rounded-xl border transition-colors",
+                  i === shot ? "border-blaze" : "border-white/10 hover:border-white/25",
+                )}
+              >
+                <Image src={g.src} alt="" fill sizes="120px" className="object-cover" />
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => stepThumbs(1)}
+            disabled={!canScroll.forward}
+            aria-label="More pictures"
+            className="text-bone hover:border-blaze grid size-9 shrink-0 place-items-center rounded-full border border-white/15 transition-colors disabled:pointer-events-none disabled:opacity-30"
+          >
+            <ChevronRight className="size-4" strokeWidth={2} aria-hidden />
+          </button>
         </div>
       </div>
 
@@ -229,11 +313,11 @@ export function ProductDetail({
                     selected ? { borderColor: c.hex, boxShadow: `0 0 16px ${c.hex}55` } : undefined
                   }
                 >
-                  {/* The real print's face in each colourway. For the plain colour
+                  {/* The skull's 3D model in this colourway. For the plain colour
                       circle instead, comment this span out and uncomment the one
                       below it. */}
-                  <span className="relative block size-11 overflow-hidden rounded-full">
-                    <Image src={c.swatch} alt="" fill sizes="44px" className="object-cover" />
+                  <span className="relative block size-14">
+                    <Image src={c.swatch} alt="" fill sizes="56px" className="object-contain" />
                   </span>
                   {/* <span className="block size-8 rounded-full" style={{ backgroundColor: c.hex }} /> */}
                 </button>
@@ -354,7 +438,10 @@ export function ProductDetail({
 
         {/* The declarations the Legal Metrology (Packaged Commodities) Rules
             require of an online listing, in one place. Collapsed, because a
-            buyer rarely needs them - but always in the page. */}
+            buyer rarely needs them - but always in the page. The maker is
+            named without its address, the owner's call on 2026-10-01; the
+            rules ask for the address too, and it is on /contact and in the
+            policies. */}
         <details className="group rounded-tile bg-carbon border border-white/[0.09] px-5 py-4">
           <summary className="text-dim flex min-h-8 cursor-pointer list-none items-center justify-between font-mono text-[11px] tracking-[0.18em] uppercase">
             Product information
@@ -375,10 +462,7 @@ export function ProductDetail({
                 </>,
               ],
               ["Country of origin", "India"],
-              [
-                "Manufactured and packed by",
-                `${siteConfig.legalEntity}, ${siteConfig.address.line1}, ${siteConfig.address.city} ${siteConfig.address.pin}`,
-              ],
+              ["Manufactured and packed by", siteConfig.legalEntity],
               ["Consumer care", `${siteConfig.supportEmail} · ${siteConfig.phone}`],
             ].map(([label, value]) => (
               <React.Fragment key={String(label)}>

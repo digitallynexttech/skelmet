@@ -6,7 +6,7 @@ import { SectionLabel } from "@/components/shared/section-label"
 
 const CLIPS = [
   { src: "/product/lifestyle-garage.jpg", title: "Unboxing to wall", length: "0:42" },
-  { src: "/product/install-drill-assembled.jpg", title: "The 10-minute fit", length: "1:08" },
+  { src: "/product/why-install-olive.jpg", title: "The 10-minute fit", length: "1:08" },
   { src: "/product/lifestyle-room.jpg", title: "A week later", length: "0:26" },
 ]
 

@@ -11,9 +11,9 @@ export const siteConfig = {
   legalForm: "sole proprietorship",
   gstin: "09AOIPJ0692M1ZG",
   city: "Noida",
-  email: "skelmetindia@gmail.com",
-  supportEmail: "skelmetindia@gmail.com",
-  grievanceEmail: "skelmetindia@gmail.com",
+  email: "contact@skelmet.in",
+  supportEmail: "contact@skelmet.in",
+  grievanceEmail: "contact@skelmet.in",
   phone: "+91 98187 45945",
   address: {
     line1: "B-121, B Block, Udyog Marg, Sector 6",

@@ -41,12 +41,12 @@ export async function FaqSection() {
             </Link>{" "}
             and we reply within {siteConfig.promise.supportReply}.
           </p>
-          {/* Square: the skull and its arm fill 62% of this portrait picture's
-              height, more than a 4:3 crop keeps; a square keeps the middle 81%. */}
+          {/* Square, like the picture: the skull, its arm and the gloves on its
+              hook, with nothing cropped off. */}
           <div className="rounded-tile relative hidden aspect-square overflow-hidden border border-white/[0.08] lg:block">
             <Image
-              src="/product/mount-side-ghost-grey.jpg"
-              alt="Side profile of the SKELMET mount in Ghost Grey on its black arm"
+              src="/product/gallery-bare-skull-ghost-grey.jpg"
+              alt="The SKELMET mount in Ghost Grey on its black arm, gloves hanging from the hook"
               fill
               sizes="(min-width: 1280px) 460px, 400px"
               className="object-cover"

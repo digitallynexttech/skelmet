@@ -19,8 +19,9 @@ export type Colourway = {
   /** Swatch token: matches the filament, not the UI palette. */
   hex: string
   /**
-   * The picker's swatch: the real print's face, cut out of
-   * colourway-lineup.jpg (scripts/build-gallery-shots.mjs).
+   * The picker's swatch: the skull's own 3D model - the print file - rendered
+   * in this filament, three-quarter front, on a transparent ground. The
+   * colours are the real prints', from colourway-lineup.jpg.
    */
   swatch: string
   blurb: string
@@ -67,6 +68,8 @@ export type Product = {
 export type GalleryShot = {
   alt: string
   src: Record<ColourwayId, string>
+  /** For a shot of the mount in use: what it is showing, over the image. */
+  caption?: { title: string; body: string }
 }
 
 export const COLOURWAYS: Colourway[] = [
@@ -75,7 +78,7 @@ export const COLOURWAYS: Colourway[] = [
     name: "Blaze Orange",
     sku: "SKM-BLZ",
     hex: "#FF5A1F",
-    swatch: "/product/swatch-blaze.jpg",
+    swatch: "/product/swatch-3d-blaze.png",
     blurb: "Bright and hot, built to catch the eye.",
     image: "/product/product-front.jpg",
     price: "3499",
@@ -88,7 +91,7 @@ export const COLOURWAYS: Colourway[] = [
     name: "Militia Olive",
     sku: "SKM-OLV",
     hex: "#8A9A5B",
-    swatch: "/product/swatch-olive.jpg",
+    swatch: "/product/swatch-3d-olive.png",
     blurb: "Bold in presence, subtle in colour.",
     image: "/product/colourway-olive-print.jpg",
     price: "3499",
@@ -103,7 +106,7 @@ export const COLOURWAYS: Colourway[] = [
     // print in colourway-lineup.jpg: near neutral, a faint violet cast. It
     // was #C8CED6, which read as silver.
     hex: "#98979E",
-    swatch: "/product/swatch-ghost.jpg",
+    swatch: "/product/swatch-3d-ghost.png",
     blurb: "Calm, cold and still as stone.",
     image: "/product/colourway-ghost-grey-print.jpg",
     price: "3499",
@@ -131,17 +134,27 @@ export const FLAME_SKULL_MOUNT: Product = {
         ghost: "/product/colourway-ghost-grey-print.jpg",
       },
     },
+    // The owner's photograph, the real arm: the side view. (mount-side.jpg
+    // was a render whose arm is not the one that ships.)
     {
-      alt: "Side profile showing the mount arm",
+      alt: "The skull on its arm with no helmet, gloves hanging from the hook",
       src: {
-        blaze: "/product/mount-side.jpg",
-        olive: "/product/mount-side-olive.jpg",
-        ghost: "/product/mount-side-ghost-grey.jpg",
+        blaze: "/product/gallery-bare-skull.jpg",
+        olive: "/product/gallery-bare-skull-olive.jpg",
+        ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
+      },
+      caption: {
+        title: "Hooks under the arm",
+        body: "Gloves and keys hang below the skull, helmet on or off. Rated for 10 kg.",
       },
     },
     // In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
     {
       alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
+      caption: {
+        title: "All your riding gear in one place",
+        body: "Helmet on the skull; jacket, gloves and keys on the hooks under the arm.",
+      },
       src: {
         blaze: "/product/gallery-wall-gear.jpg",
         olive: "/product/gallery-wall-gear-olive.jpg",
@@ -150,6 +163,10 @@ export const FLAME_SKULL_MOUNT: Product = {
     },
     {
       alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
+      caption: {
+        title: "Full-face, open-face or modular",
+        body: "The skull sits inside the helmet and spreads its weight across the liner.",
+      },
       src: {
         blaze: "/product/gallery-garage-night.jpg",
         olive: "/product/gallery-garage-night-olive.jpg",
@@ -157,15 +174,11 @@ export const FLAME_SKULL_MOUNT: Product = {
       },
     },
     {
-      alt: "The skull on its arm with no helmet, gloves hanging from the hook",
-      src: {
-        blaze: "/product/gallery-bare-skull.jpg",
-        olive: "/product/gallery-bare-skull-olive.jpg",
-        ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
-      },
-    },
-    {
       alt: "Screwing the mount to the wall through the foot of its plate",
+      caption: {
+        title: "Up in four steps",
+        body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
+      },
       src: {
         blaze: "/product/gallery-install.jpg",
         olive: "/product/gallery-install-olive.jpg",

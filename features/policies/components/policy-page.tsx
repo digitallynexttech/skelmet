@@ -288,11 +288,11 @@ export function PolicyPage({ policy }: { policy: Policy }) {
         </div>
         <div className="relative order-first min-h-[240px] lg:order-last lg:min-h-[300px]">
           <Image
-            src="/product/mount-side.jpg"
-            alt="Side profile of the SKELMET mount"
+            src="/product/gallery-bare-skull.jpg"
+            alt="The SKELMET mount on its black arm, gloves hanging from the hook"
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
+            className="object-cover object-[50%_35%]"
           />
         </div>
       </section>
