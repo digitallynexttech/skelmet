@@ -1,6 +1,5 @@
 import Image from "next/image"
 
-import { SkullDock } from "@/components/marketing/skull-dock"
 import { SectionLabel } from "@/components/shared/section-label"
 import { DropListForm } from "@/features/newsletter/components/drop-list-form"
 
@@ -15,8 +14,7 @@ export function DropList() {
           sizes="(min-width: 1024px) 50vw, 100vw"
           className="object-cover"
         />
-        {/* The hero skull's last stop: it lands on the blaze skull in the lineup. */}
-        <SkullDock src="/product/colourway-lineup.jpg" sizes="(min-width: 1024px) 50vw, 100vw" />
+        {/* No skull dock here: the hero skull's route ends at The build. */}
       </div>
       <div className="bg-carbon flex flex-col justify-center px-5 py-14 sm:px-8 sm:py-16 xl:px-14">
         <SectionLabel numbered tone="violet" className="mb-4">

@@ -67,6 +67,9 @@ const DIP = 0.14
  * the photographed one most closely here (0.927), less at 14° and at 22°,
  * and to the eye it is at 18° that the seated skull meets the camera as the
  * photograph does.
+ *
+ * A photo can set its own (SkullDock's `pitch`): the box-contents flat lay is
+ * shot from straight above, square to the skull's side, so it takes 0.
  */
 const DOCK_PITCH = 0.31
 
@@ -91,6 +94,8 @@ export type Anchor = {
   turn: number
   /** The photo's own skull stays hidden for the whole route, not just the landing. */
   hideOwn: boolean
+  /** How far the skull nods toward the camera seated here, radians (DOCK_PITCH unless the photo says). */
+  pitch: number
   /** The photographed skull's centre and height, document px. */
   cx: number
   cy: number
@@ -149,6 +154,7 @@ export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
         home: true,
         turn: 0,
         hideOwn: false,
+        pitch: 0,
         cx: left + rect.width * rest.centreX,
         cy: top + rect.height * rest.centreY,
         h: rect.height * rest.height,
@@ -170,6 +176,8 @@ export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
       home: false,
       turn: Number(el.dataset.skullTurn) || 0,
       hideOwn: el.hasAttribute("data-skull-hide-own"),
+      // A shot from straight above (a flat lay) has no "above eye level" to nod to.
+      pitch: el.dataset.skullPitch === undefined ? DOCK_PITCH : Number(el.dataset.skullPitch),
       cx: left + offsetX + ((x0 + x1) / 2) * scale,
       cy: top + offsetY + ((y0 + y1) / 2) * scale,
       h: (y1 - y0) * scale,
@@ -277,12 +285,14 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
   const plates = new Map<HTMLElement, number>()
   let clip: Box | null = null
   let nearest = 0
+  let seatPitch = DOCK_PITCH
   for (const a of anchors) {
     if (a.home || !a.clip) continue
     const w = proximity(cx, cy, a)
     plates.set(a.el, a.hideOwn ? 1 : w)
     if (w > nearest) {
       nearest = w
+      seatPitch = a.pitch
       // Relaxed away from the photo's edges as the skull leaves, so the crop
       // never slices it mid-air.
       const slack = (1 - w) * vh
@@ -295,5 +305,5 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     }
   }
 
-  return { cx, cy, h, bob, spin, turn, pitch: DOCK_PITCH * nearest, clip, plates, docked: nearest }
+  return { cx, cy, h, bob, spin, turn, pitch: seatPitch * nearest, clip, plates, docked: nearest }
 }

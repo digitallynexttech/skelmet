@@ -7,14 +7,8 @@
   },
   "/product/box-contents.jpg": {
     "plate": "/product/box-contents-plate.webp",
-    "width": 2000,
-    "height": 1250,
-    "skull": [101, 155, 679, 689]
-  },
-  "/product/colourway-lineup.jpg": {
-    "plate": "/product/colourway-lineup-plate.webp",
-    "width": 2000,
-    "height": 1116,
-    "skull": [106, 152, 664, 976]
+    "width": 2400,
+    "height": 1500,
+    "skull": [129, 96, 860, 718]
   }
 }

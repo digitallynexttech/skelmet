@@ -54,10 +54,11 @@ const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
 
 /**
  * The photos with a skull to dock on. `spill` is for a shot where the print
- * throws its colour onto the set: the lineup's orange skull glows on the dark
- * backdrop and the glossy floor, too faintly to key but plainly orange once
- * the skull is gone. See growSpill. `clean` is the photo without its skull,
- * relative to the repo, aligned to it pixel for pixel.
+ * throws its colour onto the set: an orange skull glows on a dark backdrop,
+ * too faintly to key but plainly orange once the skull is gone. See
+ * growSpill. `clean` is the photo without its skull, relative to the repo,
+ * aligned to it pixel for pixel. The route ends at the box contents, so the
+ * lineup in the Next drop band is no longer a stop.
  */
 const SOURCES = [
   { src: "/product/product-front.jpg" },
@@ -66,7 +67,6 @@ const SOURCES = [
     spill: { key: 10, reach: 160 },
     clean: "../FILES_SKELMET/website-source-media/box-contents-clean.png",
   },
-  { src: "/product/colourway-lineup.jpg", spill: { key: 10, reach: 160 } },
 ]
 const DOCKS = path.join(ROOT, "components/marketing/skull-docks.json")
 
@@ -362,6 +362,36 @@ async function cleanFill(file, W, H) {
   return Float32Array.from(data)
 }
 
+/**
+ * Brings a clean shot to the photo's exposure. A skull-less shot made by
+ * repainting the photo comes back a shade off, and the patch would show as a
+ * lighter skull. Gains per channel, from bare backdrop (dark, colourless) in
+ * both pictures, away from the skull and the shadow it throws in the photo.
+ */
+function matchTable(filled, rgb, chroma, W, H, [x0, y0, x1, y1]) {
+  const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.35)
+  const sums = [0, 0, 0, 0, 0, 0]
+  for (let i = 0; i < W * H; i += 3) {
+    const x = i % W
+    const y = (i / W) | 0
+    if (x > x0 - pad && x < x1 + pad && y > y0 - pad && y < y1 + pad) continue
+    const p = i * 3
+    const lumPhoto = 0.299 * rgb[p] + 0.587 * rgb[p + 1] + 0.114 * rgb[p + 2]
+    const lumClean = 0.299 * filled[p] + 0.587 * filled[p + 1] + 0.114 * filled[p + 2]
+    const chromaClean =
+      Math.max(filled[p], filled[p + 1], filled[p + 2]) -
+      Math.min(filled[p], filled[p + 1], filled[p + 2])
+    if (lumPhoto > 90 || lumClean > 90 || chroma[i] > 18 || chromaClean > 18) continue
+    for (let c = 0; c < 3; c++) {
+      sums[c] += rgb[p + c]
+      sums[3 + c] += filled[p + c]
+    }
+  }
+  const gains = [0, 1, 2].map((c) => (sums[3 + c] > 0 ? sums[c] / sums[3 + c] : 1))
+  for (let i = 0; i < W * H; i++) for (let c = 0; c < 3; c++) filled[i * 3 + c] *= gains[c]
+  console.log(`  clean    gains ${gains.map((g) => g.toFixed(3)).join(" ")}`)
+}
+
 const docks = {}
 
 for (const { src, spill, clean } of SOURCES) {
@@ -417,6 +447,7 @@ for (const { src, spill, clean } of SOURCES) {
 
   const hole = dilate(spill ? growSpill(skull, rgb, chroma, W, H, spill) : skull, W, H, GROW)
   const filled = clean ? await cleanFill(clean, W, H) : fillRows(rgb, hole, W, H)
+  if (clean) matchTable(filled, rgb, chroma, W, H, [x0, y0, x1, y1])
 
   // Grain: the high-pass of the backdrop in a ring just outside the hole.
   const ring = dilate(hole, W, H, 40)

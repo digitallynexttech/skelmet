@@ -21,6 +21,10 @@ import DOCKS from "@/components/marketing/skull-docks.json"
  * turned from facing the camera, in radians, negative to face left. The mesh
  * lands turned the same way, and is sized by its silhouette at that angle.
  *
+ * `pitch` is how far the landed skull nods toward the camera, in radians: by
+ * default the 18° that matches photos taken from a little above eye level
+ * (skull-journey's DOCK_PITCH); 0 for a shot square to the skull's side.
+ *
  * `phone` keeps this stop on the route on phones, where the route ends at the
  * last such stop and every other dock is skipped (see skull-journey).
  *
@@ -36,12 +40,14 @@ export function SkullDock({
   src,
   sizes,
   turn,
+  pitch,
   phone,
   hideOwnSkull,
 }: {
   src: string
   sizes: string
   turn?: number
+  pitch?: number
   phone?: boolean
   hideOwnSkull?: boolean
 }) {
@@ -52,6 +58,7 @@ export function SkullDock({
     <div
       data-skull-dock={src}
       data-skull-turn={turn}
+      data-skull-pitch={pitch}
       data-skull-phone={phone ? "" : undefined}
       data-skull-hide-own={hideOwnSkull ? "" : undefined}
       className="pointer-events-none absolute inset-0"

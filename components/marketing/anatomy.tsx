@@ -19,12 +19,17 @@ export function Anatomy() {
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
             />
-            {/* The hero skull lands on the mount on its way down. The shot is a
-                profile facing left, so it lands turned a quarter to match. */}
+            {/* The hero skull's last stop on desktop (phones end at the lineup):
+                it lands on the mount here and stays. The shot is a
+                profile facing left, so it lands turned a quarter to match, and
+                it is taken from straight above, so the skull does not nod. The
+                mount lies turned 7° face-up, as the 3D model is built, so the
+                landed skull sits on its post exactly. */}
             <SkullDock
               src="/product/box-contents.jpg"
               sizes="(min-width: 1024px) 55vw, 92vw"
               turn={-Math.PI / 2}
+              pitch={0}
             />
           </div>
         </div>
