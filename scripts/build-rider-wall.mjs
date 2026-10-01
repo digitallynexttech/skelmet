@@ -4,18 +4,19 @@
  *
  *   node scripts/build-rider-wall.mjs [source-dir]
  *
- * Real photographs, on purpose: the rendered scenes that were here read as
- * made up. Each is cropped square for its tile, and the office shots are
+ * Real photographs where they can be: the rendered scenes that were here read
+ * as made up. Each is cropped square for its tile, and the office shots are
  * toned a little down - a touch of contrast, five per cent less light - so a
  * white wall does not glare out of the dark page.
  *
- * Not every helmet is as it was shot: every photograph had the same black
- * one. In IMG_0777 it is repainted olive green (rider-wall-edits/ beside the
- * photographs). An image model repainted the shell only, and everything else
- * - the skull, the mount, the straps, the gloves, the wall - was put back
- * from the photograph pixel for pixel, so the product is never the model's.
- * The motorcycle wall is the owner's picture as supplied, already finished,
- * so it is cropped and not toned.
+ * Two are not straight photographs (both in rider-wall-edits/ beside them).
+ * Every photograph had the same black helmet with an intercom, so IMG_0777
+ * was reworked by Google's image model (Nano Banana Pro) into a cream retro
+ * open-face helmet against a dark wall, in studio light. The skull there is
+ * the model's redraw of the photographed one - checked against it: the same
+ * flames, eye vent and teeth - because the photograph's skull, flat-lit, laid
+ * back into that light came out patchy. The motorcycle wall is the owner's
+ * picture as supplied. Both arrive finished, so they are cropped, not toned.
  *
  * A changed picture needs a new file name: /product is cached for 30 days as
  * immutable.
@@ -47,11 +48,12 @@ const MAX = 1400
  * and the square's side as a fraction of its width.
  */
 const SHOTS = [
-  // IMG_0777, cropped [0, 0, 1] before the repaint.
+  // IMG_0777, cropped [0, 0, 1] before the rework.
   {
-    from: "rider-wall-edits/IMG_0777-olive-helmet.png",
-    to: "rider-olive-helmet.jpg",
+    from: "rider-wall-edits/IMG_0777-cream-retro-helmet.png",
+    to: "rider-cream-helmet.jpg",
     crop: [0, 0, 1],
+    tone: false,
   },
   { from: "IMG_0788.JPG.jpeg", to: "rider-bare-skull.jpg", crop: [0.07, 0.12, 0.9] },
   {

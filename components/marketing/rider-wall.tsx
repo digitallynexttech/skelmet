@@ -5,16 +5,16 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { siteConfig } from "@/config/site"
 
 /**
- * Our own pictures for now - of the mount in use on our walls, one helmet
- * repainted so the wall is not the same helmet every time
+ * Our own pictures for now - of the mount in use, one reworked by an image
+ * model so the wall is not the same helmet every time
  * (scripts/build-rider-wall.mjs) - and the alt text says so rather than
  * passing them off as customers' walls. Riders' shots go here once people tag
  * us and agree to be featured.
  */
 const SHOTS = [
   {
-    src: "/product/rider-olive-helmet.jpg",
-    alt: "Our mount with an olive-green helmet over the skull, gloves on the hook and a riding jacket below",
+    src: "/product/rider-cream-helmet.jpg",
+    alt: "Our mount wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below",
   },
   {
     src: "/product/rider-bare-skull.jpg",
