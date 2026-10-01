@@ -11,6 +11,15 @@ const STROKES = {
   magenta: "[-webkit-text-stroke:1px_rgb(255_61_154_/_0.20)]",
 } as const
 
+/** The same hues as channels, for the glow (globals.css: .hero-mark-*). */
+const GLOW = {
+  blaze: "255 90 31",
+  ember: "255 138 0",
+  violet: "123 92 255",
+  acid: "212 255 61",
+  magenta: "255 61 154",
+} as const
+
 export type WatermarkAccent = keyof typeof STROKES
 
 /**
@@ -24,6 +33,11 @@ export type WatermarkAccent = keyof typeof STROKES
  * Pass an array to break a long mark over two lines. That keeps the type size
  * identical to every other page and buys the width back vertically instead -
  * the alternative, shrinking it to fit, would break the shared size.
+ *
+ * Three copies of the word, laid out identically: the faint outline, a blurred
+ * glow over it that breathes, and a brighter one seen only through a band that
+ * sweeps across now and then. Each copy is painted once; only opacity and
+ * transforms animate, so the compositor runs it and nothing repaints.
  */
 export function HeroWatermark({
   children,
@@ -37,12 +51,33 @@ export function HeroWatermark({
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 flex items-center justify-end overflow-hidden pr-5 select-none sm:pr-8 xl:pr-14"
+      className="pointer-events-none absolute inset-0 overflow-hidden select-none"
+      style={{ "--glow": GLOW[accent] } as React.CSSProperties}
     >
+      <Word lines={lines} className={STROKES[accent]} />
+      {/* Laptop widths (xl) up only: narrower, the word runs behind the hero's
+          own heading and copy - 50-130px into it at 1024 on About, Contact and
+          Riders - and a glow there competes with the text. */}
+      <div className="max-xl:hidden">
+        <Word lines={lines} className="hero-mark-glow" />
+        <div className="hero-mark-sweep">
+          <div className="hero-mark-sweep-track">
+            <Word lines={lines} className="hero-mark-shine" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The word, filling its box: the same box gives every copy the same layout. */
+function Word({ lines, className }: { lines: string[]; className: string }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-end pr-5 sm:pr-8 xl:pr-14">
       <div
         className={cn(
           "font-display text-right text-[clamp(90px,19vw,300px)] leading-[0.85] text-transparent uppercase",
-          STROKES[accent],
+          className,
         )}
       >
         {lines.map((line) => (

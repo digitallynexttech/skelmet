@@ -574,6 +574,82 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   animation-play-state: paused;
 }
 
+/* The hero watermark's glow (HeroWatermark). --glow is the accent as channels.
+
+   .hero-mark-glow is the word again with a brighter, blurred outline; it
+   breathes. .hero-mark-shine is brighter still, seen only through
+   .hero-mark-sweep, a soft-edged band that crosses the hero and then rests
+   off its right edge. The track inside the band moves the other way by the
+   same distance, so the word stays put while the band passes over it: band
+   from -100% to 100/30 of its own 30% width, track from 30% to -100% of its
+   full width, on the same easing, cancel at every frame.
+
+   Out of the animation - and so with reduced motion, which ends every
+   animation at once - each rests where it starts: a faint glow, no band. */
+.hero-mark-glow {
+  -webkit-text-stroke: 1px rgb(var(--glow) / 0.7);
+  filter: drop-shadow(0 0 7px rgb(var(--glow) / 0.55));
+  opacity: 0.18;
+  animation: hero-mark-breathe 7s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.hero-mark-shine {
+  -webkit-text-stroke: 1.5px rgb(var(--glow) / 0.95);
+  filter: drop-shadow(0 0 5px rgb(var(--glow) / 0.8)) drop-shadow(0 0 22px rgb(var(--glow) / 0.4));
+}
+
+.hero-mark-sweep {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+  transform: translateX(-100%);
+  animation: hero-mark-sweep 9s ease-in-out 1.2s infinite;
+  will-change: transform;
+}
+
+.hero-mark-sweep-track {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(100% / 0.3);
+  transform: translateX(30%);
+  animation: hero-mark-sweep-track 9s ease-in-out 1.2s infinite;
+  will-change: transform;
+}
+
+@keyframes hero-mark-breathe {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes hero-mark-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(calc(100% / 0.3));
+  }
+}
+
+@keyframes hero-mark-sweep-track {
+  0% {
+    transform: translateX(30%);
+  }
+  60%,
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
 /* Everything ambient stops when the visitor asks it to. */
 @media (prefers-reduced-motion: reduce) {
   [data-splash] {
