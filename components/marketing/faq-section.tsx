@@ -41,7 +41,9 @@ export async function FaqSection() {
             </Link>{" "}
             and we reply within {siteConfig.promise.supportReply}.
           </p>
-          <div className="rounded-tile relative hidden aspect-4/3 overflow-hidden border border-white/[0.08] lg:block">
+          {/* Square: the skull and its arm fill 62% of this portrait picture's
+              height, more than a 4:3 crop keeps; a square keeps the middle 81%. */}
+          <div className="rounded-tile relative hidden aspect-square overflow-hidden border border-white/[0.08] lg:block">
             <Image
               src="/product/mount-side-ghost-grey.jpg"
               alt="Side profile of the SKELMET mount in Ghost Grey on its black arm"
