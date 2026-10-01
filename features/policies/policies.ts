@@ -681,8 +681,8 @@ const RETURNS: Policy = {
   shortVersion:
     "Changed your mind? Seven days, unused, original box. We collect it and refund you. Cancel free any time before dispatch.",
   accent: "magenta",
-  updated: "2026-09-28",
-  version: "1.0",
+  updated: "2026-10-01",
+  version: "1.1",
   sections: [
     {
       n: "01",
@@ -702,7 +702,7 @@ const RETURNS: Policy = {
           type: "list",
           items: [
             "Unused and undamaged, with no drill marks or adhesive residue.",
-            "In the original box with the screws, keychain and manual.",
+            "In the original box with the screws, wall plugs and drilling template.",
             "Test-fitting it against the wall is fine. Drilling and mounting it is not.",
           ],
         },

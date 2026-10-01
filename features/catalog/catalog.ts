@@ -160,14 +160,17 @@ export const FLAME_SKULL_MOUNT: Product = {
     { label: "Material", value: "PLA+ · matte" },
     { label: "Load rating", value: "10 kg" },
     { label: "Weight", value: "315 g" },
-    { label: "Fixings", value: "3 × screws + wall anchors" },
+    { label: "Fixings", value: "3 × screws + wall plugs" },
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
+  // As The build section shows it (anatomy.tsx): no keychain - the mystery
+  // box took its place - and the paper template is the installation guide.
   inTheBox: [
     "Skull mount, arm attached",
-    "3 × screws + wall anchors",
-    "SKELMET keychain",
-    "Installation manual",
+    "3 × screws + wall plugs",
+    "Drilling template",
+    "Thank-you card",
+    "Mystery box",
   ],
 }
 
