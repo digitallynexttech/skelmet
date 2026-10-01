@@ -29,9 +29,9 @@ export function Bento() {
           hero
           title="Store in style"
           image="/product/why-store.jpg"
-          alt="A SKELMET mount with an open-face helmet on it, on a garage wall at night"
+          alt="A SKELMET mount on a garage wall at night, a helmet on the skull and a jacket, gloves and keys on its hooks"
           sizes="(min-width: 1024px) 50vw, 100vw"
-          focus="object-[72%_22%]"
+          focus="object-[72%_10%]"
           className="col-span-2 min-h-[300px] sm:min-h-[340px] lg:row-span-2 lg:min-h-0"
         >
           Bedroom, garage or living room: wherever you mount it, it catches eyes, commands attention
@@ -56,9 +56,9 @@ export function Bento() {
           icon={ShieldCheck}
           iconClass="text-violet"
           image="/product/why-safeguard.jpg"
-          alt="A glossy black helmet resting on the skull mount, clear of the floor"
+          alt="A glossy black helmet on the skull mount, with a jacket, gloves and keys on its hooks, clear of the floor"
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-          focus="object-[50%_30%]"
+          focus="object-[50%_10%]"
           className="col-span-2 min-h-[260px] sm:col-span-1 lg:min-h-0"
         >
           Floors and shelves wear your helmet down over time with dust, scratches, and scuffs. A
@@ -71,9 +71,9 @@ export function Bento() {
           icon={Wind}
           iconClass="text-ember"
           image="/product/why-clean.jpg"
-          alt="A helmet with its visor up airing on the mount beside an open window"
+          alt="A helmet with its visor up airing on the mount beside an open window, a jacket, gloves and keys below it"
           sizes="(min-width: 1024px) 50vw, 100vw"
-          focus="object-[88%_35%] sm:object-[100%_40%]"
+          focus="object-[88%_20%] sm:object-[100%_5%]"
           className="col-span-2 min-h-[300px] sm:min-h-[240px] lg:min-h-0"
         >
           Sweat builds up in padding if the helmet is left closed up. Mounting keeps the helmet
