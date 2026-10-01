@@ -58,6 +58,11 @@ const nextConfig = {
   serverExternalPackages: ["pdfkit"],
   images: {
     formats: ["image/avif", "image/webp"],
+    // 75 for most photos; 90 for a few where fine detail is the point (the
+    // box contents: the table's grain, the card's small print), which AVIF at
+    // 75 smooths into a blur. A quality not listed here is rounded to the
+    // nearest one that is.
+    qualities: [75, 90],
     // 1280 and 1440 added to the default ladder: a full-width photo on a
     // 1366 or 1440 laptop jumped from 1200 straight to 1920 wide, a third
     // more image than the screen can show.

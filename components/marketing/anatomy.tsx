@@ -15,7 +15,12 @@ export function Anatomy() {
               src="/product/box-contents.jpg"
               alt="What comes in the box: the flame skull on its arm in one piece, a paper drilling guide marking the three holes, three screws and wall plugs, a thank-you card and a mystery box"
               fill
-              sizes="(min-width: 1024px) 55vw, 92vw"
+              // Its real width: the page less its gutters, the 520px text
+              // column and the 64px gap beside it; full width less gutters
+              // when stacked. At 90, as the card's print and the table's grain
+              // went soft at the default 75.
+              sizes="(min-width: 1280px) calc(100vw - 696px), (min-width: 1024px) calc(100vw - 648px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
+              quality={90}
               className="object-cover"
             />
           </div>
