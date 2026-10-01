@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { categoryLabel, formatPostDate, type BlogListItem } from "@/features/blog/blog"
 import { SanityImage } from "@/features/blog/components/sanity-image"
 import { imageUrl } from "@/features/blog/lib/image"
@@ -57,6 +58,12 @@ export function PostCard({
             }
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
+        ) : null}
+        {/* The Studio's "featured" switch, said on the card as well as by its place. */}
+        {post.featured ? (
+          <Badge variant="blaze" className="absolute top-4 left-4">
+            Featured
+          </Badge>
         ) : null}
       </div>
 
