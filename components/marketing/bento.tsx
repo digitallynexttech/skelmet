@@ -12,11 +12,16 @@ import { cn } from "@/lib/utils"
  * full width, so no photograph is squeezed into half a phone. The rows are tall
  * (320px) because the tiles are photographs: at 220px the words covered them.
  *
- * Every photograph shows the real mount: the skull and the bracket in them are
- * renders of the files the mounts are printed from, joined as they ship, laid
- * back over scenes generated around them. A new picture needs the same, or it
- * shows a mount nobody makes. Four are recoloured from their orange originals
- * so the grid shows all three colourways (scripts/build-why-colourways.mjs).
+ * Every photograph shows the real mount. In four, the skull and the bracket
+ * are renders of the files the mounts are printed from, joined as they ship,
+ * laid back over scenes generated around them; those four are recoloured from
+ * their orange originals so the grid shows all three colourways
+ * (scripts/build-why-colourways.mjs). Store in style is the owner's photograph
+ * IMG_0762 reworked by Nano Banana Pro into a garage at night with a new
+ * helmet (source in FILES_SKELMET/product-images/why-edits): its skull and
+ * bracket are the model's redraw of the photographed ones, checked against
+ * the print - the plate flat on the wall, the arm's cut-outs and hooks. A new
+ * picture needs one of the two, or it shows a mount nobody makes.
  */
 export function Bento() {
   return (
@@ -30,10 +35,10 @@ export function Bento() {
         <Reason
           hero
           title="Store in style"
-          image="/product/why-store.jpg"
-          alt="A SKELMET mount on a garage wall at night, a helmet on the skull and a jacket, gloves and keys on its hooks"
+          image="/product/why-store-white-helmet.jpg"
+          alt="A SKELMET mount on a garage wall at night, a white open-face helmet on the skull and gloves, keys and a jacket on its hooks"
           sizes="(min-width: 1024px) 50vw, 100vw"
-          focus="object-[72%_10%]"
+          focus="object-[0%_10%]"
           className="col-span-2 min-h-[380px] sm:min-h-[440px] lg:row-span-2 lg:min-h-0"
         >
           Bedroom, garage or living room: wherever you mount it, it catches eyes, commands attention
