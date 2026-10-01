@@ -81,8 +81,8 @@ export async function ColourwayGrid() {
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
                 className="object-cover"
               />
-              {/* The hero skull lands here on its way down the page, and on a
-                  phone this is where it stops. The photo's own skull is kept
+              {/* The hero skull lands here on its way down the page, and this
+                  is where it stops, on every screen. The photo's own skull is kept
                   hidden throughout, so the card only ever shows the 3D one.
                   Only the blaze plate has a dock; the others render nothing. */}
               <SkullDock

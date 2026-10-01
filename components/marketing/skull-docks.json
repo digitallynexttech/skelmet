@@ -4,11 +4,5 @@
     "width": 1611,
     "height": 2000,
     "skull": [387, 318, 1221, 1692]
-  },
-  "/product/box-contents.jpg": {
-    "plate": "/product/box-contents-plate.webp",
-    "width": 2400,
-    "height": 1500,
-    "skull": [129, 96, 860, 718]
   }
 }
