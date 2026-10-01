@@ -4,6 +4,12 @@ import { INSTALL_STEPS } from "@/components/marketing/content"
 import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 
+/**
+ * The mount ships in one piece - the skull already fixed to its arm - so the
+ * picture shows it whole, screwed up through the foot of its plate. It is the
+ * old install scene reworked by Nano Banana Pro with the real mount as the
+ * reference (source in FILES_SKELMET/product-images/why-edits).
+ */
 export function InstallSteps() {
   return (
     <Section id="install" className="bg-carbon border-y border-white/[0.07]">
@@ -11,8 +17,8 @@ export function InstallSteps() {
         <div className="rounded-card overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-3/2">
             <Image
-              src="/product/install-drill.jpg"
-              alt="Fitting the SKELMET bracket to a wall with a drill"
+              src="/product/install-drill-assembled.jpg"
+              alt="Screwing the SKELMET mount to a wall through the foot of its plate, the skull already fixed to its arm"
               fill
               sizes="(min-width: 1024px) 45vw, 92vw"
               className="object-cover"
