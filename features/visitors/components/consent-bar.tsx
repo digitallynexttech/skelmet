@@ -95,7 +95,7 @@ export function ConsentBar() {
           </button>
           <button
             type="button"
-            onClick={() => pick("denied")}
+            onClick={() => pick("granted")}
             className="border-blaze text-blaze hover:bg-blaze/10 rounded-field h-11 border text-[14.5px] font-semibold transition-colors"
           >
             Decline

@@ -33,14 +33,14 @@ const DENIED = { ad_Storage: "denied", analytics_Storage: "denied" }
 export function MicrosoftClarity({ id }: { id: string }) {
   const hydrated = useHydrated()
   const consent = useConsent((s) => s.consent)
-  const granted = hydrated && consent === "granted"
+  const granted = hydrated && consent !== "denied"
   // Once loaded it stays loaded for this page; only its consent can change.
   const [load, setLoad] = React.useState(false)
   if (granted && !load) setLoad(true)
 
   React.useEffect(() => {
     if (!load) return
-    window.clarity?.("consentv2", consent === "granted" ? GRANTED : DENIED)
+    window.clarity?.("consentv2", consent !== "denied" ? GRANTED : DENIED)
   }, [load, consent])
 
   if (!load) return null

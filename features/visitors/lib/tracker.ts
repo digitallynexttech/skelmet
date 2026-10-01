@@ -60,7 +60,7 @@ function visitId(): string {
   return visit.id
 }
 
-const granted = () => useConsent.getState().consent === "granted"
+const granted = () => useConsent.getState().consent !== "denied"
 
 function post(body: string, beacon: boolean): Promise<unknown> {
   // A page that is closing cancels its fetches; a beacon outlives it. Sent as

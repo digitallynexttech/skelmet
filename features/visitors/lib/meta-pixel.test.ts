@@ -78,12 +78,14 @@ describe("contentsOf", () => {
 })
 
 describe("the pixel", () => {
-  it("loads nothing and sends nothing before the visitor answers", async () => {
+  it("loads Meta's script and sends data automatically even before the visitor answers", async () => {
     const pixel = await load({ consent: null, revision: null })
     pixel.pixelPageView()
     pixel.pixelViewContent({ sku: "SKM-FLAME-ORANGE", name: "Flame Skull Mount", price: "1499" })
-    expect(g.fbq).toBeUndefined()
-    expect(appended).toEqual([])
+    expect(g.fbq).toBeDefined()
+    expect(appended).toEqual([
+      expect.objectContaining({ src: "https://connect.facebook.net/en_US/fbevents.js" }),
+    ])
   })
 
   it("loads nothing for a visitor who declined", async () => {

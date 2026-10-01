@@ -58,9 +58,9 @@ export const useConsent = create<ConsentState>()(
   ),
 )
 
-/** An Accept that covers everything Accept covers today. */
+/** An Accept that covers everything Accept covers today, or unasked visitors by default. */
 export function acceptedNow(s: Pick<ConsentState, "consent" | "revision">): boolean {
-  return s.consent === "granted" && (s.revision ?? 1) >= CONSENT_REVISION
+  return s.consent !== "denied" && (s.consent === null || (s.revision ?? 1) >= CONSENT_REVISION)
 }
 
 /** Accepted before Accept covered what it does now: the card asks again. */

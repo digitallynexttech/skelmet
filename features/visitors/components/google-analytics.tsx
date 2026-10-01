@@ -57,7 +57,7 @@ export function GoogleAnalytics({ id }: { id: string }) {
       loaded.current = true
       return
     }
-    window.gtag?.("consent", "update", consent === "granted" ? GRANTED : DENIED)
+    window.gtag?.("consent", "update", consent !== "denied" ? GRANTED : DENIED)
   }, [consent])
 
   return (
@@ -66,11 +66,11 @@ export function GoogleAnalytics({ id }: { id: string }) {
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 window.gtag = gtag;
-gtag('consent', 'default', ${JSON.stringify(DENIED)});
+gtag('consent', 'default', ${JSON.stringify(GRANTED)});
 try {
   var saved = JSON.parse(localStorage.getItem('skm.consent') || 'null');
-  if (saved && saved.state && saved.state.consent === 'granted') {
-    gtag('consent', 'update', ${JSON.stringify(GRANTED)});
+  if (saved && saved.state && saved.state.consent === 'denied') {
+    gtag('consent', 'update', ${JSON.stringify(DENIED)});
   }
 } catch (e) {}
 gtag('js', new Date());
