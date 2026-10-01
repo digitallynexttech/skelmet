@@ -6,15 +6,15 @@ import { siteConfig } from "@/config/site"
 
 /**
  * Our own pictures for now - of the mount in use, one reworked by an image
- * model so the wall is not the same helmet every time
- * (scripts/build-rider-wall.mjs) - and the alt text says so rather than
- * passing them off as customers' walls. Riders' shots go here once people tag
- * us and agree to be featured.
+ * model so the wall is not the same helmet every time, and two skulls
+ * recoloured so it shows all three colourways (scripts/build-rider-wall.mjs).
+ * The alt text says they are ours rather than passing them off as customers'
+ * walls. Riders' shots go here once people tag us and agree to be featured.
  */
 const SHOTS = [
   {
     src: "/product/rider-cream-helmet.jpg",
-    alt: "Our mount wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below",
+    alt: "Our mount in Militia Olive wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below",
   },
   {
     src: "/product/rider-bare-skull.jpg",
@@ -26,7 +26,7 @@ const SHOTS = [
   },
   {
     src: "/product/rider-dark-door.jpg",
-    alt: "A helmet on the mount against a dark door, the skull filling the visor",
+    alt: "A helmet on the mount against a dark door, the Ghost Grey skull filling the visor",
   },
 ]
 
