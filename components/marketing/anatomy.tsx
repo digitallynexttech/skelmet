@@ -13,8 +13,8 @@ export function Anatomy() {
         <div className="rounded-card bg-carbon overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-16/10">
             <Image
-              src="/product/mount-assembled.jpg"
-              alt="The mount as it ships: the flame skull and its arm in one piece, hooks along the underside and the wall plate at the far end"
+              src="/product/box-contents.jpg"
+              alt="What comes in the box: the flame skull on its arm in one piece, a paper drilling guide marking the three holes, three screws and wall plugs, a thank-you card and a mystery box"
               fill
               sizes="(min-width: 1024px) 55vw, 92vw"
               className="object-cover"
@@ -22,7 +22,7 @@ export function Anatomy() {
             {/* The hero skull lands on the mount on its way down. The shot is a
                 profile facing left, so it lands turned a quarter to match. */}
             <SkullDock
-              src="/product/mount-assembled.jpg"
+              src="/product/box-contents.jpg"
               sizes="(min-width: 1024px) 55vw, 92vw"
               turn={-Math.PI / 2}
             />

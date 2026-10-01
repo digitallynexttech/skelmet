@@ -22,6 +22,12 @@
  * ring round the hole, so it does not read as a polished patch when the mesh
  * turns away from it.
  *
+ * A photo made from renders of the print files has something better than a
+ * guess: the same picture with the skull taken off, the bare table and the
+ * bracket's post ending where the skull sat. Its `clean` file fills the hole
+ * instead, grain and all. The clean files are build inputs, not served, so
+ * they live beside the print file in FILES_SKELMET.
+ *
  * Output is a full-size webp that is transparent everywhere except the patch,
  * so the plate lines up with the photo under the same `object-cover` and costs
  * a few KB rather than a second copy of the photograph. Outside the hole the
@@ -50,11 +56,16 @@ const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
  * The photos with a skull to dock on. `spill` is for a shot where the print
  * throws its colour onto the set: the lineup's orange skull glows on the dark
  * backdrop and the glossy floor, too faintly to key but plainly orange once
- * the skull is gone. See growSpill.
+ * the skull is gone. See growSpill. `clean` is the photo without its skull,
+ * relative to the repo, aligned to it pixel for pixel.
  */
 const SOURCES = [
   { src: "/product/product-front.jpg" },
-  { src: "/product/mount-assembled.jpg", spill: { key: 10, reach: 160 } },
+  {
+    src: "/product/box-contents.jpg",
+    spill: { key: 10, reach: 160 },
+    clean: "../FILES_SKELMET/website-source-media/box-contents-clean.png",
+  },
   { src: "/product/colourway-lineup.jpg", spill: { key: 10, reach: 160 } },
 ]
 const DOCKS = path.join(ROOT, "components/marketing/skull-docks.json")
@@ -338,9 +349,22 @@ function gaussian(seed) {
   return () => Math.sqrt(-2 * Math.log(rand() + 1e-12)) * Math.cos(2 * Math.PI * rand())
 }
 
+/** The skull-less shot, as the hole's fill: RGB floats at the photo's size. */
+async function cleanFill(file, W, H) {
+  const full = path.resolve(ROOT, file)
+  if (!fs.existsSync(full))
+    throw new Error(`${file} is missing: it is the skull-less shot this plate is cut from`)
+  const { data } = await sharp(full)
+    .removeAlpha()
+    .resize(W, H, { fit: "fill" })
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  return Float32Array.from(data)
+}
+
 const docks = {}
 
-for (const { src, spill } of SOURCES) {
+for (const { src, spill, clean } of SOURCES) {
   const file = path.join(ROOT, "public", src)
   const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true })
   const { width: W, height: H, channels: C } = info
@@ -392,7 +416,7 @@ for (const { src, spill } of SOURCES) {
   }
 
   const hole = dilate(spill ? growSpill(skull, rgb, chroma, W, H, spill) : skull, W, H, GROW)
-  const filled = fillRows(rgb, hole, W, H)
+  const filled = clean ? await cleanFill(clean, W, H) : fillRows(rgb, hole, W, H)
 
   // Grain: the high-pass of the backdrop in a ring just outside the hole.
   const ring = dilate(hole, W, H, 40)
@@ -419,7 +443,8 @@ for (const { src, spill } of SOURCES) {
   for (let i = 0; i < W * H; i++) {
     const a = Math.min(1, edge[i] * 1.6)
     if (a <= 0.002) continue
-    const n = hole[i] ? noise() * grain : 0
+    // a clean shot carries its own grain
+    const n = hole[i] && !clean ? noise() * grain : 0
     for (let ch = 0; ch < 3; ch++) {
       out[i * 4 + ch] = Math.max(0, Math.min(255, Math.round(filled[i * 3 + ch] + n)))
     }
