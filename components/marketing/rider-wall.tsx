@@ -5,11 +5,11 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { siteConfig } from "@/config/site"
 
 /**
- * Our own photographs for now - real ones, taken on a phone, of the mount in
- * use on two of our walls, two of them with the helmet repainted so the wall
- * is not one helmet four times (scripts/build-rider-wall.mjs) - and the alt
- * text says so rather than passing them off as customers' walls. Riders'
- * shots go here once people tag us and agree to be featured.
+ * Our own pictures for now - of the mount in use on our walls, one helmet
+ * repainted so the wall is not the same helmet every time
+ * (scripts/build-rider-wall.mjs) - and the alt text says so rather than
+ * passing them off as customers' walls. Riders' shots go here once people tag
+ * us and agree to be featured.
  */
 const SHOTS = [
   {
@@ -21,8 +21,8 @@ const SHOTS = [
     alt: "The flame skull on its arm with no helmet, gloves hanging from the hook",
   },
   {
-    src: "/product/rider-blue-helmet.jpg",
-    alt: "A blue helmet on our mount from the side, the skull showing through the visor",
+    src: "/product/rider-motorcycle-wall.jpg",
+    alt: "A black helmet on our mount over a riding jacket and gloves, a motorcycle parked below",
   },
   {
     src: "/product/rider-dark-door.jpg",

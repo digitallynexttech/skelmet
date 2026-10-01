@@ -1,22 +1,24 @@
 /**
- * The Rider wall's four photographs, from the owner's own phone shots of the
- * mount in use, into public/product/rider-*.jpg.
+ * The Rider wall's four pictures of the mount in use, the owner's own, into
+ * public/product/rider-*.jpg.
  *
  *   node scripts/build-rider-wall.mjs [source-dir]
  *
  * Real photographs, on purpose: the rendered scenes that were here read as
- * made up. Each is cropped square for its tile and toned a little down - a
- * touch of contrast, five per cent less light - so a white office wall does
- * not glare out of the dark page.
+ * made up. Each is cropped square for its tile, and the office shots are
+ * toned a little down - a touch of contrast, five per cent less light - so a
+ * white wall does not glare out of the dark page.
  *
- * One change to what was photographed: every shot had the same black helmet,
- * so two are repainted, olive green and blue (rider-wall-edits/ beside the
+ * Not every helmet is as it was shot: every photograph had the same black
+ * one. In IMG_0777 it is repainted olive green (rider-wall-edits/ beside the
  * photographs). An image model repainted the shell only, and everything else
  * - the skull, the mount, the straps, the gloves, the wall - was put back
  * from the photograph pixel for pixel, so the product is never the model's.
+ * The motorcycle wall is the owner's picture as supplied, already finished,
+ * so it is cropped and not toned.
  *
- * A changed photograph needs a new file name: /product is cached for 30 days
- * as immutable.
+ * A changed picture needs a new file name: /product is cached for 30 days as
+ * immutable.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -41,8 +43,8 @@ const OUT_DIR = path.join(ROOT, "public/product")
 const MAX = 1400
 
 /**
- * crop: left and top as fractions of the upright photograph's width and
- * height, and the square's side as a fraction of its width.
+ * crop: left and top as fractions of the upright picture's width and height,
+ * and the square's side as a fraction of its width.
  */
 const SHOTS = [
   // IMG_0777, cropped [0, 0, 1] before the repaint.
@@ -52,11 +54,11 @@ const SHOTS = [
     crop: [0, 0, 1],
   },
   { from: "IMG_0788.JPG.jpeg", to: "rider-bare-skull.jpg", crop: [0.07, 0.12, 0.9] },
-  // IMG_0790, cropped [0, 0.1, 1] before the repaint.
   {
-    from: "rider-wall-edits/IMG_0790-blue-helmet.png",
-    to: "rider-blue-helmet.jpg",
-    crop: [0, 0, 1],
+    from: "rider-wall-edits/with-jacket-motorcycle.png",
+    to: "rider-motorcycle-wall.jpg",
+    crop: [0.055, 0.083, 0.755],
+    tone: false,
   },
   { from: "6.jpeg", to: "rider-dark-door.jpg", crop: [0, 0.08, 1] },
 ]
@@ -73,14 +75,13 @@ for (const shot of SHOTS) {
   const top = Math.min(Math.round(fy * info.height), info.height - side)
   const out = Math.min(side, MAX)
 
-  const file = path.join(OUT_DIR, shot.to)
-  await sharp(data)
+  let image = sharp(data)
     .extract({ left, top, width: side, height: side })
     .resize(out, out, { kernel: "lanczos3" })
-    .linear(1.05, -10)
-    .modulate({ brightness: 0.95, saturation: 1.04 })
-    .sharpen({ sigma: 0.5 })
-    .jpeg({ quality: 84, mozjpeg: true })
-    .toFile(file)
+  if (shot.tone !== false) {
+    image = image.linear(1.05, -10).modulate({ brightness: 0.95, saturation: 1.04 })
+  }
+  const file = path.join(OUT_DIR, shot.to)
+  await image.sharpen({ sigma: 0.5 }).jpeg({ quality: 84, mozjpeg: true }).toFile(file)
   console.log(`${shot.to}  ${out}x${out}  ${(fs.statSync(file).size / 1024).toFixed(0)} KB`)
 }
