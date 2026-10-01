@@ -38,6 +38,13 @@ export const siteConfig = {
   clarityProjectId: "ypbnwozfgy",
 
   /**
+   * Meta Pixel (Facebook and Instagram ads). Public, like the GA id. Loaded by
+   * production builds only, and only for visitors who accept cookies
+   * (features/visitors/lib/meta-pixel.ts).
+   */
+  metaPixelId: "1023005070753961",
+
+  /**
    * Sanity, the CMS behind /blog and its editor at /studio. The project id
    * and dataset are public by nature - they are in the URL of every image a
    * post shows - so they live here, like the analytics ids. An empty id means

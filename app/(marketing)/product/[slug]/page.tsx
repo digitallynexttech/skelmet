@@ -20,6 +20,7 @@ import { ProductDetail } from "@/features/catalog/components/product-detail"
 import { PRODUCTS, getProduct } from "@/features/catalog/catalog"
 import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { shippingCharge } from "@/features/settings/server/runtime-settings"
+import { PixelViewContent } from "@/features/visitors/components/meta-pixel"
 
 type Params = { slug: string }
 
@@ -102,6 +103,11 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       </nav>
 
       <ProductDetail product={product} freeShipping={charge.sharePercent === 0} />
+      <PixelViewContent
+        sku={product.colourways[0]!.sku}
+        name={product.name}
+        price={product.price}
+      />
 
       <TrustStrip />
 

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Cookie, X } from "lucide-react"
 
-import { useConsent } from "@/features/visitors/hooks/use-consent"
+import { acceptedBefore, useConsent } from "@/features/visitors/hooks/use-consent"
 import { reportConsent } from "@/features/visitors/lib/tracker"
 import { useHydrated } from "@/hooks/use-hydrated"
 
@@ -21,11 +21,14 @@ export function ConsentBar() {
   const hydrated = useHydrated()
   const consent = useConsent((s) => s.consent)
   const reviewing = useConsent((s) => s.reviewing)
+  // Accepted before Accept covered what it does now (the Meta Pixel): asked
+  // again, with the old Accept standing for what it covered until then.
+  const outdated = useConsent(acceptedBefore)
   const choose = useConsent((s) => s.choose)
   const dismiss = useConsent((s) => s.dismiss)
 
   // The choice lives in localStorage, which the server render cannot see.
-  if (!hydrated || (consent !== null && !reviewing)) return null
+  if (!hydrated || (consent !== null && !reviewing && !outdated)) return null
 
   const pick = (next: "granted" | "denied") => {
     const previous = useConsent.getState().consent
@@ -74,6 +77,11 @@ export function ConsentBar() {
         {reviewing && consent ? (
           <p className="text-dim mt-3 text-[12.5px]">
             You {consent === "granted" ? "accepted" : "declined"} cookies. You can change that here.
+          </p>
+        ) : outdated ? (
+          <p className="text-dim mt-3 text-[12.5px]">
+            Accept now also turns on Meta&apos;s ad pixel. Your earlier choice stands until you pick
+            again.
           </p>
         ) : null}
 

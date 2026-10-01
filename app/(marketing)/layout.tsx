@@ -11,6 +11,7 @@ import { CartDrawer } from "@/features/cart/components/cart-drawer"
 import { ConsentBar } from "@/features/visitors/components/consent-bar"
 import { CookieSettingsButton } from "@/features/visitors/components/cookie-settings-button"
 import { GoogleAnalytics } from "@/features/visitors/components/google-analytics"
+import { MetaPixel } from "@/features/visitors/components/meta-pixel"
 import { MicrosoftClarity } from "@/features/visitors/components/microsoft-clarity"
 import { VisitTracker } from "@/features/visitors/components/visit-tracker"
 
@@ -34,6 +35,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <>
           <GoogleAnalytics id={siteConfig.googleAnalyticsId} />
           <MicrosoftClarity id={siteConfig.clarityProjectId} />
+          <MetaPixel />
         </>
       ) : null}
       {/* The announcement strip, above the header. It scrolls away with the

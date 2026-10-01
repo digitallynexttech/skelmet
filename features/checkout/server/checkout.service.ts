@@ -1053,7 +1053,8 @@ export type Confirmation = {
   paymentMethod: PaymentMethod
   placedAt: string | null
   itemCount: number
-  items: { name: string; qty: number }[]
+  /** SKU and price too, for the ad pixel's Purchase: Meta matches products by SKU. */
+  items: { name: string; qty: number; sku: string; unitPrice: string }[]
 }
 
 /**
@@ -1087,7 +1088,14 @@ export async function getConfirmation(rawNumber: string): Promise<ActionResult<C
         placedAt: true,
         createdAt: true,
         userId: true,
-        items: { select: { nameSnapshot: true, qty: true } },
+        items: {
+          select: {
+            nameSnapshot: true,
+            qty: true,
+            unitPrice: true,
+            variant: { select: { sku: true } },
+          },
+        },
       },
     })
 
@@ -1108,7 +1116,12 @@ export async function getConfirmation(rawNumber: string): Promise<ActionResult<C
       paymentMethod: order.paymentMethod,
       placedAt: (order.placedAt ?? order.createdAt).toISOString(),
       itemCount: order.items.reduce((sum, i) => sum + i.qty, 0),
-      items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+      items: order.items.map((i) => ({
+        name: i.nameSnapshot,
+        qty: i.qty,
+        sku: i.variant.sku,
+        unitPrice: i.unitPrice.toString(),
+      })),
     })
   })
 }

@@ -85,8 +85,8 @@ const PRIVACY: Policy = {
   shortVersion:
     "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
   accent: "violet",
-  updated: "2026-09-28",
-  version: "1.2",
+  updated: "2026-10-01",
+  version: "1.3",
   sections: [
     {
       n: "01",
@@ -174,7 +174,7 @@ const PRIVACY: Policy = {
           items: [
             "Strictly necessary, always: your cart and your cookie choice, kept in your own browser, and a cookie that lets the confirmation page show the order you just placed. The site does not work without these.",
             "Anonymous visit counts, always: the pages you view and for how long, your device type and browser, the approximate area your connection comes from (city, district and state), the site or campaign that sent you, and what you put in your cart. There is no cookie and your IP address is not stored, so none of it is linked to you or to your other visits. Google Analytics also receives a cookieless signal for each page, which Google uses only in aggregate.",
-            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address and the approximate map point it gives (usually your network's area, not your street), your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. Each browser keeps its own cookie, so we show our staff visits as probably one person's when they share the email or phone you typed, or the same connection and kind of device within a few hours, and only among visitors who accepted. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads, and Microsoft Clarity, which records how the pages are used - clicks, taps and scrolling - as one recording per visit. Clarity's recordings hide anything you type into a form and the pages showing your name, address or order.",
+            "Only if you accept: a cookie that recognises this device for a year, and with it your IP address and the approximate map point it gives (usually your network's area, not your street), your device model, the pages and cart of each visit, and the email, phone, name and pincode you type at checkout, even if you do not place the order. Each browser keeps its own cookie, so we show our staff visits as probably one person's when they share the email or phone you typed, or the same connection and kind of device within a few hours, and only among visitors who accepted. We use it to understand what people look for, and to remind you about a cart or a payment you did not finish. Accepting also turns on Google Analytics' cookies, which measure visits and let Google measure and show our ads, and Microsoft Clarity, which records how the pages are used - clicks, taps and scrolling - as one recording per visit. Clarity's recordings hide anything you type into a form and the pages showing your name, address or order. Accepting also turns on the Meta Pixel, which tells Meta (Facebook and Instagram) the pages you view, the products you view, add to your cart and buy, and what an order is worth, with Meta's cookies, so that we can measure our ads there and show them to people likely to want a mount. It does not receive what you type at checkout.",
           ],
         },
         {
@@ -231,6 +231,11 @@ const PRIVACY: Policy = {
               "Google (Analytics and Ads)",
               "Visit statistics and ad measurement",
               "Pages viewed, device, approximate location; cookies only if you accept",
+            ],
+            [
+              "Meta (Pixel)",
+              "Measuring and showing our ads on Facebook and Instagram",
+              "Only if you accept: pages viewed, products viewed, added to cart and bought, order value, device, and its cookies",
             ],
           ],
         },

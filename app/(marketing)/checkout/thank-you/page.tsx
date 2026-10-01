@@ -6,6 +6,7 @@ import { SkullStage } from "@/components/marketing/skull-stage"
 import { ButtonLink } from "@/components/ui/button"
 import { siteConfig } from "@/config/site"
 import { getConfirmation, type Confirmation } from "@/features/checkout/server/checkout.service"
+import { PixelPurchase } from "@/features/visitors/components/meta-pixel"
 import { formatEta } from "@/lib/delivery"
 import { formatMoney } from "@/lib/money"
 
@@ -192,6 +193,15 @@ export default async function ThankYouPage({
     // Hidden from Microsoft Clarity's recordings: it shows the buyer's email,
     // address and order.
     <div data-clarity-mask="true">
+      {/* The order for the ad pixel, if the visitor accepted cookies: the
+          whole order's value, whatever is paid now and what on delivery. */}
+      <PixelPurchase
+        order={{
+          number: order.number,
+          total: order.total,
+          items: order.items.map((i) => ({ sku: i.sku, qty: i.qty, unitPrice: i.unitPrice })),
+        }}
+      />
       <div className="grain relative flex min-h-[calc(100dvh-74px-36px)] flex-col justify-center overflow-hidden px-5 py-10 text-center sm:px-8">
         <div className="animate-bloom absolute top-16 left-1/2 size-[280px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(255_90_31_/_0.34),transparent_66%)] blur-[30px] sm:size-[420px]" />
         <div className="animate-spin-rev border-blaze/30 absolute top-20 left-1/2 size-[260px] -translate-x-1/2 rounded-full border border-dashed sm:size-[388px]" />

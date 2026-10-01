@@ -42,6 +42,7 @@ import type {
   OfferedMethod,
 } from "@/features/checkout/server/payment-options.service"
 import type { CheckoutPrefill as Prefill } from "@/features/checkout/server/prefill.service"
+import { pixelInitiateCheckout } from "@/features/visitors/lib/meta-pixel"
 import { reportCheckout, reportContact } from "@/features/visitors/lib/tracker"
 import { apiFetch } from "@/lib/api-fetch"
 import {
@@ -358,6 +359,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     if (!mounted || !basket || reportedBasket.current === basket) return
     reportedBasket.current = basket
     reportCheckout(itemsRef.current)
+    pixelInitiateCheckout(itemsRef.current)
   }, [mounted, basket])
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
