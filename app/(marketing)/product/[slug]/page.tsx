@@ -45,9 +45,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: product.name,
     description,
     path: `/product/${product.slug}`,
-    // Blaze is the canonical finish for sharing: metadata is per slug,
-    // not per selected colourway.
-    image: { url: product.gallery[0]!.src.blaze, alt: product.gallery[0]!.alt },
+    // Blaze's front shot is the picture for sharing: metadata is per slug,
+    // not per selected colourway, and Blaze's gallery opens on a fitting shot.
+    image: { url: product.colourways[0]!.image, alt: `${product.name}, front view` },
   })
 }
 

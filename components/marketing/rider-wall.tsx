@@ -13,8 +13,8 @@ import { siteConfig } from "@/config/site"
  */
 const SHOTS = [
   {
-    src: "/product/rider-cream-helmet.jpg",
-    alt: "Our mount in Militia Olive wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below",
+    src: "/product/rider-dark-door.jpg",
+    alt: "A helmet on the mount against a dark door, the Ghost Grey skull filling the visor",
   },
   {
     src: "/product/rider-bare-skull.jpg",
@@ -24,9 +24,12 @@ const SHOTS = [
     src: "/product/rider-motorcycle-wall.jpg",
     alt: "A black helmet on our mount over a riding jacket and gloves, a motorcycle parked below",
   },
+  // rider-cream-helmet.jpg with its dark studio wall swapped for a plain
+  // white one (GPT Image 2.5 on Higgsfield), modelled on the owner's
+  // rider-bare-skull.jpg, so it reads as a photo taken at home.
   {
-    src: "/product/rider-dark-door.jpg",
-    alt: "A helmet on the mount against a dark door, the Ghost Grey skull filling the visor",
+    src: "/product/rider-cream-helmet-white-wall.jpg",
+    alt: "Our mount in Militia Olive wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below it on a white wall",
   },
 ]
 

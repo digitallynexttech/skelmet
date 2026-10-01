@@ -49,27 +49,35 @@ export type Product = {
   reviewCount: number
   unitsLeft: number
   colourways: Colourway[]
-  gallery: GalleryShot[]
+  /**
+   * Each finish's own pictures, in the order the gallery shows them. A Record,
+   * so a finish cannot be left without any: only the first picture used to
+   * follow the swatch, and picking Militia Olive left four orange photographs
+   * behind it.
+   */
+  gallery: Record<ColourwayId, GalleryImage[]>
   specs: Array<{ label: string; value: string; pending?: boolean }>
   inTheBox: string[]
 }
 
-/**
- * One gallery slot, in all three finishes.
- *
- * The file per colourway is a Record rather than an optional override, so a
- * finish cannot be left out: only the first slot used to follow the swatch,
- * and picking Militia Olive left four orange photographs behind it. A missing
- * finish is now a type error rather than something you find on the page.
- *
- * All three files share framing and dimensions, so `object-cover` crops them
- * identically and switching colourway does not shift the image.
- */
-export type GalleryShot = {
+/** One picture, in one finish, as the gallery shows it. */
+export type GalleryImage = {
+  src: string
   alt: string
-  src: Record<ColourwayId, string>
   /** For a shot of the mount in use: what it is showing, over the image. */
   caption?: { title: string; body: string }
+}
+
+/**
+ * A shot taken in all three finishes. The file per colourway is a Record, so
+ * a finish cannot be left out. All three files share framing and dimensions,
+ * so `object-cover` crops them identically and switching colourway does not
+ * shift the image.
+ */
+type GalleryShot = Omit<GalleryImage, "src"> & { src: Record<ColourwayId, string> }
+
+function inFinish(shot: GalleryShot, id: ColourwayId): GalleryImage {
+  return { ...shot, src: shot.src[id] }
 }
 
 export const COLOURWAYS: Colourway[] = [
@@ -115,6 +123,109 @@ export const COLOURWAYS: Colourway[] = [
   },
 ]
 
+const FRONT: GalleryShot = {
+  alt: "Flame skull mount, front elevation",
+  src: {
+    blaze: "/product/product-front.jpg",
+    olive: "/product/colourway-olive-print.jpg",
+    ghost: "/product/colourway-ghost-grey-print.jpg",
+  },
+}
+
+// The owner's photograph, the real arm: the side view. (mount-side.jpg
+// was a render whose arm is not the one that ships.)
+const BARE_SKULL: GalleryShot = {
+  alt: "The skull on its arm with no helmet, gloves hanging from the hook",
+  src: {
+    blaze: "/product/gallery-bare-skull.jpg",
+    olive: "/product/gallery-bare-skull-olive.jpg",
+    ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
+  },
+  caption: {
+    title: "Hooks under the arm",
+    body: "Gloves and keys hang below the skull, helmet on or off. Rated for 10 kg.",
+  },
+}
+
+// In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
+const WALL_GEAR: GalleryShot = {
+  alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
+  caption: {
+    title: "All your riding gear in one place",
+    body: "Helmet on the skull; jacket, gloves and keys on the hooks under the arm.",
+  },
+  src: {
+    blaze: "/product/gallery-wall-gear.jpg",
+    olive: "/product/gallery-wall-gear-olive.jpg",
+    ghost: "/product/gallery-wall-gear-ghost-grey.jpg",
+  },
+}
+
+const GARAGE_NIGHT: GalleryShot = {
+  alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
+  caption: {
+    title: "Full-face, open-face or modular",
+    body: "The skull sits inside the helmet and spreads its weight across the liner.",
+  },
+  src: {
+    blaze: "/product/gallery-garage-night.jpg",
+    olive: "/product/gallery-garage-night-olive.jpg",
+    ghost: "/product/gallery-garage-night-ghost-grey.jpg",
+  },
+}
+
+const INSTALL: GalleryShot = {
+  alt: "Screwing the mount to the wall through the foot of its plate",
+  caption: {
+    title: "Up in four steps",
+    body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
+  },
+  src: {
+    blaze: "/product/gallery-install.jpg",
+    olive: "/product/gallery-install-olive.jpg",
+    ghost: "/product/gallery-install-ghost-grey.jpg",
+  },
+}
+
+const FLAME_DETAIL: GalleryShot = {
+  alt: "Macro detail of the carved flame relief",
+  src: {
+    blaze: "/product/detail-flame.jpg",
+    olive: "/product/detail-flame-olive.jpg",
+    ghost: "/product/detail-flame-ghost-grey.jpg",
+  },
+}
+
+const SHOTS = [FRONT, BARE_SKULL, WALL_GEAR, GARAGE_NIGHT, INSTALL, FLAME_DETAIL]
+
+// Blaze Orange opens on photographs taken in that finish alone
+// (scripts/build-shop-shots.mjs).
+const BLAZE_GALLERY: GalleryImage[] = [
+  {
+    src: "/product/gallery-fitting.jpg",
+    alt: "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
+  },
+  {
+    src: "/product/gallery-placing-helmet.jpg",
+    alt: "Setting a black helmet onto the skull on its wall mount",
+  },
+  {
+    src: "/product/gallery-hanging-jacket.jpg",
+    alt: "Hanging a riding jacket and gloves on the hook under a helmet on the mount",
+  },
+  {
+    src: "/product/gallery-gear-labels.jpg",
+    alt: "A helmet on the mount, gloves and a jacket on its hooks, labelled: keeps the helmet organised, prevents scratches and damage, improves airflow so it dries faster, holds gloves, extra hook for jackets and gear",
+  },
+  {
+    src: "/product/gallery-garage-bike.jpg",
+    alt: "A helmet on the mount on a lit garage wall, a sports bike parked below it",
+  },
+  inFinish(INSTALL, "blaze"),
+  inFinish(FLAME_DETAIL, "blaze"),
+  inFinish(FRONT, "blaze"),
+]
+
 export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
@@ -125,75 +236,11 @@ export const FLAME_SKULL_MOUNT: Product = {
   reviewCount: 312,
   unitsLeft: 12,
   colourways: COLOURWAYS,
-  gallery: [
-    {
-      alt: "Flame skull mount, front elevation",
-      src: {
-        blaze: "/product/product-front.jpg",
-        olive: "/product/colourway-olive-print.jpg",
-        ghost: "/product/colourway-ghost-grey-print.jpg",
-      },
-    },
-    // The owner's photograph, the real arm: the side view. (mount-side.jpg
-    // was a render whose arm is not the one that ships.)
-    {
-      alt: "The skull on its arm with no helmet, gloves hanging from the hook",
-      src: {
-        blaze: "/product/gallery-bare-skull.jpg",
-        olive: "/product/gallery-bare-skull-olive.jpg",
-        ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
-      },
-      caption: {
-        title: "Hooks under the arm",
-        body: "Gloves and keys hang below the skull, helmet on or off. Rated for 10 kg.",
-      },
-    },
-    // In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
-    {
-      alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
-      caption: {
-        title: "All your riding gear in one place",
-        body: "Helmet on the skull; jacket, gloves and keys on the hooks under the arm.",
-      },
-      src: {
-        blaze: "/product/gallery-wall-gear.jpg",
-        olive: "/product/gallery-wall-gear-olive.jpg",
-        ghost: "/product/gallery-wall-gear-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
-      caption: {
-        title: "Full-face, open-face or modular",
-        body: "The skull sits inside the helmet and spreads its weight across the liner.",
-      },
-      src: {
-        blaze: "/product/gallery-garage-night.jpg",
-        olive: "/product/gallery-garage-night-olive.jpg",
-        ghost: "/product/gallery-garage-night-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "Screwing the mount to the wall through the foot of its plate",
-      caption: {
-        title: "Up in four steps",
-        body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
-      },
-      src: {
-        blaze: "/product/gallery-install.jpg",
-        olive: "/product/gallery-install-olive.jpg",
-        ghost: "/product/gallery-install-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "Macro detail of the carved flame relief",
-      src: {
-        blaze: "/product/detail-flame.jpg",
-        olive: "/product/detail-flame-olive.jpg",
-        ghost: "/product/detail-flame-ghost-grey.jpg",
-      },
-    },
-  ],
+  gallery: {
+    blaze: BLAZE_GALLERY,
+    olive: SHOTS.map((shot) => inFinish(shot, "olive")),
+    ghost: SHOTS.map((shot) => inFinish(shot, "ghost")),
+  },
   specs: [
     { label: "Material", value: "PLA+ · matte" },
     { label: "Load rating", value: "10 kg" },

@@ -198,14 +198,13 @@ export async function ensureCatalogue(
     })
     variantsCreated += 1
 
-    // Media hangs off the variant, not the product: every gallery slot exists
-    // in all three finishes, and a single product-level list could only ever
-    // hold one of them.
+    // Media hangs off the variant, not the product: each finish has its own
+    // gallery, and a single product-level list could only ever hold one.
     await db.mediaAsset.createMany({
-      data: FLAME_SKULL_MOUNT.gallery.map((g, i) => ({
+      data: FLAME_SKULL_MOUNT.gallery[c.id].map((g, i) => ({
         productId: product.id,
         variantId: variant.id,
-        key: g.src[c.id].replace(/^\//, ""),
+        key: g.src.replace(/^\//, ""),
         alt: `${c.name} — ${g.alt}`,
         sort: i,
       })),
