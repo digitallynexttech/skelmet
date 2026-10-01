@@ -120,7 +120,8 @@ export function ProductDetail({
     const el = thumbs.current
     const first = el?.firstElementChild as HTMLElement | null
     if (!el || !first) return
-    el.scrollBy({ left: direction * (first.offsetWidth + 10), behavior: "smooth" })
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0
+    el.scrollBy({ left: direction * (first.offsetWidth + gap), behavior: "smooth" })
   }
   // The picked shot stays in view: a new colourway goes back to the first.
   React.useEffect(() => {
@@ -193,7 +194,9 @@ export function ProductDetail({
           ) : null}
         </div>
 
-        {/* Five thumbnails at a time, arrows either side. The row scrolls
+        {/* Five thumbnails at a time from sm, three on a phone - five there
+            came out about 40px, too small to make out - arrows either side.
+            The row scrolls
             within itself - never the page - with its scrollbar hidden; the
             arrows are the way along it. Fixed height rather than square: at
             this column width square thumbs push the gallery past the fold. */}
@@ -210,7 +213,7 @@ export function ProductDetail({
           <div
             ref={thumbs}
             onScroll={measureThumbs}
-            className="flex min-w-0 flex-1 snap-x [scrollbar-width:none] gap-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+            className="flex min-w-0 flex-1 snap-x [scrollbar-width:none] gap-2 overflow-x-auto sm:gap-2.5 [&::-webkit-scrollbar]:hidden"
           >
             {gallery.map((g, i) => (
               <button
@@ -220,7 +223,7 @@ export function ProductDetail({
                 aria-label={`View ${g.alt}`}
                 aria-current={i === shot}
                 className={cn(
-                  "relative aspect-square max-h-[84px] w-[calc((100%-2.5rem)/5)] shrink-0 snap-start overflow-hidden rounded-xl border transition-colors",
+                  "relative aspect-square max-h-[84px] w-[calc((100%-1rem)/3)] shrink-0 snap-start overflow-hidden rounded-xl border transition-colors sm:w-[calc((100%-2.5rem)/5)]",
                   i === shot ? "border-blaze" : "border-white/10 hover:border-white/25",
                 )}
               >
