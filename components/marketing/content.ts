@@ -14,48 +14,61 @@ export const TICKER_ITEMS = [
   "SHIPS IN 48 HOURS",
 ]
 
-const PAY_QUESTION = "How do I pay?"
+const PAY_QUESTION = "How do I pay for a SKELMET order?"
 
 /**
+ * Each question names what it is about, so it reads on its own - in a search
+ * result, or opened alone in the accordion.
+ *
  * The figures in these answers come from siteConfig.promise, the same place
  * the policies take theirs from, so the FAQ cannot promise something the
  * policy pages do not.
  */
 export const FAQ_ITEMS = [
   {
-    question: "Will it hold a full-face helmet?",
+    question: "Will the SKELMET mount hold a full-face helmet?",
     answer:
-      "Yes. Full-face, open-face and modular all sit on it. The skull goes inside the helmet and spreads its weight across the liner, so no single spot of the padding is pressed out of shape.",
+      "Yes. Full-face, open-face and modular helmets all sit on it. The skull goes inside the helmet and spreads its weight across the liner, so no single spot of the padding is pressed out of shape.",
   },
   {
-    question: "Can I mount it without drilling?",
+    question: "Which colours does the SKELMET skull come in?",
     answer:
-      "Not recommended; screws provide a solid hold against the wall, which makes the mount able to hold 10 kg. Any other way can compromise the mount and its holding capacity.",
+      "Three: Blaze Orange, Militia Olive and Ghost Grey. Each is printed in matte PLA+ and comes on the same black arm.",
   },
   {
-    question: "Can SKELMET hold jackets or gloves along with the helmet?",
+    question: "Can the SKELMET mount hold my jacket and gloves as well as my helmet?",
     answer:
-      "Yes, the mount has hooks on the arm and is made to hold up to 10 kg of weight. You can mount your helmet and store your keys, gloves, and jackets all at once.",
+      "Yes. The arm has hooks under the skull, and the whole mount is rated for 10 kg, so your helmet, gloves, jacket and keys can hang on it together.",
   },
   {
-    question: "Does SKELMET scratch or damage the helmet's paint or visor?",
+    question: "Will the SKELMET mount scratch my helmet's paint or visor?",
     answer:
-      "No. The contact points are smooth and rounded, so the helmet rests on the mount without any scratching or pressure marks.",
+      "No. Everything the helmet touches is smooth and rounded, so it rests on the mount without scratches or pressure marks.",
   },
   {
-    question: "Does the colour fade in sunlight?",
+    question: "What comes in the SKELMET box?",
     answer:
-      "PLA+ will fade under months of direct sun, so this is an indoor mount. On a normal interior wall the colour holds.",
+      "The flame skull, already fixed to its black arm in one piece, a paper drilling guide that marks the three holes, three screws with wall plugs, a thank-you card and a mystery box.",
   },
   {
-    question: "How long does delivery take?",
-    answer: `We dispatch within ${P.dispatchHours} hours of payment, and delivery takes up to ${P.deliveryDays} from dispatch. The tracking link comes to you by email as soon as the parcel leaves us.`,
+    question: "Can I put up the SKELMET mount without drilling?",
+    answer:
+      "We do not recommend it. The 10 kg rating holds when the mount is screwed into the wall with the three screws and wall plugs in the box. Adhesive strips and hooks are not made for that load, and the mount could come down. The paper guide in the box marks exactly where to drill.",
+  },
+  {
+    question: "Will the SKELMET skull fade in sunlight?",
+    answer:
+      "Over months of direct sun, yes: PLA+ fades, so the mount is made for indoor walls. Out of direct sunlight the colour holds.",
+  },
+  {
+    question: "How long does a SKELMET order take to arrive?",
+    answer: `We dispatch every order within ${P.dispatchHours} hours of payment, and delivery takes up to ${P.deliveryDays} from dispatch. Your tracking link comes by email as soon as the parcel leaves us.`,
   },
   {
     // Worded as the rule, not the figures: the threshold and the share are set
     // in the console's Settings and can change without a deploy. The shipping
     // policy page states the live figures.
-    question: "How much is shipping?",
+    question: "How much is shipping on a SKELMET order?",
     answer:
       "It depends on your pincode. Where the courier charges us up to a set amount to reach it, shipping is free. Where it costs more, you pay a share of the difference and we pay the rest. The shipping policy has the current figures, and checkout shows the exact charge as soon as you enter your pincode, before you pay.",
   },
@@ -66,21 +79,25 @@ export const FAQ_ITEMS = [
     answer: paymentCopy(DEFAULT_PAYMENT_OPTIONS).faq,
   },
   {
-    question: "Can I return it?",
-    answer: `Yes, within ${P.returnDays} days of delivery and for any reason, as long as it is unused, undrilled and back in its original box. We book and pay for the pickup. Refunds are issued within ${P.refundDays} of approval, and banks usually take ${P.bankDays} more to show it.`,
+    question: "Can I return the SKELMET mount?",
+    answer: `Yes, within ${P.returnDays} days of delivery and for any reason, as long as it is unused, undrilled, undamaged and back in its original box. We book and pay for the pickup. Refunds are issued within ${P.refundDays} of approval, and banks usually take ${P.bankDays} more to show it.`,
   },
   {
-    question: "Do you do bulk orders for clubs?",
+    question: "What if my SKELMET mount arrives damaged?",
+    answer: `Photograph it before you unpack any further and send us the photos within ${P.damageReportHours} hours of delivery. We send a replacement, and we do not ask for the damaged one back.`,
+  },
+  {
+    question: "Is the SKELMET mount covered by a warranty?",
+    answer: `Yes, for ${P.warrantyMonths} months from delivery, against cracking, deformation or the arm failing in normal indoor use. Send us a photo and we replace it. The warranty is on top of your rights under the Consumer Protection Act 2019.`,
+  },
+  {
+    question: "Does SKELMET take bulk orders for riding clubs?",
     answer:
-      "Yes, and custom filament colour is available from five units. Message us with the count and the colour you want.",
-  },
-  {
-    question: "What if it arrives damaged?",
-    answer: `Photograph it before you unpack any further and send it to us within ${P.damageReportHours} hours of delivery. We replace it, and we do not ask for the damaged one back.`,
+      "Yes, and from five units we can print them in a custom filament colour. Message us with how many you need and the colour you want.",
   },
 ]
 
-/** The FAQ, with "How do I pay?" answered for the ways to pay in force. */
+/** The FAQ, with the question on paying answered for the ways to pay in force. */
 export function faqItems(howToPay: string) {
   return FAQ_ITEMS.map((item) =>
     item.question === PAY_QUESTION ? { ...item, answer: howToPay } : item,

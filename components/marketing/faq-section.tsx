@@ -10,9 +10,9 @@ import { paymentCopy } from "@/features/checkout/payment-options"
 import { paymentOptions } from "@/features/settings/server/runtime-settings"
 
 /**
- * Async only for "How do I pay?", which states the ways to pay switched on in
- * the console. The pages it sits on are prerendered, and a save there
- * refreshes them (refreshPaymentTerms).
+ * Async only for the question on paying, which states the ways to pay
+ * switched on in the console. The pages it sits on are prerendered, and a
+ * save there refreshes them (refreshPaymentTerms).
  */
 export async function FaqSection() {
   const items = faqItems(paymentCopy(await paymentOptions()).faq)
@@ -25,15 +25,14 @@ export async function FaqSection() {
   // the panel behind.
   return (
     <Section id="faq" className="bg-carbon border-t border-white/[0.07]">
-      <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-16">
+      {/* 460px from xl: the heading is 446px wide at 58px (Anton), on one line. */}
+      <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-16 xl:grid-cols-[460px_minmax(0,1fr)]">
         <div>
           <SectionLabel numbered className="mb-3.5">
             Questions
           </SectionLabel>
           <h2 className="font-display text-bone mb-5 text-[38px] leading-[1.04] uppercase sm:text-[48px] xl:text-[58px]">
-            Before you
-            <br />
-            ask us
+            Before you ask us
           </h2>
           <p className="text-ash mb-7 text-[15.5px] leading-[1.6]">
             Still stuck?{" "}
@@ -44,10 +43,10 @@ export async function FaqSection() {
           </p>
           <div className="rounded-tile relative hidden aspect-4/3 overflow-hidden border border-white/[0.08] lg:block">
             <Image
-              src="/product/mount-side.jpg"
-              alt="Side profile of the SKELMET mount"
+              src="/product/mount-side-ghost-grey.jpg"
+              alt="Side profile of the SKELMET mount in Ghost Grey on its black arm"
               fill
-              sizes="360px"
+              sizes="(min-width: 1280px) 460px, 400px"
               className="object-cover"
             />
           </div>
