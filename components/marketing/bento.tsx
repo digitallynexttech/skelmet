@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils"
  * Every photograph shows the real mount: the skull and the bracket in them are
  * renders of the files the mounts are printed from, joined as they ship, laid
  * back over scenes generated around them. A new picture needs the same, or it
- * shows a mount nobody makes.
+ * shows a mount nobody makes. Four are recoloured from their orange originals
+ * so the grid shows all three colourways (scripts/build-why-colourways.mjs).
  */
 export function Bento() {
   return (
@@ -43,8 +44,8 @@ export function Bento() {
           title="Simple installation"
           icon={Wrench}
           iconClass="text-acid"
-          image="/product/why-install.jpg"
-          alt="A hand driving a screw into the hole at the foot of the mount's wall plate with a cordless drill"
+          image="/product/why-install-olive.jpg"
+          alt="A hand driving a screw into the hole at the foot of a Militia Olive mount's wall plate with a cordless drill"
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
           focus="object-[56%_30%]"
           className="col-span-2 min-h-[340px] sm:col-span-1 sm:min-h-[360px] lg:min-h-0"
@@ -56,8 +57,8 @@ export function Bento() {
           title="Safeguard your equipment"
           icon={ShieldCheck}
           iconClass="text-violet"
-          image="/product/why-safeguard.jpg"
-          alt="A glossy black helmet on the skull mount, with a jacket, gloves and keys on its hooks, clear of the floor"
+          image="/product/why-safeguard-ghost-grey.jpg"
+          alt="A glossy black helmet on a Ghost Grey skull mount, with a jacket, gloves and keys on its hooks, clear of the floor"
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
           focus="object-[50%_10%]"
           className="col-span-2 min-h-[340px] sm:col-span-1 sm:min-h-[360px] lg:min-h-0"
@@ -71,8 +72,8 @@ export function Bento() {
           title="Keep it clean"
           icon={Wind}
           iconClass="text-ember"
-          image="/product/why-clean.jpg"
-          alt="A helmet with its visor up airing on the mount beside an open window, a jacket, gloves and keys below it"
+          image="/product/why-clean-olive.jpg"
+          alt="A helmet with its visor up airing on a Militia Olive mount beside an open window, a jacket, gloves and keys below it"
           sizes="(min-width: 1024px) 50vw, 100vw"
           focus="object-[88%_20%] sm:object-[100%_5%]"
           className="col-span-2 min-h-[360px] sm:min-h-[320px] lg:min-h-0"
@@ -86,8 +87,8 @@ export function Bento() {
           title="The accessories station"
           icon={Boxes}
           iconClass="text-magenta"
-          image="/product/why-accessories.jpg"
-          alt="Riding gloves and a key hanging from the hooks under the mount's arm"
+          image="/product/why-accessories-ghost-grey.jpg"
+          alt="Riding gloves and a key hanging from the hooks under a Ghost Grey mount's arm"
           sizes="(min-width: 1280px) calc(100vw - 112px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
           focus="object-[84%_30%] sm:object-[100%_32%]"
           className="col-span-2 min-h-[360px] sm:min-h-[320px] lg:col-span-4 lg:min-h-0"
