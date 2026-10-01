@@ -134,8 +134,10 @@ export function ProductDetail({
         </div>
 
         {/* Fixed height rather than aspect-square: at this column width square
-            thumbs are ~160px tall and push the gallery past the fold. */}
-        <div className="grid w-full grid-cols-5 gap-2.5">
+            thumbs are ~160px tall and push the gallery past the fold. Seven
+            shots: one row from sm; on a phone the row scrolls sideways within
+            itself (never the page) rather than shrinking thumbs below a tap. */}
+        <div className="flex w-full gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-7 sm:gap-2.5 sm:overflow-visible sm:pb-0">
           {gallery.map((g, i) => (
             <button
               key={g.src + i}
@@ -144,7 +146,7 @@ export function ProductDetail({
               aria-label={`View ${g.alt}`}
               aria-current={i === shot}
               className={cn(
-                "relative aspect-square max-h-[84px] overflow-hidden rounded-xl border transition-colors",
+                "relative aspect-square max-h-[84px] w-16 shrink-0 overflow-hidden rounded-xl border transition-colors sm:w-auto",
                 i === shot ? "border-blaze" : "border-white/10 hover:border-white/25",
               )}
             >
@@ -227,7 +229,13 @@ export function ProductDetail({
                     selected ? { borderColor: c.hex, boxShadow: `0 0 16px ${c.hex}55` } : undefined
                   }
                 >
-                  <span className="block size-8 rounded-full" style={{ backgroundColor: c.hex }} />
+                  {/* The real print's face in each colourway. For the plain colour
+                      circle instead, comment this span out and uncomment the one
+                      below it. */}
+                  <span className="relative block size-11 overflow-hidden rounded-full">
+                    <Image src={c.swatch} alt="" fill sizes="44px" className="object-cover" />
+                  </span>
+                  {/* <span className="block size-8 rounded-full" style={{ backgroundColor: c.hex }} /> */}
                 </button>
               )
             })}

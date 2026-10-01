@@ -18,6 +18,11 @@ export type Colourway = {
   sku: string
   /** Swatch token: matches the filament, not the UI palette. */
   hex: string
+  /**
+   * The picker's swatch: the real print's face, cut out of
+   * colourway-lineup.jpg (scripts/build-gallery-shots.mjs).
+   */
+  swatch: string
   blurb: string
   image: string
   /**
@@ -70,6 +75,7 @@ export const COLOURWAYS: Colourway[] = [
     name: "Blaze Orange",
     sku: "SKM-BLZ",
     hex: "#FF5A1F",
+    swatch: "/product/swatch-blaze.jpg",
     blurb: "Bright and hot, built to catch the eye.",
     image: "/product/product-front.jpg",
     price: "3499",
@@ -82,6 +88,7 @@ export const COLOURWAYS: Colourway[] = [
     name: "Militia Olive",
     sku: "SKM-OLV",
     hex: "#8A9A5B",
+    swatch: "/product/swatch-olive.jpg",
     blurb: "Bold in presence, subtle in colour.",
     image: "/product/colourway-olive-print.jpg",
     price: "3499",
@@ -96,6 +103,7 @@ export const COLOURWAYS: Colourway[] = [
     // print in colourway-lineup.jpg: near neutral, a faint violet cast. It
     // was #C8CED6, which read as silver.
     hex: "#98979E",
+    swatch: "/product/swatch-ghost.jpg",
     blurb: "Calm, cold and still as stone.",
     image: "/product/colourway-ghost-grey-print.jpg",
     price: "3499",
@@ -131,20 +139,37 @@ export const FLAME_SKULL_MOUNT: Product = {
         ghost: "/product/mount-side-ghost-grey.jpg",
       },
     },
+    // In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
     {
-      alt: "A matte black helmet resting on the mount",
+      alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
       src: {
-        blaze: "/product/lifestyle-concrete.jpg",
-        olive: "/product/lifestyle-concrete-olive.jpg",
-        ghost: "/product/lifestyle-concrete-ghost-grey.jpg",
+        blaze: "/product/gallery-wall-gear.jpg",
+        olive: "/product/gallery-wall-gear-olive.jpg",
+        ghost: "/product/gallery-wall-gear-ghost-grey.jpg",
       },
     },
     {
-      alt: "Gloves hanging from the hooks on the mount",
+      alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
       src: {
-        blaze: "/product/lifestyle-gloves.jpg",
-        olive: "/product/lifestyle-gloves-olive.jpg",
-        ghost: "/product/lifestyle-gloves-ghost-grey.jpg",
+        blaze: "/product/gallery-garage-night.jpg",
+        olive: "/product/gallery-garage-night-olive.jpg",
+        ghost: "/product/gallery-garage-night-ghost-grey.jpg",
+      },
+    },
+    {
+      alt: "The skull on its arm with no helmet, gloves hanging from the hook",
+      src: {
+        blaze: "/product/gallery-bare-skull.jpg",
+        olive: "/product/gallery-bare-skull-olive.jpg",
+        ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
+      },
+    },
+    {
+      alt: "Screwing the mount to the wall through the foot of its plate",
+      src: {
+        blaze: "/product/gallery-install.jpg",
+        olive: "/product/gallery-install-olive.jpg",
+        ghost: "/product/gallery-install-ghost-grey.jpg",
       },
     },
     {
