@@ -1,4 +1,4 @@
-import { Droplets, Footprints, ShieldAlert } from "lucide-react"
+import Image from "next/image"
 
 import { WHY_CARE } from "@/components/marketing/content"
 import { Section, SectionHeading } from "@/components/marketing/section"
@@ -8,9 +8,13 @@ import { SectionLabel } from "@/components/shared/section-label"
  * The problem, before the product. Magenta throughout, because this is the
  * one section on the page that is not selling anything - it is describing
  * what already happens to a helmet that lives on the floor.
+ *
+ * A picture of exactly that, and the three ways it goes wrong as a numbered
+ * list beside it. It was three thin cards with small type stretched across
+ * the page, which on a wide screen read as empty boxes. The picture is
+ * generated (Nano Banana Pro, source in FILES_SKELMET/product-images/
+ * why-edits) and shows no SKELMET, so there is nothing in it to get wrong.
  */
-const ICONS = [Footprints, Droplets, ShieldAlert]
-
 export function WhyCare() {
   return (
     <Section className="bg-carbon border-y border-white/[0.07]">
@@ -18,29 +22,38 @@ export function WhyCare() {
         The problem
       </SectionLabel>
       <SectionHeading className="mb-10 max-w-[900px] sm:mb-12">
-        Why not give your helmet the same love as your bike?
+        Why not give your gear the same love as your bike?
       </SectionHeading>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {WHY_CARE.map(({ kicker, body }, i) => {
-          const Icon = ICONS[i] ?? ShieldAlert
-          return (
-            <div
+      <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
+        <div className="rounded-card relative aspect-4/3 overflow-hidden border border-white/[0.08]">
+          <Image
+            src="/product/problem-shoe-rack.jpg"
+            alt="A scratched full-face helmet left on the floor by a shoe rack, a riding glove dropped beside it"
+            fill
+            sizes="(min-width: 1024px) 45vw, 92vw"
+            className="object-cover"
+          />
+        </div>
+
+        <ol className="flex flex-col">
+          {WHY_CARE.map(({ kicker, body }, i) => (
+            <li
               key={kicker}
-              className="rounded-tile bg-void flex flex-col gap-4 border border-white/[0.08] p-6 sm:p-7"
+              className="flex gap-5 border-t border-white/[0.08] py-6 first:border-t-0 first:pt-0 last:pb-0 sm:gap-6"
             >
-              <span className="border-magenta/25 bg-magenta/[0.08] grid size-10 place-items-center rounded-full border">
-                <Icon className="text-magenta size-[18px]" strokeWidth={1.8} />
+              <span className="font-display text-magenta w-11 shrink-0 text-[34px] leading-none">
+                {String(i + 1).padStart(2, "0")}
               </span>
               <div>
-                <p className="text-magenta mb-2 font-mono text-[11px] tracking-[0.14em] uppercase">
+                <h3 className="text-bone mb-1.5 text-[19px] font-semibold sm:text-[21px]">
                   {kicker}
-                </p>
-                <p className="text-ash text-[14.5px] leading-[1.6]">{body}</p>
+                </h3>
+                <p className="text-ash text-[15.5px] leading-[1.65] sm:text-[16.5px]">{body}</p>
               </div>
-            </div>
-          )
-        })}
+            </li>
+          ))}
+        </ol>
       </div>
     </Section>
   )
