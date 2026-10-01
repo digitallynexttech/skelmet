@@ -132,45 +132,51 @@ const FRONT: GalleryShot = {
   },
 }
 
-// The owner's photograph, the real arm: the side view. (mount-side.jpg
-// was a render whose arm is not the one that ships.)
-const BARE_SKULL: GalleryShot = {
-  alt: "The skull on its arm with no helmet, gloves hanging from the hook",
+// The owner's photographs, in Blaze Orange as taken (scripts/build-shop-shots.mjs).
+// The olive and the grey are the same photographs with only the skull
+// recoloured, against the real prints (GPT Image 2.5 on Higgsfield).
+const FITTING: GalleryShot = {
+  alt: "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
   src: {
-    blaze: "/product/gallery-bare-skull.jpg",
-    olive: "/product/gallery-bare-skull-olive.jpg",
-    ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
-  },
-  caption: {
-    title: "Hooks under the arm",
-    body: "Gloves and keys hang below the skull, helmet on or off. Rated for 10 kg.",
+    blaze: "/product/gallery-fitting.jpg",
+    olive: "/product/gallery-fitting-olive.jpg",
+    ghost: "/product/gallery-fitting-ghost-grey.jpg",
   },
 }
 
-// In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
-const WALL_GEAR: GalleryShot = {
-  alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
-  caption: {
-    title: "All your riding gear in one place",
-    body: "Helmet on the skull; jacket, gloves and keys on the hooks under the arm.",
-  },
+const PLACING_HELMET: GalleryShot = {
+  alt: "Setting a black helmet onto the skull on its wall mount",
   src: {
-    blaze: "/product/gallery-wall-gear.jpg",
-    olive: "/product/gallery-wall-gear-olive.jpg",
-    ghost: "/product/gallery-wall-gear-ghost-grey.jpg",
+    blaze: "/product/gallery-placing-helmet.jpg",
+    olive: "/product/gallery-placing-helmet-olive.jpg",
+    ghost: "/product/gallery-placing-helmet-ghost-grey.jpg",
   },
 }
 
-const GARAGE_NIGHT: GalleryShot = {
-  alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
-  caption: {
-    title: "Full-face, open-face or modular",
-    body: "The skull sits inside the helmet and spreads its weight across the liner.",
-  },
+const HANGING_JACKET: GalleryShot = {
+  alt: "Hanging a riding jacket and gloves on the hook under a helmet on the mount",
   src: {
-    blaze: "/product/gallery-garage-night.jpg",
-    olive: "/product/gallery-garage-night-olive.jpg",
-    ghost: "/product/gallery-garage-night-ghost-grey.jpg",
+    blaze: "/product/gallery-hanging-jacket.jpg",
+    olive: "/product/gallery-hanging-jacket-olive.jpg",
+    ghost: "/product/gallery-hanging-jacket-ghost-grey.jpg",
+  },
+}
+
+const GEAR_LABELS: GalleryShot = {
+  alt: "A helmet on the mount, gloves and a jacket on its hooks, labelled: keeps the helmet organised, prevents scratches and damage, improves airflow so it dries faster, holds gloves, extra hook for jackets and gear",
+  src: {
+    blaze: "/product/gallery-gear-labels.jpg",
+    olive: "/product/gallery-gear-labels-olive.jpg",
+    ghost: "/product/gallery-gear-labels-ghost-grey.jpg",
+  },
+}
+
+const GARAGE_BIKE: GalleryShot = {
+  alt: "A helmet on the mount on a lit garage wall, a sports bike parked below it",
+  src: {
+    blaze: "/product/gallery-garage-bike.jpg",
+    olive: "/product/gallery-garage-bike-olive.jpg",
+    ghost: "/product/gallery-garage-bike-ghost-grey.jpg",
   },
 }
 
@@ -196,34 +202,16 @@ const FLAME_DETAIL: GalleryShot = {
   },
 }
 
-const SHOTS = [FRONT, BARE_SKULL, WALL_GEAR, GARAGE_NIGHT, INSTALL, FLAME_DETAIL]
-
-// Blaze Orange opens on photographs taken in that finish alone
-// (scripts/build-shop-shots.mjs).
-const BLAZE_GALLERY: GalleryImage[] = [
-  {
-    src: "/product/gallery-fitting.jpg",
-    alt: "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
-  },
-  {
-    src: "/product/gallery-placing-helmet.jpg",
-    alt: "Setting a black helmet onto the skull on its wall mount",
-  },
-  {
-    src: "/product/gallery-hanging-jacket.jpg",
-    alt: "Hanging a riding jacket and gloves on the hook under a helmet on the mount",
-  },
-  {
-    src: "/product/gallery-gear-labels.jpg",
-    alt: "A helmet on the mount, gloves and a jacket on its hooks, labelled: keeps the helmet organised, prevents scratches and damage, improves airflow so it dries faster, holds gloves, extra hook for jackets and gear",
-  },
-  {
-    src: "/product/gallery-garage-bike.jpg",
-    alt: "A helmet on the mount on a lit garage wall, a sports bike parked below it",
-  },
-  inFinish(INSTALL, "blaze"),
-  inFinish(FLAME_DETAIL, "blaze"),
-  inFinish(FRONT, "blaze"),
+/** The gallery's order, the same in every finish. */
+const SHOTS = [
+  FITTING,
+  PLACING_HELMET,
+  HANGING_JACKET,
+  GEAR_LABELS,
+  GARAGE_BIKE,
+  INSTALL,
+  FLAME_DETAIL,
+  FRONT,
 ]
 
 export const FLAME_SKULL_MOUNT: Product = {
@@ -237,7 +225,7 @@ export const FLAME_SKULL_MOUNT: Product = {
   unitsLeft: 12,
   colourways: COLOURWAYS,
   gallery: {
-    blaze: BLAZE_GALLERY,
+    blaze: SHOTS.map((shot) => inFinish(shot, "blaze")),
     olive: SHOTS.map((shot) => inFinish(shot, "olive")),
     ghost: SHOTS.map((shot) => inFinish(shot, "ghost")),
   },
