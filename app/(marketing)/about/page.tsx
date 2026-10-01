@@ -48,22 +48,14 @@ export default function AboutPage() {
       <div className="grain relative overflow-hidden border-b border-white/[0.07] px-5 pt-14 pb-14 sm:px-8 xl:px-14">
         <HeroWatermark>About</HeroWatermark>
         <div className="relative z-10 max-w-[900px]">
-          <SectionLabel className="mb-5">About us</SectionLabel>
           <h1 className="font-display text-bone mb-7 text-[52px] leading-[1.0] uppercase sm:text-[76px] xl:text-[104px]">
             All your gear
             <br />
             <span className="text-blaze">One place</span>
           </h1>
-          <p className="text-ash mb-5 max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[19px]">
-            Every ride ended the same way. The helmet went on a chair, the floor, or wherever there
-            was space, waiting to get knocked over and scratched. The gloves ended up on the shoe
-            rack, the jacket over a chair, and the keys wherever they landed. Then the next ride
-            started with hunting for all of it again.
-          </p>
           <p className="text-ash max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[19px]">
-            So we built one place for everything. SKELMET holds your helmet, gloves, jacket and keys
-            on a single wall mount, so your gear stays together, stays safe, and is ready when you
-            are.
+            Every ride ended with the helmet on the floor and the gloves, jacket and keys all over
+            the house. So we built one wall mount that holds the lot, ready for the next ride.
           </p>
         </div>
       </div>

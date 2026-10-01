@@ -7,7 +7,6 @@ import { FaqSection } from "@/components/marketing/faq-section"
 import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
-import { SectionLabel } from "@/components/shared/section-label"
 import { WhatsappIcon } from "@/components/shared/social-icons"
 import { siteConfig } from "@/config/site"
 import { ContactForm, ContactFormFromLink } from "@/features/inquiries/components/contact-form"
@@ -31,7 +30,6 @@ export default function ContactPage() {
         <HeroWatermark accent="acid">Contact</HeroWatermark>
 
         <div className="relative z-10">
-          <SectionLabel className="mb-4">Contact</SectionLabel>
           <h1 className="font-display text-bone mb-5 text-[52px] leading-[1.0] uppercase sm:text-[72px] xl:text-[88px]">
             Talk to a
             <br />
