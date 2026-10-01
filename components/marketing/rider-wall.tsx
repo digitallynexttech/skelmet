@@ -2,17 +2,31 @@ import Image from "next/image"
 
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
+import { siteConfig } from "@/config/site"
 
 /**
- * Our own photographs for now, and the alt text says so rather than passing
- * them off as customers' walls. Riders' shots go here once people tag us and
- * agree to be featured.
+ * Our own photographs for now - real ones, taken on a phone, of the mount in
+ * use on two of our walls (scripts/build-rider-wall.mjs) - and the alt text
+ * says so rather than passing them off as customers' walls. Riders' shots go
+ * here once people tag us and agree to be featured.
  */
 const SHOTS = [
-  { src: "/product/lifestyle-room.jpg", alt: "A SKELMET mount in a bedroom" },
-  { src: "/product/lifestyle-gloves.jpg", alt: "Gloves hanging from the hook" },
-  { src: "/product/lifestyle-concrete.jpg", alt: "A helmet on the mount against concrete" },
-  { src: "/product/lifestyle-garage.jpg", alt: "The mount on a workshop wall" },
+  {
+    src: "/product/rider-full-kit.jpg",
+    alt: "Our mount with a helmet over the skull, gloves on the hook and a riding jacket below",
+  },
+  {
+    src: "/product/rider-bare-skull.jpg",
+    alt: "The flame skull on its arm with no helmet, gloves hanging from the hook",
+  },
+  {
+    src: "/product/rider-three-quarter.jpg",
+    alt: "A helmet on our mount from the side, the skull showing through the visor",
+  },
+  {
+    src: "/product/rider-dark-door.jpg",
+    alt: "A helmet on the mount against a dark door, the skull filling the visor",
+  },
 ]
 
 export function RiderWall() {
@@ -25,9 +39,14 @@ export function RiderWall() {
           </SectionLabel>
           <SectionHeading>Mounted &amp; posted</SectionHeading>
         </div>
-        <span className="border-magenta/40 text-magenta inline-flex h-11 items-center rounded-full border px-5 text-[13px] font-semibold tracking-[0.05em] uppercase">
-          Tag @skelmet to be featured
-        </span>
+        <a
+          href={siteConfig.social.instagram}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="border-magenta/40 text-magenta hover:border-magenta hover:bg-magenta/10 focus-visible:border-magenta focus-visible:bg-magenta/10 inline-flex h-11 items-center rounded-full border px-5 text-[13px] font-semibold tracking-[0.05em] uppercase transition-colors focus-visible:outline-none"
+        >
+          Tag {siteConfig.social.instagramHandle} to be featured
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">

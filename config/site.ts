@@ -22,7 +22,9 @@ export const siteConfig = {
   },
 
   social: {
-    instagram: "https://instagram.com/skelmet",
+    instagram: "https://www.instagram.com/skelmet.in/",
+    /** As it is written on the site: "tag @skelmet.in". */
+    instagramHandle: "@skelmet.in",
     youtube: "https://youtube.com/@skelmet",
     whatsapp: "https://wa.me/919818745945",
   },
