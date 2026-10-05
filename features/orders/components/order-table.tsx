@@ -2,64 +2,65 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import {
+  ClipboardCopy,
+  Download,
+  FileSpreadsheet,
+  ListOrdered,
+  Phone,
+  Plus,
+  Search,
+  ShoppingBag,
+  ShoppingCart,
+  X,
+} from "lucide-react"
+import { toast } from "sonner"
 
-import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
-import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
-import { DataTable, type Column } from "@/components/ui/data-table"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
+import { Menu, MenuItem, MenuLabel, MenuLink, MenuSeparator } from "@/components/ui/menu"
 import { Select } from "@/components/ui/select"
+import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT, statusLabelFor } from "@/features/checkout/payment-options"
 import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
-import {
-  ORDER_STATUS_COLORS,
-  ORDER_STATUS_LABELS,
-  statusesIn,
-  type OrderScope,
-  type OrderStatus,
-} from "@/lib/constants"
+import { ORDER_VIEWS, viewsIn, type OrderView } from "@/features/orders/order-views"
+import { ORDER_STATUS_LABELS, statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { cn } from "@/lib/utils"
 
 /**
- * The two boards one table serves. Orders is the working list - paid, or
+ * The two lists one table serves. Orders is the working list - paid, or
  * cash on delivery accepted, and everything that happens after. All orders
- * adds the ones never paid for, which Abandoned carts follows up on.
+ * adds the ones never paid for, which Abandoned carts follows up on. Each
+ * links to the other from More actions.
  */
 const SCOPES: Record<
   OrderScope,
-  { title: string; description: string; all: string; exportName: string; tiles: string }
+  { title: string; exportName: string; other: { label: string; href: string } }
 > = {
   paid: {
     title: "Orders",
-    description:
-      "Orders to fulfil - paid, or cash on delivery - and every stage after, newest first. Ones still waiting for an online payment are under All orders and Abandoned carts. Search by order number, email or phone.",
-    all: "All to fulfil",
     exportName: "orders",
-    // Eight tiles: two rows of four, or one row once there is room.
-    tiles: "lg:grid-cols-4 xl:grid-cols-8",
+    other: { label: "All orders, paid or not", href: "/admin/orders/all" },
   },
   all: {
     title: "All orders",
-    description: "Every order, paid or not, newest first. Search by order number, email or phone.",
-    all: "All",
     exportName: "all-orders",
-    // Ten tiles: two rows of five. In one row each was too narrow for its label.
-    tiles: "lg:grid-cols-5",
+    other: { label: "Orders to fulfil", href: "/admin/orders" },
   },
 }
 
-/** The tile's accent, taken from the same map the badges read. */
-const TILE_TONE: Record<"neutral" | "accent" | "success" | "danger", string> = {
-  neutral: "text-ash",
-  accent: "text-ember",
-  success: "text-acid",
-  danger: "text-magenta",
-}
+// Stable, since useUrlState memoises on it.
+const DEFAULTS = { view: "all", status: "ALL", q: "" }
+
+const PAGE_SIZES = [10, 20, 50, 100]
+
+const secondary =
+  "text-bone flex h-9 items-center gap-2 rounded-sm border border-white/[0.14] bg-white/[0.04] px-3 text-[13px] font-semibold transition-colors hover:border-white/25 hover:bg-white/[0.08] aria-expanded:border-white/25 aria-expanded:bg-white/[0.08]"
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -70,18 +71,17 @@ function fmtDate(iso: string) {
   })
 }
 
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
 export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   const copy = SCOPES[scope]
   const statuses = statusesIn(scope)
-  const filters: Array<{ label: string; value: OrderStatus | "ALL" }> = [
-    { label: scope === "paid" ? "All orders to fulfil" : "All orders", value: "ALL" },
-    ...statuses.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s })),
-  ]
+  const views = viewsIn(scope)
 
-  // Filter and search live in the URL, so a filtered view is shareable (§6).
-  // The page number no longer does: paging happens in the table now, over the
-  // window the server sent.
-  const [state, setState] = useUrlState({ status: "ALL", q: "" })
+  // Tab, status and search live in the URL, so a filtered view is shareable
+  // (§6). The page does not: paging happens in the table, over the window
+  // the server sent.
+  const [state, setState] = useUrlState(DEFAULTS)
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const debounced = useDebounce(rawQuery, 350)
 
@@ -89,11 +89,53 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
     if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  // A link or bookmark naming a status this board does not show falls back to all of it.
+  // A link or bookmark naming a tab or status this list does not have falls
+  // back to all of it.
+  const view: OrderView = views.includes(state.view as OrderView)
+    ? (state.view as OrderView)
+    : "all"
   const status: OrderStatus | "ALL" = statuses.includes(state.status as OrderStatus)
     ? (state.status as OrderStatus)
     : "ALL"
-  const { data, isLoading, isError, error } = useOrders({ page: 1, scope, status, q: state.q })
+  const { data, isLoading, isError, error } = useOrders({
+    page: 1,
+    scope,
+    view,
+    status,
+    q: state.q,
+  })
+
+  // What Export and More actions work on, taken as the menu opens: the
+  // ticked orders, or else every order in the tab.
+  const table = React.useRef<DataTableHandle<OrderRow>>(null)
+  const [target, setTarget] = React.useState<{ rows: OrderRow[]; selected: boolean }>({
+    rows: [],
+    selected: false,
+  })
+  function takeTarget() {
+    const selected = table.current?.selectedRows() ?? []
+    setTarget(
+      selected.length > 0
+        ? { rows: selected, selected: true }
+        : { rows: table.current?.exportRows() ?? [], selected: false },
+    )
+  }
+  const targetLabel =
+    target.rows.length === 0
+      ? "No orders listed"
+      : target.selected
+        ? plural(target.rows.length, "selected order", "selected orders")
+        : `All ${plural(target.rows.length, "order", "orders")} listed`
+
+  async function copyList(values: string[], what: string) {
+    const unique = [...new Set(values.filter(Boolean))]
+    try {
+      await navigator.clipboard.writeText(unique.join("\n"))
+      toast.success(`Copied ${plural(unique.length, what, `${what}s`)}`)
+    } catch {
+      toast.error("Could not copy. Allow clipboard access for this site and try again.")
+    }
+  }
 
   const columns: Column<OrderRow>[] = [
     {
@@ -110,6 +152,39 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           {o.number}
         </Link>
       ),
+    },
+    {
+      key: "placed",
+      header: "Date",
+      // Sorts on the ISO string, which orders correctly.
+      value: (o) => o.placedAt ?? o.createdAt,
+      cell: (o) => (
+        <span className="text-ash font-mono text-[12px]">{fmtDate(o.placedAt ?? o.createdAt)}</span>
+      ),
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      value: (o) => o.customer || o.email,
+      cell: (o) => (
+        <span className="block min-w-0">
+          <span className="text-bone block truncate text-[14px]">{o.customer}</span>
+          <span className="text-dim block truncate font-mono text-[11px]">{o.email}</span>
+        </span>
+      ),
+    },
+    {
+      key: "phone",
+      header: "Phone",
+      value: (o) => o.phone,
+      cell: (o) => <span className="text-ash font-mono text-[12px]">{o.phone || "-"}</span>,
+    },
+    {
+      key: "city",
+      header: "City",
+      defaultHidden: true,
+      value: (o) => o.city,
+      cell: (o) => <span className="text-ash text-[13.5px]">{o.city || "-"}</span>,
     },
     {
       key: "status",
@@ -130,25 +205,12 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       ),
     },
     {
-      key: "customer",
-      header: "Customer",
-      value: (o) => o.customer || o.email,
-      cell: (o) => (
-        <span className="block min-w-0">
-          <span className="text-bone block truncate text-[14px]">{o.customer}</span>
-          <span className="text-dim block truncate font-mono text-[11px]">{o.email}</span>
-        </span>
-      ),
-    },
-    {
       key: "items",
       header: "Items",
       align: "right",
       value: (o) => o.itemCount,
       cell: (o) => (
-        <span className="text-ash text-[13.5px]">
-          {o.itemCount} {o.itemCount === 1 ? "item" : "items"}
-        </span>
+        <span className="text-ash text-[13.5px]">{plural(o.itemCount, "item", "items")}</span>
       ),
     },
     {
@@ -163,82 +225,175 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
         </span>
       ),
     },
-    {
-      key: "placed",
-      header: "Placed",
-      align: "right",
-      // Sorts on the ISO string, which orders correctly.
-      value: (o) => o.placedAt ?? o.createdAt,
-      cell: (o) => (
-        <span className="text-dim font-mono text-[11.5px]">
-          {fmtDate(o.placedAt ?? o.createdAt)}
-        </span>
-      ),
-    },
   ]
 
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader
-        eyebrow={scope === "all" ? "Orders" : undefined}
-        title={copy.title}
-        description={copy.description}
-      />
+  // The tabs. Picking one clears the status filter, and picking a status
+  // goes back to All: each is a way of choosing what to list, and the two
+  // together would mostly list nothing.
+  const tabs = (
+    <div role="group" aria-label="Views" className="flex gap-1 overflow-x-auto">
+      {views.map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={view === v}
+          onClick={() => setState({ view: v, status: "ALL" })}
+          className={cn(
+            "flex h-8 shrink-0 items-center gap-2 rounded-sm px-3 text-[13px] font-semibold whitespace-nowrap transition-colors",
+            view === v
+              ? "text-bone bg-white/[0.09]"
+              : "text-ash hover:text-bone hover:bg-white/[0.04]",
+          )}
+        >
+          {ORDER_VIEWS[v].label}
+          {data ? (
+            <span className="text-dim font-mono text-[11px] font-normal">{data.viewCounts[v]}</span>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  )
 
-      {/* The board. Every status this page covers is here whether or not it
-          has anything in it, and each tile is also the filter — the dropdown
-          and these set the same thing, so whichever you reach for the other
-          follows. */}
-      <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3", copy.tiles)}>
-        <BoardTile
-          label={copy.all}
-          value={data?.allCount ?? 0}
-          empty={!data?.allCount}
-          active={status === "ALL"}
-          onClick={() => setState({ status: "ALL" })}
+  const filters = (
+    <>
+      <div className="relative w-full sm:w-[240px]">
+        <Search
+          className="text-dim pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          strokeWidth={1.9}
         />
-        {statuses.map((s) => (
-          <BoardTile
-            key={s}
-            label={ORDER_STATUS_LABELS[s]}
-            value={data?.counts?.[s] ?? 0}
-            empty={!data?.counts?.[s]}
-            tone={TILE_TONE[ORDER_STATUS_COLORS[s]]}
-            active={status === s}
-            onClick={() => setState({ status: s })}
-          />
-        ))}
+        <Input
+          value={rawQuery}
+          onChange={(e) => setRawQuery(e.target.value)}
+          placeholder="Order no., email or phone"
+          aria-label="Search orders by order number, email or phone"
+          className="h-9 pr-8 pl-9 text-[13px]"
+        />
+        {rawQuery ? (
+          <button
+            type="button"
+            onClick={() => setRawQuery("")}
+            aria-label="Clear the search"
+            className="text-dim hover:text-bone absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center transition-colors"
+          >
+            <X className="size-3.5" strokeWidth={2.2} />
+          </button>
+        ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-[420px]">
-          <Search
-            className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
-            strokeWidth={1.9}
-          />
-          <Input
-            value={rawQuery}
-            onChange={(e) => setRawQuery(e.target.value)}
-            placeholder="SKM-2026-4F2K, email or phone"
-            aria-label="Search orders"
-            className="pl-11"
-          />
-        </div>
+      <Select
+        label="Filter by status"
+        size="sm"
+        value={status}
+        onChange={(next) => setState({ status: next, view: "all" })}
+        className="min-w-0 flex-1 sm:w-[200px] sm:flex-none"
+        options={[
+          { value: "ALL" as const, label: "Any status" },
+          ...statuses.map((s) => ({
+            value: s,
+            label: ORDER_STATUS_LABELS[s],
+            hint: data?.counts[s] ?? 0,
+          })),
+        ]}
+      />
+    </>
+  )
 
-        <Select
-          label="Filter by status"
-          value={status}
-          onChange={(next) => setState({ status: next })}
-          className="w-full sm:w-[260px]"
-          options={filters.map((f) => ({
-            value: f.value,
-            label: f.label,
-            hint:
-              f.value === "ALL"
-                ? (data?.allCount ?? 0)
-                : (data?.counts?.[f.value as OrderStatus] ?? 0),
-          }))}
-        />
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-bone flex items-center gap-2.5 text-[20px] leading-none font-semibold">
+          <ShoppingBag className="text-ash size-5" strokeWidth={1.9} />
+          {copy.title}
+        </h1>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Menu
+            label="Export"
+            onOpen={takeTarget}
+            buttonClassName={secondary}
+            button={
+              <>
+                <Download className="size-4" strokeWidth={1.9} />
+                <span className="hidden sm:inline">Export</span>
+              </>
+            }
+          >
+            <MenuLabel>{targetLabel}</MenuLabel>
+            <MenuItem
+              icon={Download}
+              disabled={target.rows.length === 0}
+              onSelect={() => table.current?.download("csv")}
+            >
+              CSV file
+            </MenuItem>
+            <MenuItem
+              icon={FileSpreadsheet}
+              disabled={target.rows.length === 0}
+              onSelect={() => table.current?.download("xlsx")}
+            >
+              Excel file
+            </MenuItem>
+          </Menu>
+
+          <Menu
+            label="More actions"
+            onOpen={takeTarget}
+            buttonClassName={secondary}
+            button={
+              <>
+                <span className="sm:hidden">More</span>
+                <span className="hidden sm:inline">More actions</span>
+              </>
+            }
+          >
+            <MenuLabel>{targetLabel}</MenuLabel>
+            <MenuItem
+              icon={ClipboardCopy}
+              disabled={target.rows.length === 0}
+              onSelect={() =>
+                void copyList(
+                  target.rows.map((o) => o.number),
+                  "order number",
+                )
+              }
+            >
+              Copy order numbers
+            </MenuItem>
+            <MenuItem
+              icon={Phone}
+              disabled={target.rows.length === 0}
+              onSelect={() =>
+                void copyList(
+                  target.rows.map((o) => o.phone),
+                  "phone number",
+                )
+              }
+            >
+              Copy phone numbers
+            </MenuItem>
+            <MenuSeparator />
+            <MenuLink icon={ListOrdered} href={copy.other.href}>
+              {copy.other.label}
+            </MenuLink>
+            <MenuLink icon={ShoppingCart} href="/admin/orders/abandoned">
+              Abandoned carts
+            </MenuLink>
+          </Menu>
+
+          {/* No order is made in here: the shop's checkout is where stock,
+              the price and the payment are settled, so a phone order goes
+              through it too, in a new tab, with the customer's details. */}
+          <Link
+            href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+            target="_blank"
+            rel="noopener"
+            title="Opens the shop in a new tab: place the order at checkout with the customer's details"
+            className="bg-blaze text-void hover:bg-ember flex h-9 items-center gap-1.5 rounded-sm px-3.5 text-[13px] font-semibold transition-colors"
+          >
+            <Plus className="size-4" strokeWidth={2.2} />
+            Create order
+          </Link>
+        </div>
       </div>
 
       {isError ? (
@@ -248,24 +403,35 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
         />
       ) : (
         <DataTable
+          handle={table}
           rows={data?.data ?? []}
           columns={columns}
           rowId={(o) => o.id}
           exportName={copy.exportName}
+          exportButtons={false}
+          columnToggle
+          pageSizes={PAGE_SIZES}
+          pageKey={`${view}|${status}|${state.q}`}
+          bar={tabs}
+          barEnd={filters}
           loading={isLoading}
           total={data?.pagination?.total}
-          empty="Nothing matches. Try a different status or clear the search."
+          empty={
+            state.q
+              ? "No order matches that search."
+              : "No orders here yet. Try another tab or status."
+          }
           exportColumns={[
             { header: "Order", value: (o) => o.number },
-            { header: "Status", value: (o) => o.status },
-            { header: "Payment", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
+            { header: "Date", value: (o) => fmtDate(o.placedAt ?? o.createdAt) },
             { header: "Customer", value: (o) => o.customer },
             { header: "Email", value: (o) => o.email },
             { header: "Phone", value: (o) => o.phone },
             { header: "City", value: (o) => o.city },
+            { header: "Status", value: (o) => o.status },
+            { header: "Payment", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
             { header: "Items", value: (o) => o.itemCount },
             { header: "Total", value: (o) => Number(o.total) },
-            { header: "Placed", value: (o) => fmtDate(o.placedAt ?? o.createdAt) },
           ]}
         />
       )}

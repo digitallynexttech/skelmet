@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import type { PaymentMethod } from "@/features/checkout/payment-options"
+import type { OrderView } from "@/features/orders/order-views"
 import { apiFetch } from "@/lib/api-fetch"
 import { MAX_PAGE_SIZE, type OrderScope, type OrderStatus } from "@/lib/constants"
 import { mutationWithToast } from "@/lib/query"
@@ -104,9 +105,10 @@ export type Dashboard = {
   recent: OrderRow[]
 }
 
-/** The order list also carries a count per status for the board tiles. */
+/** The order list also carries a count per status and per tab. */
 export type OrderListPayload = Paginated<OrderRow> & {
   counts: Record<OrderStatus, number>
+  viewCounts: Record<OrderView, number>
   allCount: number
 }
 
@@ -157,6 +159,7 @@ type OrderListParams = {
   page: number
   scope: OrderScope
   status: OrderStatus | "ALL"
+  view: OrderView
   q: string
 }
 
@@ -165,6 +168,7 @@ const getOrders = (params: OrderListParams) => {
     page: String(params.page),
     scope: params.scope,
     status: params.status,
+    view: params.view,
     // The console sorts and exports client-side, so it takes the whole
     // window rather than twenty rows it would then mis-describe.
     pageSize: String(MAX_PAGE_SIZE),

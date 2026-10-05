@@ -7,11 +7,15 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Columns3,
   Download,
   FileSpreadsheet,
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { Menu, MenuCheckbox, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/menu"
+import { Select } from "@/components/ui/select"
+import { useStoredState } from "@/hooks/use-stored-state"
 import { downloadCsv, downloadXlsx, type ExportColumn } from "@/lib/export"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +40,11 @@ import { cn } from "@/lib/utils"
  * over two. A cell that stacks lines on purpose - a name over an email -
  * still stacks; only the lines themselves stay whole. The expanded detail row
  * wraps as prose, since that is what it holds.
+ *
+ * A screen can also ask for the fuller kit - controls inside the frame (bar),
+ * a column picker, a choice of rows per page - and export from its own
+ * header through `handle`. The picker and the page size are remembered per
+ * table (by exportName) in this browser.
  */
 export type Column<T> = {
   key: string
@@ -46,6 +55,8 @@ export type Column<T> = {
   value?: (row: T) => string | number | null | undefined
   align?: "left" | "right"
   className?: string
+  /** Starts hidden where the table has a column picker, until someone shows it. */
+  defaultHidden?: boolean
 }
 
 type Props<T> = {
@@ -83,7 +94,42 @@ type Props<T> = {
    * summary, it is a message the reader cannot read.
    */
   expandable?: (row: T) => React.ReactNode
+  /** The CSV and Excel buttons over the table. Off where the page has its own Export. */
+  exportButtons?: boolean
+  /** For a page that exports from its own header. */
+  handle?: React.Ref<DataTableHandle<T>>
+  /** Controls inside the frame, over the table, on the left: tabs, say. */
+  bar?: React.ReactNode
+  /** And on the right, before the column picker: search and filters. */
+  barEnd?: React.ReactNode
+  /** A menu to hide and show columns. */
+  columnToggle?: boolean
+  /** Rows per page to choose from, in the footer. Include pageSize. */
+  pageSizes?: readonly number[]
+  /** When this changes the table goes back to its first page: a new tab or filter. */
+  pageKey?: string
 }
+
+export type DataTableHandle<T> = {
+  /** The ticked rows that are still listed. */
+  selectedRows: () => T[]
+  /** What an export holds now: the ticked rows, or else every row listed. */
+  exportRows: () => T[]
+  download: (format: "csv" | "xlsx") => void
+}
+
+/** The hidden columns as stored: a JSON list of keys, or anything else as none. */
+function parseHidden(raw: string): Set<string> {
+  try {
+    const list: unknown = JSON.parse(raw)
+    return new Set(Array.isArray(list) ? list.filter((k) => typeof k === "string") : [])
+  } catch {
+    return new Set()
+  }
+}
+
+const iconButton =
+  "text-ash hover:text-bone flex size-9 shrink-0 items-center justify-center rounded-sm border border-white/[0.12] transition-colors hover:border-white/25 aria-expanded:border-white/25 aria-expanded:text-bone"
 
 export function DataTable<T>({
   rows,
@@ -98,11 +144,40 @@ export function DataTable<T>({
   frame = true,
   total,
   expandable,
+  exportButtons = true,
+  handle,
+  bar,
+  barEnd,
+  columnToggle = false,
+  pageSizes,
+  pageKey,
 }: Props<T>) {
   const [sort, setSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null)
   const [page, setPage] = React.useState(1)
   const [picked, setPicked] = React.useState<Set<string>>(new Set())
   const [open, setOpen] = React.useState<Set<string>>(new Set())
+
+  // A new tab or filter starts on page one, not on whatever page the last
+  // one was left at. Adjusted during render, as React has it for state that
+  // follows a prop.
+  const [seenKey, setSeenKey] = React.useState(pageKey)
+  if (pageKey !== seenKey) {
+    setSeenKey(pageKey)
+    setPage(1)
+  }
+
+  const defaultHidden = JSON.stringify(columns.filter((c) => c.defaultHidden).map((c) => c.key))
+  const [hiddenRaw, setHiddenRaw] = useStoredState(`skm.table.${exportName}.hidden`, defaultHidden)
+  const [sizeRaw, setSizeRaw] = useStoredState(`skm.table.${exportName}.size`, String(pageSize))
+  const size = pageSizes?.includes(Number(sizeRaw)) ? Number(sizeRaw) : pageSize
+
+  const hidden = React.useMemo(
+    () => (columnToggle ? parseHidden(hiddenRaw) : new Set<string>()),
+    [columnToggle, hiddenRaw],
+  )
+  const shownColumns = columns.filter((c) => !hidden.has(c.key))
+  // Columns renamed since the choice was stored can leave none: show them all.
+  const visible = shownColumns.length > 0 ? shownColumns : columns
 
   const sorted = React.useMemo(() => {
     if (!sort) return rows
@@ -121,10 +196,10 @@ export function DataTable<T>({
     })
   }, [rows, sort, columns])
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(sorted.length / size))
   const current = Math.min(page, totalPages)
-  const start = (current - 1) * pageSize
-  const shown = sorted.slice(start, start + pageSize)
+  const start = (current - 1) * size
+  const shown = sorted.slice(start, start + size)
 
   // A filter upstream can shrink the list under the current page; snap back
   // rather than showing an empty one.
@@ -168,56 +243,216 @@ export function DataTable<T>({
   const pickedRows = picked.size > 0 ? sorted.filter((r) => picked.has(rowId(r))) : []
   const exportRows = pickedRows.length > 0 ? pickedRows : sorted
 
-  return (
-    <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-dim font-mono text-[11px] tracking-[0.1em]">
-          {pickedRows.length > 0 ? (
+  function download(format: "csv" | "xlsx") {
+    if (format === "csv") return downloadCsv(exportRows, exportCols, exportName)
+    // The spreadsheet library is fetched on first use, so a dropped
+    // connection fails here - say so rather than doing nothing.
+    void downloadXlsx(exportRows, exportCols, exportName).catch(() =>
+      toast.error("Could not build the Excel file. Try again, or export as CSV."),
+    )
+  }
+
+  React.useImperativeHandle(handle, () => ({
+    selectedRows: () => pickedRows,
+    exportRows: () => exportRows,
+    download,
+  }))
+
+  const inFrame = bar != null || barEnd != null
+  const topRow = exportButtons || toolbar != null || (columnToggle && !inFrame)
+
+  const selection =
+    pickedRows.length > 0 ? (
+      <button
+        type="button"
+        onClick={() => setPicked(new Set())}
+        className="text-acid hover:text-bone transition-colors"
+      >
+        {pickedRows.length} selected · clear
+      </button>
+    ) : null
+
+  const columnsMenu = columnToggle ? (
+    <Menu
+      label="Show or hide columns"
+      button={<Columns3 className="size-4" strokeWidth={1.9} />}
+      buttonClassName={iconButton}
+    >
+      <MenuLabel>Columns</MenuLabel>
+      {columns.map((c) => {
+        const on = visible.includes(c)
+        return (
+          <MenuCheckbox
+            key={c.key}
+            checked={on}
+            // One always stays: a table of no columns is just row numbers.
+            disabled={on && visible.length === 1}
+            onChange={(next) => {
+              const keys = new Set(hidden)
+              if (next) keys.delete(c.key)
+              else keys.add(c.key)
+              setHiddenRaw(JSON.stringify([...keys]))
+            }}
+          >
+            {c.header}
+          </MenuCheckbox>
+        )
+      })}
+      {hidden.size > 0 ? (
+        <>
+          <MenuSeparator />
+          <MenuItem onSelect={() => setHiddenRaw("[]")}>Show all columns</MenuItem>
+        </>
+      ) : null}
+    </Menu>
+  ) : null
+
+  /**
+   * Where the rows are and how many to a page. Always there once the reader
+   * can choose the page size, or when the count has nowhere else to go;
+   * otherwise only when there is more than one page.
+   */
+  const footer =
+    !pageSizes && topRow && totalPages === 1 ? null : (
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5",
+          inFrame ? "border-t border-white/[0.07] px-3 py-2.5" : "mt-3",
+        )}
+      >
+        <div className="text-dim flex items-center gap-3 font-mono text-[11px] tracking-[0.06em]">
+          {topRow || inFrame ? null : selection}
+          <span>
+            {sorted.length === 0
+              ? "0 rows"
+              : `${start + 1}–${Math.min(start + size, sorted.length)} of ${sorted.length}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {pageSizes ? (
+            <div className="flex items-center gap-2">
+              <span className="text-dim text-[12.5px]">Rows per page</span>
+              <Select
+                label="Rows per page"
+                size="sm"
+                placement="top"
+                value={String(size)}
+                onChange={(next) => {
+                  setSizeRaw(next)
+                  setPage(1)
+                }}
+                options={pageSizes.map((n) => ({ value: String(n), label: String(n) }))}
+                className="w-[76px]"
+              />
+            </div>
+          ) : null}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setPicked(new Set())}
-              className="text-acid hover:text-bone transition-colors"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={current === 1}
+              aria-label="Previous page"
+              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
             >
-              {pickedRows.length} selected · clear
+              <ChevronLeft className="size-4" strokeWidth={2} />
             </button>
-          ) : (
-            <span>
-              {sorted.length} {sorted.length === 1 ? "row" : "rows"}
-              {truncated ? " of " + total : null}
+            <span className="text-ash px-1.5 font-mono text-[12px] whitespace-nowrap">
+              {current} / {totalPages}
             </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {toolbar}
-          <button
-            type="button"
-            onClick={() => downloadCsv(exportRows, exportCols, exportName)}
-            disabled={exportRows.length === 0}
-            className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
-          >
-            <Download className="size-3.5" strokeWidth={2} />
-            CSV
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              // The spreadsheet library is fetched on first use, so a dropped
-              // connection fails here - say so rather than doing nothing.
-              void downloadXlsx(exportRows, exportCols, exportName).catch(() =>
-                toast.error("Could not build the Excel file. Try again, or export as CSV."),
-              )
-            }
-            disabled={exportRows.length === 0}
-            className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
-          >
-            <FileSpreadsheet className="size-3.5" strokeWidth={2} />
-            Excel
-          </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={current === totalPages}
+              aria-label="Next page"
+              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
+            >
+              <ChevronRight className="size-4" strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </div>
+    )
 
-      <div className={cn(frame && "overflow-hidden rounded-md border border-white/[0.09]")}>
+  return (
+    <div>
+      {topRow ? (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-dim font-mono text-[11px] tracking-[0.1em]">
+            {selection ?? (
+              <span>
+                {sorted.length} {sorted.length === 1 ? "row" : "rows"}
+                {truncated ? " of " + total : null}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {toolbar}
+            {inFrame ? null : columnsMenu}
+            {exportButtons ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => download("csv")}
+                  disabled={exportRows.length === 0}
+                  className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
+                >
+                  <Download className="size-3.5" strokeWidth={2} />
+                  CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => download("xlsx")}
+                  disabled={exportRows.length === 0}
+                  className="text-ash hover:text-bone flex h-9 items-center gap-2 rounded-md border border-white/[0.12] px-3 text-[12.5px] transition-colors hover:border-white/25 disabled:opacity-40"
+                >
+                  <FileSpreadsheet className="size-3.5" strokeWidth={2} />
+                  Excel
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {/* With controls inside it the frame cannot clip: their menus open
+          over the table and past its foot. */}
+      <div
+        className={cn(
+          frame && "rounded-md border border-white/[0.09]",
+          frame && !inFrame && "overflow-hidden",
+        )}
+      >
+        {inFrame ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-white/[0.07] px-3 py-2.5">
+            {/* Ticked rows take the tabs' place, as long as there are any, so
+                ticking one moves nothing under the pointer. */}
+            <div className="min-w-0 flex-[1_1_360px]">
+              {pickedRows.length > 0 ? (
+                <div className="flex h-8 items-center gap-3 px-1">
+                  <span className="text-bone text-[13px] font-semibold">
+                    {pickedRows.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPicked(new Set())}
+                    className="text-ash hover:text-bone text-[13px] underline-offset-4 transition-colors hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : (
+                bar
+              )}
+            </div>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:flex-nowrap">
+              {barEnd}
+              {columnsMenu}
+            </div>
+          </div>
+        ) : null}
+
         {/* Contained on the inline axis, so a table wider than the screen
             scrolls in here instead of reporting its width upward: in a grid
             or flex column, that width stretched the whole page sideways. */}
@@ -236,7 +471,7 @@ export function DataTable<T>({
                 </th>
                 <th className="w-12 px-2 py-3 font-normal">#</th>
                 {expandable ? <th className="w-9" /> : null}
-                {columns.map((c) => (
+                {visible.map((c) => (
                   <th
                     key={c.key}
                     className={cn("px-4 py-3 font-normal", c.align === "right" && "text-right")}
@@ -324,7 +559,7 @@ export function DataTable<T>({
                           </button>
                         </td>
                       ) : null}
-                      {columns.map((c) => (
+                      {visible.map((c) => (
                         <td
                           key={c.key}
                           className={cn(
@@ -339,7 +574,7 @@ export function DataTable<T>({
                     </tr>
                     {expandable && open.has(id) ? (
                       <tr className="border-t border-white/[0.05]">
-                        <td colSpan={columns.length + 3} className="px-4 pb-5">
+                        <td colSpan={visible.length + 3} className="px-4 pb-5">
                           {expandable(row)}
                         </td>
                       </tr>
@@ -358,6 +593,8 @@ export function DataTable<T>({
             </p>
           </div>
         ) : null}
+
+        {inFrame ? footer : null}
       </div>
 
       {truncated ? (
@@ -367,36 +604,7 @@ export function DataTable<T>({
         </p>
       ) : null}
 
-      {totalPages > 1 ? (
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-dim font-mono text-[11px]">
-            {start + 1}–{Math.min(start + pageSize, sorted.length)} of {sorted.length}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={current === 1}
-              aria-label="Previous page"
-              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
-            >
-              <ChevronLeft className="size-4" strokeWidth={2} />
-            </button>
-            <span className="text-ash px-2 font-mono text-[12px]">
-              {current} / {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={current === totalPages}
-              aria-label="Next page"
-              className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
-            >
-              <ChevronRight className="size-4" strokeWidth={2} />
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {inFrame ? null : footer}
     </div>
   )
 }

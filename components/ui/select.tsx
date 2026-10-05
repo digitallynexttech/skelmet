@@ -32,6 +32,8 @@ export function Select<T extends string>({
   label,
   placeholder,
   invalid,
+  size = "md",
+  placement = "bottom",
   className,
   id,
   "aria-describedby": describedBy,
@@ -50,6 +52,10 @@ export function Select<T extends string>({
   placeholder?: string
   /** Magenta border, as on an Input with aria-invalid. */
   invalid?: boolean
+  /** sm: a filter in a toolbar rather than a form field. */
+  size?: "md" | "sm"
+  /** Which way the list opens: up for a select at the foot of a table. */
+  placement?: "bottom" | "top"
   className?: string
   /** Set by Field, which ties its label and message to the trigger. */
   id?: string
@@ -166,7 +172,8 @@ export function Select<T extends string>({
         aria-label={label}
         onClick={() => (open ? setOpen(false) : show())}
         className={cn(
-          "rounded-field bg-void text-bone flex h-[52px] w-full items-center justify-between gap-3 border border-white/[0.14] px-4 text-[14px] transition-colors",
+          "rounded-field bg-void text-bone flex w-full items-center justify-between gap-3 border border-white/[0.14] transition-colors",
+          size === "sm" ? "h-9 px-3 text-[13px]" : "h-[52px] px-4 text-[14px]",
           "focus:border-blaze focus:ring-blaze/[0.16] outline-none focus:ring-[3px]",
           open && "border-blaze",
           invalid && !open && "border-magenta focus:ring-magenta/[0.16]",
@@ -193,7 +200,12 @@ export function Select<T extends string>({
           role="listbox"
           aria-label={label}
           tabIndex={-1}
-          className="bg-carbon absolute top-[calc(100%+6px)] right-0 left-0 z-50 max-h-[min(420px,60vh)] overflow-y-auto rounded-md border border-white/[0.14] p-1.5 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]"
+          className={cn(
+            "bg-carbon absolute right-0 z-50 max-h-[min(420px,60vh)] overflow-y-auto rounded-md border border-white/[0.14] p-1.5 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]",
+            placement === "top" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]",
+            // A small select is narrower than its longest option; a form field never is.
+            size === "sm" ? "w-max min-w-full" : "left-0",
+          )}
         >
           {options.map((o, i) => {
             const isSelected = o.value === value

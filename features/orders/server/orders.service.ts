@@ -5,6 +5,7 @@ import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { creditNoteOnRefund, queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paymentConfig } from "@/features/settings/server/runtime-settings"
+import { ORDER_VIEW_KEYS, isInView, viewWhere, type OrderView } from "@/features/orders/order-views"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
 import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
 import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
@@ -96,19 +97,21 @@ function serializeRow(row: {
  *
  * `scope` is which orders the list is about at all - "paid" for the Orders
  * page (paid and every stage after), "all" for All orders. The search and the
- * tiles stay inside it; the status filter narrows within it.
+ * tabs stay inside it; the view (a tab) and the status filter narrow within it.
  */
 export async function listOrders(params: {
   page?: number
   pageSize?: number
   scope?: OrderScope
   status?: OrderStatus | "ALL"
+  view?: OrderView
   q?: string | null
 }): Promise<
   ActionResult<{
     data: OrderRow[]
     pagination: unknown
     counts: Record<OrderStatus, number>
+    viewCounts: Record<OrderView, number>
     allCount: number
   }>
 > {
@@ -123,9 +126,9 @@ export async function listOrders(params: {
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
 
-    // The search narrows the counts; the status filter does not. A tile
-    // showing "Shipped 4" has to keep saying 4 while you are looking at the
-    // shipped ones, or the board stops being a board.
+    // The search narrows the counts; the view and the status filter do not.
+    // A tab showing "In transit 4" has to keep saying 4 while you are looking
+    // at the shipped ones, or the counts stop meaning anything.
     const searched = q
       ? {
           OR: [
@@ -143,7 +146,8 @@ export async function listOrders(params: {
         ? { status: inScope.includes(params.status) ? params.status : { in: [] } }
         : { status: { in: [...inScope] } }
     const scoped = { ...searched, status: { in: [...inScope] } }
-    const where = { ...searched, ...status }
+    // AND, not a spread: the search and a view are both an OR.
+    const where = { AND: [searched, status, viewWhere(params.view ?? "all")] }
 
     const [rows, total, grouped] = await Promise.all([
       db.order.findMany({
@@ -154,24 +158,42 @@ export async function listOrders(params: {
         take: size,
       }),
       db.order.count({ where }),
-      // One grouped query rather than eight counts.
-      db.order.groupBy({ by: ["status"], where: scoped, _count: { _all: true } }),
+      // One grouped query rather than a count per status and per tab. By
+      // method too, since the Unpaid tab depends on how an order is paid.
+      db.order.groupBy({
+        by: ["status", "paymentMethod"],
+        where: scoped,
+        _count: { _all: true },
+      }),
     ])
 
-    // Every status is present, including the ones at zero: a tile that
-    // disappears when it empties is a tile you cannot trust to be there.
+    // Every status and tab is present, including the ones at zero: a count
+    // that disappears when it empties is one you cannot trust to be there.
     const counts = Object.fromEntries(ORDER_STATUSES.map((s) => [s, 0])) as Record<
       OrderStatus,
+      number
+    >
+    const viewCounts = Object.fromEntries(ORDER_VIEW_KEYS.map((v) => [v, 0])) as Record<
+      OrderView,
       number
     >
     let all = 0
     for (const g of grouped) {
       const n = g._count._all
-      counts[g.status as OrderStatus] = n
+      const status = g.status as OrderStatus
+      counts[status] += n
       all += n
+      for (const view of ORDER_VIEW_KEYS) {
+        if (isInView(view, status, g.paymentMethod as PaymentMethod)) viewCounts[view] += n
+      }
     }
 
-    return ok({ ...paginate(rows.map(serializeRow), page, size, total), counts, allCount: all })
+    return ok({
+      ...paginate(rows.map(serializeRow), page, size, total),
+      counts,
+      viewCounts,
+      allCount: all,
+    })
   })
 }
 

@@ -1,3 +1,4 @@
+import { ORDER_VIEW_KEYS } from "@/features/orders/order-views"
 import { listOrders } from "@/features/orders/server/orders.service"
 import { respond } from "@/lib/api-response"
 import { ORDER_STATUSES } from "@/lib/constants"
@@ -11,6 +12,7 @@ const QUERY = {
   pageSize: pageSizeParam,
   scope: enumParam(["paid", "all"], "paid"),
   status: enumParam(["ALL", ...ORDER_STATUSES], "ALL"),
+  view: enumParam(ORDER_VIEW_KEYS, "all"),
   q: textParam,
 }
 
