@@ -67,6 +67,15 @@ function basic(keyId: string, keySecret: string): string {
   return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`
 }
 
+/**
+ * The account switched on and its publishable key id: what a reopened order
+ * is paid with. Throws, as opening an order does, when its keys are not set.
+ */
+export async function activeGatewayKey(): Promise<{ mode: PaymentMode; keyId: string }> {
+  const { mode, keyId } = await credentials()
+  return { mode, keyId }
+}
+
 /** Whether the account switched on has a key id and secret. */
 export async function isGatewayConfigured(): Promise<boolean> {
   const config = await paymentConfig()

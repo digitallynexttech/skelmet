@@ -2,9 +2,14 @@ import "server-only"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
 import { splitPayment, type PaymentMethod } from "@/features/checkout/payment-options"
-import { placeOrderSchema, verifyPaymentSchema } from "@/features/checkout/schemas/checkout.schema"
+import {
+  placeOrderSchema,
+  verifyPaymentSchema,
+  type PlaceOrderInput,
+} from "@/features/checkout/schemas/checkout.schema"
 import { offeredMethods } from "@/features/checkout/server/payment-options.service"
 import {
+  activeGatewayKey,
   captureGatewayPayment,
   createGatewayOrder,
   fetchOrderPayments,
@@ -151,6 +156,137 @@ const UNPAID_HOLD_MS = 60 * 60_000
  * more than a real buyer retrying a declined card ever needs.
  */
 const OPEN_UNPAID_LIMIT = 3
+
+const OPEN_UNPAID_REFUSAL =
+  "You already have orders waiting to be paid for. Finish paying for one of those, or try again in an hour."
+
+/**
+ * How young an unpaid order must be for paying again to reopen it rather than
+ * write another: well inside its hour, so the new attempt is not racing the
+ * order's release (releaseStaleOrders).
+ */
+const REOPEN_WITHIN_MS = UNPAID_HOLD_MS - 15 * 60_000
+
+/** Payment rows that moved no money: an order with only these can take another attempt. */
+const NO_MONEY_MOVED = ["CREATED", "FAILED"]
+
+/**
+ * A buyer's unpaid online orders young enough to reopen, newest first. One
+ * query, read before anything else, so the ceiling below can tell a retry
+ * from a new order.
+ */
+async function openAttempts(email: string, phone: string, method: PaymentMethod) {
+  return db.order.findMany({
+    where: {
+      status: "PENDING",
+      paymentMethod: method,
+      email,
+      phone,
+      createdAt: { gte: new Date(Date.now() - REOPEN_WITHIN_MS) },
+    },
+    orderBy: { createdAt: "desc" },
+    take: OPEN_UNPAID_LIMIT,
+    select: {
+      id: true,
+      number: true,
+      total: true,
+      dueOnDelivery: true,
+      couponId: true,
+      items: { select: { qty: true, variant: { select: { sku: true } } } },
+      payments: {
+        where: { gateway: "razorpay" },
+        orderBy: { createdAt: "desc" },
+        select: { gatewayOrderId: true, status: true, amount: true, mode: true },
+      },
+    },
+  })
+}
+
+type OpenAttempt = Awaited<ReturnType<typeof openAttempts>>[number]
+
+const sameMoney = (a: { toString(): string } | number, b: { toString(): string } | number) =>
+  Math.abs(Number(a.toString()) - Number(b.toString())) < 0.005
+
+/** The same things in the same numbers, whatever order they were listed in. */
+function sameBasket(
+  attempt: OpenAttempt,
+  items: ReadonlyArray<{ sku: string; qty: number }>,
+): boolean {
+  const key = (list: Array<[string, number]>) =>
+    list
+      .map(([sku, qty]) => `${sku}:${qty}`)
+      .sort()
+      .join(",")
+  return (
+    key(attempt.items.map((i) => [i.variant.sku, i.qty])) === key(items.map((i) => [i.sku, i.qty]))
+  )
+}
+
+/**
+ * Paying again for an order that is still open, instead of writing another.
+ *
+ * A declined card, a closed payment window or a page reloaded mid-checkout
+ * used to leave one unpaid order per attempt - the same buyer, the same
+ * basket, three orders, two of them expiring an hour later. Razorpay takes
+ * any number of attempts on one of its orders until one is paid, so an
+ * attempt for the same basket at the same price, from the same email and
+ * phone, reopens the order already holding that stock. The address may have
+ * changed and is saved onto it; the price was checked to be the same.
+ *
+ * Never an order any money has moved on, nor one opened on the other
+ * Razorpay account: those are not for a second attempt.
+ */
+async function reopenUnpaidOrder(
+  attempts: OpenAttempt[],
+  input: {
+    items: ReadonlyArray<{ sku: string; qty: number }>
+    total: number
+    payNow: number
+    dueOnDelivery: number
+    couponId: string | null
+    address: PlaceOrderInput["address"]
+    method: PaymentMethod
+  },
+): Promise<StartedCheckout | null> {
+  if (attempts.length === 0) return null
+  let key: { mode: PaymentMode; keyId: string }
+  try {
+    key = await activeGatewayKey()
+  } catch {
+    return null
+  }
+
+  for (const attempt of attempts) {
+    const payment = attempt.payments[0]
+    if (!payment || attempt.payments.some((p) => !NO_MONEY_MOVED.includes(p.status))) continue
+    if (payment.mode !== key.mode) continue
+    if (
+      attempt.couponId !== input.couponId ||
+      !sameBasket(attempt, input.items) ||
+      !sameMoney(attempt.total, input.total) ||
+      !sameMoney(attempt.dueOnDelivery, input.dueOnDelivery) ||
+      !sameMoney(payment.amount, input.payNow)
+    ) {
+      continue
+    }
+    // Conditional, so an order paid or released this instant is left alone.
+    const moved = await db.order.updateMany({
+      where: { id: attempt.id, status: "PENDING" },
+      data: { shippingAddress: { ...input.address } },
+    })
+    if (moved.count === 0) continue
+    return {
+      orderId: attempt.id,
+      orderNumber: attempt.number,
+      total: attempt.total.toString(),
+      payNow: String(input.payNow),
+      gatewayOrderId: payment.gatewayOrderId,
+      gatewayKeyId: key.keyId,
+      paymentMethod: input.method,
+    }
+  }
+  return null
+}
 
 /**
  * How many cash-on-delivery orders one email or phone may have waiting to be
@@ -360,7 +496,12 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 
     // Then, before any stock is looked at or Shiprocket asked: the ceiling on
     // orders one buyer may hold without having paid for them
-    // (OPEN_UNPAID_LIMIT, OPEN_COD_LIMIT).
+    // (OPEN_UNPAID_LIMIT, OPEN_COD_LIMIT). Paying again for one of those is
+    // not a new order - it reopens that one - so a buyer at the ceiling whose
+    // basket matches an open order goes on, and is refused further down only
+    // if it turns out not to be a retry after all.
+    const attempts = paysOnline ? await openAttempts(email, input.phone, method) : []
+    let atCeiling = false
     if (paysOnline) {
       const openUnpaid = await db.order.count({
         where: {
@@ -371,11 +512,10 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         },
       })
       if (openUnpaid >= OPEN_UNPAID_LIMIT) {
-        return fail(
-          "You already have orders waiting to be paid for. Finish paying for one of those, or try again in an hour.",
-          undefined,
-          409,
-        )
+        if (!attempts.some((a) => sameBasket(a, input.items))) {
+          return fail(OPEN_UNPAID_REFUSAL, undefined, 409)
+        }
+        atCeiling = true
       }
     } else {
       const openCod = await db.order.count({
@@ -522,6 +662,37 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         undefined,
         422,
       )
+    }
+
+    // ── or pay again for the order already open ─────────────
+    if (paysOnline) {
+      const reopened = await reopenUnpaidOrder(attempts, {
+        items: input.items,
+        total: priced.total,
+        payNow: split.payNow,
+        dueOnDelivery: split.dueOnDelivery,
+        couponId,
+        address: input.address,
+        method,
+      })
+      if (reopened) {
+        await createAuditLog(session, {
+          action: "order:reopen",
+          module: "order",
+          entityId: reopened.orderId,
+          meta: { number: reopened.orderNumber, payNow: split.payNow },
+          ...(await getAuditMeta()),
+        })
+        await rememberOrder(reopened.orderNumber)
+        await attachOrderToVisitor({
+          orderId: reopened.orderId,
+          email: input.email,
+          phone: input.phone,
+          name: `${input.address.firstName} ${input.address.lastName}`.trim(),
+        })
+        return ok(reopened)
+      }
+      if (atCeiling) return fail(OPEN_UNPAID_REFUSAL, undefined, 409)
     }
 
     // ── write the order and claim stock in one transaction ──

@@ -244,6 +244,85 @@ describe("placeOrder", () => {
     })
   })
 
+  describe("paying again", () => {
+    const open = (over: Record<string, unknown> = {}) => ({
+      id: "order-open",
+      number: "SKM-2026-OPEN",
+      total: "3499",
+      dueOnDelivery: "0",
+      couponId: null,
+      items: [{ qty: 1, variant: { sku: "SKM-FLAME-ORANGE" } }],
+      payments: [
+        { gatewayOrderId: "order_RZ_OPEN", status: "FAILED", amount: "3499", mode: "test" },
+      ],
+      ...over,
+    })
+    // The buyer's open orders; releaseStaleOrders asks for old ones (createdAt lt) and gets none.
+    const attempts = (list: unknown[]) =>
+      mocks.db.order.findMany.mockImplementation(
+        async (args?: { where?: { createdAt?: { gte?: Date } } }) =>
+          args?.where?.createdAt?.gte ? list : [],
+      )
+
+    it("reopens the order already open for the same basket instead of writing another", async () => {
+      attempts([open()])
+      const result = await service.placeOrder(ORDER_INPUT)
+      expect(result).toMatchObject({
+        ok: true,
+        data: {
+          orderNumber: "SKM-2026-OPEN",
+          gatewayOrderId: "order_RZ_OPEN",
+          gatewayKeyId: "rzp_test_x",
+          payNow: "3499",
+        },
+      })
+      expect(mocks.db.order.create).not.toHaveBeenCalled()
+      expect(mocks.gateway.createGatewayOrder).not.toHaveBeenCalled()
+      expect(mocks.db.order.updateMany).toHaveBeenCalledWith({
+        where: { id: "order-open", status: "PENDING" },
+        data: { shippingAddress: expect.objectContaining({ pincode: "302001" }) },
+      })
+      expect(mocks.createAuditLog).toHaveBeenCalledWith(
+        null,
+        expect.objectContaining({ action: "order:reopen", entityId: "order-open" }),
+      )
+    })
+
+    it("writes a new order when the basket or the price has changed", async () => {
+      attempts([
+        open({ items: [{ qty: 2, variant: { sku: "SKM-FLAME-ORANGE" } }] }),
+        open({ total: "2999" }),
+      ])
+      const result = await service.placeOrder(ORDER_INPUT)
+      expect(result).toMatchObject({ ok: true, data: { orderNumber: "SKM-2026-AAAA" } })
+      expect(mocks.db.order.create).toHaveBeenCalled()
+    })
+
+    it("never reopens an order money has moved on, or one opened on the other account", async () => {
+      const pay = open().payments[0]!
+      attempts([
+        open({ payments: [{ ...pay, status: "AUTHORIZED" }] }),
+        open({ payments: [{ ...pay, mode: "live" }] }),
+      ])
+      const result = await service.placeOrder(ORDER_INPUT)
+      expect(result).toMatchObject({ ok: true, data: { orderNumber: "SKM-2026-AAAA" } })
+    })
+
+    it("lets a buyer at the ceiling pay again for an open order, and still refuses a new one", async () => {
+      mocks.db.order.count.mockResolvedValue(3)
+      attempts([open()])
+      expect(await service.placeOrder(ORDER_INPUT)).toMatchObject({
+        ok: true,
+        data: { orderNumber: "SKM-2026-OPEN" },
+      })
+
+      // The same basket at another price is not a retry.
+      attempts([open({ total: "2999" })])
+      expect(await service.placeOrder(ORDER_INPUT)).toMatchObject({ ok: false, status: 409 })
+      expect(mocks.db.order.create).not.toHaveBeenCalled()
+    })
+  })
+
   describe("paying on delivery", () => {
     const cod = { ...ORDER_INPUT, paymentMethod: "COD" }
     const partial = { ...ORDER_INPUT, paymentMethod: "PARTIAL" }

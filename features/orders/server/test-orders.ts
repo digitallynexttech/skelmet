@@ -15,7 +15,8 @@ import { createAuditLog } from "@/server/audit"
 import { db } from "@/server/db"
 
 /**
- * Deleting the orders the shop placed to try itself out.
+ * Deleting orders that were never sales: the ones the shop placed to try
+ * itself out, and the unpaid attempts a declined or abandoned payment left.
  *
  * Nothing here can tell a test from a sale on its own, so staff choose the
  * orders - and then everything that marks one as real keeps it, whatever was

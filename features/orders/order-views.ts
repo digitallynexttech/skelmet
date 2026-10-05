@@ -1,5 +1,5 @@
 import type { PaymentMethod } from "@/features/checkout/payment-options"
-import { statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
+import { ORDER_STATUSES, statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
 
 /**
  * The tabs over the order list: the few views staff reach for all day.
@@ -28,7 +28,10 @@ export type OrderView = (typeof ORDER_VIEW_KEYS)[number]
 type ViewDef = { label: string; clauses: readonly Clause[] | null }
 
 export const ORDER_VIEWS: Record<OrderView, ViewDef> = {
-  all: { label: "All", clauses: null },
+  // Everything but the cancelled, which have a view of their own: on All
+  // orders those are mostly payments that never came, one per attempt, and
+  // listed with the rest they buried the orders that are real.
+  all: { label: "All", clauses: [{ statuses: ORDER_STATUSES.filter((s) => s !== "CANCELLED") }] },
   // Not yet handed to a courier: COD accepted, paid, or packed.
   unfulfilled: { label: "Unfulfilled", clauses: [{ statuses: ["CONFIRMED", "PAID", "PACKED"] }] },
   // Payment pending or partially paid (order-progress.ts), as Shopify's

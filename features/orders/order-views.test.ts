@@ -21,6 +21,15 @@ describe("the Unpaid tab", () => {
   })
 })
 
+describe("the All view", () => {
+  it("leaves out cancelled orders, which the Cancelled view lists", () => {
+    expect(isInView("all", "CANCELLED", "ONLINE")).toBe(false)
+    expect(isInView("cancelled", "CANCELLED", "ONLINE")).toBe(true)
+    expect(isInView("all", "PENDING", "ONLINE")).toBe(true)
+    expect(isInView("all", "REFUNDED", "COD")).toBe(true)
+  })
+})
+
 describe("viewsIn", () => {
   it("offers no Cancelled tab on Orders, where nothing cancelled is listed", () => {
     expect(viewsIn("paid")).not.toContain("cancelled")

@@ -101,7 +101,7 @@ export function OrderTable({
   canDeleteTest = false,
 }: {
   scope?: OrderScope
-  /** An owner or admin: offered Delete test orders, which the server also checks. */
+  /** An owner or admin: offered Delete orders, which the server also checks. */
   canDeleteTest?: boolean
 }) {
   const copy = SCOPES[scope]
@@ -154,8 +154,8 @@ export function OrderTable({
         ? plural(target.rows.length, "selected order", "selected orders")
         : `All ${plural(target.rows.length, "order", "orders")} listed`
 
-  // Delete test orders: the server says first what would go and what
-  // stays, and why; only the confirm deletes.
+  // Delete orders: tests, and attempts whose payment never came. The server
+  // says first what would go and what stays, and why; only the confirm deletes.
   const { ask, dialog } = useConfirm()
   const deleteTest = useDeleteTestOrders()
 
@@ -169,9 +169,7 @@ export function OrderTable({
     }
     const n = plan.deletable.length
     ask({
-      title: n
-        ? `Delete ${plural(n, "test order", "test orders")}?`
-        : "None of these can be deleted",
+      title: n ? `Delete ${plural(n, "order", "orders")}?` : "None of these can be deleted",
       body: <DeletionPreview plan={plan} />,
       confirmLabel: n ? `Delete ${plural(n, "order", "orders")}` : "Close",
       tone: n ? "danger" : "primary",
@@ -417,7 +415,7 @@ export function OrderTable({
                     hint={target.selected ? undefined : "tick first"}
                     onSelect={() => void askToDelete(target.rows)}
                   >
-                    Delete test orders
+                    Delete orders
                   </MenuItem>
                 </>
               ) : null}
