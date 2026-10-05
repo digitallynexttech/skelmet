@@ -329,13 +329,16 @@ export function ProductDetail({
           </div>
         </div>
 
-        {/* qty + add + buy. One row from xl, stacked on phones. Stacked, the
-            stepper keeps its own width rather than stretching across, and
-            the buttons only share space once they sit side by side: flex-1
-            in a column sizes their HEIGHT from zero, which squashed them to
-            the height of their text. */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap xl:max-w-[720px] xl:flex-nowrap">
-          <div className="flex h-[58px] shrink-0 items-center gap-1 self-start rounded-full border border-white/[0.16] px-1.5 sm:self-auto">
+        {/* qty + add + buy, sized by the row's own width (a container query):
+            the buy panel's column depends on the screen's height as well as
+            its width, so no screen breakpoint says how much room there is.
+            From 40rem all three share one row. Narrower, the stepper and Add
+            to cart share the first and Buy it now takes the second; under
+            24rem the price leaves Add to cart's label, which needs 234px with
+            it and 161px without. Add to cart keeps a 150px floor, so on the
+            narrowest phones it wraps onto a row of its own instead. */}
+        <div className="@container flex flex-wrap gap-2.5 xl:max-w-[720px]">
+          <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
             <button
               type="button"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -363,8 +366,7 @@ export function ProductDetail({
             type="button"
             variant="primary"
             size="lg"
-            full
-            className="min-w-0 sm:flex-1"
+            className="min-w-[150px] flex-1 @max-[24rem]:px-5"
             disabled={soldOut}
             onClick={(e) => {
               add(colourwayId, qty)
@@ -383,12 +385,12 @@ export function ProductDetail({
               </span>
             ) : (
               <>
-                {/* The price leaves the label on the narrowest phones, where it
-                    would push the page sideways; it is right above, in large. */}
+                {/* The price leaves the label where the row is too narrow for
+                    it; it is right above, in large. */}
                 <span>
-                  Add to cart<span className="max-[359px]:hidden"> ·</span>
+                  Add to cart<span className="@max-[24rem]:hidden"> ·</span>
                 </span>
-                <Money value={lineTotal} className="max-[359px]:hidden" />
+                <Money value={lineTotal} className="@max-[24rem]:hidden" />
               </>
             )}
           </Button>
@@ -396,8 +398,7 @@ export function ProductDetail({
           <Button
             variant="accent"
             size="lg"
-            full
-            className="min-w-0 sm:flex-1"
+            className="min-w-0 grow basis-full @min-[40rem]:basis-0"
             disabled={soldOut}
             onClick={() =>
               // Straight to checkout with just this, leaving the cart as it is.
