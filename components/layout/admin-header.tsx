@@ -35,9 +35,6 @@ export function AdminHeader() {
         )}
         <PanelLeftOpen className="size-[18px] lg:hidden" strokeWidth={1.8} aria-hidden />
       </button>
-      <kbd className="text-dim hidden rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[10.5px] tracking-[0.08em] lg:inline">
-        Ctrl B
-      </kbd>
     </header>
   )
 }
