@@ -177,7 +177,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
           <h1 className="font-display text-bone mb-5 text-[46px] leading-[1.0] uppercase sm:text-[64px] xl:text-[84px]">
             {policy.title}
           </h1>
-          <p className="text-ash mb-6 max-w-[640px] text-[16px] leading-[1.64] sm:text-[17px]">
+          <p className="text-ash mb-6 max-w-[520px] text-[16px] leading-[1.6] text-pretty sm:text-[17.5px]">
             {policy.intro}
           </p>
 

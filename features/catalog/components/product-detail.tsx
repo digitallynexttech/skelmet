@@ -85,15 +85,15 @@ export function ProductDetail({
 
   const colourway = product.colourways.find((c) => c.id === colourwayId) ?? product.colourways[0]!
 
-  // Every slot follows the swatch, not just the first. It used to swap the
-  // front shot alone and keep four shared "context" shots, which meant picking
-  // Militia Olive showed one olive skull and then four orange ones.
+  // Each finish has its own pictures, so the whole gallery follows the swatch.
+  // It used to swap the front shot alone and keep four shared "context" shots,
+  // which meant picking Militia Olive showed one olive skull and then four
+  // orange ones.
   const gallery = React.useMemo(
     () =>
-      product.gallery.map((shot) => ({
-        src: shot.src[colourway.id],
-        alt: `${colourway.name} — ${shot.alt}`,
-        caption: shot.caption,
+      product.gallery[colourway.id].map((image) => ({
+        ...image,
+        alt: `${colourway.name} — ${image.alt}`,
       })),
     [colourway, product.gallery],
   )

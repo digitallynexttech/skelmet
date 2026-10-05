@@ -49,27 +49,35 @@ export type Product = {
   reviewCount: number
   unitsLeft: number
   colourways: Colourway[]
-  gallery: GalleryShot[]
+  /**
+   * Each finish's own pictures, in the order the gallery shows them. A Record,
+   * so a finish cannot be left without any: only the first picture used to
+   * follow the swatch, and picking Militia Olive left four orange photographs
+   * behind it.
+   */
+  gallery: Record<ColourwayId, GalleryImage[]>
   specs: Array<{ label: string; value: string; pending?: boolean }>
   inTheBox: string[]
 }
 
-/**
- * One gallery slot, in all three finishes.
- *
- * The file per colourway is a Record rather than an optional override, so a
- * finish cannot be left out: only the first slot used to follow the swatch,
- * and picking Militia Olive left four orange photographs behind it. A missing
- * finish is now a type error rather than something you find on the page.
- *
- * All three files share framing and dimensions, so `object-cover` crops them
- * identically and switching colourway does not shift the image.
- */
-export type GalleryShot = {
+/** One picture, in one finish, as the gallery shows it. */
+export type GalleryImage = {
+  src: string
   alt: string
-  src: Record<ColourwayId, string>
   /** For a shot of the mount in use: what it is showing, over the image. */
   caption?: { title: string; body: string }
+}
+
+/**
+ * A shot taken in all three finishes. The file per colourway is a Record, so
+ * a finish cannot be left out. All three files share framing and dimensions,
+ * so `object-cover` crops them identically and switching colourway does not
+ * shift the image.
+ */
+type GalleryShot = Omit<GalleryImage, "src"> & { src: Record<ColourwayId, string> }
+
+function inFinish(shot: GalleryShot, id: ColourwayId): GalleryImage {
+  return { ...shot, src: shot.src[id] }
 }
 
 export const COLOURWAYS: Colourway[] = [
@@ -115,6 +123,97 @@ export const COLOURWAYS: Colourway[] = [
   },
 ]
 
+const FRONT: GalleryShot = {
+  alt: "Flame skull mount, front elevation",
+  src: {
+    blaze: "/product/product-front.jpg",
+    olive: "/product/colourway-olive-print.jpg",
+    ghost: "/product/colourway-ghost-grey-print.jpg",
+  },
+}
+
+// The owner's photographs, in Blaze Orange as taken (scripts/build-shop-shots.mjs).
+// The olive and the grey are the same photographs with only the skull
+// recoloured, against the real prints (GPT Image 2.5 on Higgsfield).
+const FITTING: GalleryShot = {
+  alt: "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
+  src: {
+    blaze: "/product/gallery-fitting.jpg",
+    olive: "/product/gallery-fitting-olive.jpg",
+    ghost: "/product/gallery-fitting-ghost-grey.jpg",
+  },
+}
+
+const PLACING_HELMET: GalleryShot = {
+  alt: "Setting a black helmet onto the skull on its wall mount",
+  src: {
+    blaze: "/product/gallery-placing-helmet.jpg",
+    olive: "/product/gallery-placing-helmet-olive.jpg",
+    ghost: "/product/gallery-placing-helmet-ghost-grey.jpg",
+  },
+}
+
+const HANGING_JACKET: GalleryShot = {
+  alt: "Hanging a riding jacket and gloves on the hook under a helmet on the mount",
+  src: {
+    blaze: "/product/gallery-hanging-jacket.jpg",
+    olive: "/product/gallery-hanging-jacket-olive.jpg",
+    ghost: "/product/gallery-hanging-jacket-ghost-grey.jpg",
+  },
+}
+
+const GEAR_LABELS: GalleryShot = {
+  alt: "A helmet on the mount, gloves and a jacket on its hooks, labelled: keeps the helmet organised, prevents scratches and damage, improves airflow so it dries faster, holds gloves, extra hook for jackets and gear",
+  src: {
+    blaze: "/product/gallery-gear-labels.jpg",
+    olive: "/product/gallery-gear-labels-olive.jpg",
+    ghost: "/product/gallery-gear-labels-ghost-grey.jpg",
+  },
+}
+
+const GARAGE_BIKE: GalleryShot = {
+  alt: "A helmet on the mount on a lit garage wall, a sports bike parked below it",
+  src: {
+    blaze: "/product/gallery-garage-bike.jpg",
+    olive: "/product/gallery-garage-bike-olive.jpg",
+    ghost: "/product/gallery-garage-bike-ghost-grey.jpg",
+  },
+}
+
+const INSTALL: GalleryShot = {
+  alt: "Screwing the mount to the wall through the foot of its plate",
+  caption: {
+    title: "Up in four steps",
+    body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
+  },
+  src: {
+    blaze: "/product/gallery-install.jpg",
+    olive: "/product/gallery-install-olive.jpg",
+    ghost: "/product/gallery-install-ghost-grey.jpg",
+  },
+}
+
+const FLAME_DETAIL: GalleryShot = {
+  alt: "Macro detail of the carved flame relief",
+  src: {
+    blaze: "/product/detail-flame.jpg",
+    olive: "/product/detail-flame-olive.jpg",
+    ghost: "/product/detail-flame-ghost-grey.jpg",
+  },
+}
+
+/** The gallery's order, the same in every finish. */
+const SHOTS = [
+  FITTING,
+  PLACING_HELMET,
+  HANGING_JACKET,
+  GEAR_LABELS,
+  GARAGE_BIKE,
+  INSTALL,
+  FLAME_DETAIL,
+  FRONT,
+]
+
 export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
@@ -125,75 +224,11 @@ export const FLAME_SKULL_MOUNT: Product = {
   reviewCount: 312,
   unitsLeft: 12,
   colourways: COLOURWAYS,
-  gallery: [
-    {
-      alt: "Flame skull mount, front elevation",
-      src: {
-        blaze: "/product/product-front.jpg",
-        olive: "/product/colourway-olive-print.jpg",
-        ghost: "/product/colourway-ghost-grey-print.jpg",
-      },
-    },
-    // The owner's photograph, the real arm: the side view. (mount-side.jpg
-    // was a render whose arm is not the one that ships.)
-    {
-      alt: "The skull on its arm with no helmet, gloves hanging from the hook",
-      src: {
-        blaze: "/product/gallery-bare-skull.jpg",
-        olive: "/product/gallery-bare-skull-olive.jpg",
-        ghost: "/product/gallery-bare-skull-ghost-grey.jpg",
-      },
-      caption: {
-        title: "Hooks under the arm",
-        body: "Gloves and keys hang below the skull, helmet on or off. Rated for 10 kg.",
-      },
-    },
-    // In use, the real skull and arm in every one (scripts/build-gallery-shots.mjs).
-    {
-      alt: "A glossy black helmet on the mount, a jacket, gloves and keys on its hooks",
-      caption: {
-        title: "All your riding gear in one place",
-        body: "Helmet on the skull; jacket, gloves and keys on the hooks under the arm.",
-      },
-      src: {
-        blaze: "/product/gallery-wall-gear.jpg",
-        olive: "/product/gallery-wall-gear-olive.jpg",
-        ghost: "/product/gallery-wall-gear-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "The mount in a garage at night, a white open-face helmet on the skull and gloves and keys on its hooks",
-      caption: {
-        title: "Full-face, open-face or modular",
-        body: "The skull sits inside the helmet and spreads its weight across the liner.",
-      },
-      src: {
-        blaze: "/product/gallery-garage-night.jpg",
-        olive: "/product/gallery-garage-night-olive.jpg",
-        ghost: "/product/gallery-garage-night-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "Screwing the mount to the wall through the foot of its plate",
-      caption: {
-        title: "Up in four steps",
-        body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
-      },
-      src: {
-        blaze: "/product/gallery-install.jpg",
-        olive: "/product/gallery-install-olive.jpg",
-        ghost: "/product/gallery-install-ghost-grey.jpg",
-      },
-    },
-    {
-      alt: "Macro detail of the carved flame relief",
-      src: {
-        blaze: "/product/detail-flame.jpg",
-        olive: "/product/detail-flame-olive.jpg",
-        ghost: "/product/detail-flame-ghost-grey.jpg",
-      },
-    },
-  ],
+  gallery: {
+    blaze: SHOTS.map((shot) => inFinish(shot, "blaze")),
+    olive: SHOTS.map((shot) => inFinish(shot, "olive")),
+    ghost: SHOTS.map((shot) => inFinish(shot, "ghost")),
+  },
   specs: [
     { label: "Material", value: "PLA+ · matte" },
     { label: "Load rating", value: "10 kg" },

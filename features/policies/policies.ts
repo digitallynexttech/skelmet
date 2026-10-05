@@ -80,7 +80,7 @@ const PRIVACY: Policy = {
   slug: "privacy",
   title: "Privacy policy",
   intro:
-    "What we collect, why we collect it, and how to make us delete it. Written to be read, not to be survived.",
+    "What we collect, why we collect it, who we share it with, how long we keep it, and how to make us delete it. Written to be read, not to be survived.",
   readingTime: "~8 min read",
   shortVersion:
     "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
@@ -332,7 +332,8 @@ const PAYMENT_SECTION = "Payment"
 const TERMS: Policy = {
   slug: "terms",
   title: "Terms of service",
-  intro: "The deal between you and us when you buy a skull. Short sentences, no traps.",
+  intro:
+    "The deal between you and us when you buy a skull, from prices and delivery to returns, cancellations and the warranty. Short sentences, no traps.",
   readingTime: "~9 min read",
   shortVersion:
     "Buy it, we ship it. Don't like it? Send it back unused within 7 days. Don't hang a person off it.",
@@ -582,7 +583,7 @@ const TERMS: Policy = {
 const shippingPolicy = (rule: ShippingRule): Policy => ({
   slug: "shipping",
   title: "Shipping policy",
-  intro: "When it leaves, how it travels, and what happens if it goes wrong.",
+  intro: `When it leaves, how it travels, and what happens if it goes wrong. Out within ${P.dispatchHours} hours of payment, and with you within ${P.deliveryDays} of dispatch.`,
   readingTime: "~4 min read",
   shortVersion: `${shippingTerms(rule).short} Dispatched within ${P.dispatchHours} hours of payment, delivered within ${P.deliveryDays} of dispatch.`,
   accent: "acid",
@@ -676,7 +677,7 @@ const SHIPPING = shippingPolicy(shippingConfig.fee)
 const RETURNS: Policy = {
   slug: "returns",
   title: "Returns, refunds & cancellation",
-  intro: "Seven days, no interrogation, and we pay the pickup.",
+  intro: `Seven days, no interrogation, and we pay the pickup. Refunds go back to the way you paid, within ${P.refundDays} of the return being approved.`,
   readingTime: "~4 min read",
   shortVersion:
     "Changed your mind? Seven days, unused, original box. We collect it and refund you. Cancel free any time before dispatch.",

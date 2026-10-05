@@ -5,7 +5,6 @@ import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { TrustStrip } from "@/components/marketing/trust-strip"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
-import { SectionLabel } from "@/components/shared/section-label"
 
 export const metadata: Metadata = pageMetadata({
   title: "FAQ",
@@ -21,14 +20,14 @@ export default function FaqPage() {
         <HeroWatermark accent="ember">FAQ</HeroWatermark>
 
         <div className="relative z-10">
-          <SectionLabel className="mb-4">Support</SectionLabel>
           <h1 className="font-display text-bone mb-5 text-[52px] leading-[1.0] uppercase sm:text-[72px] xl:text-[88px]">
             Questions,
             <br />
             answered
           </h1>
-          <p className="text-ash max-w-[540px] text-[16px] leading-[1.62] sm:text-[17.5px]">
-            The ones we actually get asked, in the order we get asked them.
+          <p className="text-ash max-w-[520px] text-[16px] leading-[1.6] text-pretty sm:text-[17.5px]">
+            The ones we actually get asked, from fitment and drilling to delivery, returns and the
+            warranty. Not here? Message us and a human replies.
           </p>
         </div>
       </Section>
