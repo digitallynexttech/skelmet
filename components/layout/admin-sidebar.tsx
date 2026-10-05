@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
@@ -22,6 +23,7 @@ import {
 
 import { useAdminShell } from "@/components/layout/admin-shell"
 import { Wordmark } from "@/components/shared/wordmark"
+import { siteConfig } from "@/config/site"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
@@ -147,10 +149,31 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
   // Cosmetic filter only - proxy.ts and requirePermission are the enforcement.
   const items = NAV.filter((item) => permissions.includes(item.scope))
 
-  const body = (
+  // compact: the desktop rail closed to its icons - the skull mark for the
+  // lockup, each section an icon named by its tooltip and for screen readers,
+  // and no pages under a section. The phone drawer is never compact.
+  const body = (compact: boolean) => (
     <>
-      <div className="flex h-[68px] items-center gap-3 border-b border-white/[0.07] px-5">
-        <Wordmark size="sm" />
+      <div
+        className={cn(
+          "flex h-[68px] items-center border-b border-white/[0.07]",
+          compact ? "justify-center" : "gap-3 px-5",
+        )}
+      >
+        {compact ? (
+          <Link href="/" title={siteConfig.name} className="inline-flex items-center">
+            <Image
+              src="/brand/skelmet-mark.png"
+              width={351}
+              height={435}
+              alt={siteConfig.name}
+              sizes="32px"
+              className="h-8 w-auto"
+            />
+          </Link>
+        ) : (
+          <Wordmark size="sm" />
+        )}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
@@ -161,29 +184,34 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
             item.children && active ? currentChild(pathname, item.children) : undefined
           // The section's own page, rather than one of the pages under it.
           const here = active && !current
+          // On the closed rail the pages under a section are not shown, so
+          // the section lights up for any of them.
+          const lit = compact ? active : here
           return (
             <div key={item.href}>
               <Link
                 href={item.href}
-                aria-current={here ? "page" : undefined}
+                aria-current={here ? "page" : lit ? "true" : undefined}
+                title={compact ? item.label : undefined}
                 // Only the page you are on lights up: on one of the section's
                 // pages the section itself stays plain, or two rows would both
                 // read as the current page. The arrow says which section.
                 className={cn(
-                  "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[14px] transition-colors",
-                  here
+                  "flex min-h-11 items-center gap-3 rounded-xl text-[14px] transition-colors",
+                  compact ? "justify-center" : "px-3.5",
+                  lit
                     ? "bg-blaze/12 text-bone font-semibold"
                     : "text-ash hover:text-bone hover:bg-white/[0.04]",
                 )}
               >
                 <item.icon
-                  className={cn("size-[18px] shrink-0", here ? "text-blaze" : "text-dim")}
+                  className={cn("size-[18px] shrink-0", lit ? "text-blaze" : "text-dim")}
                   strokeWidth={1.8}
                 />
-                {item.label}
+                <span className={compact ? "sr-only" : undefined}>{item.label}</span>
                 {/* Says the section has pages under it; turns down while
                     they are showing. */}
-                {item.children ? (
+                {item.children && !compact ? (
                   <ChevronRight
                     aria-hidden
                     className={cn(
@@ -197,7 +225,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
               {/* A section's pages show only while you are in it, so the
                   menu stays short: on Visitors, Orders is one row. Opening
                   the section is one click on its name. */}
-              {item.children && active ? (
+              {item.children && active && !compact ? (
                 <ul className="flex flex-col gap-0.5 py-0.5">
                   {item.children.map((child) => {
                     const on = current?.href === child.href
@@ -232,10 +260,14 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
         <button
           type="button"
           onClick={() => setConfirmingSignOut(true)}
-          className="text-ash hover:text-magenta flex min-h-11 w-full items-center gap-3 rounded-md px-3.5 text-[14px] transition-colors hover:bg-white/[0.04]"
+          title={compact ? "Sign out" : undefined}
+          className={cn(
+            "text-ash hover:text-magenta flex min-h-11 w-full items-center gap-3 rounded-md text-[14px] transition-colors hover:bg-white/[0.04]",
+            compact ? "justify-center" : "px-3.5",
+          )}
         >
           <LogOut className="text-dim size-[18px] shrink-0" strokeWidth={1.8} />
-          Sign out
+          <span className={compact ? "sr-only" : undefined}>Sign out</span>
         </button>
       </div>
     </>
@@ -243,18 +275,15 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
 
   return (
     <>
-      {/* The rail slides shut to nothing; its contents keep their width so
-          they slide with it rather than reflowing. Closed, it is inert: no
-          tab stop lands in a sidebar nobody can see. */}
+      {/* Closed, the rail narrows to its icons rather than going away. */}
       <aside
         id="admin-sidebar"
-        inert={collapsed}
         className={cn(
-          "bg-carbon sticky top-0 hidden h-dvh shrink-0 overflow-hidden border-white/[0.07] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:block",
-          collapsed ? "w-0 border-r-0" : "w-[248px] border-r",
+          "bg-carbon sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-white/[0.07] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:flex",
+          collapsed ? "w-[72px]" : "w-[248px]",
         )}
       >
-        <div className="flex h-full w-[248px] flex-col">{body}</div>
+        {body(collapsed)}
       </aside>
 
       <div
@@ -286,7 +315,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
           >
             <X className="size-5" strokeWidth={2} />
           </button>
-          {body}
+          {body(false)}
         </div>
       </div>
 

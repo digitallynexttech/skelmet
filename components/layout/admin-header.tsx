@@ -3,14 +3,12 @@
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { useAdminShell } from "@/components/layout/admin-shell"
-import { Wordmark } from "@/components/shared/wordmark"
-import { cn } from "@/lib/utils"
 
 /**
  * The bar across the top of the console's content, the same 68px as the
  * sidebar's logo row so the two read as one line. It holds the sidebar's
- * toggle, and the wordmark wherever the sidebar is not showing it: on a phone,
- * and on a desktop with the rail closed.
+ * toggle; the logo stays in the sidebar, which closes to its icons and the
+ * skull mark rather than going away.
  */
 export function AdminHeader() {
   const { collapsed, drawerOpen, toggle } = useAdminShell()
@@ -40,9 +38,6 @@ export function AdminHeader() {
       <kbd className="text-dim hidden rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[10.5px] tracking-[0.08em] lg:inline">
         Ctrl B
       </kbd>
-      <div className={cn("ml-1", collapsed ? "lg:block" : "lg:hidden")}>
-        <Wordmark size="sm" />
-      </div>
     </header>
   )
 }

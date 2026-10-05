@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
  * Whether the console's sidebar is showing, shared by the sidebar and the
  * header's toggle.
  *
- * From lg the sidebar is a rail that closes to nothing and opens again; the
+ * From lg the sidebar is a rail that closes to its icons and opens again; the
  * choice is kept in a cookie, which the layout reads, so a reload opens the
  * page as it was left rather than flashing the rail open first. Below lg it
  * is a drawer, closed on every page.
