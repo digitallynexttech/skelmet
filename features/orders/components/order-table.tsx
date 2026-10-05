@@ -19,7 +19,7 @@ import { toast } from "sonner"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
-import { ToneBadge, type Tone } from "@/components/shared/status-badge"
+import { ToneBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
 import {
@@ -99,13 +99,6 @@ function paymentNote(o: OrderRow): string {
   const due = dueAtDoor(o)
   const method = PAYMENT_METHOD_SHORT[o.paymentMethod]
   return due > 0 ? `${method} · ${formatMoney(due)} due` : method
-}
-
-const DOT: Record<Tone, string> = {
-  neutral: "bg-ash/60",
-  accent: "bg-ember",
-  success: "bg-acid",
-  danger: "bg-magenta",
 }
 
 export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
@@ -266,15 +259,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       value: (o) => o.delivery?.label ?? "",
       cell: (o) =>
         o.delivery ? (
-          <span className="text-ash flex items-center gap-2 text-[13px]">
-            <span
-              className={cn(
-                "size-1.5 shrink-0 rounded-full",
-                DOT[DELIVERY_STATES[o.delivery.key].tone],
-              )}
-            />
-            {o.delivery.label}
-          </span>
+          <ToneBadge tone={DELIVERY_STATES[o.delivery.key].tone}>{o.delivery.label}</ToneBadge>
         ) : (
           <span className="text-dim">-</span>
         ),
