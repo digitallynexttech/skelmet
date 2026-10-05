@@ -2,6 +2,7 @@ import "server-only"
 
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import type { UnpaidOrderRow, UnpaidOrdersPayload } from "@/features/orders/hooks/use-orders"
+import { cancelledByStaff } from "@/features/orders/server/cancellations"
 import { MAX_PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
@@ -75,16 +76,8 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
       : []
 
     // Cancelled by a person, or by the clock. Only the audit log knows.
-    const cancelled = orders.filter((o) => o.status === "CANCELLED").map((o) => o.id)
-    const byStaff = new Set(
-      cancelled.length
-        ? (
-            await db.auditLog.findMany({
-              where: { entityId: { in: cancelled }, action: "order:cancel" },
-              select: { entityId: true },
-            })
-          ).map((a) => a.entityId)
-        : [],
+    const byStaff = await cancelledByStaff(
+      orders.filter((o) => o.status === "CANCELLED").map((o) => o.id),
     )
 
     const data: Row[] = orders.map((o) => {

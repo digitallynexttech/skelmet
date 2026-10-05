@@ -47,22 +47,30 @@ describe("paymentState", () => {
 })
 
 describe("fulfilmentState", () => {
+  const unshipped = { shipped: false, cancelledByStaff: false }
+  const shipped = { shipped: true, cancelledByStaff: false }
+
   it("holds an unpaid online order, and fulfils once the courier has it", () => {
-    expect(fulfilmentState("PENDING", false)).toBe("on_hold")
-    expect(fulfilmentState("PAID", false)).toBe("unfulfilled")
-    expect(fulfilmentState("PACKED", false)).toBe("packed")
-    expect(fulfilmentState("SHIPPED", true)).toBe("fulfilled")
-    expect(fulfilmentState("RETURNED", true)).toBe("fulfilled")
+    expect(fulfilmentState("PENDING", unshipped)).toBe("on_hold")
+    expect(fulfilmentState("PAID", unshipped)).toBe("unfulfilled")
+    expect(fulfilmentState("PACKED", unshipped)).toBe("packed")
+    expect(fulfilmentState("SHIPPED", shipped)).toBe("fulfilled")
+    expect(fulfilmentState("RETURNED", shipped)).toBe("fulfilled")
+  })
+
+  it("tells an order that expired unpaid from one staff cancelled", () => {
+    expect(fulfilmentState("CANCELLED", unshipped)).toBe("expired")
+    expect(fulfilmentState("CANCELLED", { ...unshipped, cancelledByStaff: true })).toBe("cancelled")
   })
 
   it("says a refund before shipping cancelled the fulfilment", () => {
-    expect(fulfilmentState("REFUNDED", false)).toBe("cancelled")
-    expect(fulfilmentState("REFUNDED", true)).toBe("fulfilled")
+    expect(fulfilmentState("REFUNDED", unshipped)).toBe("cancelled")
+    expect(fulfilmentState("REFUNDED", shipped)).toBe("fulfilled")
   })
 
   it("is unfulfilled or packed exactly where the Unfulfilled tab lists an order", () => {
     for (const status of ORDER_STATUSES) {
-      const open = ["unfulfilled", "packed"].includes(fulfilmentState(status, false))
+      const open = ["unfulfilled", "packed"].includes(fulfilmentState(status, unshipped))
       expect(open, status).toBe(isInView("unfulfilled", status, "ONLINE"))
     }
   })

@@ -182,7 +182,10 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       cell: (o) => (
         <Link
           href={`/admin/orders/${o.id}`}
-          className="text-bone hover:text-blaze font-mono text-[13px] transition-colors"
+          className={cn(
+            "text-bone hover:text-blaze font-mono text-[13px] transition-colors",
+            o.status === "CANCELLED" && "decoration-ash line-through",
+          )}
         >
           {o.number}
         </Link>
@@ -239,7 +242,10 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       header: "Fulfilment status",
       value: (o) => FULFILMENT_STATES[o.fulfilment].label,
       cell: (o) => (
-        <ToneBadge tone={FULFILMENT_STATES[o.fulfilment].tone}>
+        <ToneBadge
+          tone={FULFILMENT_STATES[o.fulfilment].tone}
+          title={FULFILMENT_STATES[o.fulfilment].title}
+        >
           {FULFILMENT_STATES[o.fulfilment].label}
         </ToneBadge>
       ),
@@ -468,6 +474,12 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           exportButtons={false}
           columnToggle
           numbered={false}
+          // Cancelled orders step back, struck through, as closed business.
+          rowClassName={(o) =>
+            o.status === "CANCELLED"
+              ? "[&>td]:opacity-55 [&>td]:transition-opacity hover:[&>td]:opacity-100"
+              : undefined
+          }
           pageSizes={PAGE_SIZES}
           pageKey={`${view}|${status}|${state.q}`}
           bar={bar}

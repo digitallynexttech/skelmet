@@ -110,6 +110,8 @@ type Props<T> = {
   pageKey?: string
   /** The # column of row numbers. Exports number their rows either way. */
   numbered?: boolean
+  /** Classes for one row, to set some apart: a cancelled order, say. */
+  rowClassName?: (row: T) => string | undefined
 }
 
 export type DataTableHandle<T> = {
@@ -154,6 +156,7 @@ export function DataTable<T>({
   pageSizes,
   pageKey,
   numbered = true,
+  rowClassName,
 }: Props<T>) {
   const [sort, setSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null)
   const [page, setPage] = React.useState(1)
@@ -525,6 +528,7 @@ export function DataTable<T>({
                       className={cn(
                         "border-t border-white/[0.07] transition-colors",
                         picked.has(id) ? "bg-blaze/[0.06]" : "hover:bg-white/[0.02]",
+                        rowClassName?.(row),
                       )}
                     >
                       <td className="px-3 py-3.5">

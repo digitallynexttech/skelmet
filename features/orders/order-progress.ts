@@ -59,20 +59,42 @@ export function paymentState(status: OrderStatus, method: PaymentMethod): Paymen
  * unfulfilled  to pack
  * packed       packed, waiting for the courier
  * fulfilled    handed to the courier, whatever happened after
- * cancelled    called off, or refunded, before it shipped
+ * expired      never paid for, and cancelled by itself to free its stock
+ * cancelled    called off by staff, or refunded before it shipped
  */
-export type FulfilmentState = "on_hold" | "unfulfilled" | "packed" | "fulfilled" | "cancelled"
+export type FulfilmentState =
+  "on_hold" | "unfulfilled" | "packed" | "fulfilled" | "expired" | "cancelled"
 
-export const FULFILMENT_STATES: Record<FulfilmentState, { label: string; tone: Tone }> = {
-  on_hold: { label: "On hold", tone: "neutral" },
+export const FULFILMENT_STATES: Record<
+  FulfilmentState,
+  { label: string; tone: Tone; title?: string }
+> = {
+  on_hold: { label: "On hold", tone: "neutral", title: "Waiting for its online payment." },
   unfulfilled: { label: "Unfulfilled", tone: "accent" },
   packed: { label: "Packed", tone: "accent" },
   fulfilled: { label: "Fulfilled", tone: "success" },
-  cancelled: { label: "Cancelled", tone: "neutral" },
+  expired: {
+    label: "Expired",
+    tone: "neutral",
+    title:
+      "Not paid for in time, so it was cancelled automatically and its stock went back on sale.",
+  },
+  cancelled: {
+    label: "Cancelled by staff",
+    tone: "neutral",
+    title: "Cancelled from the admin, or refunded before it shipped.",
+  },
 }
 
-/** `shipped`: a shipment was booked for it and not called off. */
-export function fulfilmentState(status: OrderStatus, shipped: boolean): FulfilmentState {
+/**
+ * `shipped`: a shipment was booked for it and not called off.
+ * `cancelledByStaff`: for a cancelled order, whether a person cancelled it
+ * (cancelledByStaff in orders/server) rather than the clock.
+ */
+export function fulfilmentState(
+  status: OrderStatus,
+  { shipped, cancelledByStaff }: { shipped: boolean; cancelledByStaff: boolean },
+): FulfilmentState {
   switch (status) {
     case "PENDING":
       return "on_hold"
@@ -86,7 +108,7 @@ export function fulfilmentState(status: OrderStatus, shipped: boolean): Fulfilme
     case "RETURNED":
       return "fulfilled"
     case "CANCELLED":
-      return "cancelled"
+      return cancelledByStaff ? "cancelled" : "expired"
     // Refunded from wherever it was: shipped first, or refunded instead.
     case "REFUNDED":
       return shipped ? "fulfilled" : "cancelled"

@@ -14,6 +14,7 @@ import {
   type PaymentState,
 } from "@/features/orders/order-progress"
 import { ORDER_VIEW_KEYS, isInView, viewWhere, type OrderView } from "@/features/orders/order-views"
+import { cancelledByStaff } from "@/features/orders/server/cancellations"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
 import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
 import { trackingStage, trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
@@ -75,25 +76,32 @@ export type OrderRow = {
 
 type Address = { firstName?: string; lastName?: string; city?: string; state?: string }
 
+/** The cancelled ones, whose row has to say who cancelled them. */
+const cancelledIds = (rows: Array<{ id: string; status: string }>) =>
+  rows.filter((r) => r.status === "CANCELLED").map((r) => r.id)
+
 function readAddress(json: unknown): Address {
   return (json ?? {}) as Address
 }
 
-function serializeRow(row: {
-  id: string
-  number: string
-  status: string
-  paymentMethod: string
-  email: string
-  phone: string
-  total: { toString(): string }
-  dueOnDelivery: { toString(): string }
-  createdAt: Date
-  placedAt: Date | null
-  shippingAddress: unknown
-  shipment: { status: string; pickupScheduledAt: Date | null } | null
-  _count: { items: number }
-}): OrderRow {
+function serializeRow(
+  row: {
+    id: string
+    number: string
+    status: string
+    paymentMethod: string
+    email: string
+    phone: string
+    total: { toString(): string }
+    dueOnDelivery: { toString(): string }
+    createdAt: Date
+    placedAt: Date | null
+    shippingAddress: unknown
+    shipment: { status: string; pickupScheduledAt: Date | null } | null
+    _count: { items: number }
+  },
+  byStaff: ReadonlySet<string>,
+): OrderRow {
   const addr = readAddress(row.shippingAddress)
   const status = row.status as OrderStatus
   const stage = row.shipment ? trackingStage(row.shipment.status) : null
@@ -110,7 +118,10 @@ function serializeRow(row: {
     customer: [addr.firstName, addr.lastName].filter(Boolean).join(" ") || "Guest",
     location: [addr.city, addr.state].filter(Boolean).join(", ") || "-",
     payment: paymentState(status, row.paymentMethod as PaymentMethod),
-    fulfilment: fulfilmentState(status, stage !== null && stage !== "cancelled"),
+    fulfilment: fulfilmentState(status, {
+      shipped: stage !== null && stage !== "cancelled",
+      cancelledByStaff: byStaff.has(row.id),
+    }),
     delivery: deliveryState({
       orderStatus: status,
       courierStatus: row.shipment?.status ?? null,
@@ -218,8 +229,14 @@ export async function listOrders(params: {
       }
     }
 
+    const byStaff = await cancelledByStaff(cancelledIds(rows))
     return ok({
-      ...paginate(rows.map(serializeRow), page, size, total),
+      ...paginate(
+        rows.map((row) => serializeRow(row, byStaff)),
+        page,
+        size,
+        total,
+      ),
       counts,
       viewCounts,
       allCount: all,
@@ -700,12 +717,13 @@ export async function getDashboard(): Promise<ActionResult<unknown>> {
       }),
     ])
 
+    const byStaff = await cancelledByStaff(cancelledIds(recent))
     return ok({
       todayCount,
       weekRevenue: (weekRevenue._sum.total ?? 0).toString(),
       awaiting,
       lowStock,
-      recent: recent.map(serializeRow),
+      recent: recent.map((row) => serializeRow(row, byStaff)),
     })
   })
 }

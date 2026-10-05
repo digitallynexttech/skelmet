@@ -13,15 +13,19 @@ export type Tone = keyof typeof TONE
 /** A status in one of the four tones, for statuses that are not an order's own. */
 export function ToneBadge({
   tone,
+  title,
   className,
   children,
 }: {
   tone: Tone
+  /** Shown on hover: what the status means, where the word alone is not enough. */
+  title?: string
   className?: string
   children: React.ReactNode
 }) {
   return (
     <span
+      title={title}
       className={cn(
         "inline-flex items-center rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] uppercase",
         TONE[tone],
