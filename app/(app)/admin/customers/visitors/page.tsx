@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
+import { PageSkeleton } from "@/components/shared/page-skeleton"
+
 import { VisitorTable } from "@/features/visitors/components/visitor-table"
 
 export const metadata: Metadata = {
@@ -12,7 +14,7 @@ export const metadata: Metadata = {
 export default function AdminVisitorsPage() {
   return (
     // useSearchParams needs a Suspense boundary in the app router.
-    <Suspense fallback={<div className="h-96 animate-pulse rounded-md bg-white/5" />}>
+    <Suspense fallback={<PageSkeleton />}>
       <VisitorTable />
     </Suspense>
   )

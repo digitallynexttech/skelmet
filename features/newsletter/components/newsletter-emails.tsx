@@ -1,17 +1,18 @@
 "use client"
 
 import * as React from "react"
+import { Mail } from "lucide-react"
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import type { JSONContent } from "@tiptap/react"
 
 import { Field, Input, Label } from "@/components/ui/input"
+import { HeaderButton } from "@/components/ui/header-button"
 import { siteConfig } from "@/config/site"
 import { EMPTY_DOC, RichEditor } from "@/features/newsletter/components/rich-editor"
 import { renderNewsletter } from "@/features/newsletter/emails/newsletter-email"
@@ -184,12 +185,11 @@ export function NewsletterEmails() {
   )
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Newsletter"
+        icon={Mail}
         title="Write an email"
-        description="Goes to everyone subscribed, one email each with their own unsubscribe link. Send yourself a test first to see it in a real inbox."
-        actions={<Badge variant="acid">{subscribed} subscribed</Badge>}
+        parent={{ label: "Newsletter", href: "/admin/newsletter" }}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_460px] xl:items-start">
@@ -257,23 +257,20 @@ export function NewsletterEmails() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Button
+            <HeaderButton
               type="button"
-              variant="ghost"
-              size="sm"
               disabled={send.isPending}
               onClick={() => valid() && submit(true)}
             >
               Send a test to me
-            </Button>
-            <Button
+            </HeaderButton>
+            <HeaderButton
               type="submit"
               variant="primary"
-              size="sm"
               disabled={send.isPending || busy || subscribed === 0}
             >
               Send to {subscribed} {subscribed === 1 ? "subscriber" : "subscribers"}
-            </Button>
+            </HeaderButton>
             {busy ? (
               <span className="text-dim text-[12.5px]">
                 One is still sending; this waits for it.
@@ -281,18 +278,22 @@ export function NewsletterEmails() {
             ) : null}
           </div>
 
-          <p className="text-dim text-[12.5px] leading-[1.6]">
-            Sent from the shop&apos;s Gmail account, about 40 a minute. Gmail allows around 500
-            emails a day; past that the email pauses here and Resume sends the rest the next day.
-          </p>
+          <div className="text-dim flex flex-col gap-1.5 text-[12.5px] leading-[1.6]">
+            <p>
+              Goes to everyone subscribed, one email each with their own unsubscribe link. Send
+              yourself a test first to see it in a real inbox.
+            </p>
+            <p>
+              Sent from the shop&apos;s Gmail account, about 40 a minute. Gmail allows around 500
+              emails a day; past that the email pauses here and Resume sends the rest the next day.
+            </p>
+          </div>
         </form>
 
         {/* The real email, from the same code that sends it, at about a
             phone's width. Sandboxed: nothing in it can run. */}
         <div className="bg-void rounded-md border border-white/[0.09] p-4">
-          <div className="text-dim mb-3 font-mono text-[10.5px] tracking-[0.14em] uppercase">
-            Preview
-          </div>
+          <h2 className="text-bone mb-3 text-[15px] font-semibold">Preview</h2>
           <iframe
             title="Email preview"
             sandbox=""
@@ -302,8 +303,8 @@ export function NewsletterEmails() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="font-display text-bone text-[22px] tracking-[0.02em] uppercase">Sent</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-bone text-[15px] font-semibold">Sent</h2>
         {isError ? (
           <EmptyState
             title="Could not load sent emails"
@@ -315,6 +316,7 @@ export function NewsletterEmails() {
             columns={columns}
             rowId={(c) => c.id}
             exportName="newsletter-emails"
+            compact
             loading={isLoading}
             empty="Nothing sent yet."
             expandable={(c) => (
@@ -380,9 +382,9 @@ function CampaignStatus({
       <Badge variant={c.status === "PAUSED" ? "ember" : "magenta"}>
         {c.status === "PAUSED" ? "Paused" : "Stopped"}
       </Badge>
-      <Button variant="ghost" size="xs" disabled={resuming} onClick={onResume}>
+      <HeaderButton disabled={resuming} onClick={onResume}>
         Resume
-      </Button>
+      </HeaderButton>
       {note ? (
         <span className="text-dim max-w-[340px] truncate text-[12px]" title={note}>
           {note}

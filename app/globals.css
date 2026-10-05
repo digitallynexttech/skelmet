@@ -147,6 +147,15 @@
   --radius-field: var(--radius-sm, 0.25rem);
 }
 
+/* In the admin a Badge is the size of a status pill (ToneBadge in
+   components/shared/status-badge.tsx), so a table reads the same whichever
+   one a screen used. Unlayered, so it outranks the utilities it replaces. */
+[data-console] .badge {
+  padding: 0.25rem 0.625rem;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
 @layer base {
   * {
     box-sizing: border-box;

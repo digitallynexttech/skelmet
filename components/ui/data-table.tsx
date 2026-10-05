@@ -102,14 +102,20 @@ type Props<T> = {
   bar?: React.ReactNode
   /** And on the right, before the column picker: search and filters. */
   barEnd?: React.ReactNode
-  /** A menu to hide and show columns. */
+  /** A menu to hide and show columns. On unless turned off. */
   columnToggle?: boolean
   /** Rows per page to choose from, in the footer. Include pageSize. */
   pageSizes?: readonly number[]
   /** When this changes the table goes back to its first page: a new tab or filter. */
   pageKey?: string
-  /** The # column of row numbers. Exports number their rows either way. */
+  /** The # column of row numbers, off unless asked for. Exports number their rows either way. */
   numbered?: boolean
+  /**
+   * A few rows on a record's page - a product's variants, a customer's
+   * orders: no ticking, column picker, export or page size, and paging only
+   * if it is ever needed.
+   */
+  compact?: boolean
   /** Classes for one row, to set some apart: a cancelled order, say. */
   rowClassName?: (row: T) => string | undefined
 }
@@ -121,6 +127,9 @@ export type DataTableHandle<T> = {
   exportRows: () => T[]
   download: (format: "csv" | "xlsx") => void
 }
+
+/** Every table offers these, as Orders does. */
+const PAGE_SIZES = [10, 20, 50, 100]
 
 /** The hidden columns as stored: a JSON list of keys, or anything else as none. */
 function parseHidden(raw: string): Set<string> {
@@ -152,11 +161,12 @@ export function DataTable<T>({
   handle,
   bar,
   barEnd,
-  columnToggle = false,
-  pageSizes,
+  columnToggle = true,
+  pageSizes = PAGE_SIZES,
   pageKey,
-  numbered = true,
+  numbered = false,
   rowClassName,
+  compact = false,
 }: Props<T>) {
   const [sort, setSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null)
   const [page, setPage] = React.useState(1)
@@ -266,7 +276,7 @@ export function DataTable<T>({
 
   const inFrame = bar != null || barEnd != null
   const selecting = inFrame && pickedRows.length > 0
-  const topRow = exportButtons || toolbar != null || (columnToggle && !inFrame)
+  const topRow = !compact && (exportButtons || toolbar != null || (columnToggle && !inFrame))
 
   const selection =
     pickedRows.length > 0 ? (
@@ -279,40 +289,41 @@ export function DataTable<T>({
       </button>
     ) : null
 
-  const columnsMenu = columnToggle ? (
-    <Menu
-      label="Show or hide columns"
-      button={<Columns3 className="size-4" strokeWidth={1.9} />}
-      buttonClassName={iconButton}
-    >
-      <MenuLabel>Columns</MenuLabel>
-      {columns.map((c) => {
-        const on = visible.includes(c)
-        return (
-          <MenuCheckbox
-            key={c.key}
-            checked={on}
-            // One always stays: a table of no columns is just row numbers.
-            disabled={on && visible.length === 1}
-            onChange={(next) => {
-              const keys = new Set(hidden)
-              if (next) keys.delete(c.key)
-              else keys.add(c.key)
-              setHiddenRaw(JSON.stringify([...keys]))
-            }}
-          >
-            {c.header}
-          </MenuCheckbox>
-        )
-      })}
-      {hidden.size > 0 ? (
-        <>
-          <MenuSeparator />
-          <MenuItem onSelect={() => setHiddenRaw("[]")}>Show all columns</MenuItem>
-        </>
-      ) : null}
-    </Menu>
-  ) : null
+  const columnsMenu =
+    columnToggle && !compact ? (
+      <Menu
+        label="Show or hide columns"
+        button={<Columns3 className="size-4" strokeWidth={1.9} />}
+        buttonClassName={iconButton}
+      >
+        <MenuLabel>Columns</MenuLabel>
+        {columns.map((c) => {
+          const on = visible.includes(c)
+          return (
+            <MenuCheckbox
+              key={c.key}
+              checked={on}
+              // One always stays: a table of no columns is just row numbers.
+              disabled={on && visible.length === 1}
+              onChange={(next) => {
+                const keys = new Set(hidden)
+                if (next) keys.delete(c.key)
+                else keys.add(c.key)
+                setHiddenRaw(JSON.stringify([...keys]))
+              }}
+            >
+              {c.header}
+            </MenuCheckbox>
+          )
+        })}
+        {hidden.size > 0 ? (
+          <>
+            <MenuSeparator />
+            <MenuItem onSelect={() => setHiddenRaw("[]")}>Show all columns</MenuItem>
+          </>
+        ) : null}
+      </Menu>
+    ) : null
 
   /**
    * Where the rows are and how many to a page. Always there once the reader
@@ -320,7 +331,7 @@ export function DataTable<T>({
    * otherwise only when there is more than one page.
    */
   const footer =
-    !pageSizes && topRow && totalPages === 1 ? null : (
+    (compact || (!pageSizes && topRow)) && totalPages === 1 ? null : (
       <div
         className={cn(
           "flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5",
@@ -337,7 +348,7 @@ export function DataTable<T>({
         </div>
 
         <div className="flex items-center gap-3">
-          {pageSizes ? (
+          {pageSizes && !compact ? (
             <div className="flex items-center gap-2">
               <span className="text-dim text-[12.5px]">Rows per page</span>
               <Select
@@ -454,40 +465,44 @@ export function DataTable<T>({
         <div className="scrollbar-visible overflow-x-auto contain-inline-size">
           <table className="w-full text-left">
             <thead className="bg-void/50">
-              <tr className="text-dim font-mono text-[10.5px] tracking-[0.14em] whitespace-nowrap uppercase">
-                <th className="relative w-10 px-3 py-3">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all rows on this page"
-                    checked={allOnPage}
-                    onChange={toggleAll}
-                    className="accent-blaze size-3.5 align-middle"
-                  />
-                  {/* With rows ticked, the headings give way to the count, as
+              <tr className="text-ash text-[12.5px] font-semibold whitespace-nowrap">
+                {compact ? null : (
+                  <th className="relative w-10 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all rows on this page"
+                      checked={allOnPage}
+                      onChange={toggleAll}
+                      className="accent-blaze size-3.5 align-middle"
+                    />
+                    {/* With rows ticked, the headings give way to the count, as
                       Shopify has it. They are hidden rather than removed, so
                       no column changes width under the pointer. */}
-                  {selecting ? (
-                    <span className="absolute inset-y-0 left-full flex items-center gap-3 pl-2 font-sans text-[13px] tracking-normal whitespace-nowrap normal-case">
-                      <span className="text-bone font-semibold">{pickedRows.length} selected</span>
-                      <button
-                        type="button"
-                        onClick={() => setPicked(new Set())}
-                        className="text-ash hover:text-bone underline-offset-4 transition-colors hover:underline"
-                      >
-                        Clear
-                      </button>
-                    </span>
-                  ) : null}
-                </th>
+                    {selecting ? (
+                      <span className="absolute inset-y-0 left-full flex items-center gap-3 pl-2 text-[13px] whitespace-nowrap">
+                        <span className="text-bone font-semibold">
+                          {pickedRows.length} selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPicked(new Set())}
+                          className="text-ash hover:text-bone underline-offset-4 transition-colors hover:underline"
+                        >
+                          Clear
+                        </button>
+                      </span>
+                    ) : null}
+                  </th>
+                )}
                 {numbered ? (
-                  <th className={cn("w-12 px-2 py-3 font-normal", selecting && "invisible")}>#</th>
+                  <th className={cn("w-12 px-2 py-3", selecting && "invisible")}>#</th>
                 ) : null}
                 {expandable ? <th className="w-9" /> : null}
                 {visible.map((c) => (
                   <th
                     key={c.key}
                     className={cn(
-                      "px-4 py-3 font-normal",
+                      "px-4 py-3",
                       c.align === "right" && "text-right",
                       selecting && "invisible",
                     )}
@@ -503,9 +518,8 @@ export function DataTable<T>({
                           )
                         }
                         className={cn(
-                          // A button does not inherit font-family, so a sortable header would
-                          // otherwise sit in the body face beside its mono neighbours.
-                          "hover:text-bone inline-flex items-center gap-1.5 font-mono transition-colors",
+                          // Weight and face spelled out: a button does not take them from the row.
+                          "hover:text-bone inline-flex items-center gap-1.5 font-sans font-semibold transition-colors",
                           sort?.key === c.key && "text-bone",
                           c.align === "right" && "flex-row-reverse",
                         )}
@@ -538,15 +552,17 @@ export function DataTable<T>({
                         rowClassName?.(row),
                       )}
                     >
-                      <td className="px-3 py-3.5">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select row ${start + i + 1}`}
-                          checked={picked.has(id)}
-                          onChange={() => toggleOne(id)}
-                          className="accent-blaze size-3.5 align-middle"
-                        />
-                      </td>
+                      {compact ? null : (
+                        <td className="px-3 py-3.5">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select row ${start + i + 1}`}
+                            checked={picked.has(id)}
+                            onChange={() => toggleOne(id)}
+                            className="accent-blaze size-3.5 align-middle"
+                          />
+                        </td>
+                      )}
                       {numbered ? (
                         <td className="text-dim px-2 py-3.5 font-mono text-[12px]">
                           {start + i + 1}
@@ -593,7 +609,10 @@ export function DataTable<T>({
                     </tr>
                     {expandable && open.has(id) ? (
                       <tr className="border-t border-white/[0.05]">
-                        <td colSpan={visible.length + (numbered ? 3 : 2)} className="px-4 pb-5">
+                        <td
+                          colSpan={visible.length + (numbered ? 1 : 0) + (compact ? 1 : 2)}
+                          className="px-4 pb-5"
+                        >
                           {expandable(row)}
                         </td>
                       </tr>

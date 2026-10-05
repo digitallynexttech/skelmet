@@ -4,8 +4,8 @@ import * as React from "react"
 import { CheckCircle2, RefreshCw } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { HeaderButton } from "@/components/ui/header-button"
 import {
   ChangeList,
   CopyLine,
@@ -205,10 +205,8 @@ function ShiprocketForm({
               />
             </div>
             {canWrite ? (
-              <Button
+              <HeaderButton
                 type="button"
-                variant="ghost"
-                size="sm"
                 className="h-[52px] shrink-0 px-4"
                 onClick={() => {
                   const token = newToken()
@@ -218,7 +216,7 @@ function ShiprocketForm({
               >
                 <RefreshCw className="size-3.5" strokeWidth={1.9} />
                 New
-              </Button>
+              </HeaderButton>
             ) : null}
           </div>
         </SettingField>
@@ -237,18 +235,15 @@ function ShiprocketForm({
 
       {canWrite ? (
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
+          <HeaderButton
             type="submit"
             variant="primary"
-            size="sm"
             disabled={!dirty || saveShiprocket.isPending}
           >
             Save Shiprocket settings
-          </Button>
-          <Button
+          </HeaderButton>
+          <HeaderButton
             type="button"
-            variant="ghost"
-            size="sm"
             // Tests what is saved, so not while there are unsaved changes.
             disabled={!data.ready || dirty || testShiprocket.isPending}
             onClick={() => {
@@ -264,7 +259,7 @@ function ShiprocketForm({
             }}
           >
             Test connection
-          </Button>
+          </HeaderButton>
           {result && !dirty ? (
             <span className="text-acid inline-flex items-center gap-1.5 text-[13px]">
               <CheckCircle2 className="size-4" strokeWidth={2} />

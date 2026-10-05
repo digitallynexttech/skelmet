@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import {
-  ArrowLeft,
   Compass,
   Eye,
   Link2,
@@ -11,9 +10,13 @@ import {
   ShoppingBag,
   ShoppingCart,
   UserCheck,
+  Users,
 } from "lucide-react"
 
+import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
+import { PageHeader } from "@/components/shared/page-header"
+import { StatTile } from "@/components/shared/stat-tile"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { ContactActions } from "@/features/visitors/components/contact-actions"
@@ -34,17 +37,6 @@ import { regionOf } from "@/lib/india"
  * each, the cart as it changed, and where they stopped.
  */
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-carbon rounded-md border border-white/[0.09] px-5 py-4">
-      <div className="text-dim mb-1.5 font-mono text-[10px] tracking-[0.16em] uppercase">
-        {label}
-      </div>
-      <div className="text-bone text-[20px] leading-none font-semibold">{children}</div>
-    </div>
-  )
-}
-
 function Card({
   title,
   icon,
@@ -56,9 +48,9 @@ function Card({
 }) {
   return (
     <section className="bg-carbon rounded-md border border-white/[0.09] p-5">
-      <div className="text-dim mb-4 flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] uppercase">
+      <div className="mb-4 flex items-center gap-2.5">
         {icon}
-        {title}
+        <h2 className="text-bone text-[15px] font-semibold">{title}</h2>
       </div>
       {children}
     </section>
@@ -91,6 +83,9 @@ function Fact({
     </div>
   )
 }
+
+/** The list a visitor is opened from, which the header links back to. */
+const VISITORS = { label: "Visitors", href: "/admin/customers/visitors" }
 
 const isOrderStatus = (s: string): s is OrderStatus =>
   (ORDER_STATUSES as readonly string[]).includes(s)
@@ -181,38 +176,30 @@ function Body({ v }: { v: VisitorDetail }) {
   const cartText = v.cart?.items.map((i) => `${i.qty} × ${i.name} (${i.colourway})`).join(", ")
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href="/admin/customers/visitors"
-          className="text-ash hover:text-bone mb-4 inline-flex items-center gap-2 text-[13.5px] transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          All visitors
-        </Link>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="font-display text-bone mb-2 text-[34px] leading-[1.05] uppercase sm:text-[40px]">
-              {name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2">
-              {v.anonymous ? (
-                <Badge variant="muted">Anonymous - did not accept cookies</Badge>
-              ) : (
-                <Badge variant="acid">
-                  Accepted cookies{v.consentAt ? ` · ${when(v.consentAt)}` : ""}
-                </Badge>
-              )}
-              {v.customer ? (
-                <Link href={`/admin/customers/${v.customer.id}`}>
-                  <Badge variant="ember">Buyer · see orders</Badge>
-                </Link>
-              ) : null}
-              {v.email ? <span className="text-ash font-mono text-[12.5px]">{v.email}</span> : null}
-              {v.phone ? <span className="text-ash font-mono text-[12.5px]">{v.phone}</span> : null}
-            </div>
-          </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        icon={Users}
+        title={name}
+        parent={VISITORS}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {v.anonymous ? (
+              <Badge variant="muted">Anonymous - did not accept cookies</Badge>
+            ) : (
+              <Badge variant="acid">
+                Accepted cookies{v.consentAt ? ` · ${when(v.consentAt)}` : ""}
+              </Badge>
+            )}
+            {v.customer ? (
+              <Link href={`/admin/customers/${v.customer.id}`}>
+                <Badge variant="ember">Buyer · see orders</Badge>
+              </Link>
+            ) : null}
+            {v.email ? <span className="text-ash font-mono text-[12.5px]">{v.email}</span> : null}
+            {v.phone ? <span className="text-ash font-mono text-[12.5px]">{v.phone}</span> : null}
+          </span>
+        }
+        actions={
           <ContactActions
             phone={v.phone}
             email={v.email}
@@ -223,25 +210,25 @@ function Body({ v }: { v: VisitorDetail }) {
                 : `Hi ${first}, this is SKELMET.`
             }
           />
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat label="Visits">{v.visitCount}</Stat>
-        <Stat label="Pages viewed">{v.pageviews}</Stat>
-        <Stat label="Time on site">{duration(v.engagedSeconds)}</Stat>
-        <Stat label="First seen">
+        <StatTile label="Visits">{v.visitCount}</StatTile>
+        <StatTile label="Pages viewed">{v.pageviews}</StatTile>
+        <StatTile label="Time on site">{duration(v.engagedSeconds)}</StatTile>
+        <StatTile label="First seen">
           <span className="font-mono text-[14px]">{when(v.firstSeenAt)}</span>
-        </Stat>
-        <Stat label="Last seen">
+        </StatTile>
+        <StatTile label="Last seen">
           <span className="font-mono text-[14px]">{when(v.lastSeenAt)}</span>
-        </Stat>
+        </StatTile>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card
           title="Device"
-          icon={<DeviceIcon type={v.deviceType} className="text-ember size-3.5" />}
+          icon={<DeviceIcon type={v.deviceType} className="text-ember size-4" />}
         >
           <dl>
             <Fact label="Type" value={v.deviceType} />
@@ -255,7 +242,7 @@ function Body({ v }: { v: VisitorDetail }) {
           </dl>
         </Card>
 
-        <Card title="Where" icon={<MapPin className="text-ember size-3.5" strokeWidth={1.9} />}>
+        <Card title="Where" icon={<MapPin className="text-ember size-4" strokeWidth={1.9} />}>
           <dl>
             <Fact label="City" value={v.city} />
             <Fact label="District" value={v.district} />
@@ -298,7 +285,7 @@ function Body({ v }: { v: VisitorDetail }) {
 
         <Card
           title="First came from"
-          icon={<Compass className="text-ember size-3.5" strokeWidth={1.9} />}
+          icon={<Compass className="text-ember size-4" strokeWidth={1.9} />}
         >
           <dl>
             <Fact label="Source" value={sourceLine(v) === "-" ? null : sourceLine(v)} />
@@ -312,7 +299,7 @@ function Body({ v }: { v: VisitorDetail }) {
       {v.linked.length ? (
         <Card
           title="Probably the same person"
-          icon={<Link2 className="text-ember size-3.5" strokeWidth={1.9} />}
+          icon={<Link2 className="text-ember size-4" strokeWidth={1.9} />}
         >
           <p className="text-dim mb-3 text-[12px] leading-[1.5]">
             Each browser keeps its own cookie, so the same phone in Chrome and in Brave arrives as
@@ -353,7 +340,7 @@ function Body({ v }: { v: VisitorDetail }) {
           {v.cart ? (
             <Card
               title="In their cart now"
-              icon={<ShoppingCart className="text-ember size-3.5" strokeWidth={1.9} />}
+              icon={<ShoppingCart className="text-ember size-4" strokeWidth={1.9} />}
             >
               <ul className="mb-3 flex flex-col gap-1.5">
                 {v.cart.items.map((i) => (
@@ -381,7 +368,7 @@ function Body({ v }: { v: VisitorDetail }) {
           {v.orders.length ? (
             <Card
               title="Orders"
-              icon={<ShoppingBag className="text-ember size-3.5" strokeWidth={1.9} />}
+              icon={<ShoppingBag className="text-ember size-4" strokeWidth={1.9} />}
             >
               <ul className="flex flex-col gap-2">
                 {v.orders.map((o) => (
@@ -404,9 +391,7 @@ function Body({ v }: { v: VisitorDetail }) {
       ) : null}
 
       <div>
-        <div className="text-dim mb-3 font-mono text-[10px] tracking-[0.16em] uppercase">
-          Visits, newest first
-        </div>
+        <h2 className="text-bone mb-3 text-[15px] font-semibold">Visits, newest first</h2>
         {v.sessions.length ? (
           <ol className="flex flex-col gap-3">
             {v.sessions.map((s) => (
@@ -426,8 +411,8 @@ export function VisitorDetailView({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="h-12 w-64 animate-pulse rounded-md bg-white/5" />
+      <div className="flex flex-col gap-5">
+        <div className="h-7 w-64 animate-pulse rounded-md bg-white/5" />
         <div className="grid gap-4 sm:grid-cols-5">
           {[0, 1, 2, 3, 4].map((i) => (
             <div key={i} className="h-20 animate-pulse rounded-md bg-white/5" />
@@ -441,18 +426,11 @@ export function VisitorDetailView({ id }: { id: string }) {
   if (isError || !data) {
     return (
       <div className="flex flex-col gap-5">
-        <Link
-          href="/admin/customers/visitors"
-          className="text-ash hover:text-bone inline-flex items-center gap-2 text-[13.5px] transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          All visitors
-        </Link>
-        <div className="border-magenta/35 bg-magenta/[0.06] rounded-md border p-5">
-          <p className="text-bone text-[14px]">
-            {error instanceof Error ? error.message : "Could not load this visitor."}
-          </p>
-        </div>
+        <PageHeader icon={Users} title="Visitor" parent={VISITORS} />
+        <EmptyState
+          title="Could not load this visitor"
+          description={error instanceof Error ? error.message : undefined}
+        />
       </div>
     )
   }

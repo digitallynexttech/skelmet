@@ -1,14 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { Mail, Phone } from "lucide-react"
+import { Mail, MessageSquare, Phone } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DataTable, type Column } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
+import { HeaderButton } from "@/components/ui/header-button"
 import {
   useInquiries,
   useInquiryActions,
@@ -17,11 +19,14 @@ import {
 } from "@/features/inquiries/hooks/use-inquiries"
 import { useDebounce } from "@/hooks/use-debounce"
 
-const FILTERS = [
+type Filter = InquiryStatus | "ALL"
+
+// All first, as every view menu has it; the inbox still opens on New.
+const FILTERS: Array<{ value: Filter; label: string }> = [
+  { value: "ALL", label: "All" },
   { value: "NEW", label: "New" },
   { value: "OPEN", label: "Open" },
   { value: "RESOLVED", label: "Resolved" },
-  { value: "ALL", label: "All" },
 ]
 
 const TONE: Record<InquiryStatus, "ember" | "violet" | "acid"> = {
@@ -39,12 +44,13 @@ const when = (iso: string) =>
   })
 
 export function InquiryInbox() {
-  const [status, setStatus] = React.useState("NEW")
+  const [status, setStatus] = React.useState<Filter>("NEW")
   const [search, setSearch] = React.useState("")
   const q = useDebounce(search, 300)
 
   const { data, isLoading, isError, error } = useInquiries({ page: 1, status, q })
   const setStatusFor = useInquiryActions()
+  const table = React.useRef<DataTableHandle<InquiryRow>>(null)
 
   const columns: Column<InquiryRow>[] = [
     {
@@ -119,73 +125,61 @@ export function InquiryInbox() {
       cell: (i) => (
         <div className="flex justify-end gap-2">
           {i.status !== "OPEN" && i.status !== "RESOLVED" ? (
-            <Button
-              variant="ghost"
-              size="sm"
+            <HeaderButton
               disabled={setStatusFor.isPending}
               onClick={() => setStatusFor.mutate({ id: i.id, status: "OPEN" })}
             >
               Pick up
-            </Button>
+            </HeaderButton>
           ) : null}
           {i.status !== "RESOLVED" ? (
-            <Button
+            <HeaderButton
               variant="primary"
-              size="sm"
               disabled={setStatusFor.isPending}
               onClick={() => setStatusFor.mutate({ id: i.id, status: "RESOLVED" })}
             >
               Resolve
-            </Button>
+            </HeaderButton>
           ) : (
-            <Button
-              variant="ghost"
-              size="sm"
+            <HeaderButton
               disabled={setStatusFor.isPending}
               onClick={() => setStatusFor.mutate({ id: i.id, status: "OPEN" })}
             >
               Reopen
-            </Button>
+            </HeaderButton>
           )}
         </div>
       ),
     },
   ]
 
-  return (
-    <div className="flex flex-col gap-7">
-      <PageHeader
-        title="Inquiries"
-        description="Everything sent through the contact form. Oldest first, so whoever has waited longest gets answered first."
-        actions={data?.newCount ? <Badge variant="ember">{data.newCount} new</Badge> : null}
+  const bar = (
+    <div className="flex items-center gap-2">
+      <ViewMenu
+        value={status}
+        onChange={setStatus}
+        // New counts every new inquiry, whatever the search.
+        options={FILTERS.map((f) => ({
+          ...f,
+          count: f.value === "NEW" ? data?.newCount : undefined,
+        }))}
       />
+      <TableSearch
+        value={search}
+        onChange={setSearch}
+        placeholder="Name, email or order number"
+        label="Search inquiries by name, email or order number"
+      />
+    </div>
+  )
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setStatus(f.value)}
-              className={
-                status === f.value
-                  ? "bg-blaze text-void rounded-md px-4 py-2 text-[12.5px] font-semibold"
-                  : "text-ash hover:text-bone rounded-md border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30"
-              }
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Name, email or order number"
-          aria-label="Search inquiries"
-          className="h-11 sm:w-72"
-        />
-      </div>
+  return (
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        icon={MessageSquare}
+        title="Inquiries"
+        actions={<ExportMenu table={table} noun={["inquiry", "inquiries"]} />}
+      />
 
       {isError ? (
         <EmptyState
@@ -194,13 +188,21 @@ export function InquiryInbox() {
         />
       ) : (
         <DataTable
+          handle={table}
           rows={data?.data ?? []}
           columns={columns}
           rowId={(i) => i.id}
           exportName="inquiries"
+          exportButtons={false}
+          pageKey={`${status}|${q}`}
+          bar={bar}
           loading={isLoading}
           total={data?.pagination?.total}
-          empty="Inbox is clear. Nothing is waiting on you right now."
+          empty={
+            q
+              ? "No inquiry matches that search."
+              : "Inbox is clear. Nothing is waiting on you right now."
+          }
           // The message is the point of the row and will not fit in a cell,
           // so it opens underneath instead of being truncated into nonsense.
           expandable={(i) => (

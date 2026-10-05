@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
+import { PageSkeleton } from "@/components/shared/page-skeleton"
+
 import { AbandonedCarts } from "@/features/orders/components/abandoned-carts"
 
 export const metadata: Metadata = {
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
 export default function AdminAbandonedCartsPage() {
   return (
     // useSearchParams needs a Suspense boundary in the app router.
-    <Suspense fallback={<div className="h-96 animate-pulse rounded-md bg-white/5" />}>
+    <Suspense fallback={<PageSkeleton />}>
       <AbandonedCarts />
     </Suspense>
   )

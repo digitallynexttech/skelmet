@@ -3,9 +3,9 @@
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { HeaderButton } from "@/components/ui/header-button"
 import { FEE_BASES, type FeeBasis } from "@/config/shipping"
 import {
   ChangeList,
@@ -155,14 +155,9 @@ function ShippingForm({ data, canWrite, ask }: { data: Shipping; canWrite: boole
 
       {canWrite ? (
         <div>
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={!dirty || saveShipping.isPending}
-          >
+          <HeaderButton type="submit" variant="primary" disabled={!dirty || saveShipping.isPending}>
             Save shipping charge
-          </Button>
+          </HeaderButton>
         </div>
       ) : null}
     </form>

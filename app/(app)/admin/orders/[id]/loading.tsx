@@ -1,12 +1,5 @@
+import { PageSkeleton } from "@/components/shared/page-skeleton"
+
 export default function Loading() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="h-14 w-64 animate-pulse rounded-md bg-white/5" />
-      <div className="rounded-md h-20 animate-pulse bg-white/5" />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-md h-80 animate-pulse bg-white/5" />
-        <div className="rounded-md h-80 animate-pulse bg-white/5" />
-      </div>
-    </div>
-  )
+  return <PageSkeleton kind="detail" />
 }

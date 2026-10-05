@@ -2,16 +2,19 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Archive, Percent, Plus, RotateCcw, Search, Ticket, X } from "lucide-react"
+import { Archive, Percent, RotateCcw, Ticket, X } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DataTable, type Column } from "@/components/ui/data-table"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { DateField } from "@/components/ui/date-field"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { HeaderButton } from "@/components/ui/header-button"
 import { Field, Input } from "@/components/ui/input"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
 import {
   useCouponMutations,
   useCoupons,
@@ -29,9 +32,10 @@ const STATE_TONE = {
   EXHAUSTED: "ember",
 } as const
 
-const TABS: { id: CouponView; label: string }[] = [
-  { id: "codes", label: "Codes" },
-  { id: "archived", label: "Archive" },
+// As Shopify's orders have it: All is every code not archived.
+const VIEWS: { value: CouponView; label: string }[] = [
+  { value: "codes", label: "All" },
+  { value: "archived", label: "Archived" },
 ]
 
 // Stable, since useUrlState memoises on it.
@@ -203,7 +207,7 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
       className="border-blaze/30 bg-carbon rounded-md border bg-[linear-gradient(160deg,rgb(255_90_31_/_0.06),transparent_50%)] p-6"
     >
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-bone text-[22px] uppercase">
+        <h2 className="text-bone text-[15px] font-semibold">
           {renewing ? `Renew ${renewing.code}` : "New discount code"}
         </h2>
         <button
@@ -313,29 +317,27 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
 
       <div className="mt-6 flex flex-wrap gap-2.5">
         {clash ? (
-          <Button
+          <HeaderButton
             type="button"
             variant="primary"
-            size="md"
             disabled={renew.isPending}
             onClick={() => void renewInstead(clash.id)}
           >
             <RotateCcw className="size-4" strokeWidth={2.2} />
             Renew {clash.code}
-          </Button>
+          </HeaderButton>
         ) : (
-          <Button
+          <HeaderButton
             type="submit"
             variant="primary"
-            size="md"
             disabled={create.isPending || renew.isPending}
           >
             {renewing ? "Renew code" : "Create code"}
-          </Button>
+          </HeaderButton>
         )}
-        <Button type="button" variant="ghost" size="md" onClick={onDone}>
+        <HeaderButton type="button" onClick={onDone}>
           Cancel
-        </Button>
+        </HeaderButton>
       </div>
     </form>
   )
@@ -365,7 +367,20 @@ export function CouponManager() {
   }, [debounced, state.q, setState])
 
   const { data, isLoading, isError, error } = useCoupons({ page: 1, q: state.q, view })
+  // The other view too, for its count in the view menu. Codes are few, and
+  // switching to it is then instant.
+  const other = useCoupons({
+    page: 1,
+    q: state.q,
+    view: view === "codes" ? "archived" : "codes",
+  })
+  const [thisCount, otherCount] = [data?.pagination?.total, other.data?.pagination?.total]
+  const counts: Record<CouponView, number | undefined> =
+    view === "codes"
+      ? { codes: thisCount, archived: otherCount }
+      : { codes: otherCount, archived: thisCount }
   const { expire, archive, restore, showInCart } = useCouponMutations()
+  const table = React.useRef<DataTableHandle<CouponRow>>(null)
 
   const columns: Column<CouponRow>[] = [
     {
@@ -376,7 +391,7 @@ export function CouponManager() {
       cell: (c) => (
         <Link
           href={`/admin/coupons/${encodeURIComponent(c.code)}`}
-          className="font-display text-bone hover:text-blaze text-[20px] tracking-[0.08em] underline-offset-4 transition-colors hover:underline"
+          className="text-bone hover:text-blaze font-mono text-[13px] font-semibold tracking-[0.04em] transition-colors"
         >
           {c.code}
         </Link>
@@ -462,71 +477,79 @@ export function CouponManager() {
         ]
       : []),
     {
-      // No value: a button is not data.
+      // No value: a button is not data. Named, for the column picker.
       key: "actions",
-      header: "",
+      header: "Actions",
       align: "right",
       cell: (c) =>
         view === "archived" ? (
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => openForm(c)}>
-              Renew
-            </Button>
-            <Button
+            <HeaderButton onClick={() => openForm(c)}>Renew</HeaderButton>
+            <HeaderButton
               variant="quiet"
-              size="sm"
               disabled={restore.isPending}
               onClick={() => restore.mutate(c.id)}
             >
               <RotateCcw className="size-4" strokeWidth={2} />
               Restore
-            </Button>
+            </HeaderButton>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
             {c.state !== "ACTIVE" ? (
-              <Button variant="ghost" size="sm" onClick={() => openForm(c)}>
-                Renew
-              </Button>
+              <HeaderButton onClick={() => openForm(c)}>Renew</HeaderButton>
             ) : null}
             {c.state === "ACTIVE" ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={expire.isPending}
-                onClick={() => expire.mutate(c.id)}
-              >
+              <HeaderButton disabled={expire.isPending} onClick={() => expire.mutate(c.id)}>
                 Expire
-              </Button>
+              </HeaderButton>
             ) : null}
-            <Button
+            <HeaderButton
               variant="quiet"
-              size="sm"
               disabled={archive.isPending}
               onClick={() => archive.mutate(c.id)}
               aria-label={`Archive ${c.code}`}
-              title="Archive"
+              title="Stops the code working and moves it to Archived"
             >
               <Archive className="size-4" strokeWidth={1.9} />
               Archive
-            </Button>
+            </HeaderButton>
           </div>
         ),
     },
   ]
 
+  // The codes or the archive, in a menu beside the search.
+  const bar = (
+    <div className="flex items-center gap-2">
+      <ViewMenu
+        value={view}
+        onChange={(v) => setState({ view: v })}
+        options={VIEWS.map((v) => ({ ...v, count: counts[v.value] }))}
+      />
+      <TableSearch
+        value={rawQuery}
+        onChange={setRawQuery}
+        placeholder="Search codes"
+        label="Search discount codes"
+      />
+    </div>
+  )
+
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       <PageHeader
+        icon={Percent}
         title="Offers & codes"
-        description="Discount codes customers can enter at checkout, or apply in the cart when In cart is on. Archived codes stop working and move to the Archive tab."
         actions={
-          !creating ? (
-            <Button variant="primary" size="sm" onClick={() => openForm(null)}>
-              <Plus className="size-4" strokeWidth={2.2} />
-              New code
-            </Button>
-          ) : null
+          <>
+            <ExportMenu table={table} noun={["code", "codes"]} />
+            {!creating ? (
+              <HeaderButton variant="primary" onClick={() => openForm(null)}>
+                New code
+              </HeaderButton>
+            ) : null}
+          </>
         }
       />
 
@@ -538,52 +561,6 @@ export function CouponManager() {
         />
       ) : null}
 
-      <div
-        role="tablist"
-        aria-label="Offers and codes"
-        className="flex gap-1 overflow-x-auto border-b border-white/[0.09]"
-      >
-        {TABS.map((tab) => {
-          const selected = tab.id === view
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => setState({ view: tab.id })}
-              className={cn(
-                "-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-[14px] whitespace-nowrap transition-colors",
-                selected
-                  ? "border-blaze text-bone font-semibold"
-                  : "text-ash hover:text-bone border-transparent",
-              )}
-            >
-              {tab.label}
-              {selected && typeof data?.pagination?.total === "number" ? (
-                <span className="text-dim font-mono text-[11px] font-normal">
-                  {data.pagination.total}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="relative max-w-[380px]">
-        <Search
-          className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
-          strokeWidth={1.9}
-        />
-        <Input
-          value={rawQuery}
-          onChange={(e) => setRawQuery(e.target.value)}
-          placeholder="Search codes"
-          aria-label="Search codes"
-          className="pl-11 uppercase"
-        />
-      </div>
-
       {isError ? (
         <EmptyState
           title="Could not load codes"
@@ -591,16 +568,22 @@ export function CouponManager() {
         />
       ) : (
         <DataTable
+          handle={table}
           rows={data?.data ?? []}
           columns={columns}
           rowId={(c) => c.id}
           exportName="discount-codes"
+          exportButtons={false}
+          pageKey={`${view}|${state.q}`}
+          bar={bar}
           loading={isLoading}
           total={data?.pagination?.total}
           empty={
-            view === "archived"
-              ? "Nothing archived. Archive a code from the Codes tab to put it away here."
-              : "No discount codes yet. Create one and it works at checkout immediately."
+            state.q
+              ? "No code matches that search."
+              : view === "archived"
+                ? "Nothing archived. Archiving a code stops it working and puts it here, to restore or renew."
+                : "No discount codes yet. Create one and it works at checkout immediately."
           }
           exportColumns={[
             { header: "Code", value: (c) => c.code },

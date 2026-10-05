@@ -1,24 +1,28 @@
 "use client"
 
 import * as React from "react"
-import { Check, X } from "lucide-react"
+import { Check, Star, X } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { ViewMenu } from "@/components/ui/view-menu"
+import { HeaderButton } from "@/components/ui/header-button"
 import {
   useReviewActions,
   useReviews,
   type ReviewStatus,
 } from "@/features/reviews/hooks/use-reviews"
 
-const FILTERS = [
+type Filter = ReviewStatus | "ALL"
+
+// All first, as every view menu has it; the queue still opens on Waiting.
+const FILTERS: Array<{ value: Filter; label: string }> = [
+  { value: "ALL", label: "All" },
   { value: "PENDING", label: "Waiting" },
   { value: "PUBLISHED", label: "Published" },
   { value: "REJECTED", label: "Rejected" },
-  { value: "ALL", label: "All" },
 ]
 
 const TONE: Record<ReviewStatus, "ember" | "acid" | "outline"> = {
@@ -29,7 +33,7 @@ const TONE: Record<ReviewStatus, "ember" | "acid" | "outline"> = {
 
 export function ReviewQueue() {
   const [page, setPage] = React.useState(1)
-  const [status, setStatus] = React.useState("PENDING")
+  const [status, setStatus] = React.useState<Filter>("PENDING")
 
   const { data, isLoading, isError, error } = useReviews({ page, status })
   const { publish, reject } = useReviewActions()
@@ -39,33 +43,26 @@ export function ReviewQueue() {
   const pages = data?.pagination.totalPages ?? 1
 
   return (
-    <div className="flex flex-col gap-7">
-      <PageHeader
-        title="Reviews"
-        description="Nothing shows on the product page until someone here publishes it. Oldest first, so the queue drains fairly."
-        actions={
-          data?.pendingCount ? <Badge variant="ember">{data.pendingCount} waiting</Badge> : null
-        }
-      />
+    <div className="flex flex-col gap-5">
+      <PageHeader icon={Star} title="Reviews" />
 
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => {
-              setStatus(f.value)
-              setPage(1)
-            }}
-            className={
-              status === f.value
-                ? "bg-blaze text-void rounded-full px-4 py-2 text-[12.5px] font-semibold"
-                : "text-ash hover:text-bone rounded-full border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30"
-            }
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Not a table, so no table bar: the view menu sits over the cards. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <ViewMenu
+          value={status}
+          onChange={(next) => {
+            setStatus(next)
+            setPage(1)
+          }}
+          // Waiting counts every review waiting, whichever view is open.
+          options={FILTERS.map((f) => ({
+            ...f,
+            count: f.value === "PENDING" ? data?.pendingCount : undefined,
+          }))}
+        />
+        <p className="text-dim text-[12.5px]">
+          Nothing shows on the product page until it is published here.
+        </p>
       </div>
 
       {isLoading ? (
@@ -88,7 +85,7 @@ export function ReviewQueue() {
                     <Badge variant={TONE[r.status]}>{r.status}</Badge>
                     {r.verified ? <Badge variant="violet">Verified buyer</Badge> : null}
                   </div>
-                  <h2 className="text-bone text-[16px] font-semibold">{r.title}</h2>
+                  <h2 className="text-bone text-[15px] font-semibold">{r.title}</h2>
                   <p className="text-dim mt-1 font-mono text-[11.5px]">
                     {r.authorName}
                     {r.city ? `, ${r.city}` : ""} on {r.product.name} ·{" "}
@@ -98,45 +95,32 @@ export function ReviewQueue() {
 
                 {r.status === "PENDING" ? (
                   <div className="flex gap-2">
-                    <Button
+                    <HeaderButton
                       variant="primary"
-                      size="sm"
                       className="px-3"
                       disabled={busy}
                       onClick={() => publish.mutate(r.id)}
                     >
                       <Check className="size-3.5" strokeWidth={2.4} />
                       Publish
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    </HeaderButton>
+                    <HeaderButton
                       className="px-3"
                       disabled={busy}
                       onClick={() => reject.mutate(r.id)}
                     >
                       <X className="size-3.5" strokeWidth={2.4} />
                       Reject
-                    </Button>
+                    </HeaderButton>
                   </div>
                 ) : r.status === "REJECTED" ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => publish.mutate(r.id)}
-                  >
+                  <HeaderButton disabled={busy} onClick={() => publish.mutate(r.id)}>
                     Publish anyway
-                  </Button>
+                  </HeaderButton>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => reject.mutate(r.id)}
-                  >
+                  <HeaderButton disabled={busy} onClick={() => reject.mutate(r.id)}>
                     Take down
-                  </Button>
+                  </HeaderButton>
                 )}
               </div>
 
@@ -148,25 +132,15 @@ export function ReviewQueue() {
 
       {pages > 1 ? (
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
+          <HeaderButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Previous
-          </Button>
+          </HeaderButton>
           <span className="text-dim font-mono text-[12px]">
             Page {page} of {pages}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page >= pages}
-            onClick={() => setPage((p) => p + 1)}
-          >
+          <HeaderButton disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
             Next
-          </Button>
+          </HeaderButton>
         </div>
       ) : null}
     </div>

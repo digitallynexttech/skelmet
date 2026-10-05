@@ -3,9 +3,9 @@
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { HeaderButton } from "@/components/ui/header-button"
 import { advanceLabel, advanceOf, splitPayment } from "@/features/checkout/payment-options"
 import {
   ChangeList,
@@ -271,14 +271,9 @@ function OptionsForm({ data, canWrite, ask }: { data: Checkout; canWrite: boolea
 
       {canWrite ? (
         <div>
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={!dirty || saveCheckout.isPending}
-          >
+          <HeaderButton type="submit" variant="primary" disabled={!dirty || saveCheckout.isPending}>
             Save ways to pay
-          </Button>
+          </HeaderButton>
         </div>
       ) : null}
     </form>

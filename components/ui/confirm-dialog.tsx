@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Button } from "@/components/ui/button"
+import { HeaderButton } from "@/components/ui/header-button"
 import { cn } from "@/lib/utils"
 
 /**
@@ -67,31 +67,22 @@ export function ConfirmDialog({
       )}
     >
       <div className="p-6">
-        <h2 id={titleId} className="font-display mb-2 text-[22px] uppercase">
+        <h2 id={titleId} className="mb-2 text-[17px] font-semibold">
           {title}
         </h2>
         {body ? <div className="text-ash text-[14px] leading-[1.6]">{body}</div> : null}
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={pending}>
+          <HeaderButton onClick={onClose} disabled={pending}>
             {cancelLabel}
-          </Button>
-          {/* There is no danger variant in the button set, so a destructive
-              confirm is a ghost button carrying the magenta the rest of the
-              app already uses for failure. */}
-          <Button
-            type="button"
-            variant={tone === "danger" ? "ghost" : "primary"}
-            size="md"
+          </HeaderButton>
+          <HeaderButton
+            variant={tone === "danger" ? "danger" : "primary"}
             onClick={onConfirm}
             disabled={pending}
-            className={cn(
-              tone === "danger" &&
-                "border-magenta/45 text-magenta hover:border-magenta hover:bg-magenta/[0.08]",
-            )}
           >
             {pending ? "Working…" : confirmLabel}
-          </Button>
+          </HeaderButton>
         </div>
       </div>
     </dialog>

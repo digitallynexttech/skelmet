@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Settings } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
@@ -84,7 +85,7 @@ export function SettingsView() {
 
   let panel: React.ReactNode
   if (active === "team") {
-    panel = <StaffSettings embedded />
+    panel = <StaffSettings />
   } else if (isLoading) {
     panel = (
       <div className="flex flex-col gap-5">
@@ -110,12 +111,9 @@ export function SettingsView() {
   }
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       {dialog}
-      <PageHeader
-        title="Settings"
-        description="Payment keys, paying on delivery, the Shiprocket login and the shipping charge. A change here takes effect straight away, without a deploy, and every save is logged."
-      />
+      <PageHeader icon={Settings} title="Settings" />
 
       <Tabs active={active} onChange={(tab) => setState({ tab })} />
 

@@ -2,14 +2,13 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
 
-import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { Badge } from "@/components/ui/badge"
-import { DataTable, type Column } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
 import { ContactActions } from "@/features/visitors/components/contact-actions"
 import { useLeftCarts, type LeftCartRow } from "@/features/visitors/hooks/use-visitors"
 import { ago, deviceLine, placeLine, visitorName, when } from "@/features/visitors/lib/format"
@@ -32,7 +31,12 @@ const who = (r: LeftCartRow) => visitorName({ ...r, id: r.visitorId })
  * only be counted - which is still worth knowing: it says what people want
  * and where they stop.
  */
-export function LeftCartsTable() {
+export function LeftCartsTable({
+  handle,
+}: {
+  /** For Export in the page's header. */
+  handle?: React.Ref<DataTableHandle<LeftCartRow>>
+}) {
   const { data, isLoading, isError, error } = useLeftCarts()
   const [show, setShow] = React.useState<Show>("all")
   const [query, setQuery] = React.useState("")
@@ -156,79 +160,64 @@ export function LeftCartsTable() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <BoardTile
-          label="Carts left"
-          value={summary?.count ?? 0}
-          empty={!summary?.count}
-          active={show === "all"}
-          onClick={() => setShow("all")}
-        />
-        <BoardTile
-          label="With contact details"
-          value={summary?.withContact ?? 0}
-          empty={!summary?.withContact}
-          tone="text-acid"
-          active={show === "contact"}
-          onClick={() => setShow("contact")}
-        />
-        <BoardTile
-          label="Reached checkout"
-          value={summary?.reachedCheckout ?? 0}
-          empty={!summary?.reachedCheckout}
-          tone="text-ember"
-          active={show === "checkout"}
-          onClick={() => setShow("checkout")}
-        />
-        <BoardTile
-          label="Value left in carts"
-          value={<Money value={summary?.value ?? 0} />}
-          empty={!Number(summary?.value)}
-          tone="text-magenta"
-        />
-      </div>
-
-      <div className="relative w-full sm:max-w-[420px]">
-        <Search
-          className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
-          strokeWidth={1.9}
-        />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Name, email, phone, city or colourway"
-          aria-label="Search carts"
-          className="pl-11"
-        />
-      </div>
-
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowId={(r) => r.id}
-        exportName="abandoned-carts"
-        loading={isLoading}
-        empty={
-          query || show !== "all"
-            ? "Nothing matches. Try another tile or clear the search."
-            : "No carts left behind. Carts show here once visitors add something and leave without placing an order."
-        }
-        exportColumns={[
-          { header: "Name", value: (r) => r.name ?? "" },
-          { header: "Email", value: (r) => r.email ?? "" },
-          { header: "Phone", value: (r) => r.phone ?? "" },
-          { header: "Cookies", value: (r) => (r.anonymous ? "Anonymous" : "Accepted") },
-          { header: "Left in cart", value: (r) => itemsText(r) },
-          { header: "Items", value: (r) => r.itemCount },
-          { header: "Value", value: (r) => Number(r.value) },
-          { header: "Reached checkout", value: (r) => (r.checkoutAt ? when(r.checkoutAt) : "") },
-          { header: "Device", value: (r) => deviceLine(r) },
-          { header: "Place", value: (r) => placeLine(r) },
-          { header: "Source", value: (r) => r.source ?? "" },
-          { header: "Last change", value: (r) => when(r.updatedAt) },
-        ]}
-      />
-    </div>
+    <DataTable
+      handle={handle}
+      rows={rows}
+      columns={columns}
+      rowId={(r) => r.id}
+      exportName="abandoned-carts"
+      exportButtons={false}
+      pageKey={`${show}|${query}`}
+      bar={
+        <div className="flex items-center gap-2">
+          <ViewMenu
+            value={show}
+            onChange={setShow}
+            options={[
+              { value: "all", label: "All", count: summary?.count },
+              { value: "contact", label: "With contact details", count: summary?.withContact },
+              { value: "checkout", label: "Reached checkout", count: summary?.reachedCheckout },
+            ]}
+          />
+          <TableSearch
+            value={query}
+            onChange={setQuery}
+            placeholder="Name, email, phone or city"
+            label="Search carts by name, email, phone, city or colourway"
+          />
+        </div>
+      }
+      // The board's value tile, as a line: it filters nothing. There from the
+      // first render, so the bar does not rearrange itself when it loads.
+      barEnd={
+        <span className="text-dim text-[12.5px] whitespace-nowrap">
+          {summary ? (
+            <>
+              <Money value={summary.value} className="text-ash font-mono" /> left in carts
+            </>
+          ) : null}
+        </span>
+      }
+      loading={isLoading}
+      empty={
+        query || show !== "all"
+          ? "Nothing matches. Try another view or clear the search."
+          : "No carts left behind. Carts show here once visitors add something and leave without placing an order."
+      }
+      exportColumns={[
+        { header: "Name", value: (r) => r.name ?? "" },
+        { header: "Email", value: (r) => r.email ?? "" },
+        { header: "Phone", value: (r) => r.phone ?? "" },
+        { header: "Cookies", value: (r) => (r.anonymous ? "Anonymous" : "Accepted") },
+        { header: "Left in cart", value: (r) => itemsText(r) },
+        { header: "Items", value: (r) => r.itemCount },
+        { header: "Value", value: (r) => Number(r.value) },
+        { header: "Reached checkout", value: (r) => (r.checkoutAt ? when(r.checkoutAt) : "") },
+        { header: "Device", value: (r) => deviceLine(r) },
+        { header: "Place", value: (r) => placeLine(r) },
+        { header: "Source", value: (r) => r.source ?? "" },
+        { header: "Last change", value: (r) => when(r.updatedAt) },
+      ]}
+    />
   )
 }

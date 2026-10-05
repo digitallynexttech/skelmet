@@ -1,12 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { Percent } from "lucide-react"
 
-import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
+import { StatTile } from "@/components/shared/stat-tile"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { DataTable, type Column } from "@/components/ui/data-table"
@@ -21,6 +21,8 @@ import type { OrderStatus } from "@/lib/constants"
 import { formatMoney } from "@/lib/money"
 
 const STATE_TONE = { ACTIVE: "acid", EXPIRED: "muted", EXHAUSTED: "ember" } as const
+
+const PARENT = { label: "Offers & codes", href: "/admin/coupons" }
 
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -101,29 +103,22 @@ function eventDetail(e: CouponEvent): string | null {
 export function CouponHistoryView({ code }: { code: string }) {
   const { data, isLoading, isError, error } = useCouponHistory(code)
 
-  const back = (
-    <Link
-      href="/admin/coupons"
-      className="text-ash hover:text-bone inline-flex items-center gap-2 text-[13.5px] transition-colors"
-    >
-      <ArrowLeft className="size-4" strokeWidth={2} />
-      Offers &amp; codes
-    </Link>
-  )
+  // Until the code loads, the header has the name from the address. Codes
+  // are kept in capitals, and found whatever case the address has.
+  const header = <PageHeader icon={Percent} parent={PARENT} title={code.toUpperCase()} />
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6">
-        {back}
-        <div className="h-16 w-64 animate-pulse rounded-md bg-white/5" />
+      <div className="flex flex-col gap-5">
+        {header}
         <div className="h-64 animate-pulse rounded-md bg-white/5" />
       </div>
     )
   }
   if (isError || !data) {
     return (
-      <div className="flex flex-col gap-6">
-        {back}
+      <div className="flex flex-col gap-5">
+        {header}
         <EmptyState
           title="Could not load this code"
           description={error instanceof Error ? error.message : "It may have been removed."}
@@ -284,33 +279,32 @@ export function CouponHistoryView({ code }: { code: string }) {
   ]
 
   return (
-    <div className="flex flex-col gap-7">
-      {back}
-
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Offers & codes"
-        title={coupon.code}
-        description={`${termsText(coupon)}. ${
-          coupon.expiresAt ? `Expires ${day(coupon.expiresAt)}` : "No expiry"
-        }. ${coupon.showInCart ? "Offered in the cart." : "Not offered in the cart."}`}
-        actions={
-          <div className="flex items-center gap-2">
-            {coupon.archivedAt ? <Badge variant="muted">Archived</Badge> : null}
-            <Badge variant={STATE_TONE[coupon.state]}>{coupon.state}</Badge>
-          </div>
+        icon={Percent}
+        parent={PARENT}
+        // The code's state beside its name, as Shopify puts an order's.
+        title={
+          <>
+            {coupon.code}
+            <span className="ml-3 inline-flex gap-2 align-middle">
+              {coupon.archivedAt ? <Badge variant="muted">Archived</Badge> : null}
+              <Badge variant={STATE_TONE[coupon.state]}>{coupon.state}</Badge>
+            </span>
+          </>
         }
+        subtitle={[
+          termsText(coupon),
+          coupon.expiresAt ? `Expires ${day(coupon.expiresAt)}` : "No expiry",
+          coupon.showInCart ? "Offered in the cart" : "Not offered in the cart",
+        ].join(" · ")}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <BoardTile label="Orders, all runs" value={all.orders} empty={all.orders === 0} />
-        <BoardTile
-          label="Discount given"
-          value={formatMoney(all.discount)}
-          tone="text-acid"
-          empty={all.discount === 0}
-        />
-        <BoardTile label="Sales with it" value={formatMoney(all.sales)} empty={all.sales === 0} />
-        <BoardTile label="Runs" value={runs.length} />
+        <StatTile label="Orders, all runs">{all.orders}</StatTile>
+        <StatTile label="Discount given">{formatMoney(all.discount)}</StatTile>
+        <StatTile label="Sales with it">{formatMoney(all.sales)}</StatTile>
+        <StatTile label="Runs">{runs.length}</StatTile>
       </div>
       {all.refunded > 0 ? (
         <p className="text-dim -mt-3 text-[12.5px]">
@@ -320,7 +314,7 @@ export function CouponHistoryView({ code }: { code: string }) {
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-bone text-[22px] uppercase">Runs</h2>
+        <h2 className="text-bone text-[15px] font-semibold">Runs</h2>
         <p className="text-dim -mt-1 text-[13px]">
           Each renewal starts a run. Orders count once placed; unpaid and cancelled ones do not.
         </p>
@@ -329,18 +323,20 @@ export function CouponHistoryView({ code }: { code: string }) {
           columns={runColumns}
           rowId={(r) => String(r.index)}
           exportName={`${coupon.code.toLowerCase()}-runs`}
+          compact
           empty="No runs yet."
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-bone text-[22px] uppercase">Orders with this code</h2>
+        <h2 className="text-bone text-[15px] font-semibold">Orders with this code</h2>
         {canSeeOrders ? (
           <DataTable
             rows={orders}
             columns={orderColumns}
             rowId={(o) => o.id}
             exportName={`${coupon.code.toLowerCase()}-orders`}
+            compact
             empty="No orders have used this code yet."
             exportColumns={[
               { header: "Order", value: (o) => o.number },
@@ -362,7 +358,7 @@ export function CouponHistoryView({ code }: { code: string }) {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-bone text-[22px] uppercase">Log</h2>
+        <h2 className="text-bone text-[15px] font-semibold">Log</h2>
         {events.length === 0 ? (
           <p className="text-ash text-[13.5px]">Nothing recorded for this code.</p>
         ) : (

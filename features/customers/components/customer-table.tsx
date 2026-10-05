@@ -2,12 +2,13 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { Users } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
-import { DataTable, type Column } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { TableSearch } from "@/components/ui/table-search"
 import type { CustomerRow } from "@/features/customers/server/customers.service"
 import { apiFetch } from "@/lib/api-fetch"
 import { MAX_PAGE_SIZE } from "@/lib/constants"
@@ -37,6 +38,7 @@ export function CustomerTable() {
   const [search, setSearch] = React.useState("")
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const table = React.useRef<DataTableHandle<CustomerRow>>(null)
 
   React.useEffect(() => {
     let cancelled = false
@@ -130,22 +132,12 @@ export function CustomerTable() {
   ]
 
   return (
-    <div>
+    <div className="flex flex-col gap-5">
       <PageHeader
+        icon={Users}
         title="Customers"
-        description={`${total} ${total === 1 ? "person has" : "people have"} paid for an order. No accounts - these are written at checkout, and listed here once the payment lands.`}
-        className="mb-6"
+        actions={<ExportMenu table={table} noun={["customer", "customers"]} />}
       />
-
-      <div className="bg-carbon relative mb-4 flex items-center gap-2.5 rounded-md border border-white/10 px-4">
-        <Search className="text-dim size-4 shrink-0" strokeWidth={1.9} />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name, email or phone"
-          className="h-[50px] border-0 bg-transparent px-0 text-[14px] focus:ring-0"
-        />
-      </div>
 
       {error ? (
         <div className="border-magenta/35 bg-magenta/[0.06] rounded-md border p-5">
@@ -153,10 +145,21 @@ export function CustomerTable() {
         </div>
       ) : (
         <DataTable
+          handle={table}
           rows={rows}
           columns={columns}
           rowId={(c) => c.id}
           exportName="customers"
+          exportButtons={false}
+          pageKey={search}
+          bar={
+            <TableSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Name, email or phone"
+              label="Search customers by name, email or phone"
+            />
+          }
           loading={loading}
           total={total}
           empty={search ? "Nobody matches that." : "No buyers yet. The first paid order adds one."}

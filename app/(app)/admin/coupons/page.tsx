@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
+import { PageSkeleton } from "@/components/shared/page-skeleton"
+
 import { CouponManager } from "@/features/coupons/components/coupon-manager"
 
 export const metadata: Metadata = {
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function AdminCouponsPage() {
   return (
-    <Suspense fallback={<div className="h-96 animate-pulse rounded-md bg-white/5" />}>
+    <Suspense fallback={<PageSkeleton />}>
       <CouponManager />
     </Suspense>
   )

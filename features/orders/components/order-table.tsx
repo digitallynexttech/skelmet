@@ -4,33 +4,25 @@ import * as React from "react"
 import Link from "next/link"
 import {
   ChevronDown,
-  ChevronsUpDown,
   ClipboardCopy,
-  Download,
-  FileSpreadsheet,
   ListOrdered,
   Phone,
-  Search,
   ShoppingBag,
   ShoppingCart,
   Trash2,
-  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
+import { PageHeader } from "@/components/shared/page-header"
 import { ToneBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
-import {
-  Menu,
-  MenuItem,
-  MenuLabel,
-  MenuLink,
-  MenuOption,
-  MenuSeparator,
-} from "@/components/ui/menu"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { HeaderLink, headerButton } from "@/components/ui/header-button"
+import { Menu, MenuItem, MenuLabel, MenuLink, MenuSeparator } from "@/components/ui/menu"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT } from "@/features/checkout/payment-options"
 import {
@@ -69,6 +61,7 @@ const SCOPES: Record<
     other: { label: "All orders, paid or not", href: "/admin/orders/all" },
   },
   all: {
+    // Under Orders in the header: Orders > All orders.
     title: "All orders",
     exportName: "all-orders",
     other: { label: "Orders to fulfil", href: "/admin/orders" },
@@ -77,11 +70,6 @@ const SCOPES: Record<
 
 // Stable, since useUrlState memoises on it.
 const DEFAULTS = { view: "all", q: "" }
-
-const PAGE_SIZES = [10, 20, 50, 100]
-
-const secondary =
-  "text-bone flex h-9 items-center gap-2 rounded-sm border border-white/[0.14] bg-white/[0.04] px-3 text-[13px] font-semibold transition-colors hover:border-white/25 hover:bg-white/[0.08] aria-expanded:border-white/25 aria-expanded:bg-white/[0.08]"
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -345,159 +333,111 @@ export function OrderTable({
   // beside the search.
   const bar = (
     <div className="flex items-center gap-2">
-      <Menu
-        label={`View: ${ORDER_VIEWS[view].label}`}
-        align="start"
-        buttonClassName="text-bone flex h-9 shrink-0 items-center gap-1.5 rounded-sm bg-white/[0.06] px-3 text-[13px] font-semibold transition-colors hover:bg-white/[0.1] aria-expanded:bg-white/[0.1]"
-        button={
-          <>
-            {ORDER_VIEWS[view].label}
-            <ChevronsUpDown className="text-ash size-3.5" strokeWidth={2.2} />
-          </>
-        }
-      >
-        {views.map((v) => (
-          <MenuOption
-            key={v}
-            checked={view === v}
-            onSelect={() => setState({ view: v })}
-            hint={data?.viewCounts[v]}
-          >
-            {ORDER_VIEWS[v].label}
-          </MenuOption>
-        ))}
-      </Menu>
-
-      <div className="relative min-w-0 flex-1 sm:max-w-[280px]">
-        <Search
-          className="text-dim pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-          strokeWidth={1.9}
-        />
-        <Input
-          value={rawQuery}
-          onChange={(e) => setRawQuery(e.target.value)}
-          placeholder="Order no., email or phone"
-          aria-label="Search orders by order number, email or phone"
-          className="h-9 pr-8 pl-9 text-[13px]"
-        />
-        {rawQuery ? (
-          <button
-            type="button"
-            onClick={() => setRawQuery("")}
-            aria-label="Clear the search"
-            className="text-dim hover:text-bone absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center transition-colors"
-          >
-            <X className="size-3.5" strokeWidth={2.2} />
-          </button>
-        ) : null}
-      </div>
+      <ViewMenu
+        value={view}
+        onChange={(v) => setState({ view: v })}
+        options={views.map((v) => ({
+          value: v,
+          label: ORDER_VIEWS[v].label,
+          count: data?.viewCounts[v],
+        }))}
+      />
+      <TableSearch
+        value={rawQuery}
+        onChange={setRawQuery}
+        placeholder="Order no., email or phone"
+        label="Search orders by order number, email or phone"
+      />
     </div>
   )
-
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-bone flex items-center gap-2.5 text-[20px] leading-none font-semibold">
-          <ShoppingBag className="text-ash size-5" strokeWidth={1.9} />
-          {copy.title}
-        </h1>
+      <PageHeader
+        icon={ShoppingBag}
+        title={copy.title}
+        parent={scope === "all" ? { label: "Orders", href: "/admin/orders" } : undefined}
+        actions={
+          <>
+            <ExportMenu table={table} noun={["order", "orders"]} />
 
-        <div className="ml-auto flex items-center gap-2">
-          <Menu label="Export" onOpen={takeTarget} buttonClassName={secondary} button="Export">
-            <MenuLabel>{targetLabel}</MenuLabel>
-            <MenuItem
-              icon={Download}
-              disabled={target.rows.length === 0}
-              onSelect={() => table.current?.download("csv")}
-            >
-              CSV file
-            </MenuItem>
-            <MenuItem
-              icon={FileSpreadsheet}
-              disabled={target.rows.length === 0}
-              onSelect={() => table.current?.download("xlsx")}
-            >
-              Excel file
-            </MenuItem>
-          </Menu>
-
-          <Menu
-            label="More actions"
-            onOpen={takeTarget}
-            buttonClassName={cn(secondary, "group")}
-            button={
-              <>
-                <span className="sm:hidden">More</span>
-                <span className="hidden sm:inline">More actions</span>
-                <ChevronDown
-                  className="text-ash size-4 transition-transform group-aria-expanded:rotate-180"
-                  strokeWidth={2}
-                />
-              </>
-            }
-          >
-            <MenuLabel>{targetLabel}</MenuLabel>
-            <MenuItem
-              icon={ClipboardCopy}
-              disabled={target.rows.length === 0}
-              onSelect={() =>
-                void copyList(
-                  target.rows.map((o) => o.number),
-                  "order number",
-                )
+            <Menu
+              label="More actions"
+              onOpen={takeTarget}
+              buttonClassName={cn(headerButton(), "group")}
+              button={
+                <>
+                  <span className="sm:hidden">More</span>
+                  <span className="hidden sm:inline">More actions</span>
+                  <ChevronDown
+                    className="text-ash size-4 transition-transform group-aria-expanded:rotate-180"
+                    strokeWidth={2}
+                  />
+                </>
               }
             >
-              Copy order numbers
-            </MenuItem>
-            <MenuItem
-              icon={Phone}
-              disabled={target.rows.length === 0}
-              onSelect={() =>
-                void copyList(
-                  target.rows.map((o) => o.phone),
-                  "phone number",
-                )
-              }
-            >
-              Copy phone numbers
-            </MenuItem>
-            <MenuSeparator />
-            <MenuLink icon={ListOrdered} href={copy.other.href}>
-              {copy.other.label}
-            </MenuLink>
-            <MenuLink icon={ShoppingCart} href="/admin/orders/abandoned">
-              Abandoned carts
-            </MenuLink>
-            {canDeleteTest ? (
-              <>
-                <MenuSeparator />
-                {/* Ticked orders only: never "everything in this view". */}
-                <MenuItem
-                  icon={Trash2}
-                  disabled={!target.selected}
-                  hint={target.selected ? undefined : "tick first"}
-                  onSelect={() => void askToDelete(target.rows)}
-                >
-                  Delete test orders
-                </MenuItem>
-              </>
-            ) : null}
-          </Menu>
+              <MenuLabel>{targetLabel}</MenuLabel>
+              <MenuItem
+                icon={ClipboardCopy}
+                disabled={target.rows.length === 0}
+                onSelect={() =>
+                  void copyList(
+                    target.rows.map((o) => o.number),
+                    "order number",
+                  )
+                }
+              >
+                Copy order numbers
+              </MenuItem>
+              <MenuItem
+                icon={Phone}
+                disabled={target.rows.length === 0}
+                onSelect={() =>
+                  void copyList(
+                    target.rows.map((o) => o.phone),
+                    "phone number",
+                  )
+                }
+              >
+                Copy phone numbers
+              </MenuItem>
+              <MenuSeparator />
+              <MenuLink icon={ListOrdered} href={copy.other.href}>
+                {copy.other.label}
+              </MenuLink>
+              <MenuLink icon={ShoppingCart} href="/admin/orders/abandoned">
+                Abandoned carts
+              </MenuLink>
+              {canDeleteTest ? (
+                <>
+                  <MenuSeparator />
+                  {/* Ticked orders only: never "everything in this view". */}
+                  <MenuItem
+                    icon={Trash2}
+                    disabled={!target.selected}
+                    hint={target.selected ? undefined : "tick first"}
+                    onSelect={() => void askToDelete(target.rows)}
+                  >
+                    Delete test orders
+                  </MenuItem>
+                </>
+              ) : null}
+            </Menu>
 
-          {/* No order is made in here: the shop's checkout is where stock,
+            {/* No order is made in here: the shop's checkout is where stock,
               the price and the payment are settled, so a phone order goes
               through it too, in a new tab, with the customer's details. */}
-          <Link
-            href={`/product/${FLAME_SKULL_MOUNT.slug}`}
-            target="_blank"
-            rel="noopener"
-            title="Opens the shop in a new tab: place the order at checkout with the customer's details"
-            className="bg-blaze text-void hover:bg-ember flex h-9 items-center rounded-sm px-3.5 text-[13px] font-semibold transition-colors"
-          >
-            Create order
-          </Link>
-        </div>
-      </div>
+            <HeaderLink
+              variant="primary"
+              href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+              target="_blank"
+              rel="noopener"
+              title="Opens the shop in a new tab: place the order at checkout with the customer's details"
+            >
+              Create order
+            </HeaderLink>
+          </>
+        }
+      />
 
       {dialog}
 
@@ -514,15 +454,12 @@ export function OrderTable({
           rowId={(o) => o.id}
           exportName={copy.exportName}
           exportButtons={false}
-          columnToggle
-          numbered={false}
           // Cancelled orders step back, struck through, as closed business.
           rowClassName={(o) =>
             o.status === "CANCELLED"
               ? "[&>td]:opacity-55 [&>td]:transition-opacity hover:[&>td]:opacity-100"
               : undefined
           }
-          pageSizes={PAGE_SIZES}
           pageKey={`${view}|${state.q}`}
           bar={bar}
           loading={isLoading}

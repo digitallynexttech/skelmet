@@ -1,15 +1,17 @@
 "use client"
 
 import * as React from "react"
-import { ExternalLink, PenLine } from "lucide-react"
+import { ExternalLink, Newspaper } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { Button, ButtonLink } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { DataTable, type Column } from "@/components/ui/data-table"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { HeaderButton, HeaderLink } from "@/components/ui/header-button"
 import { Input } from "@/components/ui/input"
+import { ViewMenu } from "@/components/ui/view-menu"
 import { categoryLabel } from "@/features/blog/blog"
 import {
   useManagedPosts,
@@ -23,8 +25,7 @@ import { schedulePostSchema } from "@/features/blog/schemas/post.schema"
 import { useConfirm } from "@/hooks/use-confirm"
 import { cn } from "@/lib/utils"
 
-const FILTERS: Array<{ value: PostStatus | "ALL"; label: string }> = [
-  { value: "ALL", label: "All" },
+const FILTERS: Array<{ value: PostStatus; label: string }> = [
   { value: "DRAFT", label: "Drafts" },
   { value: "SCHEDULED", label: "Scheduled" },
   { value: "LIVE", label: "Live" },
@@ -80,6 +81,7 @@ export function PostManager() {
   const { data, isLoading, isError, error } = useManagedPosts()
   const { publish, schedule, unpublish } = usePostActions()
   const { ask, dialog } = useConfirm()
+  const table = React.useRef<DataTableHandle<ManagedPost>>(null)
   const busy = publish.isPending || schedule.isPending || unpublish.isPending
 
   const posts = data?.data ?? []
@@ -181,9 +183,7 @@ export function PostManager() {
         return (
           <div className="flex justify-end gap-2">
             {canPublish && canGoOut ? (
-              <Button
-                variant="ghost"
-                size="xs"
+              <HeaderButton
                 disabled={busy || !ready}
                 onClick={() =>
                   ask({
@@ -198,22 +198,15 @@ export function PostManager() {
                 }
               >
                 {p.status === "LIVE" ? "Publish edits" : "Publish now"}
-              </Button>
+              </HeaderButton>
             ) : null}
             {canPublish && p.status !== "LIVE" ? (
-              <Button
-                variant="ghost"
-                size="xs"
-                disabled={busy || !ready}
-                onClick={() => openSchedule(p)}
-              >
+              <HeaderButton disabled={busy || !ready} onClick={() => openSchedule(p)}>
                 {p.status === "SCHEDULED" ? "Reschedule" : "Schedule"}
-              </Button>
+              </HeaderButton>
             ) : null}
             {canPublish && p.status !== "DRAFT" ? (
-              <Button
-                variant="ghost"
-                size="xs"
+              <HeaderButton
                 disabled={busy}
                 onClick={() =>
                   ask({
@@ -229,21 +222,19 @@ export function PostManager() {
                 }
               >
                 {p.status === "LIVE" ? "Take down" : "Unschedule"}
-              </Button>
+              </HeaderButton>
             ) : null}
-            <ButtonLink href={studioLink(p.id)} target="_blank" variant="ghost" size="xs">
+            <HeaderLink href={studioLink(p.id)} target="_blank">
               Edit
-            </ButtonLink>
+            </HeaderLink>
             {p.status === "LIVE" && p.slug ? (
-              <ButtonLink
+              <HeaderLink
                 href={`/blog/${p.slug}`}
                 target="_blank"
-                variant="ghost"
-                size="xs"
                 aria-label={`View ${p.title} on the site`}
               >
                 <ExternalLink className="size-3.5" strokeWidth={2} />
-              </ButtonLink>
+              </HeaderLink>
             ) : null}
           </div>
         )
@@ -252,47 +243,26 @@ export function PostManager() {
   ]
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       {dialog}
       <PageHeader
+        icon={Newspaper}
         title="Blog"
-        description="Posts are written in the Studio. From here each one is published, given a time to go live, or taken down. A scheduled post goes on the site by itself when its time comes."
         actions={
-          <ButtonLink
-            href={`${STUDIO_PATH}/structure/post`}
-            target="_blank"
-            variant="primary"
-            size="sm"
-            className="gap-2"
-          >
-            <PenLine className="size-4" strokeWidth={2} />
-            Write a post
-          </ButtonLink>
+          <>
+            <ExportMenu table={table} noun={["post", "posts"]} />
+            <HeaderLink
+              variant="primary"
+              href={`${STUDIO_PATH}/structure/post`}
+              target="_blank"
+              rel="noopener"
+              title="Opens the Studio in a new tab"
+            >
+              Write a post
+            </HeaderLink>
+          </>
         }
       />
-
-      <div className="grid grid-cols-3 gap-3 sm:max-w-xl">
-        <Stat label="Drafts" value={data?.counts.DRAFT} tone="text-ash" />
-        <Stat label="Scheduled" value={data?.counts.SCHEDULED} tone="text-ember" />
-        <Stat label="Live" value={data?.counts.LIVE} tone="text-acid" />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => setFilter(f.value)}
-            className={
-              filter === f.value
-                ? "bg-blaze text-void rounded-md px-4 py-2 text-[12.5px] font-semibold"
-                : "text-ash hover:text-bone rounded-md border border-white/[0.14] px-4 py-2 text-[12.5px] transition-colors hover:border-white/30"
-            }
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
 
       {isError ? (
         <EmptyState
@@ -301,10 +271,23 @@ export function PostManager() {
         />
       ) : (
         <DataTable
+          handle={table}
           rows={shown}
           columns={columns}
           rowId={(p) => p.id}
           exportName="blog-posts"
+          exportButtons={false}
+          pageKey={filter}
+          bar={
+            <ViewMenu
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "ALL", label: "All", count: data ? posts.length : undefined },
+                ...FILTERS.map((f) => ({ ...f, count: data?.counts[f.value] })),
+              ]}
+            />
+          }
           loading={isLoading}
           total={shown.length}
           empty={
@@ -368,15 +351,6 @@ export function PostManager() {
         onClose={() => setScheduling(null)}
         onConfirm={confirmSchedule}
       />
-    </div>
-  )
-}
-
-function Stat({ label, value, tone }: { label: string; value?: number; tone: string }) {
-  return (
-    <div className="bg-carbon rounded-md border border-white/[0.09] px-5 py-4">
-      <div className="text-dim font-mono text-[10.5px] tracking-[0.14em] uppercase">{label}</div>
-      <div className={cn("font-display mt-1 text-[30px] leading-none", tone)}>{value ?? "–"}</div>
     </div>
   )
 }

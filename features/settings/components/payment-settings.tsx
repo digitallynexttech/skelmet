@@ -4,8 +4,8 @@ import * as React from "react"
 import { CheckCircle2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { HeaderButton } from "@/components/ui/header-button"
 import {
   ChangeList,
   CopyLine,
@@ -277,18 +277,11 @@ function KeySetForm({
 
       {canWrite ? (
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={!dirty || savePayment.isPending}
-          >
+          <HeaderButton type="submit" variant="primary" disabled={!dirty || savePayment.isPending}>
             Save {mode} keys
-          </Button>
-          <Button
+          </HeaderButton>
+          <HeaderButton
             type="button"
-            variant="ghost"
-            size="sm"
             // Tests what is saved, so not while there are unsaved changes.
             disabled={!keys.ready || dirty || testPayment.isPending}
             onClick={() => {
@@ -297,11 +290,11 @@ function KeySetForm({
             }}
           >
             Test keys
-          </Button>
+          </HeaderButton>
           {anythingSaved ? (
-            <Button type="button" variant="quiet" size="sm" onClick={removeSaved}>
+            <HeaderButton type="button" variant="quiet" onClick={removeSaved}>
               Remove saved keys
-            </Button>
+            </HeaderButton>
           ) : null}
           {accepted && !dirty ? (
             <span className="text-acid inline-flex items-center gap-1.5 text-[13px]">

@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft,
   Ban,
   CreditCard,
   ExternalLink,
@@ -16,26 +15,30 @@ import {
   Home,
   RefreshCw,
   RotateCcw,
+  ShoppingBag,
   Truck,
 } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
-import { StatusBadge } from "@/components/shared/status-badge"
+import { PageHeader } from "@/components/shared/page-header"
+import { ToneBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { HeaderButton, headerButton } from "@/components/ui/header-button"
 import { Field, Input } from "@/components/ui/input"
-import {
-  PAYMENT_METHOD_LABEL,
-  statusLabelFor,
-  type PaymentMethod,
-} from "@/features/checkout/payment-options"
+import { PAYMENT_METHOD_LABEL, type PaymentMethod } from "@/features/checkout/payment-options"
 import {
   useCourierOptions,
   useOrder,
   useOrderAction,
   type OrderDetail,
 } from "@/features/orders/hooks/use-orders"
+import {
+  FULFILMENT_STATES,
+  PAYMENT_STATES,
+  fulfilmentState,
+  paymentState,
+} from "@/features/orders/order-progress"
 import { useConfirm, type Ask } from "@/hooks/use-confirm"
 import { PAID_ORDER_STATUSES, type OrderStatus } from "@/lib/constants"
 import { formatMoney } from "@/lib/money"
@@ -134,9 +137,7 @@ function BookCourier({
 
   return (
     <div className="bg-void rounded-md border border-white/[0.09] p-5">
-      <div className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
-        Book courier · Shiprocket
-      </div>
+      <h2 className="text-bone mb-4 text-[15px] font-semibold">Book a courier · Shiprocket</h2>
 
       {kept ? (
         <div className="flex flex-col gap-3">
@@ -146,9 +147,8 @@ function BookCourier({
             yet. Finishing carries on from there - it keeps this AWB.
           </p>
           <div>
-            <Button
+            <HeaderButton
               variant="primary"
-              size="sm"
               disabled={busy}
               onClick={() =>
                 ask({
@@ -168,18 +168,16 @@ function BookCourier({
             >
               <Truck className="size-4" strokeWidth={1.9} />
               Finish booking
-            </Button>
+            </HeaderButton>
           </div>
         </div>
       ) : !asked ? (
         <div className="flex flex-wrap gap-2.5">
-          <Button variant="primary" size="sm" disabled={busy} onClick={() => setAsked(true)}>
+          <HeaderButton variant="primary" disabled={busy} onClick={() => setAsked(true)}>
             <Truck className="size-4" strokeWidth={1.9} />
             Show couriers &amp; rates
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+          </HeaderButton>
+          <HeaderButton
             disabled={busy}
             onClick={() =>
               ask({
@@ -191,7 +189,7 @@ function BookCourier({
             }
           >
             Book Shiprocket&apos;s pick
-          </Button>
+          </HeaderButton>
         </div>
       ) : couriers.isLoading ? (
         <div className="flex flex-col gap-2">
@@ -204,10 +202,10 @@ function BookCourier({
           <p className="text-magenta text-[13.5px] leading-[1.5]">
             {couriers.error instanceof Error ? couriers.error.message : "Could not load couriers."}
           </p>
-          <Button variant="ghost" size="sm" onClick={() => void couriers.refetch()}>
+          <HeaderButton onClick={() => void couriers.refetch()}>
             <RefreshCw className="size-4" strokeWidth={1.9} />
             Try again
-          </Button>
+          </HeaderButton>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -246,9 +244,8 @@ function BookCourier({
             ))}
           </fieldset>
           <div>
-            <Button
+            <HeaderButton
               variant="primary"
-              size="sm"
               disabled={busy || !pick}
               onClick={() =>
                 pick &&
@@ -268,7 +265,7 @@ function BookCourier({
             >
               <Truck className="size-4" strokeWidth={1.9} />
               {pick ? `Book ${pick.name}` : "Book"}
-            </Button>
+            </HeaderButton>
           </div>
         </div>
       )}
@@ -321,9 +318,7 @@ function ShipDialog({
       }}
       className="bg-void rounded-md border border-white/[0.09] p-5"
     >
-      <div className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
-        Mark shipped
-      </div>
+      <h2 className="text-bone mb-4 text-[15px] font-semibold">Mark shipped</h2>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <Field label="Courier">
           <Input
@@ -344,10 +339,10 @@ function ShipDialog({
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" variant="primary" size="sm" disabled={pending}>
+        <HeaderButton type="submit" variant="primary" disabled={pending}>
           <Truck className="size-4" strokeWidth={1.9} />
           Confirm shipped
-        </Button>
+        </HeaderButton>
         {children}
       </div>
     </form>
@@ -391,7 +386,7 @@ function InvoiceSection({
       <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
         <div className="mb-4 flex items-center gap-2.5">
           <FileText className="text-ember size-4" strokeWidth={1.9} />
-          <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">Invoice</h2>
+          <h2 className="text-bone text-[15px] font-semibold">Invoice</h2>
         </div>
         <p className="text-ash text-[13.5px]">
           Test-mode orders don&apos;t get tax invoices: no money changed hands.
@@ -406,9 +401,7 @@ function InvoiceSection({
       <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
         <div className="mb-4 flex items-center gap-2.5">
           <FileText className="text-ember size-4" strokeWidth={1.9} />
-          <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
-            Credit note
-          </h2>
+          <h2 className="text-bone text-[15px] font-semibold">Credit note</h2>
         </div>
         <div className="flex flex-col gap-2 text-[13.5px]">
           {credit.creditNoteNumber ? (
@@ -436,7 +429,7 @@ function InvoiceSection({
             href={`/api/admin/orders/${order.id}/credit-note`}
             target="_blank"
             rel="noreferrer"
-            className={buttonVariants({ variant: "primary", size: "sm" })}
+            className={headerButton({ variant: "primary" })}
             onClick={refreshSoon}
           >
             <Printer className="size-4" strokeWidth={1.9} />
@@ -451,7 +444,7 @@ function InvoiceSection({
     <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
       <div className="mb-4 flex items-center gap-2.5">
         <FileText className="text-ember size-4" strokeWidth={1.9} />
-        <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">Invoice</h2>
+        <h2 className="text-bone text-[15px] font-semibold">Invoice</h2>
       </div>
       <div className="flex flex-col gap-2 text-[13.5px]">
         {order.invoiceNumber ? (
@@ -480,16 +473,14 @@ function InvoiceSection({
           href={href}
           target="_blank"
           rel="noreferrer"
-          className={buttonVariants({ variant: "primary", size: "sm" })}
+          className={headerButton({ variant: "primary" })}
           // The first open issues the number; show it once it has.
           onClick={refreshSoon}
         >
           <Printer className="size-4" strokeWidth={1.9} />
           Print invoice
         </a>
-        <Button
-          variant="ghost"
-          size="sm"
+        <HeaderButton
           disabled={busy}
           onClick={() =>
             ask({
@@ -504,7 +495,7 @@ function InvoiceSection({
         >
           <Mail className="size-4" strokeWidth={1.9} />
           {order.invoiceEmailedAt ? "Email again" : "Email invoice"}
-        </Button>
+        </HeaderButton>
       </div>
     </section>
   )
@@ -557,36 +548,41 @@ export function OrderDetailView({ id }: { id: string }) {
   const back = (PAID_ORDER_STATUSES as readonly OrderStatus[]).includes(order.status)
     ? { href: "/admin/orders", label: "Orders" }
     : { href: "/admin/orders/all", label: "All orders" }
+  // As the order list reads them: Paid, Partially paid, Payment pending... and
+  // Unfulfilled, Packed, Fulfilled. Who cancelled one is the list's to say; here
+  // a cancelled order just reads Cancelled.
+  const payment = paymentState(order.status, order.paymentMethod)
+  const fulfilment = fulfilmentState(order.status, {
+    shipped: order.shipment != null && order.shipment.status.toUpperCase() !== "CANCELLED",
+    cancelledByStaff: true,
+  })
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       {dialog}
-      <div>
-        <Link
-          href={back.href}
-          className="text-ash hover:text-bone mb-5 inline-flex items-center gap-2 text-[13.5px] transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          {back.label}
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <h1 className="font-display text-bone text-[34px] leading-[1.04] sm:text-[42px]">
-            {order.number}
-          </h1>
-          <StatusBadge
-            status={order.status}
-            label={statusLabelFor(order.status, order.paymentMethod)}
-          />
-          <Badge variant={order.paymentMethod === "ONLINE" ? "muted" : "violet"}>
-            {PAYMENT_METHOD_LABEL[order.paymentMethod]}
-          </Badge>
-          {order.coupon ? <Badge variant="acid">{order.coupon.code}</Badge> : null}
-        </div>
-        <p className="text-dim mt-2 font-mono text-[12px]">
-          Placed {new Date(order.placedAt ?? order.createdAt).toLocaleString("en-IN")}
-        </p>
-      </div>
+      <PageHeader
+        icon={ShoppingBag}
+        parent={back}
+        title={<span className="font-mono">{order.number}</span>}
+        tags={
+          <>
+            <ToneBadge tone={PAYMENT_STATES[payment].tone}>
+              {PAYMENT_STATES[payment].label}
+            </ToneBadge>
+            <ToneBadge tone={FULFILMENT_STATES[fulfilment].tone}>
+              {order.status === "CANCELLED" ? "Cancelled" : FULFILMENT_STATES[fulfilment].label}
+            </ToneBadge>
+            {order.coupon ? <Badge variant="acid">{order.coupon.code}</Badge> : null}
+          </>
+        }
+        subtitle={`Placed ${new Date(order.placedAt ?? order.createdAt).toLocaleString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })} · ${PAYMENT_METHOD_LABEL[order.paymentMethod]}`}
+      />
 
       {/* Fulfilment timeline */}
       {!dead ? (
@@ -624,9 +620,8 @@ export function OrderDetailView({ id }: { id: string }) {
           {order.status === "PAID" ||
           order.status === "CONFIRMED" ||
           (order.status === "PENDING" && order.paymentMethod === "COD") ? (
-            <Button
+            <HeaderButton
               variant="primary"
-              size="sm"
               disabled={busy}
               onClick={() =>
                 ask({
@@ -639,12 +634,11 @@ export function OrderDetailView({ id }: { id: string }) {
             >
               <PackageCheck className="size-4" strokeWidth={1.9} />
               Mark packed
-            </Button>
+            </HeaderButton>
           ) : null}
           {order.status === "SHIPPED" ? (
-            <Button
+            <HeaderButton
               variant="primary"
-              size="sm"
               disabled={busy}
               onClick={() =>
                 ask({
@@ -657,14 +651,12 @@ export function OrderDetailView({ id }: { id: string }) {
             >
               <Home className="size-4" strokeWidth={1.9} />
               Mark delivered
-            </Button>
+            </HeaderButton>
           ) : null}
           {/* Unpaid only - a paid order comes back through Refund, which
               returns the money as well as the stock. */}
           {order.status === "PENDING" || order.status === "CONFIRMED" ? (
-            <Button
-              variant="ghost"
-              size="sm"
+            <HeaderButton
               disabled={busy}
               onClick={() =>
                 ask({
@@ -680,13 +672,11 @@ export function OrderDetailView({ id }: { id: string }) {
             >
               <Ban className="size-4" strokeWidth={1.9} />
               Cancel &amp; restock
-            </Button>
+            </HeaderButton>
           ) : null}
           {["PAID", "PACKED", "SHIPPED", "DELIVERED", "RETURNED"].includes(order.status) ||
           (order.status === "CANCELLED" && order.payments.some((p) => p.status === "CAPTURED")) ? (
-            <Button
-              variant="ghost"
-              size="sm"
+            <HeaderButton
               disabled={busy}
               onClick={() =>
                 ask({
@@ -718,7 +708,7 @@ export function OrderDetailView({ id }: { id: string }) {
             >
               <RotateCcw className="size-4" strokeWidth={1.9} />
               Refund
-            </Button>
+            </HeaderButton>
           ) : null}
         </div>
 
@@ -735,12 +725,12 @@ export function OrderDetailView({ id }: { id: string }) {
         ) : null}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Items */}
         <div className="bg-carbon rounded-md border border-white/[0.09]">
-          <div className="text-dim border-b border-white/[0.07] px-6 py-4 font-mono text-[10px] tracking-[0.16em] uppercase">
+          <h2 className="text-bone border-b border-white/[0.07] px-6 py-4 text-[15px] font-semibold">
             Items
-          </div>
+          </h2>
           <ul className="divide-y divide-white/[0.06]">
             {order.items.map((item) => (
               <li key={item.id} className="flex items-center gap-4 px-6 py-4">
@@ -788,7 +778,7 @@ export function OrderDetailView({ id }: { id: string }) {
             ) : null}
             <div className="mt-2 flex items-baseline justify-between border-t border-white/[0.07] pt-4">
               <span className="text-bone text-[15px] font-semibold">Total</span>
-              <Money value={order.total} className="font-display text-bone text-[28px]" />
+              <Money value={order.total} className="text-bone text-[22px] font-semibold" />
             </div>
             {due > 0 ? (
               <>
@@ -816,9 +806,7 @@ export function OrderDetailView({ id }: { id: string }) {
           <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
               <MapPin className="text-ember size-4" strokeWidth={1.9} />
-              <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
-                Ship to
-              </h2>
+              <h2 className="text-bone text-[15px] font-semibold">Ship to</h2>
             </div>
             <address className="text-bone text-[14px] leading-[1.7] not-italic">
               {addr.firstName} {addr.lastName}
@@ -848,9 +836,7 @@ export function OrderDetailView({ id }: { id: string }) {
           <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
               <CreditCard className="text-violet size-4" strokeWidth={1.9} />
-              <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
-                Payment
-              </h2>
+              <h2 className="text-bone text-[15px] font-semibold">Payment</h2>
             </div>
             {order.paymentMethod !== "ONLINE" ? (
               <p className={cn("text-ash text-[13.5px]", order.payments.length > 0 && "mb-4")}>
@@ -872,7 +858,7 @@ export function OrderDetailView({ id }: { id: string }) {
               <ul className="flex flex-col gap-3">
                 {order.payments.map((p) => (
                   <li key={p.gatewayOrderId} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
                       <span className="text-bone flex items-center gap-2 text-[13.5px] capitalize">
                         {p.gateway}
                         {/* Test money never arrives, so say so once live payments exist beside it. */}
@@ -900,9 +886,7 @@ export function OrderDetailView({ id }: { id: string }) {
             <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
               <div className="mb-4 flex items-center gap-2.5">
                 <Truck className="text-acid size-4" strokeWidth={1.9} />
-                <h2 className="text-dim font-mono text-[10px] tracking-[0.16em] uppercase">
-                  Shipment
-                </h2>
+                <h2 className="text-bone text-[15px] font-semibold">Shipment</h2>
               </div>
               <div className="flex flex-col gap-2 text-[13.5px]">
                 <Row label="Courier" value={order.shipment.courier} />
@@ -968,25 +952,15 @@ export function OrderDetailView({ id }: { id: string }) {
 
               {order.shipment.provider === "shiprocket" && order.shipment.awb ? (
                 <div className="mt-4 flex flex-wrap gap-2.5 border-t border-white/[0.07] pt-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => actions.refreshTracking.mutate()}
-                  >
+                  <HeaderButton disabled={busy} onClick={() => actions.refreshTracking.mutate()}>
                     <RefreshCw className="size-4" strokeWidth={1.9} />
                     Refresh tracking
-                  </Button>
+                  </HeaderButton>
                   {order.status === "SHIPPED" && !order.shipment.labelUrl ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => actions.book.mutate({})}
-                    >
+                    <HeaderButton disabled={busy} onClick={() => actions.book.mutate({})}>
                       <FileText className="size-4" strokeWidth={1.9} />
                       Get label
-                    </Button>
+                    </HeaderButton>
                   ) : null}
                 </div>
               ) : null}

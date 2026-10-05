@@ -4,9 +4,8 @@ import * as React from "react"
 import { KeyRound, ShieldOff, UserPlus } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
-import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { HeaderButton } from "@/components/ui/header-button"
 import { Field, Input } from "@/components/ui/input"
 import {
   useStaff,
@@ -50,9 +49,7 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
       }}
       className="rounded-card bg-carbon border border-white/[0.09] p-6"
     >
-      <h2 className="font-display text-bone mb-5 text-[22px] leading-[1.08] uppercase">
-        Add an employee
-      </h2>
+      <h2 className="text-bone mb-5 text-[15px] font-semibold">Add an employee</h2>
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2">
         <Field label="Name" error={fields.name}>
@@ -103,17 +100,16 @@ function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void 
       </fieldset>
 
       <div className="flex gap-2.5">
-        <Button
+        <HeaderButton
           type="submit"
           variant="primary"
-          size="sm"
           disabled={create.isPending || roleIds.length === 0}
         >
           Add employee
-        </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={onDone}>
+        </HeaderButton>
+        <HeaderButton type="button" variant="quiet" onClick={onDone}>
           Cancel
-        </Button>
+        </HeaderButton>
       </div>
     </form>
   )
@@ -140,19 +136,11 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="px-3"
-            disabled={busy}
-            onClick={() => setResetting((v) => !v)}
-          >
+          <HeaderButton className="px-3" disabled={busy} onClick={() => setResetting((v) => !v)}>
             <KeyRound className="size-3.5" strokeWidth={1.9} />
             Reset password
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+          </HeaderButton>
+          <HeaderButton
             className="px-3"
             disabled={busy}
             onClick={() =>
@@ -167,7 +155,7 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
           >
             <ShieldOff className="size-3.5" strokeWidth={1.9} />
             Revoke
-          </Button>
+          </HeaderButton>
         </div>
       </div>
 
@@ -192,9 +180,9 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
               autoComplete="new-password"
             />
           </Field>
-          <Button type="submit" variant="primary" size="sm" disabled={busy}>
+          <HeaderButton type="submit" variant="primary" disabled={busy}>
             Set
-          </Button>
+          </HeaderButton>
         </form>
       ) : null}
 
@@ -225,11 +213,8 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
   )
 }
 
-/**
- * Staff and roles. `embedded` when it is a tab of Settings, which has the
- * page's heading already.
- */
-export function StaffSettings({ embedded = false }: { embedded?: boolean }) {
+/** Staff and roles: the Team tab of Settings, under the page's own heading. */
+export function StaffSettings() {
   const { data, isLoading, isError, error } = useStaff()
   const [adding, setAdding] = React.useState(false)
   const { ask, dialog } = useConfirm()
@@ -256,30 +241,24 @@ export function StaffSettings({ embedded = false }: { embedded?: boolean }) {
   const roles = data?.roles ?? []
 
   const addButton = !adding ? (
-    <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
+    <HeaderButton variant="primary" onClick={() => setAdding(true)}>
       <UserPlus className="size-4" strokeWidth={1.9} />
       Add employee
-    </Button>
+    </HeaderButton>
   ) : null
   const description =
     "Who can sign in, and what each of them can do. A role is a bundle of permissions, so access is granted by job rather than one checkbox at a time."
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       {dialog}
-      {embedded ? (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="font-display text-bone text-[22px] leading-[1.08] uppercase">
-              Staff and roles
-            </h2>
-            <p className="text-ash mt-2 max-w-[560px] text-[13.5px] leading-[1.6]">{description}</p>
-          </div>
-          {addButton}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-bone text-[15px] font-semibold">Staff and roles</h2>
+          <p className="text-ash mt-1.5 max-w-[560px] text-[13px] leading-[1.6]">{description}</p>
         </div>
-      ) : (
-        <PageHeader title="Staff and roles" description={description} actions={addButton} />
-      )}
+        {addButton}
+      </div>
 
       {adding ? <AddStaffForm roles={roles} onDone={() => setAdding(false)} /> : null}
 
@@ -290,9 +269,7 @@ export function StaffSettings({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
-        <h2 className="text-dim mb-4 font-mono text-[10px] tracking-[0.16em] uppercase">
-          What each role can do
-        </h2>
+        <h2 className="text-bone mb-4 text-[15px] font-semibold">What each role can do</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           {roles.map((r) => (
             <div key={r.id}>

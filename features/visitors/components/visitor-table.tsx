@@ -2,16 +2,16 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { Users } from "lucide-react"
 
-import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { DataTable, type Column } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
-import { Select } from "@/components/ui/select"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
 import { DeviceIcon } from "@/features/visitors/components/device-icon"
 import {
   useVisitors,
@@ -31,13 +31,14 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { regionOf } from "@/lib/india"
 
-const VIEWS: Array<{ id: VisitorView; label: string; tone: string }> = [
-  { id: "all", label: "All visitors", tone: "text-bone" },
-  { id: "known", label: "Accepted cookies", tone: "text-acid" },
-  { id: "anonymous", label: "Anonymous", tone: "text-ash" },
-  { id: "contact", label: "With contact details", tone: "text-acid" },
-  { id: "cart", label: "Items in cart", tone: "text-ember" },
-  { id: "bought", label: "Bought", tone: "text-acid" },
+const VIEWS: Array<{ id: VisitorView; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "known", label: "Accepted cookies" },
+  // Each anonymous row is one visit, not one person: the count says so.
+  { id: "anonymous", label: "Anonymous visits" },
+  { id: "contact", label: "With contact details" },
+  { id: "cart", label: "Items in cart" },
+  { id: "bought", label: "Bought" },
 ]
 
 const PERIODS = [
@@ -67,6 +68,7 @@ export function VisitorTable() {
   const view = (VIEWS.some((v) => v.id === state.view) ? state.view : "all") as VisitorView
   const days = PERIODS.some((p) => p.value === state.days) ? state.days : "30"
   const { data, isLoading, isError, error } = useVisitors({ view, days, q: state.q })
+  const table = React.useRef<DataTableHandle<VisitorRow>>(null)
 
   const columns: Column<VisitorRow>[] = [
     {
@@ -173,49 +175,13 @@ export function VisitorTable() {
   ]
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Customers"
+        icon={Users}
         title="Visitors"
-        description="Everyone who has browsed the shop. A visitor who accepted cookies is one row across all their visits, with their IP address, device and anything typed at checkout. Everyone else is counted one visit at a time, anonymously. Staff signed in to the admin are never counted."
+        parent={{ label: "Customers", href: "/admin/customers" }}
+        actions={<ExportMenu table={table} noun={["visitor", "visitors"]} />}
       />
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {VIEWS.map((v) => (
-          <BoardTile
-            key={v.id}
-            label={v.label}
-            value={data?.counts?.[v.id] ?? 0}
-            empty={!data?.counts?.[v.id]}
-            tone={v.tone}
-            active={view === v.id}
-            onClick={() => setState({ view: v.id })}
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-[420px]">
-          <Search
-            className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
-            strokeWidth={1.9}
-          />
-          <Input
-            value={rawQuery}
-            onChange={(e) => setRawQuery(e.target.value)}
-            placeholder="Name, email, phone, city, IP or source"
-            aria-label="Search visitors"
-            className="pl-11"
-          />
-        </div>
-        <Select
-          label="Period"
-          value={days}
-          onChange={(next) => setState({ days: next })}
-          className="w-full sm:w-[220px]"
-          options={PERIODS}
-        />
-      </div>
 
       {isError ? (
         <EmptyState
@@ -224,16 +190,48 @@ export function VisitorTable() {
         />
       ) : (
         <DataTable
+          handle={table}
           rows={data?.data ?? []}
           columns={columns}
           rowId={(v) => v.id}
           exportName="visitors"
+          exportButtons={false}
+          pageKey={`${view}|${days}|${state.q}`}
+          bar={
+            <div className="flex items-center gap-2">
+              <ViewMenu
+                value={view}
+                onChange={(v) => setState({ view: v })}
+                options={VIEWS.map((v) => ({
+                  value: v.id,
+                  label: v.label,
+                  count: data?.counts?.[v.id],
+                }))}
+              />
+              <TableSearch
+                value={rawQuery}
+                onChange={setRawQuery}
+                placeholder="Name, email, phone, city or IP"
+                label="Search visitors by name, email, phone, city, IP address or source"
+              />
+            </div>
+          }
+          // Its own menu on the right, so the view and the search keep the
+          // first row to themselves on a phone.
+          barEnd={
+            <ViewMenu
+              label="Period"
+              value={days}
+              onChange={(next) => setState({ days: next })}
+              options={PERIODS}
+            />
+          }
           loading={isLoading}
           total={data?.pagination?.total}
           empty={
             state.q || view !== "all"
-              ? "Nobody matches. Try another tile, a longer period, or clear the search."
-              : "No visitors in this period yet. They appear as soon as someone opens the shop."
+              ? "Nobody matches. Try another view, a longer period, or clear the search."
+              : "No visitors in this period yet. They appear as soon as someone opens the shop. Staff signed in to the admin are never counted."
           }
           exportColumns={[
             { header: "Visitor", value: (v) => visitorName(v) },

@@ -4,8 +4,8 @@ import * as React from "react"
 import { Check, Copy, Eye, EyeOff } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
+import { HeaderButton } from "@/components/ui/header-button"
 import type {
   SecretState,
   SettingSource,
@@ -28,9 +28,9 @@ export function Panel({
     <section className="rounded-card bg-carbon border border-white/[0.09] p-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-[640px]">
-          <h2 className="font-display text-bone text-[22px] leading-[1.08] uppercase">{title}</h2>
+          <h2 className="text-bone text-[15px] font-semibold">{title}</h2>
           {description ? (
-            <div className="text-ash mt-2 text-[13.5px] leading-[1.6]">{description}</div>
+            <div className="text-ash mt-1.5 text-[13px] leading-[1.6]">{description}</div>
           ) : null}
         </div>
         {aside}
@@ -160,10 +160,8 @@ export function CopyLine({ label, value }: { label: string; value: string }) {
       <span className="text-dim font-mono text-[10.5px] tracking-[0.16em] uppercase">{label}</span>
       <div className="bg-void flex min-w-0 items-center gap-2 rounded-md border border-white/[0.09] py-1.5 pr-1.5 pl-4">
         <code className="text-bone min-w-0 flex-1 truncate font-mono text-[13px]">{value}</code>
-        <Button
+        <HeaderButton
           type="button"
-          variant="ghost"
-          size="xs"
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(value)
@@ -180,7 +178,7 @@ export function CopyLine({ label, value }: { label: string; value: string }) {
             <Copy className="size-3.5" strokeWidth={1.9} />
           )}
           {copied ? "Copied" : "Copy"}
-        </Button>
+        </HeaderButton>
       </div>
     </div>
   )

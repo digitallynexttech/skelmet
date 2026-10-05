@@ -2,19 +2,20 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { ShoppingBag } from "lucide-react"
 
-import { BoardTile } from "@/components/shared/board-tile"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
-import { DataTable, type Column } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
+import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
+import { ExportMenu } from "@/components/ui/export-menu"
+import { TableSearch } from "@/components/ui/table-search"
+import { ViewMenu } from "@/components/ui/view-menu"
 import { useUnpaidOrders, type UnpaidOrderRow } from "@/features/orders/hooks/use-orders"
 import { ContactActions } from "@/features/visitors/components/contact-actions"
 import { LeftCartsTable } from "@/features/visitors/components/left-carts-table"
-import { useLeftCarts } from "@/features/visitors/hooks/use-visitors"
+import { useLeftCarts, type LeftCartRow } from "@/features/visitors/hooks/use-visitors"
 import { when } from "@/features/visitors/lib/format"
 import { useUrlState } from "@/hooks/use-url-state"
 import { cn } from "@/lib/utils"
@@ -113,7 +114,16 @@ function Tabs({
   )
 }
 
-function UnpaidOrders({ show, onShow }: { show: Show; onShow: (show: Show) => void }) {
+function UnpaidOrders({
+  show,
+  onShow,
+  handle,
+}: {
+  show: Show
+  onShow: (show: Show) => void
+  /** For Export in the page's header. */
+  handle: React.Ref<DataTableHandle<UnpaidOrderRow>>
+}) {
   const { data, isLoading, isError, error } = useUnpaidOrders()
   const [query, setQuery] = React.useState("")
 
@@ -131,7 +141,6 @@ function UnpaidOrders({ show, onShow }: { show: Show; onShow: (show: Show) => vo
   }, [data, show, query])
 
   const summary = data?.summary
-  const lost = summary?.lost ?? 0
 
   const columns: Column<UnpaidOrderRow>[] = [
     {
@@ -251,70 +260,50 @@ function UnpaidOrders({ show, onShow }: { show: Show; onShow: (show: Show) => vo
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <BoardTile
-          label="All unpaid"
-          value={data?.data.length ?? 0}
-          empty={!data?.data.length}
-          active={show === "all"}
-          onClick={() => onShow("all")}
-        />
-        <BoardTile
-          label="Lost - not back yet"
-          value={lost}
-          empty={!lost}
-          tone="text-magenta"
-          active={show === "lost"}
-          onClick={() => onShow("lost")}
-        />
-        <BoardTile
-          label="Recovered - paid later"
-          value={summary?.recovered ?? 0}
-          empty={!summary?.recovered}
-          tone="text-acid"
-          active={show === "recovered"}
-          onClick={() => onShow("recovered")}
-        />
-        <BoardTile
-          label="Still awaiting payment"
-          value={summary?.open ?? 0}
-          empty={!summary?.open}
-          tone="text-ember"
-          active={show === "open"}
-          onClick={() => onShow("open")}
-        />
-        <BoardTile
-          label="Value not recovered"
-          value={<Money value={summary?.lostValue ?? 0} />}
-          empty={!Number(summary?.lostValue)}
-          tone="text-magenta"
-        />
-      </div>
-
-      <div className="relative w-full sm:max-w-[420px]">
-        <Search
-          className="text-dim pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
-          strokeWidth={1.9}
-        />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="SKM-2026-4F2K, name, email or phone"
-          aria-label="Search unpaid orders"
-          className="pl-11"
-        />
-      </div>
-
+    <div className="flex flex-col gap-3">
       <DataTable
+        handle={handle}
         rows={rows}
         columns={columns}
         rowId={(o) => o.id}
         exportName="unpaid-orders"
+        exportButtons={false}
+        pageKey={`${show}|${query}`}
+        bar={
+          <div className="flex items-center gap-2">
+            <ViewMenu
+              value={show}
+              onChange={onShow}
+              options={[
+                { value: "all", label: "All", count: data?.data.length },
+                { value: "lost", label: "Lost - not back yet", count: summary?.lost },
+                { value: "recovered", label: "Recovered - paid later", count: summary?.recovered },
+                { value: "open", label: "Still awaiting payment", count: summary?.open },
+              ]}
+            />
+            <TableSearch
+              value={query}
+              onChange={setQuery}
+              placeholder="Order no., name, email or phone"
+              label="Search unpaid orders by order number, name, email, phone or city"
+            />
+          </div>
+        }
+        // The board's value tile, as a line: it filters nothing. There from
+        // the first render, so the bar does not rearrange itself when it loads.
+        barEnd={
+          <span className="text-dim text-[12.5px] whitespace-nowrap">
+            {summary ? (
+              <>
+                <Money value={summary.lostValue} className="text-ash font-mono" /> not recovered
+              </>
+            ) : null}
+          </span>
+        }
         loading={isLoading}
         empty={
           query || show !== "all"
-            ? "Nothing matches. Try another tile or clear the search."
+            ? "Nothing matches. Try another view or clear the search."
             : "No unpaid orders. Every order placed so far was paid for."
         }
         exportColumns={[
@@ -332,6 +321,10 @@ function UnpaidOrders({ show, onShow }: { show: Show; onShow: (show: Show) => vo
           { header: "Placed", value: (o) => when(o.createdAt) },
         ]}
       />
+      <p className="text-dim text-[12.5px] leading-[1.5]">
+        An unpaid order is cancelled after an hour, to put its stock back on sale. All orders lists
+        it as Cancelled.
+      </p>
     </div>
   )
 }
@@ -352,12 +345,23 @@ export function AbandonedCarts() {
   const unpaid = useUnpaidOrders()
   const carts = useLeftCarts()
 
+  // One per tab: Export in the header takes the table of the tab that is open.
+  const unpaidTable = React.useRef<DataTableHandle<UnpaidOrderRow>>(null)
+  const cartsTable = React.useRef<DataTableHandle<LeftCartRow>>(null)
+
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Orders"
+        icon={ShoppingBag}
         title="Abandoned carts"
-        description="People who got as far as paying, or as far as the cart, and stopped. Unpaid orders are cancelled after an hour to put their stock back on sale; All orders lists them as Cancelled."
+        parent={{ label: "Orders", href: "/admin/orders" }}
+        actions={
+          active === "unpaid" ? (
+            <ExportMenu key="unpaid" table={unpaidTable} noun={["unpaid order", "unpaid orders"]} />
+          ) : (
+            <ExportMenu key="carts" table={cartsTable} noun={["cart", "carts"]} />
+          )
+        }
       />
 
       <Tabs
@@ -368,9 +372,13 @@ export function AbandonedCarts() {
 
       <div id={`panel-${active}`} role="tabpanel" aria-labelledby={`tab-${active}`}>
         {active === "unpaid" ? (
-          <UnpaidOrders show={show} onShow={(next) => setState({ show: next })} />
+          <UnpaidOrders
+            show={show}
+            onShow={(next) => setState({ show: next })}
+            handle={unpaidTable}
+          />
         ) : (
-          <LeftCartsTable />
+          <LeftCartsTable handle={cartsTable} />
         )}
       </div>
     </div>

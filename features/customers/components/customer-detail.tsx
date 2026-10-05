@@ -2,9 +2,12 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowLeft, Mail, MapPin, Phone, ShoppingBag } from "lucide-react"
+import { MapPin, ShoppingBag, Users } from "lucide-react"
 
+import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
+import { PageHeader } from "@/components/shared/page-header"
+import { StatTile } from "@/components/shared/stat-tile"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import {
@@ -18,14 +21,14 @@ import type { OrderStatus } from "@/lib/constants"
 
 /**
  * One customer: who they are, where their parcels go, and what they have
- * bought. Reached from the customer list, which is the only way in — there
+ * bought. Reached from the customer list, which is the only way in - there
  * are no customer accounts, so nobody arrives here but staff.
  */
 
 const day = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-    : "—"
+    : "-"
 
 /** The order's way of paying, as the orders table names it. */
 const paymentLabel = (method: string) => PAYMENT_METHOD_SHORT[method as PaymentMethod] ?? method
@@ -37,17 +40,6 @@ const when = (iso: string) =>
     hour: "2-digit",
     minute: "2-digit",
   })
-
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-carbon rounded-md border border-white/[0.09] px-5 py-4">
-      <div className="text-dim mb-1.5 font-mono text-[10px] tracking-[0.16em] uppercase">
-        {label}
-      </div>
-      <div className="text-bone text-[20px] leading-none font-semibold">{children}</div>
-    </div>
-  )
-}
 
 export function CustomerDetailView({ id }: { id: string }) {
   const [data, setData] = React.useState<CustomerDetail | null>(null)
@@ -144,8 +136,8 @@ export function CustomerDetailView({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="h-12 w-64 animate-pulse rounded-md bg-white/5" />
+      <div className="flex flex-col gap-5">
+        <div className="h-7 w-64 animate-pulse rounded-md bg-white/5" />
         <div className="grid gap-4 sm:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="h-20 animate-pulse rounded-md bg-white/5" />
@@ -159,76 +151,64 @@ export function CustomerDetailView({ id }: { id: string }) {
   if (error || !data) {
     return (
       <div className="flex flex-col gap-5">
-        <Link
-          href="/admin/customers"
-          className="text-ash hover:text-bone inline-flex items-center gap-2 text-[13.5px] transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          All customers
-        </Link>
-        <div className="border-magenta/35 bg-magenta/[0.06] rounded-md border p-5">
-          <p className="text-bone text-[14px]">{error ?? "Could not load customer."}</p>
-        </div>
+        <PageHeader
+          icon={Users}
+          title="Customer"
+          parent={{ label: "Customers", href: "/admin/customers" }}
+        />
+        <EmptyState title="Could not load this customer" description={error ?? undefined} />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href="/admin/customers"
-          className="text-ash hover:text-bone mb-4 inline-flex items-center gap-2 text-[13.5px] transition-colors"
-        >
-          <ArrowLeft className="size-4" strokeWidth={2} />
-          All customers
-        </Link>
-
-        <h1 className="font-display text-bone mb-2 text-[34px] leading-[1.05] uppercase sm:text-[40px]">
-          {data.name ?? "Unnamed customer"}
-        </h1>
-
-        <div className="text-ash flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px]">
-          <a
-            href={`mailto:${data.email}`}
-            className="hover:text-bone flex items-center gap-1.5 font-mono text-[12.5px] transition-colors"
-          >
-            <Mail className="size-3.5" strokeWidth={1.9} />
-            {data.email}
-          </a>
-          {data.phone ? (
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        icon={Users}
+        title={data.name ?? "Unnamed customer"}
+        parent={{ label: "Customers", href: "/admin/customers" }}
+        subtitle={
+          <>
             <a
-              href={`tel:${data.phone}`}
-              className="hover:text-bone flex items-center gap-1.5 font-mono text-[12.5px] transition-colors"
+              href={`mailto:${data.email}`}
+              className="text-ash hover:text-bone font-mono text-[12.5px] transition-colors"
             >
-              <Phone className="size-3.5" strokeWidth={1.9} />
-              {data.phone}
+              {data.email}
             </a>
-          ) : null}
-          <span className="text-dim font-mono text-[12px]">
-            Customer since {day(data.createdAt)}
-          </span>
-        </div>
-      </div>
+            {data.phone ? (
+              <>
+                {" · "}
+                <a
+                  href={`tel:${data.phone}`}
+                  className="text-ash hover:text-bone font-mono text-[12.5px] transition-colors"
+                >
+                  {data.phone}
+                </a>
+              </>
+            ) : null}
+            {` · Customer since ${day(data.createdAt)}`}
+          </>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Orders">{data.summary.orderCount}</Stat>
-        <Stat label="Total spent">
+        <StatTile label="Orders">{data.summary.orderCount}</StatTile>
+        <StatTile label="Total spent">
           <Money value={data.summary.totalSpent} />
-        </Stat>
-        <Stat label="Average order">
+        </StatTile>
+        <StatTile label="Average order">
           <Money value={data.summary.averageOrder} />
-        </Stat>
-        <Stat label="Last order">
+        </StatTile>
+        <StatTile label="Last order">
           <span className="font-mono text-[15px]">{day(data.summary.lastOrderAt)}</span>
-        </Stat>
+        </StatTile>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
         <div className="bg-carbon rounded-md border border-white/[0.09] p-5">
-          <div className="text-dim mb-4 flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] uppercase">
-            <MapPin className="text-ember size-3.5" strokeWidth={1.9} />
-            Ships to
+          <div className="mb-4 flex items-center gap-2.5">
+            <MapPin className="text-ember size-4" strokeWidth={1.9} />
+            <h2 className="text-bone text-[15px] font-semibold">Ships to</h2>
           </div>
           {data.address ? (
             <address className="text-bone text-[14px] leading-[1.7] not-italic">
@@ -260,15 +240,16 @@ export function CustomerDetailView({ id }: { id: string }) {
         </div>
 
         <div>
-          <div className="text-dim mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] uppercase">
-            <ShoppingBag className="text-ember size-3.5" strokeWidth={1.9} />
-            Order history
+          <div className="mb-3 flex items-center gap-2.5">
+            <ShoppingBag className="text-ember size-4" strokeWidth={1.9} />
+            <h2 className="text-bone text-[15px] font-semibold">Order history</h2>
           </div>
           <DataTable
             rows={data.orders}
             columns={columns}
             rowId={(o) => o.id}
             exportName={`orders-${data.email}`}
+            compact
             pageSize={10}
             empty="No orders yet."
             exportColumns={[
