@@ -255,7 +255,7 @@ export function PostManager() {
     <div className="flex flex-col gap-7">
       {dialog}
       <PageHeader
-        eyebrow="Marketing"
+        eyebrow="Console"
         title="Blog"
         description="Posts are written in the Studio. From here each one is published, given a time to go live, or taken down. A scheduled post goes on the site by itself when its time comes."
         actions={

@@ -164,7 +164,7 @@ export function CustomerDetailView({ id }: { id: string }) {
           className="text-ash hover:text-bone inline-flex items-center gap-2 text-[13.5px] transition-colors"
         >
           <ArrowLeft className="size-4" strokeWidth={2} />
-          All buyers
+          All customers
         </Link>
         <div className="border-magenta/35 bg-magenta/[0.06] rounded-md border p-5">
           <p className="text-bone text-[14px]">{error ?? "Could not load customer."}</p>
@@ -181,7 +181,7 @@ export function CustomerDetailView({ id }: { id: string }) {
           className="text-ash hover:text-bone mb-4 inline-flex items-center gap-2 text-[13.5px] transition-colors"
         >
           <ArrowLeft className="size-4" strokeWidth={2} />
-          All buyers
+          All customers
         </Link>
 
         <h1 className="font-display text-bone mb-2 text-[34px] leading-[1.05] uppercase sm:text-[40px]">

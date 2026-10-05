@@ -288,7 +288,7 @@ export function CouponHistoryView({ code }: { code: string }) {
       {back}
 
       <PageHeader
-        eyebrow="Discount code"
+        eyebrow="Offers & codes"
         title={coupon.code}
         description={`${termsText(coupon)}. ${
           coupon.expiresAt ? `Expires ${day(coupon.expiresAt)}` : "No expiry"

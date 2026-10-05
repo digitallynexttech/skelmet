@@ -129,7 +129,7 @@ function ProductCard({ product }: { product: ProductRow }) {
   const busy = updateProduct.isPending || updateVariant.isPending || adjustStock.isPending
 
   return (
-    <article className="rounded-md bg-carbon border border-white/[0.09]">
+    <article className="bg-carbon rounded-md border border-white/[0.09]">
       <header className="flex flex-wrap items-center gap-4 border-b border-white/[0.07] px-6 py-5">
         <button
           type="button"
@@ -240,7 +240,7 @@ export function ProductManager() {
     return (
       <div className="flex flex-col gap-5">
         <div className="h-14 w-72 animate-pulse rounded-md bg-white/5" />
-        <div className="rounded-md h-72 animate-pulse bg-white/5" />
+        <div className="h-72 animate-pulse rounded-md bg-white/5" />
       </div>
     )
   }
@@ -259,7 +259,7 @@ export function ProductManager() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Catalogue"
+        eyebrow="Console"
         title="Products"
         description="Prices, stock and what is live on the storefront. Stock moves by an amount in or out, so two people counting the same shelf add up instead of overwriting each other."
       />

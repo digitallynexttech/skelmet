@@ -5,92 +5,15 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import {
-  ChevronRight,
-  LayoutDashboard,
-  LogOut,
-  Mail,
-  MessageSquare,
-  Newspaper,
-  Package,
-  Percent,
-  Settings,
-  ShoppingBag,
-  Users,
-  X,
-  type LucideIcon,
-} from "lucide-react"
+import { ChevronRight, LogOut, X } from "lucide-react"
 
+import { NAV, type NavChild } from "@/components/layout/admin-nav"
 import { useAdminShell } from "@/components/layout/admin-shell"
 import { Wordmark } from "@/components/shared/wordmark"
 import { siteConfig } from "@/config/site"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { PERMISSIONS, type Permission } from "@/lib/constants"
+import type { Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-
-type NavChild = { label: string; href: string }
-
-type NavItem = {
-  label: string
-  href: string
-  icon: LucideIcon
-  scope: Permission
-  /** Further pages of the section, listed under it. The item itself is the section's own page. */
-  children?: NavChild[]
-}
-
-const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, scope: PERMISSIONS.DASHBOARD_READ },
-  {
-    label: "Orders",
-    href: "/admin/orders",
-    icon: ShoppingBag,
-    scope: PERMISSIONS.ORDER_READ,
-    children: [
-      { label: "All orders", href: "/admin/orders/all" },
-      { label: "Abandoned carts", href: "/admin/orders/abandoned" },
-    ],
-  },
-  { label: "Products", href: "/admin/products", icon: Package, scope: PERMISSIONS.PRODUCT_WRITE },
-  // Gated on ORDER_READ, not a scope of its own: a customer list is the
-  // same personal data the orders screen already shows, just grouped by
-  // person, so anyone who can read orders can already see all of it.
-  // Visitors ride along: the same shop's shoppers, most of whom never got
-  // as far as an order.
-  {
-    label: "Customers",
-    href: "/admin/customers",
-    icon: Users,
-    scope: PERMISSIONS.ORDER_READ,
-    children: [{ label: "Visitors", href: "/admin/customers/visitors" }],
-  },
-  {
-    label: "Offers & codes",
-    href: "/admin/coupons",
-    icon: Percent,
-    scope: PERMISSIONS.COUPON_READ,
-  },
-  {
-    label: "Inquiries",
-    href: "/admin/inquiries",
-    icon: MessageSquare,
-    scope: PERMISSIONS.INQUIRY_READ,
-  },
-  {
-    label: "Newsletter",
-    href: "/admin/newsletter",
-    icon: Mail,
-    scope: PERMISSIONS.NEWSLETTER_READ,
-    children: [{ label: "Write an email", href: "/admin/newsletter/emails" }],
-  },
-  { label: "Blog", href: "/admin/blog", icon: Newspaper, scope: PERMISSIONS.POST_READ },
-  {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-    scope: PERMISSIONS.SETTING_READ,
-  },
-]
 
 /**
  * The "↳" from a section down into one of its pages, as in the KYG console.
@@ -178,8 +101,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {items.map((item) => {
-          const active =
-            item.href === "/admin" ? pathname === "/admin" : within(pathname, item.href)
+          const active = within(pathname, item.href)
           const current =
             item.children && active ? currentChild(pathname, item.children) : undefined
           // The section's own page, rather than one of the pages under it.

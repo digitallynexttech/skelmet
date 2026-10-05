@@ -179,7 +179,11 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader eyebrow="Console" title={copy.title} description={copy.description} />
+      <PageHeader
+        eyebrow={scope === "all" ? "Orders" : "Console"}
+        title={copy.title}
+        description={copy.description}
+      />
 
       {/* The board. Every status this page covers is here whether or not it
           has anything in it, and each tile is also the filter — the dropdown

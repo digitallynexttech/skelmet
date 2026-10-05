@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Search } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
+import { PageHeader } from "@/components/shared/page-header"
 import { DataTable, type Column } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
 import type { CustomerRow } from "@/features/customers/server/customers.service"
@@ -89,9 +90,7 @@ export function CustomerTable() {
       key: "phone",
       header: "Phone",
       value: (c) => c.phone ?? "",
-      cell: (c) => (
-        <span className="text-ash font-mono text-[12.5px]">{c.phone ?? "-"}</span>
-      ),
+      cell: (c) => <span className="text-ash font-mono text-[12.5px]">{c.phone ?? "-"}</span>,
     },
     {
       key: "city",
@@ -132,20 +131,14 @@ export function CustomerTable() {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="text-dim mb-2 font-mono text-[10.5px] tracking-[0.18em] uppercase">
-          Customers
-        </div>
-        <h1 className="font-display text-bone mb-1 text-[38px] leading-[1.02] uppercase sm:text-[44px]">
-          Buyers
-        </h1>
-        <p className="text-ash text-[14.5px]">
-          {total} {total === 1 ? "person has" : "people have"} paid for an order. No accounts -
-          these are written at checkout, and listed here once the payment lands.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Console"
+        title="Customers"
+        description={`${total} ${total === 1 ? "person has" : "people have"} paid for an order. No accounts - these are written at checkout, and listed here once the payment lands.`}
+        className="mb-6"
+      />
 
-      <div className="rounded-md bg-carbon relative mb-4 flex items-center gap-2.5 border border-white/10 px-4">
+      <div className="bg-carbon relative mb-4 flex items-center gap-2.5 rounded-md border border-white/10 px-4">
         <Search className="text-dim size-4 shrink-0" strokeWidth={1.9} />
         <Input
           value={search}
