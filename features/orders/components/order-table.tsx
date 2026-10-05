@@ -19,7 +19,7 @@ import { toast } from "sonner"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
-import { StatusBadge } from "@/components/shared/status-badge"
+import { ToneBadge, type Tone } from "@/components/shared/status-badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
 import {
@@ -32,12 +32,18 @@ import {
 } from "@/components/ui/menu"
 import { Select } from "@/components/ui/select"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
-import { PAYMENT_METHOD_SHORT, statusLabelFor } from "@/features/checkout/payment-options"
+import { PAYMENT_METHOD_SHORT } from "@/features/checkout/payment-options"
 import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
+import {
+  DELIVERY_STATES,
+  FULFILMENT_STATES,
+  PAYMENT_STATES,
+} from "@/features/orders/order-progress"
 import { ORDER_VIEWS, viewsIn, type OrderView } from "@/features/orders/order-views"
 import { ORDER_STATUS_LABELS, statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
@@ -80,6 +86,27 @@ function fmtDate(iso: string) {
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+/** The money the courier is still to collect, while it still is. */
+function dueAtDoor(o: OrderRow): number {
+  const due = Number(o.dueOnDelivery)
+  const owed = o.payment === "pending" || o.payment === "partially_paid"
+  return owed && o.status !== "RETURNED" && due > 0 ? due : 0
+}
+
+/** How the payment is made, and what is left to collect. */
+function paymentNote(o: OrderRow): string {
+  const due = dueAtDoor(o)
+  const method = PAYMENT_METHOD_SHORT[o.paymentMethod]
+  return due > 0 ? `${method} · ${formatMoney(due)} due` : method
+}
+
+const DOT: Record<Tone, string> = {
+  neutral: "bg-ash/60",
+  accent: "bg-ember",
+  success: "bg-acid",
+  danger: "bg-magenta",
+}
 
 export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   const copy = SCOPES[scope]
@@ -182,34 +209,39 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       ),
     },
     {
-      key: "phone",
-      header: "Phone",
-      value: (o) => o.phone,
-      cell: (o) => <span className="text-ash font-mono text-[12px]">{o.phone || "-"}</span>,
-    },
-    {
-      key: "city",
-      header: "City",
-      defaultHidden: true,
-      value: (o) => o.city,
-      cell: (o) => <span className="text-ash text-[13.5px]">{o.city || "-"}</span>,
-    },
-    {
-      key: "status",
-      header: "Status",
-      value: (o) => o.status,
+      key: "total",
+      header: "Total",
+      align: "right",
+      // Money is a string on the wire; as text "₹1,000" sorts below "₹2".
+      value: (o) => Number(o.total),
       cell: (o) => (
-        <StatusBadge status={o.status} label={statusLabelFor(o.status, o.paymentMethod)} />
+        <span className="text-bone font-mono text-[13.5px]">
+          <Money value={o.total} />
+        </span>
+      ),
+    },
+    // Shopify's three statuses in place of the order's one (order-progress.ts).
+    {
+      key: "payment",
+      header: "Payment status",
+      value: (o) => PAYMENT_STATES[o.payment].label,
+      cell: (o) => (
+        <span className="flex flex-col items-start gap-1.5">
+          <ToneBadge tone={PAYMENT_STATES[o.payment].tone}>
+            {PAYMENT_STATES[o.payment].label}
+          </ToneBadge>
+          <span className="text-dim font-mono text-[11px]">{paymentNote(o)}</span>
+        </span>
       ),
     },
     {
-      key: "payment",
-      header: "Payment",
-      value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod],
+      key: "fulfilment",
+      header: "Fulfilment status",
+      value: (o) => FULFILMENT_STATES[o.fulfilment].label,
       cell: (o) => (
-        <span className="text-ash font-mono text-[12px]">
-          {PAYMENT_METHOD_SHORT[o.paymentMethod]}
-        </span>
+        <ToneBadge tone={FULFILMENT_STATES[o.fulfilment].tone}>
+          {FULFILMENT_STATES[o.fulfilment].label}
+        </ToneBadge>
       ),
     },
     {
@@ -222,16 +254,36 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
       ),
     },
     {
-      key: "total",
-      header: "Total",
-      align: "right",
-      // Money is a string on the wire; as text "₹1,000" sorts below "₹2".
-      value: (o) => Number(o.total),
-      cell: (o) => (
-        <span className="text-bone font-mono text-[13.5px]">
-          <Money value={o.total} />
-        </span>
-      ),
+      key: "delivery",
+      header: "Delivery status",
+      // Blank until there is a parcel, as Shopify leaves it.
+      value: (o) => o.delivery?.label ?? "",
+      cell: (o) =>
+        o.delivery ? (
+          <span className="text-ash flex items-center gap-2 text-[13px]">
+            <span
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                DOT[DELIVERY_STATES[o.delivery.key].tone],
+              )}
+            />
+            {o.delivery.label}
+          </span>
+        ) : (
+          <span className="text-dim">-</span>
+        ),
+    },
+    {
+      key: "phone",
+      header: "Phone",
+      value: (o) => o.phone,
+      cell: (o) => <span className="text-ash font-mono text-[12px]">{o.phone || "-"}</span>,
+    },
+    {
+      key: "location",
+      header: "Location",
+      value: (o) => o.location,
+      cell: (o) => <span className="text-ash text-[13.5px]">{o.location || "-"}</span>,
     },
   ]
 
@@ -415,6 +467,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           exportName={copy.exportName}
           exportButtons={false}
           columnToggle
+          numbered={false}
           pageSizes={PAGE_SIZES}
           pageKey={`${view}|${status}|${state.q}`}
           bar={bar}
@@ -431,12 +484,15 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
             { header: "Date", value: (o) => fmtDate(o.placedAt ?? o.createdAt) },
             { header: "Customer", value: (o) => o.customer },
             { header: "Email", value: (o) => o.email },
-            { header: "Phone", value: (o) => o.phone },
-            { header: "City", value: (o) => o.city },
-            { header: "Status", value: (o) => o.status },
-            { header: "Payment", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
-            { header: "Items", value: (o) => o.itemCount },
             { header: "Total", value: (o) => Number(o.total) },
+            { header: "Payment status", value: (o) => PAYMENT_STATES[o.payment].label },
+            { header: "Payment method", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
+            { header: "Due on delivery", value: (o) => dueAtDoor(o) },
+            { header: "Fulfilment status", value: (o) => FULFILMENT_STATES[o.fulfilment].label },
+            { header: "Items", value: (o) => o.itemCount },
+            { header: "Delivery status", value: (o) => o.delivery?.label ?? "" },
+            { header: "Phone", value: (o) => o.phone },
+            { header: "Location", value: (o) => o.location },
           ]}
         />
       )}

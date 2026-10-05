@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import type { PaymentMethod } from "@/features/checkout/payment-options"
+import type { DeliveryState, FulfilmentState, PaymentState } from "@/features/orders/order-progress"
 import type { OrderView } from "@/features/orders/order-views"
 import { apiFetch } from "@/lib/api-fetch"
 import { MAX_PAGE_SIZE, type OrderScope, type OrderStatus } from "@/lib/constants"
@@ -17,9 +18,15 @@ export type OrderRow = {
   email: string
   phone: string
   total: string
+  /** What the courier still collects: the total for COD, the balance for PARTIAL. */
+  dueOnDelivery: string
   itemCount: number
   customer: string
-  city: string
+  /** City and state. */
+  location: string
+  payment: PaymentState
+  fulfilment: FulfilmentState
+  delivery: DeliveryState | null
   createdAt: string
   placedAt: string | null
 }

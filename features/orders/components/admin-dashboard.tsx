@@ -144,7 +144,7 @@ export function AdminDashboard() {
                     label={statusLabelFor(order.status, order.paymentMethod)}
                   />
                   <span className="text-ash min-w-0 flex-1 truncate text-[13.5px]">
-                    {order.customer} · {order.city}
+                    {order.customer} · {order.location}
                   </span>
                   <span className="text-bone font-mono text-[13.5px]">
                     <Money value={order.total} />

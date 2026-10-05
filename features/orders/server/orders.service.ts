@@ -5,10 +5,18 @@ import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { creditNoteOnRefund, queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
 import { paymentConfig } from "@/features/settings/server/runtime-settings"
+import {
+  deliveryState,
+  fulfilmentState,
+  paymentState,
+  type DeliveryState,
+  type FulfilmentState,
+  type PaymentState,
+} from "@/features/orders/order-progress"
 import { ORDER_VIEW_KEYS, isInView, viewWhere, type OrderView } from "@/features/orders/order-views"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
 import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
-import { trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
+import { trackingStage, trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
 import { cancelShiprocketOrder, notifyShipped } from "@/features/shipping/server/shipping.service"
 import { paginate } from "@/lib/api-response"
 import {
@@ -35,9 +43,11 @@ const ORDER_LIST_SELECT = {
   email: true,
   phone: true,
   total: true,
+  dueOnDelivery: true,
   createdAt: true,
   placedAt: true,
   shippingAddress: true,
+  shipment: { select: { status: true, pickupScheduledAt: true } },
   _count: { select: { items: true } },
 } as const
 
@@ -49,9 +59,16 @@ export type OrderRow = {
   email: string
   phone: string
   total: string
+  /** What the courier still collects: the total for COD, the balance for PARTIAL. */
+  dueOnDelivery: string
   itemCount: number
   customer: string
-  city: string
+  /** City and state. */
+  location: string
+  /** The three statuses of order-progress.ts, as Shopify's list shows them. */
+  payment: PaymentState
+  fulfilment: FulfilmentState
+  delivery: DeliveryState | null
   createdAt: string
   placedAt: string | null
 }
@@ -70,12 +87,16 @@ function serializeRow(row: {
   email: string
   phone: string
   total: { toString(): string }
+  dueOnDelivery: { toString(): string }
   createdAt: Date
   placedAt: Date | null
   shippingAddress: unknown
+  shipment: { status: string; pickupScheduledAt: Date | null } | null
   _count: { items: number }
 }): OrderRow {
   const addr = readAddress(row.shippingAddress)
+  const status = row.status as OrderStatus
+  const stage = row.shipment ? trackingStage(row.shipment.status) : null
   return {
     id: row.id,
     number: row.number,
@@ -84,9 +105,18 @@ function serializeRow(row: {
     email: row.email,
     phone: row.phone,
     total: row.total.toString(),
+    dueOnDelivery: row.dueOnDelivery.toString(),
     itemCount: row._count.items,
     customer: [addr.firstName, addr.lastName].filter(Boolean).join(" ") || "Guest",
-    city: [addr.city, addr.state].filter(Boolean).join(", ") || "-",
+    location: [addr.city, addr.state].filter(Boolean).join(", ") || "-",
+    payment: paymentState(status, row.paymentMethod as PaymentMethod),
+    fulfilment: fulfilmentState(status, stage !== null && stage !== "cancelled"),
+    delivery: deliveryState({
+      orderStatus: status,
+      courierStatus: row.shipment?.status ?? null,
+      stage,
+      pickupScheduled: row.shipment?.pickupScheduledAt != null,
+    }),
     createdAt: row.createdAt.toISOString(),
     placedAt: row.placedAt?.toISOString() ?? null,
   }

@@ -31,13 +31,15 @@ export const ORDER_VIEWS: Record<OrderView, ViewDef> = {
   all: { label: "All", clauses: null },
   // Not yet handed to a courier: COD accepted, paid, or packed.
   unfulfilled: { label: "Unfulfilled", clauses: [{ statuses: ["CONFIRMED", "PAID", "PACKED"] }] },
-  // Money still to come in: an online payment not made yet, cash on delivery
-  // not yet delivered, or the balance of an advance the courier collects.
+  // Payment pending or partially paid (order-progress.ts), as Shopify's
+  // Unpaid tab is: an online payment not made yet, cash on delivery not yet
+  // delivered, or an advance whose balance never came in.
   unpaid: {
     label: "Unpaid",
     clauses: [
       { statuses: ["PENDING", "CONFIRMED"] },
       { statuses: ["PAID", "PACKED", "SHIPPED"], methods: ["COD", "PARTIAL"] },
+      { statuses: ["RETURNED"], methods: ["PARTIAL"] },
     ],
   },
   shipped: { label: "In transit", clauses: [{ statuses: ["SHIPPED"] }] },

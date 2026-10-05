@@ -108,6 +108,8 @@ type Props<T> = {
   pageSizes?: readonly number[]
   /** When this changes the table goes back to its first page: a new tab or filter. */
   pageKey?: string
+  /** The # column of row numbers. Exports number their rows either way. */
+  numbered?: boolean
 }
 
 export type DataTableHandle<T> = {
@@ -151,6 +153,7 @@ export function DataTable<T>({
   columnToggle = false,
   pageSizes,
   pageKey,
+  numbered = true,
 }: Props<T>) {
   const [sort, setSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null)
   const [page, setPage] = React.useState(1)
@@ -442,7 +445,7 @@ export function DataTable<T>({
           <table className="w-full text-left">
             <thead className="bg-void/50">
               <tr className="text-dim font-mono text-[10.5px] tracking-[0.14em] whitespace-nowrap uppercase">
-                <th className="w-10 px-3 py-3">
+                <th className="relative w-10 px-3 py-3">
                   <input
                     type="checkbox"
                     aria-label="Select all rows on this page"
@@ -450,14 +453,11 @@ export function DataTable<T>({
                     onChange={toggleAll}
                     className="accent-blaze size-3.5 align-middle"
                   />
-                </th>
-                {/* With rows ticked, the headings give way to the count, as
-                    Shopify has it. Hidden rather than removed, so no column
-                    changes width under the pointer. */}
-                <th className={cn("relative w-12 px-2 py-3 font-normal", selecting && "invisible")}>
-                  #
+                  {/* With rows ticked, the headings give way to the count, as
+                      Shopify has it. They are hidden rather than removed, so
+                      no column changes width under the pointer. */}
                   {selecting ? (
-                    <span className="visible absolute inset-y-0 left-2 flex items-center gap-3 font-sans text-[13px] tracking-normal normal-case">
+                    <span className="absolute inset-y-0 left-full flex items-center gap-3 pl-2 font-sans text-[13px] tracking-normal whitespace-nowrap normal-case">
                       <span className="text-bone font-semibold">{pickedRows.length} selected</span>
                       <button
                         type="button"
@@ -469,6 +469,9 @@ export function DataTable<T>({
                     </span>
                   ) : null}
                 </th>
+                {numbered ? (
+                  <th className={cn("w-12 px-2 py-3 font-normal", selecting && "invisible")}>#</th>
+                ) : null}
                 {expandable ? <th className="w-9" /> : null}
                 {visible.map((c) => (
                   <th
@@ -533,9 +536,11 @@ export function DataTable<T>({
                           className="accent-blaze size-3.5 align-middle"
                         />
                       </td>
-                      <td className="text-dim px-2 py-3.5 font-mono text-[12px]">
-                        {start + i + 1}
-                      </td>
+                      {numbered ? (
+                        <td className="text-dim px-2 py-3.5 font-mono text-[12px]">
+                          {start + i + 1}
+                        </td>
+                      ) : null}
                       {expandable ? (
                         <td className="px-1 py-3.5">
                           <button
@@ -577,7 +582,7 @@ export function DataTable<T>({
                     </tr>
                     {expandable && open.has(id) ? (
                       <tr className="border-t border-white/[0.05]">
-                        <td colSpan={visible.length + 3} className="px-4 pb-5">
+                        <td colSpan={visible.length + (numbered ? 3 : 2)} className="px-4 pb-5">
                           {expandable(row)}
                         </td>
                       </tr>

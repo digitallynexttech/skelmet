@@ -8,6 +8,31 @@ const TONE = {
   danger: "border-magenta/40 text-magenta",
 } as const
 
+export type Tone = keyof typeof TONE
+
+/** A status in one of the four tones, for statuses that are not an order's own. */
+export function ToneBadge({
+  tone,
+  className,
+  children,
+}: {
+  tone: Tone
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] uppercase",
+        TONE[tone],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
 /**
  * Tone keys map to tokens here - never an ad-hoc colour at the call site (§7).
  * `label` replaces the status's own words where they would mislead: "Paid" on
@@ -23,14 +48,8 @@ export function StatusBadge({
   className?: string
 }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded border px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] uppercase",
-        TONE[ORDER_STATUS_COLORS[status]],
-        className,
-      )}
-    >
+    <ToneBadge tone={ORDER_STATUS_COLORS[status]} className={className}>
       {label ?? ORDER_STATUS_LABELS[status]}
-    </span>
+    </ToneBadge>
   )
 }
