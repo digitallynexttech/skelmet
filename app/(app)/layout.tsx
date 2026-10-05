@@ -34,7 +34,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <QueryProvider>
       <AdminShell initialCollapsed={collapsed}>
-        <div className="bg-void flex min-h-dvh">
+        {/* data-console: the console's corners (globals.css). */}
+        <div data-console className="bg-void flex min-h-dvh">
           <AdminSidebar permissions={session.user.permissions} />
           <div className="min-w-0 flex-1">
             <AdminHeader />
@@ -48,6 +49,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 background: "var(--color-graphite)",
                 border: "1px solid rgb(255 255 255 / 0.1)",
                 color: "var(--color-bone)",
+                // Sonner's own 8px otherwise: the console's corner is rounded-sm.
+                borderRadius: "var(--radius-sm, 0.25rem)",
               },
             }}
           />

@@ -127,6 +127,26 @@
   }
 }
 
+/* The console (/admin) keeps to two corners: rounded-sm, and rounded-full for
+   pills, dots and avatars. Every other radius - Tailwind's xs and md to 4xl,
+   and the site's card, tile and field - is the small one there. Set on the
+   root while the console's shell is on the page (data-console, in
+   app/(app)/layout.tsx), so it reaches dialogs portalled outside the shell
+   too, and the shop, which shares these components, keeps its own corners.
+   Unlayered, so it outranks the theme layer that defines them. */
+:root:has([data-console]) {
+  --radius-xs: var(--radius-sm, 0.25rem);
+  --radius-md: var(--radius-sm, 0.25rem);
+  --radius-lg: var(--radius-sm, 0.25rem);
+  --radius-xl: var(--radius-sm, 0.25rem);
+  --radius-2xl: var(--radius-sm, 0.25rem);
+  --radius-3xl: var(--radius-sm, 0.25rem);
+  --radius-4xl: var(--radius-sm, 0.25rem);
+  --radius-card: var(--radius-sm, 0.25rem);
+  --radius-tile: var(--radius-sm, 0.25rem);
+  --radius-field: var(--radius-sm, 0.25rem);
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -323,7 +343,8 @@
     max-width: 100%;
     height: auto;
     max-height: 380px;
-    border-radius: 10px;
+    /* The console's one corner (see :root:has([data-console])). */
+    border-radius: var(--radius-sm, 0.25rem);
   }
   .rich-editor .ProseMirror img.ProseMirror-selectednode {
     outline: 2px solid var(--color-blaze);
