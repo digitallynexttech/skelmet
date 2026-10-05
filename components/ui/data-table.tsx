@@ -259,6 +259,7 @@ export function DataTable<T>({
   }))
 
   const inFrame = bar != null || barEnd != null
+  const selecting = inFrame && pickedRows.length > 0
   const topRow = exportButtons || toolbar != null || (columnToggle && !inFrame)
 
   const selection =
@@ -426,26 +427,7 @@ export function DataTable<T>({
       >
         {inFrame ? (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-white/[0.07] px-3 py-2.5">
-            {/* Ticked rows take the tabs' place, as long as there are any, so
-                ticking one moves nothing under the pointer. */}
-            <div className="min-w-0 flex-[1_1_360px]">
-              {pickedRows.length > 0 ? (
-                <div className="flex h-8 items-center gap-3 px-1">
-                  <span className="text-bone text-[13px] font-semibold">
-                    {pickedRows.length} selected
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPicked(new Set())}
-                    className="text-ash hover:text-bone text-[13px] underline-offset-4 transition-colors hover:underline"
-                  >
-                    Clear
-                  </button>
-                </div>
-              ) : (
-                bar
-              )}
-            </div>
+            <div className="min-w-0 flex-[1_1_360px]">{bar}</div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:flex-nowrap">
               {barEnd}
               {columnsMenu}
@@ -469,12 +451,33 @@ export function DataTable<T>({
                     className="accent-blaze size-3.5 align-middle"
                   />
                 </th>
-                <th className="w-12 px-2 py-3 font-normal">#</th>
+                {/* With rows ticked, the headings give way to the count, as
+                    Shopify has it. Hidden rather than removed, so no column
+                    changes width under the pointer. */}
+                <th className={cn("relative w-12 px-2 py-3 font-normal", selecting && "invisible")}>
+                  #
+                  {selecting ? (
+                    <span className="visible absolute inset-y-0 left-2 flex items-center gap-3 font-sans text-[13px] tracking-normal normal-case">
+                      <span className="text-bone font-semibold">{pickedRows.length} selected</span>
+                      <button
+                        type="button"
+                        onClick={() => setPicked(new Set())}
+                        className="text-ash hover:text-bone underline-offset-4 transition-colors hover:underline"
+                      >
+                        Clear
+                      </button>
+                    </span>
+                  ) : null}
+                </th>
                 {expandable ? <th className="w-9" /> : null}
                 {visible.map((c) => (
                   <th
                     key={c.key}
-                    className={cn("px-4 py-3 font-normal", c.align === "right" && "text-right")}
+                    className={cn(
+                      "px-4 py-3 font-normal",
+                      c.align === "right" && "text-right",
+                      selecting && "invisible",
+                    )}
                   >
                     {c.value ? (
                       <button

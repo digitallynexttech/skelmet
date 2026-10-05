@@ -3,12 +3,13 @@
 import * as React from "react"
 import Link from "next/link"
 import {
+  ChevronDown,
+  ChevronsUpDown,
   ClipboardCopy,
   Download,
   FileSpreadsheet,
   ListOrdered,
   Phone,
-  Plus,
   Search,
   ShoppingBag,
   ShoppingCart,
@@ -21,7 +22,14 @@ import { Money } from "@/components/shared/money"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
-import { Menu, MenuItem, MenuLabel, MenuLink, MenuSeparator } from "@/components/ui/menu"
+import {
+  Menu,
+  MenuItem,
+  MenuLabel,
+  MenuLink,
+  MenuOption,
+  MenuSeparator,
+} from "@/components/ui/menu"
 import { Select } from "@/components/ui/select"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT, statusLabelFor } from "@/features/checkout/payment-options"
@@ -227,36 +235,36 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
     },
   ]
 
-  // The tabs. Picking one clears the status filter, and picking a status
-  // goes back to All: each is a way of choosing what to list, and the two
-  // together would mostly list nothing.
-  const tabs = (
-    <div role="group" aria-label="Views" className="flex gap-1 overflow-x-auto">
-      {views.map((v) => (
-        <button
-          key={v}
-          type="button"
-          aria-pressed={view === v}
-          onClick={() => setState({ view: v, status: "ALL" })}
-          className={cn(
-            "flex h-8 shrink-0 items-center gap-2 rounded-sm px-3 text-[13px] font-semibold whitespace-nowrap transition-colors",
-            view === v
-              ? "text-bone bg-white/[0.09]"
-              : "text-ash hover:text-bone hover:bg-white/[0.04]",
-          )}
-        >
-          {ORDER_VIEWS[v].label}
-          {data ? (
-            <span className="text-dim font-mono text-[11px] font-normal">{data.viewCounts[v]}</span>
-          ) : null}
-        </button>
-      ))}
-    </div>
-  )
+  // The view, as Shopify has it: All, Unfulfilled, Unpaid... in a menu
+  // beside the search. Picking one clears the status filter, and picking a
+  // status goes back to All: each is a way of choosing what to list, and the
+  // two together would mostly list nothing.
+  const bar = (
+    <div className="flex items-center gap-2">
+      <Menu
+        label={`View: ${ORDER_VIEWS[view].label}`}
+        align="start"
+        buttonClassName="text-bone flex h-9 shrink-0 items-center gap-1.5 rounded-sm bg-white/[0.06] px-3 text-[13px] font-semibold transition-colors hover:bg-white/[0.1] aria-expanded:bg-white/[0.1]"
+        button={
+          <>
+            {ORDER_VIEWS[view].label}
+            <ChevronsUpDown className="text-ash size-3.5" strokeWidth={2.2} />
+          </>
+        }
+      >
+        {views.map((v) => (
+          <MenuOption
+            key={v}
+            checked={view === v}
+            onSelect={() => setState({ view: v, status: "ALL" })}
+            hint={data?.viewCounts[v]}
+          >
+            {ORDER_VIEWS[v].label}
+          </MenuOption>
+        ))}
+      </Menu>
 
-  const filters = (
-    <>
-      <div className="relative w-full sm:w-[240px]">
+      <div className="relative min-w-0 flex-1 sm:max-w-[280px]">
         <Search
           className="text-dim pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
           strokeWidth={1.9}
@@ -279,7 +287,11 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           </button>
         ) : null}
       </div>
+    </div>
+  )
 
+  const filters = (
+    <>
       <Select
         label="Filter by status"
         size="sm"
@@ -307,17 +319,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
         </h1>
 
         <div className="ml-auto flex items-center gap-2">
-          <Menu
-            label="Export"
-            onOpen={takeTarget}
-            buttonClassName={secondary}
-            button={
-              <>
-                <Download className="size-4" strokeWidth={1.9} />
-                <span className="hidden sm:inline">Export</span>
-              </>
-            }
-          >
+          <Menu label="Export" onOpen={takeTarget} buttonClassName={secondary} button="Export">
             <MenuLabel>{targetLabel}</MenuLabel>
             <MenuItem
               icon={Download}
@@ -338,11 +340,15 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           <Menu
             label="More actions"
             onOpen={takeTarget}
-            buttonClassName={secondary}
+            buttonClassName={cn(secondary, "group")}
             button={
               <>
                 <span className="sm:hidden">More</span>
                 <span className="hidden sm:inline">More actions</span>
+                <ChevronDown
+                  className="text-ash size-4 transition-transform group-aria-expanded:rotate-180"
+                  strokeWidth={2}
+                />
               </>
             }
           >
@@ -388,9 +394,8 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
             target="_blank"
             rel="noopener"
             title="Opens the shop in a new tab: place the order at checkout with the customer's details"
-            className="bg-blaze text-void hover:bg-ember flex h-9 items-center gap-1.5 rounded-sm px-3.5 text-[13px] font-semibold transition-colors"
+            className="bg-blaze text-void hover:bg-ember flex h-9 items-center rounded-sm px-3.5 text-[13px] font-semibold transition-colors"
           >
-            <Plus className="size-4" strokeWidth={2.2} />
             Create order
           </Link>
         </div>
@@ -412,7 +417,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           columnToggle
           pageSizes={PAGE_SIZES}
           pageKey={`${view}|${status}|${state.q}`}
-          bar={tabs}
+          bar={bar}
           barEnd={filters}
           loading={isLoading}
           total={data?.pagination?.total}

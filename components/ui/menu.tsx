@@ -18,7 +18,9 @@ import { cn } from "@/lib/utils"
 
 const MenuContext = React.createContext<(refocus?: boolean) => void>(() => {})
 
-const ITEMS = "[role=menuitem]:not([disabled]),[role=menuitemcheckbox]:not([disabled])"
+const ITEMS = ["menuitem", "menuitemcheckbox", "menuitemradio"]
+  .map((role) => `[role=${role}]:not([disabled])`)
+  .join(",")
 
 export function Menu({
   label,
@@ -194,6 +196,43 @@ export function MenuLink({
       {Icon ? <Icon className="size-4 shrink-0" strokeWidth={1.9} /> : null}
       <span className="flex-1">{children}</span>
     </Link>
+  )
+}
+
+/** One of a set, as in a select: ticked while it is the current one. */
+export function MenuOption({
+  checked,
+  onSelect,
+  hint,
+  children,
+}: {
+  checked: boolean
+  onSelect: () => void
+  /** Shown muted on the right, e.g. a count. */
+  hint?: React.ReactNode
+  children: React.ReactNode
+}) {
+  const close = React.useContext(MenuContext)
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={checked}
+      onClick={() => {
+        close()
+        onSelect()
+      }}
+      className={cn(itemClass, checked && "text-bone font-semibold")}
+    >
+      <Check
+        className={cn("text-blaze size-3.5 shrink-0", !checked && "opacity-0")}
+        strokeWidth={2.6}
+      />
+      <span className="flex-1">{children}</span>
+      {hint != null ? (
+        <span className="text-dim font-mono text-[11.5px] font-normal">{hint}</span>
+      ) : null}
+    </button>
   )
 }
 
