@@ -433,8 +433,15 @@ export function DataTable<T>({
       >
         {inFrame ? (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-white/[0.07] px-3 py-2.5">
-            <div className="min-w-0 flex-[1_1_360px]">{bar}</div>
-            <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:flex-nowrap">
+            <div className={cn("min-w-0", barEnd != null ? "flex-[1_1_360px]" : "flex-1")}>
+              {bar}
+            </div>
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                barEnd != null ? "w-full flex-wrap sm:ml-auto sm:w-auto sm:flex-nowrap" : "ml-auto",
+              )}
+            >
               {barEnd}
               {columnsMenu}
             </div>

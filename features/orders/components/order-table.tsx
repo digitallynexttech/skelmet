@@ -30,7 +30,6 @@ import {
   MenuOption,
   MenuSeparator,
 } from "@/components/ui/menu"
-import { Select } from "@/components/ui/select"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT } from "@/features/checkout/payment-options"
 import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
@@ -40,7 +39,7 @@ import {
   PAYMENT_STATES,
 } from "@/features/orders/order-progress"
 import { ORDER_VIEWS, viewsIn, type OrderView } from "@/features/orders/order-views"
-import { ORDER_STATUS_LABELS, statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
+import { type OrderScope } from "@/lib/constants"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { formatMoney } from "@/lib/money"
@@ -69,7 +68,7 @@ const SCOPES: Record<
 }
 
 // Stable, since useUrlState memoises on it.
-const DEFAULTS = { view: "all", status: "ALL", q: "" }
+const DEFAULTS = { view: "all", q: "" }
 
 const PAGE_SIZES = [10, 20, 50, 100]
 
@@ -103,10 +102,9 @@ function paymentNote(o: OrderRow): string {
 
 export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   const copy = SCOPES[scope]
-  const statuses = statusesIn(scope)
   const views = viewsIn(scope)
 
-  // Tab, status and search live in the URL, so a filtered view is shareable
+  // View and search live in the URL, so a filtered list is shareable
   // (§6). The page does not: paging happens in the table, over the window
   // the server sent.
   const [state, setState] = useUrlState(DEFAULTS)
@@ -117,19 +115,17 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
     if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  // A link or bookmark naming a tab or status this list does not have falls
-  // back to all of it.
+  // A link or bookmark naming a view this list does not have falls back to
+  // all of it.
   const view: OrderView = views.includes(state.view as OrderView)
     ? (state.view as OrderView)
     : "all"
-  const status: OrderStatus | "ALL" = statuses.includes(state.status as OrderStatus)
-    ? (state.status as OrderStatus)
-    : "ALL"
+  // The view is the one filter: the status dropdown beside it is gone.
   const { data, isLoading, isError, error } = useOrders({
     page: 1,
     scope,
     view,
-    status,
+    status: "ALL",
     q: state.q,
   })
 
@@ -279,9 +275,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   ]
 
   // The view, as Shopify has it: All, Unfulfilled, Unpaid... in a menu
-  // beside the search. Picking one clears the status filter, and picking a
-  // status goes back to All: each is a way of choosing what to list, and the
-  // two together would mostly list nothing.
+  // beside the search.
   const bar = (
     <div className="flex items-center gap-2">
       <Menu
@@ -299,7 +293,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           <MenuOption
             key={v}
             checked={view === v}
-            onSelect={() => setState({ view: v, status: "ALL" })}
+            onSelect={() => setState({ view: v })}
             hint={data?.viewCounts[v]}
           >
             {ORDER_VIEWS[v].label}
@@ -331,26 +325,6 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
         ) : null}
       </div>
     </div>
-  )
-
-  const filters = (
-    <>
-      <Select
-        label="Filter by status"
-        size="sm"
-        value={status}
-        onChange={(next) => setState({ status: next, view: "all" })}
-        className="min-w-0 flex-1 sm:w-[200px] sm:flex-none"
-        options={[
-          { value: "ALL" as const, label: "Any status" },
-          ...statuses.map((s) => ({
-            value: s,
-            label: ORDER_STATUS_LABELS[s],
-            hint: data?.counts[s] ?? 0,
-          })),
-        ]}
-      />
-    </>
   )
 
   return (
@@ -466,15 +440,12 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
               : undefined
           }
           pageSizes={PAGE_SIZES}
-          pageKey={`${view}|${status}|${state.q}`}
+          pageKey={`${view}|${state.q}`}
           bar={bar}
-          barEnd={filters}
           loading={isLoading}
           total={data?.pagination?.total}
           empty={
-            state.q
-              ? "No order matches that search."
-              : "No orders here yet. Try another tab or status."
+            state.q ? "No order matches that search." : "No orders here yet. Try another view."
           }
           exportColumns={[
             { header: "Order", value: (o) => o.number },
