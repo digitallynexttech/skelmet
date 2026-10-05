@@ -1,6 +1,9 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Toaster } from "sonner"
 
+import { AdminHeader } from "@/components/layout/admin-header"
+import { AdminShell, SIDEBAR_COOKIE } from "@/components/layout/admin-shell"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { auth } from "@/server/auth"
@@ -24,25 +27,32 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // group precisely so this redirect cannot loop into itself.
   if (session.user.mustChangePassword) redirect("/change-password?next=/admin")
 
+  // The sidebar as it was left (components/layout/admin-shell.tsx), read
+  // here so the page opens that way instead of correcting itself after load.
+  const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "closed"
+
   return (
     <QueryProvider>
-      <div className="bg-void flex min-h-dvh">
-        <AdminSidebar permissions={session.user.permissions} />
-        <div className="min-w-0 flex-1">
-          <main className="px-5 pt-20 pb-16 sm:px-8 lg:pt-10 xl:px-10">{children}</main>
+      <AdminShell initialCollapsed={collapsed}>
+        <div className="bg-void flex min-h-dvh">
+          <AdminSidebar permissions={session.user.permissions} />
+          <div className="min-w-0 flex-1">
+            <AdminHeader />
+            <main className="px-5 pt-8 pb-16 sm:px-8 lg:pt-10 xl:px-10">{children}</main>
+          </div>
+          <Toaster
+            position="bottom-right"
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "var(--color-graphite)",
+                border: "1px solid rgb(255 255 255 / 0.1)",
+                color: "var(--color-bone)",
+              },
+            }}
+          />
         </div>
-        <Toaster
-          position="bottom-right"
-          theme="dark"
-          toastOptions={{
-            style: {
-              background: "var(--color-graphite)",
-              border: "1px solid rgb(255 255 255 / 0.1)",
-              color: "var(--color-bone)",
-            },
-          }}
-        />
-      </div>
+      </AdminShell>
     </QueryProvider>
   )
 }

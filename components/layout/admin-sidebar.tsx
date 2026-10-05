@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   LogOut,
   Mail,
-  Menu,
   MessageSquare,
   Newspaper,
   Package,
@@ -21,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { useAdminShell } from "@/components/layout/admin-shell"
 import { Wordmark } from "@/components/shared/wordmark"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PERMISSIONS, type Permission } from "@/lib/constants"
@@ -136,14 +136,13 @@ function currentChild(pathname: string, children: NavChild[]): NavChild | undefi
 
 export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
   const pathname = usePathname()
-  const [open, setOpen] = React.useState(false)
-  const [openedOn, setOpenedOn] = React.useState(pathname)
+  // Open and closed live in the shell, so the header's toggle and Ctrl+B
+  // reach them too.
+  const { collapsed, drawerOpen: open, closeDrawer } = useAdminShell()
   const [confirmingSignOut, setConfirmingSignOut] = React.useState(false)
   // signOut navigates away, so this never has to be unset — it keeps the
   // button from being pressed twice while the redirect is in flight.
   const [signingOut, setSigningOut] = React.useState(false)
-
-  if (open && openedOn !== pathname) setOpen(false)
 
   // Cosmetic filter only - proxy.ts and requirePermission are the enforcement.
   const items = NAV.filter((item) => permissions.includes(item.scope))
@@ -244,21 +243,18 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
 
   return (
     <>
-      {/* Mobile trigger */}
-      <button
-        type="button"
-        aria-label="Open menu"
-        onClick={() => {
-          setOpenedOn(pathname)
-          setOpen(true)
-        }}
-        className="bg-carbon text-bone fixed top-3.5 left-4 z-50 flex size-11 items-center justify-center rounded-xl border border-white/10 lg:hidden"
+      {/* The rail slides shut to nothing; its contents keep their width so
+          they slide with it rather than reflowing. Closed, it is inert: no
+          tab stop lands in a sidebar nobody can see. */}
+      <aside
+        id="admin-sidebar"
+        inert={collapsed}
+        className={cn(
+          "bg-carbon sticky top-0 hidden h-dvh shrink-0 overflow-hidden border-white/[0.07] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:block",
+          collapsed ? "w-0 border-r-0" : "w-[248px] border-r",
+        )}
       >
-        <Menu className="size-5" strokeWidth={2} />
-      </button>
-
-      <aside className="bg-carbon sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-white/[0.07] lg:flex">
-        {body}
+        <div className="flex h-full w-[248px] flex-col">{body}</div>
       </aside>
 
       <div
@@ -269,13 +265,14 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
           type="button"
           tabIndex={-1}
           aria-label="Close menu"
-          onClick={() => setOpen(false)}
+          onClick={closeDrawer}
           className={cn(
             "bg-void/80 absolute inset-0 transition-opacity duration-300",
             open ? "opacity-100" : "opacity-0",
           )}
         />
         <div
+          id="admin-drawer"
           className={cn(
             "bg-carbon absolute inset-y-0 left-0 flex w-[262px] flex-col border-r border-white/[0.08] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
             open ? "translate-x-0" : "-translate-x-full",
@@ -284,7 +281,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
           <button
             type="button"
             aria-label="Close menu"
-            onClick={() => setOpen(false)}
+            onClick={closeDrawer}
             className="text-bone absolute top-3.5 right-3 z-10 flex size-10 items-center justify-center"
           >
             <X className="size-5" strokeWidth={2} />
