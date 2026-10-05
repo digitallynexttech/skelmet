@@ -27,6 +27,8 @@ export type OrderRow = {
   payment: PaymentState
   fulfilment: FulfilmentState
   delivery: DeliveryState | null
+  /** Paid through Razorpay's test account: the shop trying itself out. */
+  testPayment: boolean
   createdAt: string
   placedAt: string | null
 }
@@ -195,6 +197,39 @@ const postVerb = (id: string, verb: string, body?: unknown) =>
 // ── queries ───────────────────────────────────────────────
 export function useDashboard() {
   return useQuery({ queryKey: ["dashboard"], queryFn: getDashboard, staleTime: 30_000 })
+}
+
+/** What deleting these test orders would delete and keep, or did. */
+export type TestOrderPlan = {
+  deletable: Array<{
+    id: string
+    number: string
+    customer: string
+    total: string
+    testPayment: boolean
+  }>
+  kept: Array<{ id: string; number: string; reason: string }>
+  deleted: boolean
+}
+
+/** Without `confirm`, a preview: nothing is deleted. */
+export const planTestOrderDeletion = (ids: string[], confirm = false) =>
+  apiFetch<TestOrderPlan>("/api/admin/orders/delete-test", {
+    method: "POST",
+    body: JSON.stringify({ ids, confirm }),
+  })
+
+/** Invalidates: ["orders"], ["unpaid-orders"], ["dashboard"] */
+export function useDeleteTestOrders() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) => planTestOrderDeletion(ids, true),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["orders"] })
+      void qc.invalidateQueries({ queryKey: ["unpaid-orders"] })
+      void qc.invalidateQueries({ queryKey: ["dashboard"] })
+    },
+  })
 }
 
 /** Unpaid orders for the abandoned carts screen. */

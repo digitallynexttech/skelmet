@@ -2,7 +2,7 @@ import "server-only"
 
 import type { Session } from "next-auth"
 
-import type { Permission } from "@/lib/constants"
+import { FULL_ACCESS_ROLES, type Permission } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors"
 import { auth } from "@/server/auth"
@@ -115,6 +115,24 @@ export async function requirePermission(scope: Permission): Promise<Session> {
   const session = await requireStaff()
   if (!session.user.permissions.includes(scope)) {
     throw new ForbiddenError("You do not have access to that.")
+  }
+  return session
+}
+
+/** Holds an Admin or Owner role (FULL_ACCESS_ROLES). */
+export function hasFullAccess(session: Session | null): boolean {
+  const full = FULL_ACCESS_ROLES.map((r) => r.toLowerCase())
+  return Boolean(session?.user?.roles?.some((r) => full.includes(r.toLowerCase())))
+}
+
+/**
+ * For the few things no single permission should reach - deleting orders -
+ * only the full-access roles may do.
+ */
+export async function requireFullAccess(): Promise<Session> {
+  const session = await requireStaff()
+  if (!hasFullAccess(session)) {
+    throw new ForbiddenError("Only an owner or admin can do that.")
   }
   return session
 }

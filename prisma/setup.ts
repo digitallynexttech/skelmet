@@ -8,7 +8,7 @@
 import fs from "node:fs"
 
 import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
-import { PERMISSION_DEFINITIONS } from "@/lib/constants"
+import { FULL_ACCESS_ROLES, PERMISSION_DEFINITIONS } from "@/lib/constants"
 import { hashPassword } from "@/lib/crypto"
 import type { Db } from "@/server/db"
 
@@ -41,8 +41,7 @@ export function databaseHost(url: string | undefined): string {
   }
 }
 
-/** The roles that hold every permission: the one the seed makes, and an owner role if one exists. */
-export const FULL_ACCESS_ROLES = ["Admin", "Owner"]
+export { FULL_ACCESS_ROLES }
 
 /** Upserts every scope in PERMISSION_DEFINITIONS. Never removes one. */
 export async function upsertPermissions(db: Db): Promise<number> {

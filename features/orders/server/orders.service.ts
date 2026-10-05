@@ -4,7 +4,7 @@ import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { releaseStaleOrders } from "@/features/checkout/server/checkout.service"
 import { creditNoteOnRefund, queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { modeOfPayment, refundPayment } from "@/features/checkout/server/payment-gateway"
-import { paymentConfig } from "@/features/settings/server/runtime-settings"
+import { paymentConfig, type PaymentConfig } from "@/features/settings/server/runtime-settings"
 import {
   deliveryState,
   fulfilmentState,
@@ -15,6 +15,7 @@ import {
 } from "@/features/orders/order-progress"
 import { ORDER_VIEW_KEYS, isInView, viewWhere, type OrderView } from "@/features/orders/order-views"
 import { cancelledByStaff } from "@/features/orders/server/cancellations"
+import { moneyModes } from "@/features/orders/server/test-order-rules"
 import { manualShipmentSchema } from "@/features/shipping/schemas/shipping.schema"
 import { isShiprocketConfigured } from "@/features/shipping/server/shiprocket"
 import { trackingStage, trackingUrl } from "@/features/shipping/server/shiprocket-mapping"
@@ -49,6 +50,7 @@ const ORDER_LIST_SELECT = {
   placedAt: true,
   shippingAddress: true,
   shipment: { select: { status: true, pickupScheduledAt: true } },
+  payments: { select: { status: true, mode: true } },
   _count: { select: { items: true } },
 } as const
 
@@ -70,9 +72,14 @@ export type OrderRow = {
   payment: PaymentState
   fulfilment: FulfilmentState
   delivery: DeliveryState | null
+  /** Paid through Razorpay's test account: the shop trying itself out. */
+  testPayment: boolean
   createdAt: string
   placedAt: string | null
 }
+
+/** What a row needs beyond the order: who cancelled it, and which Razorpay account is which. */
+type RowContext = { byStaff: ReadonlySet<string>; payments: PaymentConfig }
 
 type Address = { firstName?: string; lastName?: string; city?: string; state?: string }
 
@@ -98,11 +105,13 @@ function serializeRow(
     placedAt: Date | null
     shippingAddress: unknown
     shipment: { status: string; pickupScheduledAt: Date | null } | null
+    payments: Array<{ status: string; mode: string | null }>
     _count: { items: number }
   },
-  byStaff: ReadonlySet<string>,
+  { byStaff, payments }: RowContext,
 ): OrderRow {
   const addr = readAddress(row.shippingAddress)
+  const modes = moneyModes(row.payments, payments)
   const status = row.status as OrderStatus
   const stage = row.shipment ? trackingStage(row.shipment.status) : null
   return {
@@ -128,6 +137,7 @@ function serializeRow(
       stage,
       pickupScheduled: row.shipment?.pickupScheduledAt != null,
     }),
+    testPayment: modes.length > 0 && modes.every((m) => m === "test"),
     createdAt: row.createdAt.toISOString(),
     placedAt: row.placedAt?.toISOString() ?? null,
   }
@@ -229,10 +239,13 @@ export async function listOrders(params: {
       }
     }
 
-    const byStaff = await cancelledByStaff(cancelledIds(rows))
+    const context = {
+      byStaff: await cancelledByStaff(cancelledIds(rows)),
+      payments: await paymentConfig(),
+    }
     return ok({
       ...paginate(
-        rows.map((row) => serializeRow(row, byStaff)),
+        rows.map((row) => serializeRow(row, context)),
         page,
         size,
         total,
@@ -717,13 +730,16 @@ export async function getDashboard(): Promise<ActionResult<unknown>> {
       }),
     ])
 
-    const byStaff = await cancelledByStaff(cancelledIds(recent))
+    const context = {
+      byStaff: await cancelledByStaff(cancelledIds(recent)),
+      payments: await paymentConfig(),
+    }
     return ok({
       todayCount,
       weekRevenue: (weekRevenue._sum.total ?? 0).toString(),
       awaiting,
       lowStock,
-      recent: recent.map((row) => serializeRow(row, byStaff)),
+      recent: recent.map((row) => serializeRow(row, context)),
     })
   })
 }

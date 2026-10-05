@@ -13,6 +13,7 @@ import {
   Search,
   ShoppingBag,
   ShoppingCart,
+  Trash2,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -32,7 +33,13 @@ import {
 } from "@/components/ui/menu"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT } from "@/features/checkout/payment-options"
-import { useOrders, type OrderRow } from "@/features/orders/hooks/use-orders"
+import {
+  planTestOrderDeletion,
+  useDeleteTestOrders,
+  useOrders,
+  type OrderRow,
+  type TestOrderPlan,
+} from "@/features/orders/hooks/use-orders"
 import {
   DELIVERY_STATES,
   FULFILMENT_STATES,
@@ -40,6 +47,7 @@ import {
 } from "@/features/orders/order-progress"
 import { ORDER_VIEWS, viewsIn, type OrderView } from "@/features/orders/order-views"
 import { type OrderScope } from "@/lib/constants"
+import { useConfirm } from "@/hooks/use-confirm"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { formatMoney } from "@/lib/money"
@@ -100,7 +108,14 @@ function paymentNote(o: OrderRow): string {
   return due > 0 ? `${method} · ${formatMoney(due)} due` : method
 }
 
-export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
+export function OrderTable({
+  scope = "paid",
+  canDeleteTest = false,
+}: {
+  scope?: OrderScope
+  /** An owner or admin: offered Delete test orders, which the server also checks. */
+  canDeleteTest?: boolean
+}) {
   const copy = SCOPES[scope]
   const views = viewsIn(scope)
 
@@ -151,6 +166,49 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
         ? plural(target.rows.length, "selected order", "selected orders")
         : `All ${plural(target.rows.length, "order", "orders")} listed`
 
+  // Delete test orders: the server says first what would go and what
+  // stays, and why; only the confirm deletes.
+  const { ask, dialog } = useConfirm()
+  const deleteTest = useDeleteTestOrders()
+
+  async function askToDelete(rows: OrderRow[]) {
+    let plan: TestOrderPlan
+    try {
+      plan = await planTestOrderDeletion(rows.map((o) => o.id))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not check those orders.")
+      return
+    }
+    const n = plan.deletable.length
+    ask({
+      title: n
+        ? `Delete ${plural(n, "test order", "test orders")}?`
+        : "None of these can be deleted",
+      body: <DeletionPreview plan={plan} />,
+      confirmLabel: n ? `Delete ${plural(n, "order", "orders")}` : "Close",
+      tone: n ? "danger" : "primary",
+      run: (done) => {
+        if (!n) return done()
+        deleteTest.mutate(
+          plan.deletable.map((o) => o.id),
+          {
+            onSuccess: (result) => {
+              const gone = result.deletable.length
+              toast.success(`Deleted ${plural(gone, "order", "orders")}`, {
+                description: result.kept.length
+                  ? `Kept ${result.kept.map((k) => k.number).join(", ")}.`
+                  : undefined,
+              })
+            },
+            onError: (err) =>
+              toast.error(err instanceof Error ? err.message : "Could not delete those orders."),
+            onSettled: done,
+          },
+        )
+      },
+    })
+  }
+
   async function copyList(values: string[], what: string) {
     const unique = [...new Set(values.filter(Boolean))]
     try {
@@ -177,6 +235,15 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           )}
         >
           {o.number}
+          {o.testPayment ? (
+            <ToneBadge
+              tone="neutral"
+              title="Paid through Razorpay's test account: no real money changed hands."
+              className="ml-2 px-1.5 py-0.5 align-middle no-underline"
+            >
+              Test
+            </ToneBadge>
+          ) : null}
         </Link>
       ),
     },
@@ -401,6 +468,20 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
             <MenuLink icon={ShoppingCart} href="/admin/orders/abandoned">
               Abandoned carts
             </MenuLink>
+            {canDeleteTest ? (
+              <>
+                <MenuSeparator />
+                {/* Ticked orders only: never "everything in this view". */}
+                <MenuItem
+                  icon={Trash2}
+                  disabled={!target.selected}
+                  hint={target.selected ? undefined : "tick first"}
+                  onSelect={() => void askToDelete(target.rows)}
+                >
+                  Delete test orders
+                </MenuItem>
+              </>
+            ) : null}
           </Menu>
 
           {/* No order is made in here: the shop's checkout is where stock,
@@ -417,6 +498,8 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           </Link>
         </div>
       </div>
+
+      {dialog}
 
       {isError ? (
         <EmptyState
@@ -464,6 +547,52 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
           ]}
         />
       )}
+    </div>
+  )
+}
+
+/** What a deletion would delete and keep, in the confirm dialog. */
+function DeletionPreview({ plan }: { plan: TestOrderPlan }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {plan.deletable.length ? (
+        <div>
+          <p>
+            Deleted for good, with their payments and shipments. Stock they still hold goes back on
+            sale. This cannot be undone.
+          </p>
+          <ul className="mt-3 max-h-48 overflow-y-auto rounded-sm border border-white/[0.09]">
+            {plan.deletable.map((o) => (
+              <li
+                key={o.id}
+                className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 py-2 first:border-t-0"
+              >
+                <span className="min-w-0">
+                  <span className="text-bone font-mono text-[12.5px]">{o.number}</span>
+                  <span className="text-dim ml-2 text-[12.5px]">{o.customer}</span>
+                </span>
+                <span className="text-dim shrink-0 font-mono text-[11.5px]">
+                  {o.testPayment ? "Test payment · " : "No payment taken · "}
+                  {formatMoney(o.total)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {plan.kept.length ? (
+        <div>
+          <p className="text-bone font-semibold">Kept, because they look real or still matter:</p>
+          <ul className="mt-2 max-h-40 overflow-y-auto">
+            {plan.kept.map((k) => (
+              <li key={k.id} className="py-1 text-[13px]">
+                <span className="text-bone font-mono text-[12.5px]">{k.number}</span>{" "}
+                <span className="text-ash">{k.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   )
 }

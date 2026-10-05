@@ -27,6 +27,14 @@ export const PERMISSIONS = {
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
+/**
+ * The roles that hold every permission: the one the seed makes, and an owner
+ * role if one exists. Matched without regard to case. Also the only roles
+ * that may do what no narrower permission should reach, such as deleting
+ * test orders.
+ */
+export const FULL_ACCESS_ROLES = ["Admin", "Owner"]
+
 export const PERMISSION_DEFINITIONS: Array<{
   scope: Permission
   module: string
