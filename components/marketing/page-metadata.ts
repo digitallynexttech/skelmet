@@ -19,14 +19,14 @@ export function pageMetadata({
   path,
   image = siteConfig.shareImage,
 }: {
-  /** Bare page title. The root layout's template adds " · SKELMET" to the tab. */
+  /** Bare page title. The root layout's template adds " - SKELMET" to the tab. */
   title: string
   description: string
   /** Path from the site root, e.g. `/about`. metadataBase makes it absolute. */
   path: string
   image?: ShareImage
 }): Metadata {
-  const shareTitle = `${title} · ${siteConfig.name}`
+  const shareTitle = `${title} - ${siteConfig.name}`
   return {
     title,
     description,

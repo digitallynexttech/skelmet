@@ -4,12 +4,12 @@ import Link from "next/link"
 import { siteConfig } from "@/config/site"
 
 /**
- * Absolute, because whether the root layout's "%s · SKELMET" template reaches
+ * Absolute, because whether the root layout's "%s - SKELMET" template reaches
  * a not-found in its own segment is Next's call, and this title must not come
- * out as "Page not found · SKELMET · SKELMET" either way.
+ * out as "Page not found - SKELMET - SKELMET" either way.
  */
 export const metadata: Metadata = {
-  title: { absolute: `Page not found · ${siteConfig.name}` },
+  title: { absolute: `Page not found - ${siteConfig.name}` },
 }
 
 export default function NotFound() {

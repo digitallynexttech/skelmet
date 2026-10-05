@@ -20,9 +20,9 @@ import { TrustStrip } from "@/components/marketing/trust-strip"
 import { siteConfig } from "@/config/site"
 
 export const metadata: Metadata = {
-  // Absolute: the root layout's template appends " · SKELMET", which made
-  // this "SKELMET · Park the menace · SKELMET".
-  title: { absolute: `${siteConfig.name} · ${siteConfig.tagline}` },
+  // Absolute: the root layout's template appends " - SKELMET", which made
+  // this "SKELMET - Park the menace - SKELMET".
+  title: { absolute: `${siteConfig.name} - ${siteConfig.tagline}` },
   description: siteConfig.description,
   alternates: { canonical: "/" },
 }
