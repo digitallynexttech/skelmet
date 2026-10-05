@@ -5,10 +5,10 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { useAdminShell } from "@/components/layout/admin-shell"
 
 /**
- * The bar across the top of the console's content, the same 68px as the
- * sidebar's logo row so the two read as one line. It holds the sidebar's
- * toggle; the logo stays in the sidebar, which closes to its icons and the
- * skull mark rather than going away.
+ * The bar across the top of the console's content, the same 68px and colour
+ * as the sidebar's logo row, so the two read as one frame. It holds the
+ * sidebar's toggle; the logo stays in the sidebar, which closes to its icons
+ * and the skull mark rather than going away.
  */
 export function AdminHeader() {
   const { collapsed, drawerOpen, toggle } = useAdminShell()
@@ -18,7 +18,7 @@ export function AdminHeader() {
   const drawerLabel = drawerOpen ? "Close menu" : "Open menu"
 
   return (
-    <header className="bg-void/85 sticky top-0 z-40 flex h-[68px] items-center gap-3 border-b border-white/[0.07] px-5 backdrop-blur-md sm:px-8 xl:px-10">
+    <header className="bg-carbon sticky top-0 z-40 flex h-[68px] items-center gap-3 border-b border-white/[0.07] px-5 sm:px-8 xl:px-10">
       <button
         type="button"
         onClick={toggle}
