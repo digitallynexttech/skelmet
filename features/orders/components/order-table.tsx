@@ -180,7 +180,7 @@ export function OrderTable({ scope = "paid" }: { scope?: OrderScope }) {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow={scope === "all" ? "Orders" : "Console"}
+        eyebrow={scope === "all" ? "Orders" : undefined}
         title={copy.title}
         description={copy.description}
       />

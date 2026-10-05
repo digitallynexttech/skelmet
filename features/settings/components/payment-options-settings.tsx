@@ -34,7 +34,7 @@ const OFFER_OPTIONS = OFFERS.map((o) => ({ value: o, label: OFFER_LABEL[o] }))
 const OFFER_DETAIL: Record<Offer, string> = {
   off: "Not offered to anyone.",
   staff:
-    "Shown at checkout only to someone signed in to this console, in the same browser. Customers see nothing, and the FAQ and terms do not change.",
+    "Shown at checkout only to someone signed in to this admin, in the same browser. Customers see nothing, and the FAQ and terms do not change.",
   everyone: "Offered to every customer, and the FAQ and terms say so.",
 }
 

@@ -10,6 +10,7 @@ import { auth } from "@/server/auth"
 
 export const metadata: Metadata = {
   title: "Sign in",
+  description: "Staff sign-in for the SKELMET admin.",
   robots: { index: false, follow: false },
 }
 
@@ -43,7 +44,7 @@ export default async function LoginPage({
             Sign in
           </h1>
           <p className="text-ash mb-9 text-[15px] leading-[1.6]">
-            The staff console. Customers never need this - orders are placed as a guest and tracked
+            For SKELMET staff. Customers never need this - orders are placed as a guest and tracked
             by order number.
           </p>
 

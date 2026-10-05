@@ -155,7 +155,6 @@ export function InquiryInbox() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Console"
         title="Inquiries"
         description="Everything sent through the contact form. Oldest first, so whoever has waited longest gets answered first."
         actions={data?.newCount ? <Badge variant="ember">{data.newCount} new</Badge> : null}

@@ -118,7 +118,6 @@ export function SubscriberList() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Console"
         title="Newsletter"
         description="Everyone who pressed Notify me on the home page. Email them about new drops from Write an email; each email carries its own unsubscribe link."
         actions={

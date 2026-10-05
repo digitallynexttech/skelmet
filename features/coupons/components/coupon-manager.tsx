@@ -518,7 +518,6 @@ export function CouponManager() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Console"
         title="Offers & codes"
         description="Discount codes customers can enter at checkout, or apply in the cart when In cart is on. Archived codes stop working and move to the Archive tab."
         actions={

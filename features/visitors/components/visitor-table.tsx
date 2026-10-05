@@ -177,7 +177,7 @@ export function VisitorTable() {
       <PageHeader
         eyebrow="Customers"
         title="Visitors"
-        description="Everyone who has browsed the shop. A visitor who accepted cookies is one row across all their visits, with their IP address, device and anything typed at checkout. Everyone else is counted one visit at a time, anonymously. Staff signed in to the console are never counted."
+        description="Everyone who has browsed the shop. A visitor who accepted cookies is one row across all their visits, with their IP address, device and anything typed at checkout. Everyone else is counted one visit at a time, anonymously. Staff signed in to the admin are never counted."
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

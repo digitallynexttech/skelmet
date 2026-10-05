@@ -259,7 +259,6 @@ export function ProductManager() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Console"
         title="Products"
         description="Prices, stock and what is live on the storefront. Stock moves by an amount in or out, so two people counting the same shelf add up instead of overwriting each other."
       />

@@ -158,7 +158,7 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
             onClick={() =>
               ask({
                 title: `Revoke ${member.name ?? member.email}?`,
-                body: "They are signed out and can no longer reach the console. Adding them again later needs a new temporary password.",
+                body: "They are signed out and can no longer sign in. Adding them again later needs a new temporary password.",
                 confirmLabel: "Revoke access",
                 tone: "danger",
                 run: (done) => revoke.mutate(member.id, { onSettled: done }),
@@ -278,12 +278,7 @@ export function StaffSettings({ embedded = false }: { embedded?: boolean }) {
           {addButton}
         </div>
       ) : (
-        <PageHeader
-          eyebrow="Console"
-          title="Staff and roles"
-          description={description}
-          actions={addButton}
-        />
+        <PageHeader title="Staff and roles" description={description} actions={addButton} />
       )}
 
       {adding ? <AddStaffForm roles={roles} onDone={() => setAdding(false)} /> : null}

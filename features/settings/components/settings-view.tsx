@@ -113,7 +113,6 @@ export function SettingsView() {
     <div className="flex flex-col gap-7">
       {dialog}
       <PageHeader
-        eyebrow="Console"
         title="Settings"
         description="Payment keys, paying on delivery, the Shiprocket login and the shipping charge. A change here takes effect straight away, without a deploy, and every save is logged."
       />

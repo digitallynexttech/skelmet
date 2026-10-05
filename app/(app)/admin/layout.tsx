@@ -1,14 +1,13 @@
 import type { Metadata } from "next"
 
 /**
- * Every console page names itself (its page.tsx), shown as "Orders · SKELMET
- * Console" so a tab is never mistaken for the shop's. The description is the
- * console's own, not the storefront's sales line the root layout carries.
+ * Every admin page names itself in its page.tsx ("Orders · SKELMET", by the
+ * root layout's template) and says what it is for. This description stands
+ * for any that does not, in place of the storefront's sales line.
  */
 export const metadata: Metadata = {
-  title: { default: "SKELMET Console", template: "%s · SKELMET Console" },
   description:
-    "The SKELMET staff console: orders, customers, products, offers, the newsletter, the blog and the shop's settings.",
+    "Run the SKELMET shop: orders, customers, products, offers, the newsletter, the blog and settings.",
   robots: { index: false, follow: false },
 }
 

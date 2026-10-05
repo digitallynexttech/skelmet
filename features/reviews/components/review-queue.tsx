@@ -41,7 +41,6 @@ export function ReviewQueue() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        eyebrow="Console"
         title="Reviews"
         description="Nothing shows on the product page until someone here publishes it. Oldest first, so the queue drains fairly."
         actions={

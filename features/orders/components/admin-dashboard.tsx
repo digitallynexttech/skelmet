@@ -42,9 +42,8 @@ export function AdminDashboard() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Console"
-        title="Today at a glance"
-        description="Orders that need packing, what came in this week, and anything running low."
+        title="Dashboard"
+        description="Today at a glance: orders that need packing, what came in this week, and anything running low."
       />
 
       {isError ? (

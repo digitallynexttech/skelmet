@@ -132,7 +132,6 @@ export function CustomerTable() {
   return (
     <div>
       <PageHeader
-        eyebrow="Console"
         title="Customers"
         description={`${total} ${total === 1 ? "person has" : "people have"} paid for an order. No accounts - these are written at checkout, and listed here once the payment lands.`}
         className="mb-6"

@@ -8,6 +8,7 @@ import { staffSession } from "@/server/action-guard"
 
 export const metadata: Metadata = {
   title: "Change password",
+  description: "Choose a new password for your SKELMET admin account.",
   robots: { index: false, follow: false },
 }
 

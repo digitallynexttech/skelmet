@@ -18,7 +18,7 @@ export default function AdminError({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
       <div className="text-magenta mb-3 font-mono text-[11px] tracking-[0.22em] uppercase">
-        Console error
+        Error
       </div>
       <h1 className="font-display text-bone mb-4 text-[34px] leading-[1.04] uppercase">
         That screen failed to load

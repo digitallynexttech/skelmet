@@ -246,7 +246,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
       <ConfirmDialog
         open={confirmingSignOut}
         title="Sign out?"
-        body="You will need your email and password to get back into the console."
+        body="You will need your email and password to sign back in."
         confirmLabel="Sign out"
         tone="danger"
         pending={signingOut}
