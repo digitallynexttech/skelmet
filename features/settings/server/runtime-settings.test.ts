@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
-import { shippingConfig } from "@/config/shipping"
+import { shippingConfig } from "@/lib/config/shipping"
 import { DEFAULT_PAYMENT_OPTIONS } from "@/features/checkout/payment-options"
 import {
   modeOfKey,
@@ -175,7 +175,7 @@ describe("resolveShiprocket", () => {
 })
 
 describe("resolveShipping", () => {
-  it("is config/shipping.ts's charge until one is saved", () => {
+  it("is lib/config/shipping.ts's charge until one is saved", () => {
     expect(resolveShipping(undefined)).toEqual(shippingConfig.fee)
   })
 

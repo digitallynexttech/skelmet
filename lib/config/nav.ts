@@ -1,4 +1,4 @@
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import type { Permission } from "@/lib/constants"
 
 export type NavItem = {

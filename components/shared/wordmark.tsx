@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { cn } from "@/lib/utils"
 
 /**

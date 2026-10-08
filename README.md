@@ -126,7 +126,7 @@ Setup, in Shiprocket:
   "shiprocket", "kartrocket", "sr" or "kr", hence the name.
 - **Wallet**: booking a courier charges it, and fails while it is empty.
 
-Box size and packed weight live in `config/shipping.ts`; couriers bill on the
+Box size and packed weight live in `lib/config/shipping.ts`; couriers bill on the
 larger of actual and volumetric weight, so they set the price of every
 shipment. The sandbox (Settings > Sandbox) is `SHIPROCKET_API_URL=https://api-sandbox.shiprocket.in`
 with the sandbox's own login.
@@ -174,7 +174,7 @@ screens.
 PostgreSQL 16 or 17, reachable from wherever the app runs.
 
 ```bash
-cp .env.example .env          # then fill in the values
+# first: a .env with the variables listed under Deploying
 pnpm db:migrate               # hand-guarded, safe to re-run
 pnpm db:bootstrap             # adds only what is missing; safe on live data
 ```
@@ -259,8 +259,11 @@ app/          routing only, one expression per route handler
 features/     <domain>/{components,hooks,schemas,server,emails}
 components/   ui/ shared/ layout/ marketing/ providers/
 lib/          helpers for client and server: money, dates, env, mail, API envelope
+lib/config/   the site's facts: promises, contact, shipping box, invoice seller, nav
 server/       db, auth, guards, audit, error mapping
 prisma/       schema, hand-written SQL migrations, seed
+public/       images, the invoice's fonts and logo (public/invoice)
+scripts/      asset builders and the mail test, run by hand
 ```
 
 Features are imported by path (`@/features/cart/hooks/use-cart`). There are no
@@ -286,5 +289,5 @@ The storefront's rating, review count and review quotes are set in code
 (`features/catalog/catalog.ts`, `components/marketing/content.ts`), not read
 from the reviews table. The shop's promises (dispatch, delivery, damage window,
 refunds, support replies) are stated once, in `siteConfig.promise` in
-`config/site.ts`, and quoted from there by the policies, FAQ, checkout and
+`lib/config/site.ts`, and quoted from there by the policies, FAQ, checkout and
 emails.

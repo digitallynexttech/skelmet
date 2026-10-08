@@ -2,7 +2,7 @@ import "server-only"
 
 import { randomBytes } from "node:crypto"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { paginate } from "@/lib/api-response"
 import { MAX_PAGE_SIZE, PAGE_SIZE, PERMISSIONS } from "@/lib/constants"
 import { hasDatabase } from "@/lib/env"

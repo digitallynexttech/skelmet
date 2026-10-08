@@ -130,7 +130,7 @@ export async function verifyPaymentSignature(
 /**
  * Signature = HMAC_SHA256(rawBody, webhookSecret): needs the raw text, never a
  * re-serialised object. Tries both accounts' secrets, since a payment in flight
- * across a mode switch is signed with the old one. Fails closed (§6).
+ * across a mode switch is signed with the old one. Fails closed.
  */
 export async function verifyWebhookSignature(
   rawBody: string,

@@ -11,7 +11,7 @@ import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 
 export const metadata: Metadata = pageMetadata({

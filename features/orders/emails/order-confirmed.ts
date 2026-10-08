@@ -1,6 +1,6 @@
 import "server-only"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 import { formatMoney } from "@/lib/money"

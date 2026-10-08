@@ -14,7 +14,6 @@ next-env.d.ts
 # env, except the example
 .env
 .env.*
-!.env.example
 
 # Claude Code agent worktrees
 .claude/worktrees/

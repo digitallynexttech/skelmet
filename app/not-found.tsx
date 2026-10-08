@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 // Absolute: the root title template may or may not apply here.
 export const metadata: Metadata = {

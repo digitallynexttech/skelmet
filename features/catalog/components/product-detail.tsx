@@ -24,7 +24,7 @@ import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-selection"
 import { PincodeCheck } from "@/features/catalog/components/pincode-check"
 import type { Product } from "@/features/catalog/catalog"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 

@@ -2,7 +2,7 @@ import Image from "next/image"
 
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 /**
  * Our own photos until riders tag us and agree to be featured. The alt text says they are

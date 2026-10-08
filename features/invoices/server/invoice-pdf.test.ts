@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { buildInvoice, type InvoiceOrder } from "@/features/invoices/invoice"
 import { renderInvoicePdf } from "@/features/invoices/server/invoice-pdf"
 
-// Renders with the fonts and logo from assets/invoice, the folder the build traces.
+// Renders with the fonts and logo from public/invoice.
 
 const order: InvoiceOrder = {
   number: "SKM-2026-47MV",

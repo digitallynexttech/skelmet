@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client"
 import type { Session } from "next-auth"
 import { z } from "zod"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import {
   refreshPaymentTerms,
   refreshShippingTerms,

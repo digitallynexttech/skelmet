@@ -165,7 +165,7 @@ export async function listCustomers(
         name: u.name,
         phone: u.phone,
         orderCount: u.orders.length,
-        // Money is a string on the wire (§7).
+        // Money is a string on the wire.
         totalSpent: spent.toFixed(2),
         lastOrderAt: last ? last.toISOString() : null,
         city: u.addresses[0]?.city ?? null,

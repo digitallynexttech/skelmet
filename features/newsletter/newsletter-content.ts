@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { C, escapeHtml, FONT } from "@/features/orders/emails/email-theme"
 
 /**

@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 
 import { Section } from "@/components/marketing/section"
 import { ButtonLink } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import {
   categoryLabel,
   extractHeadings,

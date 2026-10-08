@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { ArrowRight, Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import { Field, Input, Textarea } from "@/components/ui/input"
 import { cn } from "@/lib/utils"

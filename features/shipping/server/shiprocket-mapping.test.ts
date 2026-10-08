@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { shippingConfig } from "@/config/shipping"
+import { shippingConfig } from "@/lib/config/shipping"
 import {
   bareMobile,
   buildAdhocOrder,

@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-/** The same schema validates the form (zodResolver) and the service (§6). */
+/** The same schema validates the form (zodResolver) and the service. */
 export const createInquirySchema = z.object({
   name: z.string().trim().min(2, "Tell us your name").max(80),
   email: z.email("That email doesn't look right"),

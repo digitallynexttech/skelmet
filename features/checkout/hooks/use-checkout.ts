@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 import { useCart } from "@/features/cart/hooks/use-cart"
 import type { PlaceOrderInput } from "@/features/checkout/schemas/checkout.schema"

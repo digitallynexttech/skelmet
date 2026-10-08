@@ -1,6 +1,6 @@
 import "server-only"
 
-import { FEE_BASES, shippingConfig } from "@/config/shipping"
+import { FEE_BASES, shippingConfig } from "@/lib/config/shipping"
 import { DEFAULT_PAYMENT_OPTIONS } from "@/features/checkout/payment-options"
 import {
   KEY_PREFIX,
@@ -235,7 +235,7 @@ export function resolveShipping(stored: Partial<ShippingCharge> | undefined): Sh
   return savedShipping(stored) ?? { ...shippingConfig.fee }
 }
 
-/** Saved in the console, else config/shipping.ts. */
+/** Saved in the console, else lib/config/shipping.ts. */
 export async function shippingCharge(): Promise<ShippingCharge> {
   return resolveShipping((await storedSettings()).shipping)
 }

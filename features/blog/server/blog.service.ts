@@ -26,7 +26,7 @@ import { can, requirePermission } from "@/server/action-guard"
 // Needs SANITY_API_TOKEN (Editor role): drafts are private, and publishing is a write.
 
 const NOT_SET_UP =
-  "The blog has no Sanity project yet. Put its id in config/site.ts, under sanity.projectId."
+  "The blog has no Sanity project yet. Put its id in lib/config/site.ts, under sanity.projectId."
 const NO_TOKEN =
   "Managing posts from here needs SANITY_API_TOKEN in the server's .env: a token with the Editor role, from sanity.io/manage > API > Tokens."
 

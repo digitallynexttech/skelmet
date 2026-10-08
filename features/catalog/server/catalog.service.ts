@@ -12,7 +12,7 @@ import { db } from "@/server/db"
 async function liveBySku(skus: string[]) {
   const rows = await db.variant.findMany({
     where: { sku: { in: skus } },
-    // select, never include (§7).
+    // select, never include.
     select: { sku: true, price: true, stock: true, product: { select: { status: true } } },
   })
   return new Map(

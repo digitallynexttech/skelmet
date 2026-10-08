@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 type ShareImage = { url: string; width?: number; height?: number; alt?: string }
 

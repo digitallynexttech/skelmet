@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import type { BlogListItem } from "@/features/blog/blog"
 import { getBlogPosts } from "@/features/blog/server/sanity"
 import { PRODUCTS } from "@/features/catalog/catalog"

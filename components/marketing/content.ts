@@ -1,6 +1,6 @@
 /** Homepage copy in one place, so the page component stays composition only. */
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { DEFAULT_PAYMENT_OPTIONS, paymentCopy } from "@/features/checkout/payment-options"
 
 const P = siteConfig.promise

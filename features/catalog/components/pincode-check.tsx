@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Check, MapPin, X } from "lucide-react"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { apiFetch } from "@/lib/api-fetch"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"

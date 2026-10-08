@@ -1,6 +1,6 @@
 import "server-only"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 
 /** Sent on delivery with the tax invoice PDF. Same email rules as order-confirmed.ts. */

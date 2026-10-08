@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { CouponBox, type AppliedCoupon } from "@/features/cart/components/coupon-box"
 import { calculateTotals, lineFor, useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import {

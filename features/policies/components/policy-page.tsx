@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { POLICIES, type Inline, type Policy, type PolicyBlock } from "@/features/policies/policies"
 import { cn } from "@/lib/utils"
 

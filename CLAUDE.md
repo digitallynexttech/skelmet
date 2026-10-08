@@ -4,8 +4,7 @@
 
 Storefront and staff console for one product (a flame-skull helmet mount), live at
 https://www.skelmet.in. Next.js 16 App Router, React 19, Prisma 7 on Postgres,
-Auth.js v5, Razorpay, Shiprocket, Tailwind 4, pnpm. `docs/dn-nextjs-standard.md`
-is the house standard and wins over habit.
+Auth.js v5, Razorpay, Shiprocket, Tailwind 4, pnpm.
 
 ## Commands
 
@@ -34,7 +33,7 @@ the switch, and again after a rollback.
 ## Blog
 
 Posts live in Sanity, not in the database. The project is named in
-`config/site.ts` (`sanity.projectId`); with none, `/blog` is empty and out
+`lib/config/site.ts` (`sanity.projectId`); with none, `/blog` is empty and out
 of the menu. Editors write at `/studio`, which signs them in through Sanity.
 `features/blog/server/sanity.ts` reads posts and Next keeps them for a
 minute, so publishing needs no deploy. `proxy.ts` answers 404 for a
@@ -84,7 +83,7 @@ Keep them that way: the splash is up while the page hydrates.
 - The cookie bar is honest: a visitor who declines is counted without an IP
   address, a cookie or a link to a person. Keep it that way.
 - Reviews and the rating on the storefront are the owner's to change.
-- Promises, stated once in `config/site.ts` and used everywhere: dispatch within
+- Promises, stated once in `lib/config/site.ts` and used everywhere: dispatch within
   48 hours, delivery within 7 working days, transit damage reported within 24
   hours, refunds issued within 7 working days of approval.
 - Run Prettier on the files you changed, not on directories.

@@ -2,8 +2,8 @@
 // (E-Commerce) Rules 2020, grievance officer included. Promise figures come from
 // siteConfig.promise so policies, FAQ and emails always agree.
 
-import { shippingConfig } from "@/config/shipping"
-import { siteConfig } from "@/config/site"
+import { shippingConfig } from "@/lib/config/shipping"
+import { siteConfig } from "@/lib/config/site"
 import { DEFAULT_PAYMENT_OPTIONS, paymentCopy } from "@/features/checkout/payment-options"
 import type { PaymentOptions } from "@/features/settings/schemas/runtime-settings.schema"
 import { formatMoney } from "@/lib/money"

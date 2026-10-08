@@ -5,7 +5,7 @@ import { Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { pixelLead } from "@/features/visitors/lib/meta-pixel"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 

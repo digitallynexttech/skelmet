@@ -1,4 +1,4 @@
-import { shippingConfig, type FeeBasis } from "@/config/shipping"
+import { shippingConfig, type FeeBasis } from "@/lib/config/shipping"
 import type { PaymentMethod } from "@/features/checkout/payment-options"
 
 // Pure mapping between our orders and Shiprocket's API; the calls are in shiprocket.ts.

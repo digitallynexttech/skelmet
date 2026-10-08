@@ -3,7 +3,7 @@ import "server-only"
 import { timingSafeEqual } from "node:crypto"
 import type { Session } from "next-auth"
 
-import { shippingConfig } from "@/config/shipping"
+import { shippingConfig } from "@/lib/config/shipping"
 import { queueInvoiceEmail } from "@/features/invoices/server/invoice.service"
 import { renderOrderShipped } from "@/features/orders/emails/order-shipped"
 import { bookShipmentSchema, pincodeSchema } from "@/features/shipping/schemas/shipping.schema"

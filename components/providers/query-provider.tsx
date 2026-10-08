@@ -9,7 +9,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Lists: 30s. Lookups 60s, near-static 300s (§5).
+            // Lists: 30s. Lookups 60s, near-static 300s.
             staleTime: 30_000,
             refetchOnWindowFocus: false,
             retry: 1,

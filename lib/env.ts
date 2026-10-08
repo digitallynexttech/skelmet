@@ -4,7 +4,7 @@ import { z } from "zod"
 // optional unless REQUIRE_BACKEND=1, which production must set.
 const REQUIRE_BACKEND = process.env.REQUIRE_BACKEND === "1"
 
-/** "" and whitespace are unset, so `.env.example`'s blanks get the default. */
+/** "" and whitespace count as unset, so the schema's default applies. */
 const blank = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? undefined : value
 

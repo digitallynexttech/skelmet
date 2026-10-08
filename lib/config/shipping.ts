@@ -1,4 +1,4 @@
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 // Couriers bill the larger of real and volumetric weight (L x B x H cm / 5000),
 // so the carton's size, not the mount, sets the price.

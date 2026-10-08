@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware"
 
 import { FLAME_SKULL_MOUNT, getProduct, type ColourwayId } from "@/features/catalog/catalog"
 
-// Guest cart, client-owned in localStorage: a deliberate deviation from §2.
+// Guest cart, client-owned in localStorage (no server cart).
 
 export type CartLine = {
   /** `<productSlug>:<colourway>`, stable, so quantity merges rather than duplicates. */

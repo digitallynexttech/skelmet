@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 
 import { Money } from "@/components/shared/money"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { ButtonLink } from "@/components/ui/button"
 import {
   CouponBox,

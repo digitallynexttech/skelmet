@@ -10,8 +10,6 @@ import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Texture } from "@/components/marketing/texture"
-// import { TheHook } from "@/components/marketing/the-hook"   // hidden from this page
-// import { ThePoint } from "@/components/marketing/the-point"
 import { MoreThanMount } from "@/components/marketing/more-than-mount"
 import { TrustStrip } from "@/components/marketing/trust-strip"
 import { WhyCare } from "@/components/marketing/why-care"
@@ -87,14 +85,12 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
 
       <TrustStrip />
 
-      {/* <ThePoint /> */}
       <WhyCare />
       <MoreThanMount shots={sections.inUse} />
       <Anatomy product={product} />
       {/* CTA goes to the buy panel, not to this same page. */}
       <Texture ctaHref="#buy" price={product.price} finish={sections.finish} />
       <InstallSteps picture={sections.install} />
-      {/* <TheHook /> */}
       <Comparison looksLike={sections.looksLike} />
       <Reviews product={product} />
       <RiderWall />

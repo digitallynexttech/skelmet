@@ -4,7 +4,7 @@ import * as React from "react"
 import { Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 
 /** A button, not on page load: mail scanners and link previews open every link in an email. */

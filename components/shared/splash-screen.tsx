@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import LOCKUP from "@/components/shared/lockup-mono.json"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { cn } from "@/lib/utils"
 
 /**

@@ -1,4 +1,4 @@
-import { invoiceConfig } from "@/config/invoice"
+import { invoiceConfig } from "@/lib/config/invoice"
 import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { rupeesInWords } from "@/lib/amount-in-words"
 import { GST_STATE_CODE, matchState } from "@/lib/india"

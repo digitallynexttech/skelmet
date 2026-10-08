@@ -649,7 +649,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           select: { id: true, number: true, total: true },
         })
 
-        // Atomic claim per line so a concurrent order cannot oversell (§5).
+        // Atomic claim per line so a concurrent order cannot oversell.
         for (const line of lines) {
           const claimed = await tx.variant.updateMany({
             where: { id: line.variant.id, stock: { gte: line.qty } },

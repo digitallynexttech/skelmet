@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 
 import { Section } from "@/components/marketing/section"
 import { ButtonLink } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { UnsubscribeButton } from "@/features/newsletter/components/unsubscribe-button"
 import { subscriberForToken } from "@/features/newsletter/server/newsletter.service"
 

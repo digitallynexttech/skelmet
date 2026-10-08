@@ -13,7 +13,7 @@ import type { JSONContent } from "@tiptap/react"
 
 import { Field, Input, Label } from "@/components/ui/input"
 import { HeaderButton } from "@/components/ui/header-button"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { EMPTY_DOC, RichEditor } from "@/features/newsletter/components/rich-editor"
 import { renderNewsletter } from "@/features/newsletter/emails/newsletter-email"
 import {

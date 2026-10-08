@@ -23,7 +23,7 @@ export default function StudioPage() {
           </h1>
           <p className="text-ash text-[15.5px] leading-[1.65]">
             This is where posts will be written. It needs a Sanity project first: put its id in{" "}
-            <code className="text-bone font-mono text-[14px]">config/site.ts</code>, under{" "}
+            <code className="text-bone font-mono text-[14px]">lib/config/site.ts</code>, under{" "}
             <code className="text-bone font-mono text-[14px]">sanity.projectId</code>, and deploy.
           </p>
         </div>

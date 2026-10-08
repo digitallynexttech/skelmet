@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { FEE_BASES, type FeeBasis } from "@/config/shipping"
+import { FEE_BASES, type FeeBasis } from "@/lib/config/shipping"
 
 /**
  * Console-editable settings; client-safe, the forms validate with these. In every input a field

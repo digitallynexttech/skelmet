@@ -1,4 +1,4 @@
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { acceptedNow, useConsent } from "@/features/visitors/hooks/use-consent"
 

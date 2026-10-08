@@ -2,7 +2,6 @@ import { Fragment } from "react"
 import type { Metadata } from "next"
 
 import { Anatomy } from "@/components/marketing/anatomy"
-// import { AnyWall } from "@/components/marketing/any-wall"   // hidden from this page
 import { Bento } from "@/components/marketing/bento"
 import { ColourwayGrid } from "@/components/marketing/colourway-grid"
 import { Comparison } from "@/components/marketing/comparison"
@@ -10,14 +9,11 @@ import { DropList } from "@/components/marketing/drop-list"
 import { FaqSection } from "@/components/marketing/faq-section"
 import { Hero } from "@/components/marketing/hero"
 // import { InstallSteps } from "@/components/marketing/install-steps"   // hidden from this page
-// import { ReelStrip } from "@/components/marketing/reel-strip"   // hidden from this page
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Texture } from "@/components/marketing/texture"
-// import { TheHook } from "@/components/marketing/the-hook"   // hidden from this page
-// import { ThePoint } from "@/components/marketing/the-point"
 import { TrustStrip } from "@/components/marketing/trust-strip"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 export const metadata: Metadata = {
   // Absolute: the root layout's title template would add " - SKELMET" twice.
@@ -87,11 +83,7 @@ export default function HomePage() {
       )}
 
       {/* Hidden, not deleted: to restore one, add it to RUN. */}
-      {/* <ThePoint /> */}
       {/* <InstallSteps /> */}
-      {/* <TheHook /> */}
-      {/* <ReelStrip /> */}
-      {/* <AnyWall /> */}
     </>
   )
 }

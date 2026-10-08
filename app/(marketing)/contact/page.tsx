@@ -8,7 +8,7 @@ import { pageMetadata } from "@/components/marketing/page-metadata"
 import { Section } from "@/components/marketing/section"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
 import { WhatsappIcon } from "@/components/shared/social-icons"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { ContactForm, ContactFormFromLink } from "@/features/inquiries/components/contact-form"
 
 export const metadata: Metadata = pageMetadata({

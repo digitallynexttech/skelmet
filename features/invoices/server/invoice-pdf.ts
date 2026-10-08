@@ -4,15 +4,14 @@ import path from "node:path"
 
 import PDFDocument from "pdfkit"
 
-import { invoiceConfig } from "@/config/invoice"
-import { siteConfig } from "@/config/site"
+import { invoiceConfig } from "@/lib/config/invoice"
+import { siteConfig } from "@/lib/config/site"
 import { paymentTerms, type Invoice } from "@/features/invoices/invoice"
 
 // The A4 invoice or credit note, laid out like the seller's own invoices.
 // Noto Sans is embedded because the PDF standard fonts have no rupee sign.
 
-// A folder of its own: this path is traced at build, and all of assets/ is 250 MB.
-const ASSETS = path.join(process.cwd(), "assets", "invoice")
+const ASSETS = path.join(process.cwd(), "public", "invoice")
 const FONT = path.join(ASSETS, "NotoSans-Regular.ttf")
 const BOLD = path.join(ASSETS, "NotoSans-Bold.ttf")
 const LOGO = path.join(ASSETS, "skelmet-lockup-ink.png")

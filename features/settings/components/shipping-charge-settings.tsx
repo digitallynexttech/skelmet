@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { HeaderButton } from "@/components/ui/header-button"
-import { FEE_BASES, type FeeBasis } from "@/config/shipping"
+import { FEE_BASES, type FeeBasis } from "@/lib/config/shipping"
 import {
   ChangeList,
   Panel,

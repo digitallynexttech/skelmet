@@ -5,7 +5,7 @@ import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
 import { Section } from "@/components/marketing/section"
 import { HeroWatermark } from "@/components/shared/hero-watermark"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 export const metadata: Metadata = pageMetadata({
   title: "Rider wall",

@@ -3,8 +3,8 @@ import Link from "next/link"
 import { InstagramIcon, WhatsappIcon, YoutubeIcon } from "@/components/shared/social-icons"
 
 import { BRAND_LOCKUP_VECTOR } from "@/components/shared/wordmark"
-import { footerNav } from "@/config/nav"
-import { siteConfig } from "@/config/site"
+import { footerNav } from "@/lib/config/nav"
+import { siteConfig } from "@/lib/config/site"
 
 const SOCIALS = [
   { href: siteConfig.social.instagram, label: "Instagram", Icon: InstagramIcon },

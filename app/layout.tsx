@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Anton, JetBrains_Mono, Space_Grotesk } from "next/font/google"
 
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 
 import "./globals.css"
 

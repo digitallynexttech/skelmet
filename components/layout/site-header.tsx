@@ -8,7 +8,7 @@ import { Menu, X } from "lucide-react"
 import { CartButton } from "@/components/layout/cart-button"
 import { Wordmark } from "@/components/shared/wordmark"
 import { ButtonLink } from "@/components/ui/button"
-import { primaryNav } from "@/config/nav"
+import { primaryNav } from "@/lib/config/nav"
 import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-selection"
 import { cn } from "@/lib/utils"
 

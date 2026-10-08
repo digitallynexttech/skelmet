@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react"
 import { ArrowUp } from "lucide-react"
 
 import { WhatsappIcon } from "@/components/shared/social-icons"
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "@/lib/config/site"
 import { cn } from "@/lib/utils"
 
 const BUTTON =
