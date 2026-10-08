@@ -61,6 +61,40 @@ export type Product = {
   gallery: Record<ColourwayId, GalleryImage[]>
   specs: Array<{ label: string; value: string; pending?: boolean }>
   inTheBox: string[]
+  sections: ProductSections
+}
+
+/** A picture as a section shows it. */
+export type Picture = {
+  src: string
+  alt: string
+  /** Where a crop keeps it, as CSS object-position, when the centre would cut the skull. */
+  position?: string
+}
+
+/** FAQ answers that differ for one skull, by question. null leaves the question out. */
+export type FaqAnswers = Record<string, string | null>
+
+/**
+ * What the product page's sections show of this skull: their pictures, and
+ * the lines that are about this one rather than any SKELMET mount. The home
+ * and about pages show the Flame Skull's.
+ */
+export type ProductSections = {
+  /** "More than a mount": one picture per card, in the cards' order. */
+  inUse: [Picture, Picture, Picture]
+  /** "The build": the picture beside the specs, and what it says above them. */
+  build: { picture: Picture; body: string }
+  /** "The finish": the close-up, and what it says about the print. */
+  finish: { picture: Picture; body: string }
+  /** "Install": the mount going up on a wall. */
+  install: Picture
+  /** "The alternatives": what it looks like, in the comparison's last row. */
+  looksLike: string
+  /** Beside the questions. */
+  faq: Picture
+  /** Where the questions' answers are not true of this skull, or not yet known. */
+  faqAnswers?: FaqAnswers
 }
 
 /** One picture, in one finish, as the gallery shows it. */
@@ -249,6 +283,50 @@ export const FLAME_SKULL_MOUNT: Product = {
     "Thank-you card",
     "Mystery box",
   ],
+  sections: {
+    // The real skull and arm, one in each colourway
+    // (scripts/build-gallery-shots.mjs, build-rider-wall.mjs).
+    inUse: [
+      {
+        src: "/product/gallery-wall-gear-ghost-grey.jpg",
+        alt: "A helmet on a Ghost Grey mount, a jacket, gloves and keys on its hooks",
+      },
+      {
+        src: "/product/gallery-garage-night.jpg",
+        alt: "The mount in a garage at night, a white open-face helmet on the skull",
+      },
+      {
+        src: "/product/rider-cream-helmet.jpg",
+        alt: "A Militia Olive mount wearing a cream open-face helmet, gloves and a jacket below",
+      },
+    ],
+    build: {
+      picture: {
+        src: "/product/box-contents.jpg",
+        alt: "What comes in the box: the flame skull on its arm in one piece, a paper drilling guide marking the three holes, three screws and wall plugs, a thank-you card and a mystery box",
+      },
+      body: "The mount arm fixes to the wall with 3 screws. The skull is shaped to fit into any helmet type and size. The whole mount supports up to 10 kg.",
+    },
+    finish: {
+      picture: {
+        src: "/product/detail-flame.jpg",
+        alt: "Macro detail of the carved flame relief and 3D-print layer lines",
+      },
+      body: "We don't sand the print smooth and pretend it was moulded. The fine horizontal ridges catch the light, the flame valleys go properly deep, and the whole thing reads as made rather than manufactured.",
+    },
+    // Shipped in one piece, so it goes up whole, screwed through the foot of
+    // its plate: the print files rendered into the scene, in Militia Olive
+    // (build-why-colourways.mjs).
+    install: {
+      src: "/product/why-install-olive.jpg",
+      alt: "Screwing a Militia Olive SKELMET mount to a wall through the foot of its plate, the skull already fixed to its arm",
+    },
+    looksLike: "A flaming skull",
+    faq: {
+      src: "/product/gallery-bare-skull-ghost-grey.jpg",
+      alt: "The SKELMET mount in Ghost Grey on its black arm, gloves hanging from the hook",
+    },
+  },
 }
 
 // ── the Piston Skull ────────────────────────────────────────
@@ -327,11 +405,11 @@ export const PISTON_SKULL_MOUNT: Product = {
     olive: PISTON_SHOTS.map((shot) => inFinish(shot, "olive")),
     ghost: PISTON_SHOTS.map((shot) => inFinish(shot, "ghost")),
   },
-  // Measured off the print file. Its weight and which helmets it fits are the
-  // owner's to confirm before they go here.
+  // Measured off the print file. Its weight, its load rating (its bracket is
+  // not the Flame Skull's) and which helmets it fits are the owner's to
+  // confirm before they go here.
   specs: [
     { label: "Material", value: "PLA+ · matte" },
-    { label: "Load rating", value: "10 kg" },
     { label: "Skull", value: "15 × 28 × 21 cm" },
     { label: "Fixings", value: "3 × screws + wall plugs" },
   ],
@@ -342,6 +420,58 @@ export const PISTON_SKULL_MOUNT: Product = {
     "Thank-you card",
     "Mystery box",
   ],
+  // Its studio shots for now: the pictures of it in use (on a wall with a
+  // helmet and gear, in its box, going up) are still to be made, as the
+  // Flame Skull's were.
+  sections: {
+    inUse: [
+      {
+        src: "/product/piston-hero-ghost-grey.jpg",
+        alt: "A Ghost Grey piston skull mount on the wall, three-quarter view",
+      },
+      {
+        src: "/product/piston-front.jpg",
+        alt: "A Blaze Orange piston skull mount on the wall, face on",
+      },
+      {
+        src: "/product/piston-detail-olive.jpg",
+        alt: "A Militia Olive piston skull, close on its face and the piston in its teeth",
+      },
+    ],
+    build: {
+      picture: {
+        src: "/product/piston-mohawk.jpg",
+        alt: "The piston skull on its black arm, from above, the mohawk running back over its head",
+        position: "50% 80%",
+      },
+      body: "The mount arm fixes to the wall with 3 screws. The skull rides on its post, tipped forward and facing out from the wall.",
+    },
+    finish: {
+      picture: {
+        src: "/product/piston-detail.jpg",
+        alt: "Close up of the piston skull's face, the piston's rings and the print's layer lines",
+      },
+      body: "We don't sand the print smooth and pretend it was moulded. The fine ridges of every layer catch the light, the mohawk's spikes and the piston's rings stay crisp, and the whole thing reads as made rather than manufactured.",
+    },
+    install: {
+      src: "/product/piston-hero-olive.jpg",
+      alt: "A Militia Olive piston skull mount fixed to the wall",
+    },
+    looksLike: "A mohawk skull, piston in its teeth",
+    faq: {
+      src: "/product/piston-mohawk-ghost-grey.jpg",
+      alt: "The Piston Skull Helmet Mount in Ghost Grey, from above",
+    },
+    // Which helmets it takes and what it holds are the owner's to confirm
+    // (2026-10-08): until then its page claims neither.
+    faqAnswers: {
+      "Will the SKELMET mount hold a full-face helmet?": null,
+      "Can the SKELMET mount hold my jacket and gloves as well as my helmet?":
+        "Yes. The arm has hooks under the skull, so your gloves, jacket and keys hang right below your helmet.",
+      "Can I put up the SKELMET mount without drilling?":
+        "We do not recommend it. The mount is made to be screwed into the wall with the three screws and wall plugs in the box. Adhesive strips and hooks are not made for a helmet's weight, and the mount could come down. The paper guide in the box marks exactly where to drill.",
+    },
+  },
 }
 
 export const PRODUCTS: Product[] = [FLAME_SKULL_MOUNT, PISTON_SKULL_MOUNT]

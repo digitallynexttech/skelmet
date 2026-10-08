@@ -6,6 +6,7 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Accordion } from "@/components/ui/accordion"
 import { siteConfig } from "@/config/site"
+import { FLAME_SKULL_MOUNT, type FaqAnswers, type Picture } from "@/features/catalog/catalog"
 import { paymentCopy } from "@/features/checkout/payment-options"
 import { paymentOptions } from "@/features/settings/server/runtime-settings"
 
@@ -13,17 +14,19 @@ import { paymentOptions } from "@/features/settings/server/runtime-settings"
  * Async only for the question on paying, which states the ways to pay
  * switched on in the console. The pages it sits on are prerendered, and a
  * save there refreshes them (refreshPaymentTerms).
+ *
+ * `picture` and `answers`: the skull this page sells, the Flame Skull's
+ * unless given. An answer of null leaves its question out.
  */
-const FLAME_PICTURE = {
-  src: "/product/gallery-bare-skull-ghost-grey.jpg",
-  alt: "The SKELMET mount in Ghost Grey on its black arm, gloves hanging from the hook",
-}
-
-/** `picture`: the skull this page sells, the Flame Skull's unless given. */
 export async function FaqSection({
-  picture = FLAME_PICTURE,
-}: { picture?: { src: string; alt: string } } = {}) {
-  const items = faqItems(paymentCopy(await paymentOptions()).faq)
+  picture = FLAME_SKULL_MOUNT.sections.faq,
+  answers = {},
+}: { picture?: Picture; answers?: FaqAnswers } = {}) {
+  const items = faqItems(paymentCopy(await paymentOptions()).faq).flatMap((item) => {
+    const own = answers[item.question]
+    if (own === null) return []
+    return [own === undefined ? item : { ...item, answer: own }]
+  })
 
   // Carbon, like rider-wall. The homepage has only one other darker band, so
   // without this one its last three sections run flat into each other. It is

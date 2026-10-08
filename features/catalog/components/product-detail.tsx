@@ -41,16 +41,10 @@ export function ProductDetail({
   product,
   freeShipping,
   initialColourway,
-  showSpecs = false,
 }: {
   product: Product
   /** No shipping charge anywhere (Settings > Shipping charge at 0%). */
   freeShipping: boolean
-  /**
-   * The specs in the panel, for a page without the Flame Skull's build
-   * section (anatomy.tsx), which lists them there.
-   */
-  showSpecs?: boolean
   /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
@@ -450,27 +444,6 @@ export function ProductDetail({
             ))}
           </ul>
         </div>
-
-        {showSpecs ? (
-          <div className="rounded-tile bg-carbon border border-white/[0.09] p-5">
-            <div className="text-dim mb-3.5 font-mono text-[11px] tracking-[0.14em] uppercase">
-              Specs
-            </div>
-            <dl className="flex flex-col">
-              {product.specs.map((spec) => (
-                <div
-                  key={spec.label}
-                  className="flex items-center justify-between gap-4 border-b border-white/[0.07] py-2.5 text-[13.5px] last:border-b-0"
-                >
-                  <dt className="text-dim">{spec.label}</dt>
-                  <dd className={cn("text-right", spec.pending ? "text-ember" : "text-bone")}>
-                    {spec.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ) : null}
 
         {/* The declarations the Legal Metrology (Packaged Commodities) Rules
             require of an online listing, in one place. Collapsed, because a

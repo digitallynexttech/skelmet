@@ -3,22 +3,25 @@ import Image from "next/image"
 import { INSTALL_STEPS } from "@/components/marketing/content"
 import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
+import { FLAME_SKULL_MOUNT, type Picture } from "@/features/catalog/catalog"
 
 /**
  * The mount ships in one piece - the skull already fixed to its arm - so the
- * picture shows it whole, screwed up through the foot of its plate. Its skull
- * and bracket are renders of the print files laid into the scene (see
- * bento.tsx), in Militia Olive (build-why-colourways.mjs).
+ * picture shows it whole on its wall: the Flame Skull's unless a product page
+ * gives its own (catalog.ts).
  */
-export function InstallSteps() {
+export function InstallSteps({
+  picture = FLAME_SKULL_MOUNT.sections.install,
+}: { picture?: Picture } = {}) {
   return (
     <Section id="install" className="bg-carbon border-y border-white/[0.07]">
       <div className="grid items-center gap-10 lg:grid-cols-[560px_minmax(0,1fr)] lg:gap-14">
         <div className="rounded-card overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-3/2">
             <Image
-              src="/product/why-install-olive.jpg"
-              alt="Screwing a Militia Olive SKELMET mount to a wall through the foot of its plate, the skull already fixed to its arm"
+              src={picture.src}
+              alt={picture.alt}
+              style={{ objectPosition: picture.position }}
               fill
               sizes="(min-width: 1024px) 45vw, 92vw"
               className="object-cover object-[50%_20%]"

@@ -2,7 +2,7 @@ import { SplitFeature } from "@/components/marketing/split-feature"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, type ProductSections } from "@/features/catalog/catalog"
 import { getFeaturedProduct } from "@/features/catalog/server/catalog.service"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -19,9 +19,12 @@ export async function Texture({
   ctaHref = `/product/${FLAME_SKULL_MOUNT.slug}`,
   /** The live price, when the page has it already; otherwise read here. */
   price,
+  /** The close-up and its words: the Flame Skull's unless a product page gives its own. */
+  finish = FLAME_SKULL_MOUNT.sections.finish,
 }: {
   ctaHref?: string
   price?: string
+  finish?: ProductSections["finish"]
 } = {}) {
   // The admin price, not the registry's: this button used to quote the
   // figure the site was built with while the product page charged another.
@@ -36,8 +39,8 @@ export async function Texture({
   const label = ctaHref.startsWith("#") ? "Pick your colour" : "Buy it now"
   return (
     <SplitFeature
-      image="/product/detail-flame.jpg"
-      alt="Macro detail of the carved flame relief and 3D-print layer lines"
+      image={finish.picture.src}
+      alt={finish.picture.alt}
       reverse
       minHeight="min-h-[360px] lg:min-h-[460px]"
     >
@@ -74,9 +77,7 @@ export async function Texture({
           cap is here at all rather than removed - the column runs to 848px at
           1920, and an unbounded measure would drop this to two lines there. */}
       <p className="text-ash mb-7 max-w-[640px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
-        We don&apos;t sand the print smooth and pretend it was moulded. The fine horizontal ridges
-        catch the light, the flame valleys go properly deep, and the whole thing reads as made
-        rather than manufactured.
+        {finish.body}
       </p>
       <div className="flex flex-wrap gap-2.5">
         {TAGS.map((tag) => (

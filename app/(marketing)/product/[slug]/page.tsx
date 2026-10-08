@@ -90,10 +90,9 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const product = result.ok ? result.data : null
   if (!product) notFound()
 
-  // The Flame Skull's page carries the sections built from its own photos,
-  // specs and reviews. Another skull gets the ones true of any SKELMET mount,
-  // with its specs in the buy panel instead.
-  const isFlame = product.slug === FLAME_SKULL_MOUNT.slug
+  // Every skull's page carries the same sections, each showing this skull's
+  // pictures, specs and words (product.sections in catalog.ts).
+  const { sections } = product
 
   return (
     <>
@@ -108,11 +107,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail
-        product={product}
-        freeShipping={charge.sharePercent === 0}
-        showSpecs={!isFlame}
-      />
+      <ProductDetail product={product} freeShipping={charge.sharePercent === 0} />
       <PixelViewContent
         sku={product.colourways[0]!.sku}
         name={product.name}
@@ -121,34 +116,19 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
 
       <TrustStrip />
 
-      {isFlame ? (
-        <>
-          {/* <ThePoint /> */}
-          <WhyCare />
-          <MoreThanMount />
-          <Anatomy />
-          {/* Links back up to the buy panel: on this page the product link
-              would only point at the page the reader is already on. */}
-          <Texture ctaHref="#buy" price={product.price} />
-          <InstallSteps />
-          {/* <TheHook /> */}
-          <Comparison />
-          <Reviews />
-          <RiderWall />
-          <FaqSection />
-        </>
-      ) : (
-        <>
-          <WhyCare />
-          <Comparison />
-          <FaqSection
-            picture={{
-              src: product.gallery.ghost[product.gallery.ghost.length - 1]!.src,
-              alt: `The ${product.name} in Ghost Grey, from above`,
-            }}
-          />
-        </>
-      )}
+      {/* <ThePoint /> */}
+      <WhyCare />
+      <MoreThanMount shots={sections.inUse} />
+      <Anatomy product={product} />
+      {/* Links back up to the buy panel: on this page the product link
+          would only point at the page the reader is already on. */}
+      <Texture ctaHref="#buy" price={product.price} finish={sections.finish} />
+      <InstallSteps picture={sections.install} />
+      {/* <TheHook /> */}
+      <Comparison looksLike={sections.looksLike} />
+      <Reviews product={product} />
+      <RiderWall />
+      <FaqSection picture={sections.faq} answers={sections.faqAnswers} />
 
       <StickyBuyBar
         productSlug={product.slug}

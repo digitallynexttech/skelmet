@@ -1,10 +1,15 @@
 import { ArrowRight } from "lucide-react"
 
-import { COMPARISON_ROWS } from "@/components/marketing/content"
+import { COMPARISON_LOOKS, COMPARISON_ROWS } from "@/components/marketing/content"
 import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
+import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 
-export function Comparison() {
+/** `looksLike`: the skull the page sells, the Flame Skull's unless given. */
+export function Comparison({
+  looksLike = FLAME_SKULL_MOUNT.sections.looksLike,
+}: { looksLike?: string } = {}) {
+  const rows = [...COMPARISON_ROWS, { ...COMPARISON_LOOKS, us: looksLike }]
   return (
     <Section>
       <SectionLabel numbered className="mb-3.5">
@@ -34,7 +39,7 @@ export function Comparison() {
             </div>
           </div>
 
-          {COMPARISON_ROWS.map((row) => (
+          {rows.map((row) => (
             <div
               key={row.label}
               className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] border-b border-white/[0.07] last:border-b-0"

@@ -3,10 +3,16 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Stars } from "@/components/shared/stars"
 import { Badge } from "@/components/ui/badge"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, type Product } from "@/features/catalog/catalog"
 
-export function Reviews() {
-  const product = FLAME_SKULL_MOUNT
+/**
+ * The reviews here are the Flame Skull's. Another skull's page says so and
+ * shows them under the Flame Skull's name, never as its own (the owner's
+ * call, 2026-10-08).
+ */
+export function Reviews({ product = FLAME_SKULL_MOUNT }: { product?: Product } = {}) {
+  const reviewed = FLAME_SKULL_MOUNT
+  const borrowed = product.slug !== reviewed.slug
 
   return (
     <Section id="reviews">
@@ -18,14 +24,24 @@ export function Reviews() {
           <h2 className="font-display text-bone mb-6 text-[36px] leading-[1.04] uppercase sm:text-[46px] xl:text-[52px]">
             What riders say
           </h2>
+          {borrowed ? (
+            <p className="text-ash mb-6 text-[15px] leading-[1.6] text-pretty">
+              {product.reviewCount === 0
+                ? `The ${product.name} is new, and nobody has reviewed it yet. `
+                : null}
+              These are riders&rsquo; reviews of our {reviewed.name}.
+            </p>
+          ) : null}
 
           <div className="mb-2 flex items-baseline gap-3">
             <span className="font-display text-blaze text-[56px] leading-none sm:text-[66px]">
-              {product.rating}
+              {reviewed.rating}
             </span>
-            <span className="text-ash text-[15px]">/ 5 · {product.reviewCount} reviews</span>
+            <span className="text-ash text-[15px]">
+              / 5 · {reviewed.reviewCount} reviews{borrowed ? " of the Flame Skull" : null}
+            </span>
           </div>
-          <Stars rating={product.rating} className="mb-7 block text-[17px]" />
+          <Stars rating={reviewed.rating} className="mb-7 block text-[17px]" />
 
           <div className="flex flex-col gap-2.5">
             {RATING_BREAKDOWN.map((row) => (

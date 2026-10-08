@@ -171,8 +171,10 @@ export const COMPARISON_ROWS = [
   },
   { label: "Airs out the liner", floor: "Never", hook: "Partly", us: "Fully, open all night" },
   { label: "Holds your gloves", floor: "No", hook: "No", us: "Hooks on the mount" },
-  { label: "Looks like", floor: "A mess", hook: "A coat hook", us: "A flaming skull" },
 ]
+
+/** The comparison's last row: what SKELMET looks like is the skull the page sells. */
+export const COMPARISON_LOOKS = { label: "Looks like", floor: "A mess", hook: "A coat hook" }
 
 /**
  * The case for owning one, in two halves: what goes wrong without it, then

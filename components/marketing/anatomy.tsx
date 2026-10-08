@@ -2,18 +2,21 @@ import Image from "next/image"
 
 import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, type Product } from "@/features/catalog/catalog"
 import { cn } from "@/lib/utils"
 
-export function Anatomy() {
+/** The build of the skull the page sells: the Flame Skull's unless given. */
+export function Anatomy({ product = FLAME_SKULL_MOUNT }: { product?: Product } = {}) {
+  const { picture, body } = product.sections.build
   return (
     <Section id="build" className="grain">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
         <div className="rounded-card bg-carbon overflow-hidden border border-white/[0.08]">
           <div className="relative aspect-16/10">
             <Image
-              src="/product/box-contents.jpg"
-              alt="What comes in the box: the flame skull on its arm in one piece, a paper drilling guide marking the three holes, three screws and wall plugs, a thank-you card and a mystery box"
+              src={picture.src}
+              alt={picture.alt}
+              style={{ objectPosition: picture.position }}
               fill
               // Its real width: the page less its gutters, the 520px text
               // column and the 64px gap beside it; full width less gutters
@@ -34,12 +37,11 @@ export function Anatomy() {
             Simple yet solid
           </h2>
           <p className="text-ash mb-8 max-w-[460px] text-[16px] leading-[1.62] text-pretty sm:text-[16.5px]">
-            The mount arm fixes to the wall with 3 screws. The skull is shaped to fit into any
-            helmet type and size. The whole mount supports up to 10 kg.
+            {body}
           </p>
 
           <dl className="flex flex-col border-t border-white/[0.09]">
-            {FLAME_SKULL_MOUNT.specs.map((spec) => (
+            {product.specs.map((spec) => (
               <div
                 key={spec.label}
                 className="flex items-center justify-between gap-4 border-b border-white/[0.09] py-3.5 font-mono text-[12.5px] sm:text-[13px]"
