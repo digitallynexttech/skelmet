@@ -85,8 +85,8 @@ const PRIVACY: Policy = {
   shortVersion:
     "We collect what we need to ship you a skull, count visits anonymously, and remember your device between visits only if you accept cookies. We don't sell your data. Email us and we'll delete it.",
   accent: "violet",
-  updated: "2026-10-01",
-  version: "1.3",
+  updated: "2026-10-08",
+  version: "1.4",
   sections: [
     {
       n: "01",
@@ -211,7 +211,12 @@ const PRIVACY: Policy = {
               "Delivering the parcel",
               "Name, address, phone, what is in the parcel",
             ],
-            ["Google (Gmail)", "Order and support email", "Name, email, what the email says"],
+            ["Brevo", "Sending order email and the drop list", "Name, email, what the email says"],
+            [
+              "Google (Gmail)",
+              "Support email, and order email when Brevo cannot send it",
+              "Name, email, what the email says",
+            ],
             [
               "Our cloud server provider",
               "Running the site and its database",

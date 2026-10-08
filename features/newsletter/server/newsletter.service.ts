@@ -31,11 +31,11 @@ import {
  * The drop list: who asked to hear about new drops, and the emails staff send
  * them from the console.
  *
- * Sending goes through the shop's own SMTP account, one message per person so
- * each carries its own unsubscribe link, paced and over one connection. The
- * account is a Gmail one, which allows about 500 emails a day; when the mail
- * server says the day's allowance is spent, the campaign pauses where it got
- * to and a later Resume sends the rest. Every delivery is claimed before it is
+ * Sending goes out one message per person so each carries its own unsubscribe
+ * link, paced, by the mailer's routes in turn (lib/mailer.ts): Brevo, then the
+ * shop's Gmail. Each allows so many emails a day - Brevo's free plan 300, Gmail
+ * about 500 - and when every route says the day's allowance is spent, the
+ * campaign pauses where it got to and a later Resume sends the rest. Every delivery is claimed before it is
  * sent, so a campaign resumed after a restart never emails anyone twice.
  */
 
@@ -79,10 +79,22 @@ const HISTORY = 30
 
 /**
  * What a mail server says when it will take no more for now: Gmail's daily
- * limit (5.4.5), its rate and login throttles (4.7.x), and the wording other
- * servers use for the same. Worth pausing on rather than failing everyone left.
+ * limit (5.4.5), its rate and login throttles (4.7.x), Brevo's 429 and spent
+ * credits, and the wording other servers use for the same. Worth pausing on
+ * rather than failing everyone left.
  */
-const COME_BACK_LATER = /5\.4\.5|4\.7\.\d|sending limit|quota|try again later|too many/i
+const COME_BACK_LATER =
+  /5\.4\.5|4\.7\.\d|sending limit|quota|try again later|too.many|not.enough.credits|daily limit|API 429/i
+
+/**
+ * Later, from every route. One that still takes mail means the trouble was
+ * this address, not the day's allowance: Brevo's quota spent while Gmail
+ * refuses a mistyped address is that address failing, not a reason to pause.
+ */
+function everyRouteSaysLater(result: { error: string; refusals?: { error: string }[] }) {
+  const refusals = result.refusals?.length ? result.refusals : [result]
+  return refusals.every((r) => COME_BACK_LATER.test(r.error))
+}
 
 /**
  * Campaigns sending in this server process. It is a single process (pm2 fork
@@ -531,7 +543,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
 
         if (result.ok && result.delivered) {
           await db.newsletterDelivery.update({ where, data: { status: "SENT" } })
-        } else if (!result.ok && COME_BACK_LATER.test(result.error)) {
+        } else if (!result.ok && everyRouteSaysLater(result)) {
           // The server will take no more for now. Hand this one back so Resume
           // tries it again, and stop where we are.
           await db.newsletterDelivery.delete({ where })
@@ -539,7 +551,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
             where: { id },
             data: {
               status: "PAUSED",
-              note: `The mail server asked us to stop for now (${result.error.slice(0, 160)}). Gmail allows about 500 emails a day; resume tomorrow to send the rest.`,
+              note: `The mail servers asked us to stop for now (${result.error.slice(0, 160)}). Each allows so many emails a day; resume tomorrow to send the rest.`,
             },
           })
           return

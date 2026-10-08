@@ -213,21 +213,25 @@ degrades to `any`, and type-check fails the build.
 
 Set these on the host, not just in `.env`:
 
-| Variable                                            | Note                                                     |
-| --------------------------------------------------- | -------------------------------------------------------- |
-| `DATABASE_URL`                                      | include `&uselibpqcompat=true` for Aiven, see TLS above  |
-| `AUTH_SECRET`                                       | `openssl rand -base64 32`                                |
-| `AUTH_URL` `NEXT_PUBLIC_SITE_URL`                   | the real domain, never localhost                         |
-| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET`               | live keys, not test, when you go live                    |
-| `PAYMENT_WEBHOOK_SECRET`                            | the webhook 401s everything until this is set            |
-| `SHIPROCKET_EMAIL` `SHIPROCKET_PASSWORD`            | the API user, not the main Shiprocket login              |
-| `SHIPROCKET_PICKUP_LOCATION`                        | the pickup address's name in Shiprocket                  |
-| `SHIPROCKET_WEBHOOK_TOKEN`                          | tracking updates are ignored until this is set           |
-| `SANITY_API_TOKEN`                                  | the console's Blog page (Editor role); a private dataset |
-| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASSWORD` | receipts and invoices; with none set, mail is skipped    |
-| `MAIL_FROM`                                         | the From line of every email                             |
-| `REQUIRE_BACKEND=1`                                 | boot fails fast on a missing secret                      |
-| `NEXT_DIST_DIR`                                     | the build directory; the deploy alternates two           |
+| Variable                                            | Note                                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `DATABASE_URL`                                      | include `&uselibpqcompat=true` for Aiven, see TLS above                 |
+| `AUTH_SECRET`                                       | `openssl rand -base64 32`                                               |
+| `AUTH_URL` `NEXT_PUBLIC_SITE_URL`                   | the real domain, never localhost                                        |
+| `PAYMENT_KEY_ID` `PAYMENT_KEY_SECRET`               | live keys, not test, when you go live                                   |
+| `PAYMENT_WEBHOOK_SECRET`                            | the webhook 401s everything until this is set                           |
+| `SHIPROCKET_EMAIL` `SHIPROCKET_PASSWORD`            | the API user, not the main Shiprocket login                             |
+| `SHIPROCKET_PICKUP_LOCATION`                        | the pickup address's name in Shiprocket                                 |
+| `SHIPROCKET_WEBHOOK_TOKEN`                          | tracking updates are ignored until this is set                          |
+| `SANITY_API_TOKEN`                                  | the console's Blog page (Editor role); a private dataset                |
+| `BREVO_API_KEY`                                     | mail's first route: Brevo's API                                         |
+| `BREVO_SMTP_LOGIN` `BREVO_SMTP_KEY`                 | mail's second route: Brevo's SMTP relay                                 |
+| `BREVO_FROM`                                        | Brevo's sender, on a domain authenticated in Brevo                      |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASSWORD` | mail's last route, the shop's Gmail; with no route set, mail is skipped |
+| `MAIL_FROM`                                         | the Gmail route's From line: that Gmail mailbox                         |
+| `MAIL_REPLY_TO`                                     | where replies go on every route                                         |
+| `REQUIRE_BACKEND=1`                                 | boot fails fast on a missing secret                                     |
+| `NEXT_DIST_DIR`                                     | the build directory; the deploy alternates two                          |
 
 Point the Razorpay dashboard webhook at
 `https://<host>/api/public/webhooks/razorpay` and subscribe to `payment.captured` and

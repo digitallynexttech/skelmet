@@ -44,6 +44,14 @@ const schema = z
     PAYMENT_KEY_SECRET: optionalString(),
     PAYMENT_WEBHOOK_SECRET: optionalString(),
 
+    // Mail goes out by the first of these that takes it (lib/mailer.ts):
+    // Brevo's API, Brevo's SMTP relay, then the shop's own SMTP account.
+    BREVO_API_KEY: optionalString(),
+    BREVO_SMTP_LOGIN: optionalString(),
+    BREVO_SMTP_KEY: optionalString(),
+    // Brevo's sender: an address on a domain authenticated in Brevo.
+    BREVO_FROM: z.preprocess(blank, z.string().default("SKELMET <no-reply@skelmet.in>")),
+
     SMTP_HOST: optionalString(),
     SMTP_PORT: z.preprocess(blank, z.coerce.number().int().positive().default(587)),
     SMTP_USER: optionalString(),
@@ -52,6 +60,9 @@ const schema = z
     // address it cannot prove the account owns, so a default on the shop's
     // own domain got every message rejected until someone noticed.
     MAIL_FROM: z.preprocess(blank, z.string().default("SKELMET <skelmetindia@gmail.com>")),
+    // Where replies go, on every route. A no-reply sender's own replies go
+    // nowhere; unset, a reply goes to the sender.
+    MAIL_REPLY_TO: optionalString(),
 
     // Shiprocket. All optional: without them the console falls back to typing
     // the courier and AWB by hand, and the pincode check to the static promise.

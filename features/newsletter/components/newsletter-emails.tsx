@@ -284,8 +284,9 @@ export function NewsletterEmails() {
               yourself a test first to see it in a real inbox.
             </p>
             <p>
-              Sent from the shop&apos;s Gmail account, about 40 a minute. Gmail allows around 500
-              emails a day; past that the email pauses here and Resume sends the rest the next day.
+              Sent through Brevo from no-reply@skelmet.in, or the shop&apos;s Gmail if Brevo fails,
+              about 40 a minute. Brevo&apos;s free plan allows 300 emails a day and Gmail about 500;
+              past both the email pauses here and Resume sends the rest the next day.
             </p>
           </div>
         </form>

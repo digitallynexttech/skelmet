@@ -240,6 +240,42 @@ describe("runCampaign", () => {
       data: expect.objectContaining({ status: "SENT" }),
     })
   })
+
+  it("pauses only when every route says later, not when one still takes mail", async () => {
+    // Brevo's day is spent, but Gmail is still sending: its refusal of this
+    // one address is the address, so it fails and the list goes on.
+    mocks.send
+      .mockResolvedValueOnce({
+        ok: false,
+        delivered: false,
+        error: "brevo-api: Brevo API 429: too_many_requests; smtp: 550 5.1.1 No such user",
+        refusals: [
+          { via: "brevo-api", error: "Brevo API 429: too_many_requests" },
+          { via: "smtp", error: "550 5.1.1 No such user" },
+        ],
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        delivered: false,
+        error:
+          "brevo-api: Brevo API 429: too_many_requests; smtp: 550-5.4.5 Daily user sending limit exceeded.",
+        refusals: [
+          { via: "brevo-api", error: "Brevo API 429: too_many_requests" },
+          { via: "smtp", error: "550-5.4.5 Daily user sending limit exceeded." },
+        ],
+      })
+    await runCampaign("c1", 0)
+
+    expect(mocks.send).toHaveBeenCalledTimes(2)
+    expect(mocks.db.newsletterDelivery.update.mock.calls[0]![0].data).toMatchObject({
+      status: "FAILED",
+    })
+    expect(mocks.db.newsletterDelivery.delete).toHaveBeenCalledTimes(1)
+    expect(mocks.db.newsletterCampaign.update).toHaveBeenLastCalledWith({
+      where: { id: "c1" },
+      data: expect.objectContaining({ status: "PAUSED" }),
+    })
+  })
 })
 
 describe("uploadNewsletterImage", () => {
