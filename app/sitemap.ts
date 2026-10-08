@@ -16,6 +16,7 @@ const UPDATED = {
   faq: "2026-09-28",
   track: "2026-09-28",
   product: "2026-09-28",
+  products: "2026-10-08",
 }
 
 // Hourly: how soon a new post is listed.
@@ -80,12 +81,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  const productPages: MetadataRoute.Sitemap = PRODUCTS.map((p) => ({
-    url: url(`/product/${p.slug}`),
-    lastModified: on(UPDATED.product),
-    changeFrequency: "weekly",
-    priority: 0.95,
-  }))
+  const productPages: MetadataRoute.Sitemap = [
+    {
+      url: url("/products"),
+      lastModified: on(UPDATED.products),
+      changeFrequency: "weekly",
+      priority: 0.95,
+    },
+    ...PRODUCTS.map((p) => ({
+      url: url(`/product/${p.slug}`),
+      lastModified: on(UPDATED.product),
+      changeFrequency: "weekly" as const,
+      priority: 0.95,
+    })),
+  ]
 
   const policyPages: MetadataRoute.Sitemap = POLICIES.map((p) => ({
     url: url(`/policies/${p.slug}`),

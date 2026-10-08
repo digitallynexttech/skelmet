@@ -23,7 +23,6 @@ import { HeaderLink, headerButton } from "@/components/ui/header-button"
 import { Menu, MenuItem, MenuLabel, MenuLink, MenuSeparator } from "@/components/ui/menu"
 import { TableSearch } from "@/components/ui/table-search"
 import { ViewMenu } from "@/components/ui/view-menu"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 import { PAYMENT_METHOD_SHORT } from "@/features/checkout/payment-options"
 import {
   planTestOrderDeletion,
@@ -405,7 +404,7 @@ export function OrderTable({
             {/* Orders are only made at checkout, which settles stock, price and payment. */}
             <HeaderLink
               variant="primary"
-              href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+              href="/products"
               target="_blank"
               rel="noopener"
               title="Opens the shop in a new tab: place the order at checkout with the customer's details"

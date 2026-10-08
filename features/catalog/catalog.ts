@@ -27,6 +27,8 @@ export type Product = {
   /** What the thing is, as the product information on its page declares it. */
   productType: string
   strapline: string
+  /** On the lineup and shop cards: two lines on a phone or a laptop, so keep it near 70 characters. */
+  summary: string
   /** Wire-shaped money: a string. */
   price: string
   compareAtPrice: string
@@ -59,8 +61,8 @@ export type ProductSections = {
   inUse: [Picture, Picture, Picture]
   /** "The build": the picture beside the specs, and what it says above them. */
   build: { picture: Picture; body: string }
-  /** "The finish": the close-up, and what it says about the print. */
-  finish: { picture: Picture; body: string }
+  /** "The finish": the close-up, and what it says about the print. Without it, no section. */
+  finish?: { picture: Picture; body: string }
   /** "Install": the mount going up on a wall. */
   install: Picture
   /** "The alternatives": what it looks like, in the comparison's last row. */
@@ -94,7 +96,8 @@ export const COLOURWAYS: Colourway[] = [
     hex: "#FF5A1F",
     swatch: "/product/swatch-3d-blaze.png",
     blurb: "Bright and hot, built to catch the eye.",
-    image: "/product/product-front.jpg",
+    // The 3D skull seated in the front photo, as olive and grey are, so all three match.
+    image: "/product/colourway-blaze-print.jpg",
     price: "3499",
     stock: 0,
     inStock: true,
@@ -127,10 +130,17 @@ export const COLOURWAYS: Colourway[] = [
   },
 ]
 
+/** Far stop of each colourway's button gradient on a card; the swatch hex is the near one. */
+export const TINT_TO: Record<ColourwayId, string> = {
+  blaze: "#ff8a00",
+  olive: "#aab872",
+  ghost: "#bebdc4",
+}
+
 const FRONT: GalleryShot = {
   alt: "Flame skull mount, front elevation",
   src: {
-    blaze: "/product/product-front.jpg",
+    blaze: "/product/colourway-blaze-print.jpg",
     olive: "/product/colourway-olive-print.jpg",
     ghost: "/product/colourway-ghost-grey-print.jpg",
   },
@@ -216,11 +226,21 @@ const SHOTS = [
   FRONT,
 ]
 
+/** "The finish": the Flame Skull's alone; home and about show it too. */
+export const FLAME_FINISH = {
+  picture: {
+    src: "/product/detail-flame.jpg",
+    alt: "Macro detail of the carved flame relief and 3D-print layer lines",
+  },
+  body: "We don't sand the print smooth and pretend it was moulded. The fine horizontal ridges catch the light, the flame valleys go properly deep, and the whole thing reads as made rather than manufactured.",
+} satisfies ProductSections["finish"]
+
 export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
   productType: "Wall-mounted helmet holder (flame skull mount)",
   strapline: "It earned every scratch. Give it a wall, not the floor.",
+  summary: "Carved flames, bared teeth. Your helmet up top, gloves and keys below.",
   price: "3499",
   compareAtPrice: "4999",
   rating: 4.9,
@@ -270,13 +290,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       },
       body: "The mount arm fixes to the wall with 3 screws. The skull is shaped to fit into any helmet type and size. The whole mount supports up to 10 kg.",
     },
-    finish: {
-      picture: {
-        src: "/product/detail-flame.jpg",
-        alt: "Macro detail of the carved flame relief and 3D-print layer lines",
-      },
-      body: "We don't sand the print smooth and pretend it was moulded. The fine horizontal ridges catch the light, the flame valleys go properly deep, and the whole thing reads as made rather than manufactured.",
-    },
+    finish: FLAME_FINISH,
     // Shipped in one piece, so it goes up whole.
     install: {
       src: "/product/why-install-olive.jpg",
@@ -303,23 +317,24 @@ function pistonFinish(
   return { id, name, hex, blurb, sku, ...files, price: "3499", stock: 0, inStock: false }
 }
 
+// Card pictures: the front shot, its colour matched to the Flame Skull's (build-piston-cards.mjs).
 export const PISTON_COLOURWAYS: Colourway[] = [
   pistonFinish("blaze", "SKM-PST-BLZ", {
-    image: "/product/piston-hero.jpg",
+    image: "/product/piston-card.jpg",
     swatch: "/product/swatch-3d-piston-blaze.png",
   }),
   pistonFinish("olive", "SKM-PST-OLV", {
-    image: "/product/piston-hero-olive.jpg",
+    image: "/product/piston-card-olive.jpg",
     swatch: "/product/swatch-3d-piston-olive.png",
   }),
   pistonFinish("ghost", "SKM-PST-GHT", {
-    image: "/product/piston-hero-ghost-grey.jpg",
+    image: "/product/piston-card-ghost-grey.jpg",
     swatch: "/product/swatch-3d-piston-ghost.png",
   }),
 ]
 
-// The owner's photos of the mount in use, plus studio renders (front, detail); olive and
-// grey are the orange recoloured (scripts/build-piston-colourways.mjs).
+// The owner's photos of the mount in use; olive and grey are the orange recoloured
+// (scripts/build-piston-colourways.mjs).
 const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"]): GalleryShot => ({
   alt,
   ...(caption ? { caption } : {}),
@@ -332,7 +347,6 @@ const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"])
 
 // In the Flame Skull's order.
 const PISTON_SHOTS = [
-  pistonShot("front", "Piston skull mount, front view"),
   pistonShot(
     "fitting",
     "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
@@ -349,7 +363,6 @@ const PISTON_SHOTS = [
     "A helmet on the piston skull, face on, the piston showing through its opening",
   ),
   pistonShot("back", "From behind: the mohawk running down the back of the skull"),
-  pistonShot("detail", "Close up of the face and the piston clenched in its teeth"),
 ]
 
 export const PISTON_SKULL_MOUNT: Product = {
@@ -357,6 +370,7 @@ export const PISTON_SKULL_MOUNT: Product = {
   name: "Piston Skull Helmet Mount",
   productType: "Wall-mounted helmet holder (piston skull mount)",
   strapline: "Mohawk up, piston in its teeth. A wall for the lid that earned it.",
+  summary: "Mohawk up, piston in its teeth. Your helmet up top, gloves on the hook.",
   // Owner's price. Live price and stock come from the variant rows.
   price: "3499",
   compareAtPrice: "4999",
@@ -405,13 +419,6 @@ export const PISTON_SKULL_MOUNT: Product = {
         alt: "The piston skull on its black arm, from behind, the mohawk running down its back",
       },
       body: "The mount arm fixes to the wall with 3 screws. The skull takes full-face and open-face helmets, and rides on its post facing out from the wall.",
-    },
-    finish: {
-      picture: {
-        src: "/product/piston-detail.jpg",
-        alt: "Close up of the piston skull's face, the piston's rings and the print's layer lines",
-      },
-      body: "We don't sand the print smooth and pretend it was moulded. The fine ridges of every layer catch the light, the mohawk's spikes and the piston's rings stay crisp, and the whole thing reads as made rather than manufactured.",
     },
     install: {
       src: "/product/piston-fitting-olive.jpg",

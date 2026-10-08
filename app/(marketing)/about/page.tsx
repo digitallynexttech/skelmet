@@ -12,7 +12,6 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
 import { siteConfig } from "@/lib/config/site"
-import { FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
 
 export const metadata: Metadata = pageMetadata({
   title: "About us",
@@ -138,7 +137,7 @@ export default function AboutPage() {
             </p>
           </div>
           <ButtonLink
-            href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+            href="/products"
             variant="light"
             size="lg"
             className="bg-void text-bone hover:bg-graphite shrink-0"

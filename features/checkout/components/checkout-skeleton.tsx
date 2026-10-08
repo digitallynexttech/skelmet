@@ -14,8 +14,8 @@ export function NothingToCheckOut({ heading = true }: { heading?: boolean }) {
       <p className="text-ash mb-8 max-w-[380px] text-[15.5px] leading-[1.6]">
         Add a mount to your cart first and this page will have something to do.
       </p>
-      <ButtonLink href="/product/flame-skull-mount" variant="primary" size="lg">
-        Shop the mount
+      <ButtonLink href="/products" variant="primary" size="lg">
+        Shop the mounts
         <ArrowRight className="size-4" strokeWidth={2.4} />
       </ButtonLink>
     </div>

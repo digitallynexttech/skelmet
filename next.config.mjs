@@ -68,9 +68,9 @@ const nextConfig = {
   redirects() {
     return [
       {
-        // The listing page is gone; it is likely still indexed.
+        // The old listing's address, likely still indexed.
         source: "/shop",
-        destination: "/product/flame-skull-mount",
+        destination: "/products",
         permanent: true,
       },
       {

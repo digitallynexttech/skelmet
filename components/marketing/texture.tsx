@@ -2,7 +2,7 @@ import { SplitFeature } from "@/components/marketing/split-feature"
 import { SectionLabel } from "@/components/shared/section-label"
 import { Badge } from "@/components/ui/badge"
 import { ButtonLink } from "@/components/ui/button"
-import { FLAME_SKULL_MOUNT, type ProductSections } from "@/features/catalog/catalog"
+import { FLAME_FINISH, FLAME_SKULL_MOUNT, type ProductSections } from "@/features/catalog/catalog"
 import { getFeaturedProduct } from "@/features/catalog/server/catalog.service"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -15,11 +15,11 @@ export async function Texture({
   /** The live price, when the page has it already; otherwise read here. */
   price,
   /** The close-up and its words: the Flame Skull's unless a product page gives its own. */
-  finish = FLAME_SKULL_MOUNT.sections.finish,
+  finish = FLAME_FINISH,
 }: {
   ctaHref?: string
   price?: string
-  finish?: ProductSections["finish"]
+  finish?: NonNullable<ProductSections["finish"]>
 } = {}) {
   // The live admin price, not the registry's, so it matches the product page.
   const shown =

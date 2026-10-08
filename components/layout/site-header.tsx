@@ -95,7 +95,8 @@ export function SiteHeader() {
 
           <nav className="hidden items-center gap-8 lg:flex">
             {primaryNav.map((item) => {
-              const active = pathname === item.href
+              // A product page is part of the shop.
+              const active = pathname === item.href || (item.href === "/products" && onProduct)
               return (
                 <Link
                   key={item.href}
@@ -119,7 +120,7 @@ export function SiteHeader() {
               href={
                 onProduct && picked && productSlug
                   ? buyNowHref(picked, pickedQty, productSlug)
-                  : "/product/flame-skull-mount"
+                  : "/products"
               }
               variant="accent"
               size="xs"
@@ -185,7 +186,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="border-t border-white/[0.07] p-5">
-            <ButtonLink href="/product/flame-skull-mount" variant="primary" size="md" full>
+            <ButtonLink href="/products" variant="primary" size="md" full>
               Grab yours
             </ButtonLink>
           </div>

@@ -1,10 +1,13 @@
 /**
- * Builds the Militia Olive and Ghost Grey lineup cards (colourway-olive-print.jpg,
- * colourway-ghost-grey-print.jpg): the real 3D skull, recoloured, seated in the
- * orange photo.
+ * Builds the Flame Skull's front picture in each colourway (colourway-*-print.jpg):
+ * the real 3D skull in that colour, seated in the orange photo, so all three
+ * match the skull that docks on the home page.
  *
  *   pnpm dev                       (or any server running this code)
- *   node scripts/build-colourway-cards.mjs [http://localhost:3000]
+ *   node scripts/build-colourway-cards.mjs [http://localhost:3000] [blaze|olive|ghost ...]
+ *
+ * Name colourways to build only those: a built file is live and cached for good,
+ * so it is never rebuilt in place (a new picture needs a new name).
  *
  * Drives the site in headless Chrome: the model request is answered with a
  * recoloured copy from memory (nothing on disk changes), the skull is flown to
@@ -25,7 +28,7 @@ import sharp from "sharp"
 
 // fileURLToPath, not pathname: the URL form percent-encodes spaces in the path.
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-const BASE = process.argv[2] ?? "http://localhost:3000"
+const BASE = process.argv.slice(2).find((a) => a.startsWith("http")) ?? "http://localhost:3000"
 const PRODUCT = path.join(ROOT, "public/product")
 const MODEL_URL = readAssets().model
 const MODEL = assetFile(MODEL_URL)
@@ -38,10 +41,15 @@ const PLATE = "/product/product-front-plate.webp"
  * swatch in linear light. Matched to colourway-lineup.jpg, the three real
  * prints under one light.
  */
-const CARDS = [
+const ALL_CARDS = [
+  // null: the model's own orange, untouched.
+  { id: "blaze", out: "colourway-blaze-print.jpg", tone: null },
   { id: "olive", out: "colourway-olive-print.jpg", tone: 0.5 },
   { id: "ghost", out: "colourway-ghost-grey-print.jpg", tone: 0.8 },
 ]
+const args = process.argv.slice(2)
+const only = args.filter((a) => !a.startsWith("http"))
+const CARDS = ALL_CARDS.filter((card) => !only.length || only.includes(card.id))
 
 /** A desktop wide enough for the lineup's three columns, at a card each. */
 const VIEWPORT = { width: 1920, height: 1100 }
@@ -73,6 +81,10 @@ const io = new NodeIO()
   .registerDependencies({ "meshopt.decoder": MeshoptDecoder, "meshopt.encoder": MeshoptEncoder })
 const recoloured = new Map()
 for (const card of CARDS) {
+  if (card.tone === null) {
+    recoloured.set(card.id, fs.readFileSync(MODEL).toString("base64"))
+    continue
+  }
   const doc = await io.read(MODEL)
   for (const material of doc.getRoot().listMaterials()) {
     material.setBaseColorFactor([...hexLinear(swatch(card.id)).map((c) => c * card.tone), 1])

@@ -3,11 +3,11 @@ import type { Metadata } from "next"
 
 import { Anatomy } from "@/components/marketing/anatomy"
 import { Bento } from "@/components/marketing/bento"
-import { ColourwayGrid } from "@/components/marketing/colourway-grid"
 import { Comparison } from "@/components/marketing/comparison"
 import { DropList } from "@/components/marketing/drop-list"
 import { FaqSection } from "@/components/marketing/faq-section"
 import { Hero } from "@/components/marketing/hero"
+import { Lineup } from "@/components/marketing/lineup"
 // import { InstallSteps } from "@/components/marketing/install-steps"   // hidden from this page
 import { Reviews } from "@/components/marketing/reviews"
 import { RiderWall } from "@/components/marketing/rider-wall"
@@ -54,7 +54,7 @@ function Deferred({
 
 /** The numbered sections: position here is the label's number. `defer` renders it late (Deferred). */
 const RUN: { key: string; node: React.ReactNode; defer?: number }[] = [
-  { key: "lineup", node: <ColourwayGrid /> },
+  { key: "lineup", node: <Lineup /> },
   { key: "bento", node: <Bento />, defer: 720 },
   { key: "anatomy", node: <Anatomy /> },
   { key: "texture", node: <Texture /> },

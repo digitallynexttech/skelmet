@@ -88,8 +88,8 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <WhyCare />
       <MoreThanMount shots={sections.inUse} />
       <Anatomy product={product} />
-      {/* CTA goes to the buy panel, not to this same page. */}
-      <Texture ctaHref="#buy" price={product.price} finish={sections.finish} />
+      {/* Only where the product has its own close-up. CTA goes to the buy panel. */}
+      {sections.finish && <Texture ctaHref="#buy" price={product.price} finish={sections.finish} />}
       <InstallSteps picture={sections.install} />
       <Comparison looksLike={sections.looksLike} />
       <Reviews product={product} />

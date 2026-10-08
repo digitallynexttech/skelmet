@@ -109,7 +109,7 @@ function Cancelled({ order }: { order: Confirmation }) {
           show it.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <ButtonLink href="/product/flame-skull-mount" variant="light" size="md">
+          <ButtonLink href="/products" variant="light" size="md">
             Shop again
             <ArrowRight className="size-4" strokeWidth={2.4} />
           </ButtonLink>
@@ -139,8 +139,8 @@ function Unknown() {
             <MapPin className="size-4" strokeWidth={2.2} />
             Track an order
           </ButtonLink>
-          <ButtonLink href="/product/flame-skull-mount" variant="ghost" size="md">
-            Back to the mount
+          <ButtonLink href="/products" variant="ghost" size="md">
+            Back to the shop
           </ButtonLink>
         </div>
       </div>

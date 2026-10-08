@@ -87,6 +87,20 @@ export async function livePrices(): Promise<ActionResult<Record<string, string>>
   return runAction(async () => ok(await getLivePrices()))
 }
 
+/** SKUs on sale with stock left: what the cart drawer may suggest. */
+export async function inStockSkus(): Promise<ActionResult<string[]>> {
+  return runAction(async () => {
+    const colourways = PRODUCTS.flatMap((p) => p.colourways)
+    if (!hasDatabase()) return ok(colourways.filter((c) => c.inStock).map((c) => c.sku))
+    const live = await liveBySku(colourways.map((c) => c.sku))
+    const onSale = colourways.filter((c) => {
+      const row = live.get(c.sku)
+      return row ? row.forSale && row.stock > 0 : c.inStock
+    })
+    return ok(onSale.map((c) => c.sku))
+  })
+}
+
 export async function getFeaturedProduct(): Promise<ActionResult<Product>> {
   return runAction(async () => {
     if (!hasDatabase()) return ok(FLAME_SKULL_MOUNT)

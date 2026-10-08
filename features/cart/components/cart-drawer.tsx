@@ -29,7 +29,7 @@ import {
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { SKULL_POSTER } from "@/components/marketing/skull-interaction"
-import { COLOURWAYS, FLAME_SKULL_MOUNT, getProduct } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, PRODUCTS, getProduct } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
 import { apiFetch } from "@/lib/api-fetch"
 import { discountPercent } from "@/lib/money"
@@ -134,6 +134,7 @@ export function CartDrawer() {
   // Live prices and offers, read each time it opens.
   const syncPrices = useCart((s) => s.syncPrices)
   const [prices, setPrices] = React.useState<Record<string, string>>({})
+  const [inStock, setInStock] = React.useState<string[] | null>(null)
   const [offers, setOffers] = React.useState<CartOffer[]>([])
   React.useEffect(() => {
     if (!open) return
@@ -160,6 +161,13 @@ export function CartDrawer() {
       })
       .catch(() => {
         // The saved prices stand; checkout prices the order again anyway.
+      })
+    void apiFetch<string[]>("/api/public/catalog/in-stock")
+      .then((skus) => {
+        if (!cancelled) setInStock(skus)
+      })
+      .catch(() => {
+        // The registry's flags stand for the suggestions.
       })
     return () => {
       cancelled = true
@@ -200,7 +208,9 @@ export function CartDrawer() {
             : "[transform:translate3d(100%,0,0)] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
         )}
       >
-        {used ? <CartContents prices={prices} offers={offers} onClose={() => hide()} /> : null}
+        {used ? (
+          <CartContents prices={prices} inStock={inStock} offers={offers} onClose={() => hide()} />
+        ) : null}
       </div>
     </div>
   )
@@ -208,11 +218,13 @@ export function CartDrawer() {
 
 function CartContents({
   prices,
+  inStock,
   offers,
   onClose,
 }: {
   /** Live prices by SKU; empty until fetched. */
   prices: Record<string, string>
+  inStock: string[] | null
   offers: CartOffer[]
   onClose: () => void
 }) {
@@ -264,17 +276,12 @@ function CartContents({
             <p className="text-ash mb-6 max-w-[290px] text-[14.5px] leading-[1.6]">
               Your cart is as empty as the wall above your desk. Let&apos;s fix one of those.
             </p>
-            <ButtonLink
-              href={`/product/${FLAME_SKULL_MOUNT.slug}`}
-              variant="primary"
-              size="sm"
-              onClick={onClose}
-            >
-              Shop the mount
+            <ButtonLink href="/products" variant="primary" size="sm" onClick={onClose}>
+              Shop the mounts
               <ArrowRight className="size-4" strokeWidth={2.4} />
             </ButtonLink>
           </div>
-          <Recommendations inCart={[]} prices={prices} />
+          <Recommendations inCart={[]} prices={prices} inStock={inStock} />
         </div>
       ) : (
         // All of it scrolls; the checkout bar stays at the foot.
@@ -403,7 +410,7 @@ function CartContents({
               <div className="text-ash border-t border-white/[0.06] px-4 py-3.5 text-center text-[13.5px]">
                 Forgot something?{" "}
                 <Link
-                  href={`/product/${FLAME_SKULL_MOUNT.slug}`}
+                  href="/products"
                   onClick={onClose}
                   className="text-blaze hover:text-ember font-semibold transition-colors"
                 >
@@ -425,7 +432,7 @@ function CartContents({
               />
             </section>
 
-            <Recommendations inCart={lines.map((l) => l.sku)} prices={prices} />
+            <Recommendations inCart={lines.map((l) => l.sku)} prices={prices} inStock={inStock} />
 
             <section aria-labelledby="cart-bill" className={CARD}>
               <h3 id="cart-bill" className={`${CARD_TITLE} mb-3`}>
@@ -522,19 +529,23 @@ const CARD_TITLE = "text-bone text-[15px] font-bold"
 /** Each card's width plus the gap, for the arrows' step. */
 const CARD_STEP = 162
 
-/** The Flame Skull colourways not yet in the cart, as a swipeable rail. */
+/** Every product's colourways on sale and not yet in the cart, as a swipeable rail. */
 function Recommendations({
   inCart,
   prices,
+  inStock,
 }: {
   /** SKUs already in the cart. */
   inCart: string[]
   prices: Record<string, string>
+  /** SKUs on sale with stock; until read, the registry's flags (a draft is never offered). */
+  inStock: string[] | null
 }) {
   const add = useCart((s) => s.add)
   const rail = React.useRef<HTMLDivElement>(null)
-  // Not the Piston Skull while it is a draft: checkout would refuse it.
-  const picks = COLOURWAYS.filter((c) => !inCart.includes(c.sku))
+  const picks = PRODUCTS.flatMap((product) =>
+    product.colourways.map((c) => ({ product, c })),
+  ).filter(({ c }) => !inCart.includes(c.sku) && (inStock ? inStock.includes(c.sku) : c.inStock))
   if (picks.length === 0) return null
 
   const step = (direction: 1 | -1) =>
@@ -553,7 +564,7 @@ function Recommendations({
                 key={direction}
                 type="button"
                 onClick={() => step(direction)}
-                aria-label={direction < 0 ? "Previous colourways" : "Next colourways"}
+                aria-label={direction < 0 ? "Previous products" : "Next products"}
                 className="text-bone hover:border-blaze flex size-8 items-center justify-center rounded-full border border-white/[0.16] transition-colors"
               >
                 {direction < 0 ? (
@@ -571,18 +582,18 @@ function Recommendations({
         ref={rail}
         className="flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4"
       >
-        {picks.map((c) => {
+        {picks.map(({ product, c }) => {
           const price = prices[c.sku] ?? c.price
-          const off = discountPercent(FLAME_SKULL_MOUNT.compareAtPrice, price)
+          const off = discountPercent(product.compareAtPrice, price)
           return (
             <article
-              key={c.id}
+              key={c.sku}
               className="rounded-tile bg-void/60 flex w-[150px] shrink-0 snap-start flex-col border border-white/[0.08] p-2.5"
             >
               <div className="bg-graphite relative aspect-square overflow-hidden rounded-xl">
                 <Image
                   src={c.image}
-                  alt={`${c.name} mount`}
+                  alt={`${product.name} in ${c.name}`}
                   fill
                   sizes="130px"
                   className="object-cover"
@@ -598,18 +609,18 @@ function Recommendations({
                 <span className="truncate">{c.name}</span>
               </div>
               <div className="text-bone mt-1 line-clamp-2 text-[13px] leading-tight font-semibold">
-                {FLAME_SKULL_MOUNT.name}
+                {product.name}
               </div>
               <div className="mt-1.5 mb-auto flex flex-wrap items-baseline gap-x-1.5">
                 <Money value={price} className="text-bone font-mono text-[13.5px] font-bold" />
                 {off > 0 ? (
-                  <Money value={FLAME_SKULL_MOUNT.compareAtPrice} strike className="text-[11px]" />
+                  <Money value={product.compareAtPrice} strike className="text-[11px]" />
                 ) : null}
               </div>
               <button
                 type="button"
-                onClick={() => add(c.id, 1, FLAME_SKULL_MOUNT.slug)}
-                aria-label={`Add ${c.name} to cart`}
+                onClick={() => add(c.id, 1, product.slug)}
+                aria-label={`Add ${product.name} in ${c.name} to cart`}
                 className="text-bone hover:border-blaze hover:bg-blaze hover:text-void mt-2.5 flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/[0.18] font-mono text-[11px] font-bold tracking-[0.12em] transition-colors"
               >
                 <Plus className="size-3.5" strokeWidth={2.4} />
