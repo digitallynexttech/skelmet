@@ -21,6 +21,8 @@ export function SiteHeader() {
   // On the product page, Buy now buys what is picked there - as the phone's
   // sticky bar does - instead of linking to the page it is already on.
   const onProduct = pathname.startsWith("/product/")
+  // Which product, from /product/<slug>: there are two now.
+  const productSlug = onProduct ? pathname.split("/")[2] : undefined
   const picked = useBuySelection((s) => s.colourway)
   const pickedQty = useBuySelection((s) => s.qty)
 
@@ -120,7 +122,9 @@ export function SiteHeader() {
             <CartButton />
             <ButtonLink
               href={
-                onProduct && picked ? buyNowHref(picked, pickedQty) : "/product/flame-skull-mount"
+                onProduct && picked && productSlug
+                  ? buyNowHref(picked, pickedQty, productSlug)
+                  : "/product/flame-skull-mount"
               }
               variant="accent"
               size="xs"

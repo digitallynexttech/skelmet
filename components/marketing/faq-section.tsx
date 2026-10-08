@@ -14,7 +14,15 @@ import { paymentOptions } from "@/features/settings/server/runtime-settings"
  * switched on in the console. The pages it sits on are prerendered, and a
  * save there refreshes them (refreshPaymentTerms).
  */
-export async function FaqSection() {
+const FLAME_PICTURE = {
+  src: "/product/gallery-bare-skull-ghost-grey.jpg",
+  alt: "The SKELMET mount in Ghost Grey on its black arm, gloves hanging from the hook",
+}
+
+/** `picture`: the skull this page sells, the Flame Skull's unless given. */
+export async function FaqSection({
+  picture = FLAME_PICTURE,
+}: { picture?: { src: string; alt: string } } = {}) {
   const items = faqItems(paymentCopy(await paymentOptions()).faq)
 
   // Carbon, like rider-wall. The homepage has only one other darker band, so
@@ -45,8 +53,8 @@ export async function FaqSection() {
               hook, with nothing cropped off. */}
           <div className="rounded-tile relative hidden aspect-square overflow-hidden border border-white/[0.08] lg:block">
             <Image
-              src="/product/gallery-bare-skull-ghost-grey.jpg"
-              alt="The SKELMET mount in Ghost Grey on its black arm, gloves hanging from the hook"
+              src={picture.src}
+              alt={picture.alt}
               fill
               sizes="(min-width: 1280px) 460px, 400px"
               className="object-cover"

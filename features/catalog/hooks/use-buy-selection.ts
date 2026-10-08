@@ -25,5 +25,5 @@ export const useBuySelection = create<BuySelection>()((set) => ({
 }))
 
 /** Buy it now: checkout with just this, leaving the cart as it is. */
-export const buyNowHref = (colourway: string, qty: number) =>
-  `/checkout?buy=${encodeURIComponent(colourway)}&qty=${qty}`
+export const buyNowHref = (colourway: string, qty: number, productSlug: string) =>
+  `/checkout?buy=${encodeURIComponent(colourway)}&qty=${qty}&product=${encodeURIComponent(productSlug)}`

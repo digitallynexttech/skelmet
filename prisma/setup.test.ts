@@ -110,4 +110,18 @@ describe("ensureCatalogue", () => {
     expect(variantsCreated).toBeGreaterThan(0)
     for (const [call] of db.variant.create.mock.calls) expect(call.data.stock).toBe(0)
   })
+
+  it("adds every product, the Flame Skull live and a newer one as a draft", async () => {
+    db.variant.findUnique.mockResolvedValue(null)
+    await ensureCatalogue(asDb, { stock: 0 })
+    const created = db.product.upsert.mock.calls.map(([call]) => call.create)
+    expect(created).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: "flame-skull-mount", status: "ACTIVE" }),
+        expect.objectContaining({ slug: "piston-skull-mount", status: "DRAFT" }),
+      ]),
+    )
+    const skus = db.variant.create.mock.calls.map(([call]) => call.data.sku)
+    expect(skus).toEqual(expect.arrayContaining(["SKM-BLZ", "SKM-PST-BLZ", "SKM-PST-GHT"]))
+  })
 })

@@ -1,10 +1,10 @@
 /**
  * Client-safe catalogue registry (§4: `<feature>.ts`).
  *
- * SKELMET is a single-SKU store with three filament colourways, so the
- * catalogue is a typed registry rather than a database read. When a second
- * product lands, move this behind `catalog.service.ts` + `/api/products`,
- * the components below already take their data as props.
+ * Two skulls, each in the same three filament colourways, each colourway its
+ * own SKU. A typed registry rather than a database read: the editorial half
+ * lives here, and catalog.service.ts overlays the live price, stock and
+ * status from the database.
  *
  * [TO CONFIRM] values are real business facts nobody should guess: fill them
  * in before launch rather than shipping the brackets.
@@ -41,10 +41,13 @@ export type Colourway = {
 export type Product = {
   slug: string
   name: string
+  /** What the thing is, as the product information on its page declares it. */
+  productType: string
   strapline: string
   /** Wire-shaped money: a string, exactly as the API would send it (§5). */
   price: string
   compareAtPrice: string
+  /** 0 with `reviewCount` 0 for a product nobody has reviewed yet: the page shows no stars. */
   rating: number
   reviewCount: number
   unitsLeft: number
@@ -217,6 +220,7 @@ const SHOTS = [
 export const FLAME_SKULL_MOUNT: Product = {
   slug: "flame-skull-mount",
   name: "Flame Skull Helmet Mount",
+  productType: "Wall-mounted helmet holder (flame skull mount)",
   strapline: "It earned every scratch. Give it a wall, not the floor.",
   price: "3499",
   compareAtPrice: "4999",
@@ -247,18 +251,119 @@ export const FLAME_SKULL_MOUNT: Product = {
   ],
 }
 
-export const PRODUCTS: Product[] = [FLAME_SKULL_MOUNT]
+// ── the Piston Skull ────────────────────────────────────────
+
+/**
+ * The same filament, name and swatch colour as the Flame Skull's, with this
+ * skull's own SKU and pictures.
+ */
+function pistonFinish(
+  id: ColourwayId,
+  sku: string,
+  files: { image: string; swatch: string },
+): Colourway {
+  const { name, hex, blurb } = COLOURWAYS.find((c) => c.id === id)!
+  // Sold out until the database says otherwise: it launches as a draft, and a
+  // page built without its rows must not offer what checkout would refuse.
+  return { id, name, hex, blurb, sku, ...files, price: "3499", stock: 0, inStock: false }
+}
+
+export const PISTON_COLOURWAYS: Colourway[] = [
+  pistonFinish("blaze", "SKM-PST-BLZ", {
+    image: "/product/piston-hero.jpg",
+    swatch: "/product/swatch-3d-piston-blaze.png",
+  }),
+  pistonFinish("olive", "SKM-PST-OLV", {
+    image: "/product/piston-hero-olive.jpg",
+    swatch: "/product/swatch-3d-piston-olive.png",
+  }),
+  pistonFinish("ghost", "SKM-PST-GHT", {
+    image: "/product/piston-hero-ghost-grey.jpg",
+    swatch: "/product/swatch-3d-piston-ghost.png",
+  }),
+]
+
+/**
+ * Its pictures are renders of the print file itself, skull-design-2.stl, on
+ * the same bracket as the Flame Skull (hanger.stl), lit as the studio shots
+ * are: nothing in them is drawn by an image model, so every groove, tooth and
+ * the piston are the real print's. Same framing in every finish.
+ */
+const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"]): GalleryShot => ({
+  alt,
+  ...(caption ? { caption } : {}),
+  src: {
+    blaze: `/product/piston-${name}.jpg`,
+    olive: `/product/piston-${name}-olive.jpg`,
+    ghost: `/product/piston-${name}-ghost-grey.jpg`,
+  },
+})
+
+const PISTON_SHOTS = [
+  pistonShot("hero", "Piston skull mount on the wall, three-quarter view"),
+  pistonShot("detail", "Close up of the face and the piston clenched in its teeth"),
+  pistonShot("front", "Piston skull mount, front view"),
+  pistonShot("side", "Side view: the arm, its hooks and the skull above them", {
+    title: "Hooks under the arm",
+    body: "Gloves and keys hang below while the helmet sits on the skull.",
+  }),
+  pistonShot("mohawk", "From above: the mohawk running back over the skull"),
+]
+
+export const PISTON_SKULL_MOUNT: Product = {
+  slug: "piston-skull-mount",
+  name: "Piston Skull Helmet Mount",
+  productType: "Wall-mounted helmet holder (piston skull mount)",
+  strapline: "Mohawk up, piston in its teeth. A wall for the lid that earned it.",
+  // The owner's price (2026-10-08). Live price and stock come from the variant rows.
+  price: "3499",
+  compareAtPrice: "4999",
+  // New: nobody has reviewed it yet, so the page shows no stars.
+  rating: 0,
+  reviewCount: 0,
+  unitsLeft: 0,
+  colourways: PISTON_COLOURWAYS,
+  gallery: {
+    blaze: PISTON_SHOTS.map((shot) => inFinish(shot, "blaze")),
+    olive: PISTON_SHOTS.map((shot) => inFinish(shot, "olive")),
+    ghost: PISTON_SHOTS.map((shot) => inFinish(shot, "ghost")),
+  },
+  // Measured off the print file. Its weight and which helmets it fits are the
+  // owner's to confirm before they go here.
+  specs: [
+    { label: "Material", value: "PLA+ · matte" },
+    { label: "Load rating", value: "10 kg" },
+    { label: "Skull", value: "15 × 28 × 21 cm" },
+    { label: "Fixings", value: "3 × screws + wall plugs" },
+  ],
+  inTheBox: [
+    "Skull mount, arm attached",
+    "3 × screws + wall plugs",
+    "Drilling template",
+    "Thank-you card",
+    "Mystery box",
+  ],
+}
+
+export const PRODUCTS: Product[] = [FLAME_SKULL_MOUNT, PISTON_SKULL_MOUNT]
 
 export function getProduct(slug: string): Product | undefined {
   return PRODUCTS.find((p) => p.slug === slug)
 }
 
-export function getColourway(id: string): Colourway | undefined {
-  return COLOURWAYS.find((c) => c.id === id)
+/** A colourway of a product: the Flame Skull's unless another is named. */
+export function getColourway(
+  id: string,
+  product: Product = FLAME_SKULL_MOUNT,
+): Colourway | undefined {
+  return product.colourways.find((c) => c.id === id)
 }
 
 /** Falls back to the first colourway rather than throwing on a bad query param. */
-export function resolveColourway(id: string | undefined): Colourway {
-  const found = id ? getColourway(id) : undefined
-  return found ?? COLOURWAYS[0]!
+export function resolveColourway(
+  id: string | undefined,
+  product: Product = FLAME_SKULL_MOUNT,
+): Colourway {
+  const found = id ? getColourway(id, product) : undefined
+  return found ?? product.colourways[0]!
 }

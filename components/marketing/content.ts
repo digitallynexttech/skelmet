@@ -48,7 +48,7 @@ export const FAQ_ITEMS = [
   {
     question: "What comes in the SKELMET box?",
     answer:
-      "The flame skull, already fixed to its black arm in one piece, a paper drilling guide that marks the three holes, three screws with wall plugs, a thank-you card and a mystery box.",
+      "The skull, already fixed to its black arm in one piece, a paper drilling guide that marks the three holes, three screws with wall plugs, a thank-you card and a mystery box.",
   },
   {
     question: "Can I put up the SKELMET mount without drilling?",

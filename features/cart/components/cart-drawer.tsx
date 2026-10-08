@@ -29,11 +29,14 @@ import {
 import { calculateTotals, useCart } from "@/features/cart/hooks/use-cart"
 import { useCartDrawer } from "@/features/cart/hooks/use-cart-drawer"
 import { SKULL_POSTER } from "@/components/marketing/skull-interaction"
-import { COLOURWAYS, FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
+import { COLOURWAYS, FLAME_SKULL_MOUNT, getProduct } from "@/features/catalog/catalog"
 import { useHydrated } from "@/hooks/use-hydrated"
 import { apiFetch } from "@/lib/api-fetch"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
+
+/** A product's MRP, by slug: the Flame Skull's for a line saved before there were two. */
+const mrpOf = (slug: string) => Number((getProduct(slug) ?? FLAME_SKULL_MOUNT).compareAtPrice)
 
 /**
  * The cart, as a drawer from the right of whatever page the visitor is on.
@@ -259,9 +262,9 @@ function CartContents({
   // server.
   const totals = calculateTotals(items, coupon?.discount ?? 0)
   const lines = mounted ? items : []
-  // Against the MRP printed on the product page, as the bill in a shop app
-  // shows what the prices beside it are already taking off.
-  const mrpTotal = Number(FLAME_SKULL_MOUNT.compareAtPrice) * totals.itemCount
+  // Against the MRP printed on each line's product page, as the bill in a shop
+  // app shows what the prices beside it are already taking off.
+  const mrpTotal = items.reduce((sum, line) => sum + mrpOf(line.productSlug) * line.qty, 0)
   const saving = Math.max(0, mrpTotal - totals.total)
 
   return (
@@ -366,8 +369,10 @@ function CartContents({
 
               <ul className="px-4">
                 {lines.map((line) => {
-                  const hex = COLOURWAYS.find((c) => c.id === line.colourway)?.hex ?? "#FF5A1F"
-                  const mrp = Number(FLAME_SKULL_MOUNT.compareAtPrice) * line.qty
+                  const hex =
+                    getProduct(line.productSlug)?.colourways.find((c) => c.id === line.colourway)
+                      ?.hex ?? "#FF5A1F"
+                  const mrp = mrpOf(line.productSlug) * line.qty
                   const price = Number(line.unitPrice) * line.qty
                   return (
                     <li
@@ -461,7 +466,7 @@ function CartContents({
               />
             </section>
 
-            <Recommendations inCart={lines.map((l) => l.colourway)} prices={prices} />
+            <Recommendations inCart={lines.map((l) => l.sku)} prices={prices} />
 
             <section aria-labelledby="cart-bill" className={CARD}>
               <h3 id="cart-bill" className={`${CARD_TITLE} mb-3`}>
@@ -579,12 +584,15 @@ function Recommendations({
   inCart,
   prices,
 }: {
-  inCart: ColourwayId[]
+  /** The SKUs already in the cart. */
+  inCart: string[]
   prices: Record<string, string>
 }) {
   const add = useCart((s) => s.add)
   const rail = React.useRef<HTMLDivElement>(null)
-  const picks = COLOURWAYS.filter((c) => !inCart.includes(c.id))
+  // The Flame Skull's colourways: the Piston Skull is offered here once it is
+  // on sale, not while it is a draft checkout would refuse.
+  const picks = COLOURWAYS.filter((c) => !inCart.includes(c.sku))
   if (picks.length === 0) return null
 
   const step = (direction: 1 | -1) =>
@@ -658,7 +666,7 @@ function Recommendations({
               </div>
               <button
                 type="button"
-                onClick={() => add(c.id)}
+                onClick={() => add(c.id, 1, FLAME_SKULL_MOUNT.slug)}
                 aria-label={`Add ${c.name} to cart`}
                 className="text-bone hover:border-blaze hover:bg-blaze hover:text-void mt-2.5 flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/[0.18] font-mono text-[11px] font-bold tracking-[0.12em] transition-colors"
               >

@@ -14,9 +14,11 @@ import { buyNowHref, useBuySelection } from "@/features/catalog/hooks/use-buy-se
  * cart as it is, the same as the panel's own Buy it now.
  */
 export function StickyBuyBar({
+  productSlug,
   price,
   defaultColourway,
 }: {
+  productSlug: string
   price: string
   defaultColourway: string
 }) {
@@ -44,7 +46,7 @@ export function StickyBuyBar({
       </div>
       {/* Tighter on the narrowest phones, which it otherwise overhangs. */}
       <ButtonLink
-        href={buyNowHref(colourway, qty)}
+        href={buyNowHref(colourway, qty, productSlug)}
         variant="primary"
         size="md"
         full

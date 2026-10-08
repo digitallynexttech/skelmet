@@ -316,9 +316,11 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
 }
 
 /**
- * The one line from Buy it now - `/checkout?buy=<colourway>&qty=<n>` - at its
- * live price, or null for an ordinary checkout of the cart. In the URL rather
- * than the cart, so the cart is untouched and a reload keeps the order.
+ * The one line from Buy it now - `/checkout?buy=<colourway>&qty=<n>&product=<slug>`
+ * - at its live price, or null for an ordinary checkout of the cart. In the
+ * URL rather than the cart, so the cart is untouched and a reload keeps the
+ * order. A link from before there were two products names none, and meant
+ * the Flame Skull.
  */
 function buyNowLine(
   params: { get(name: string): string | null },
@@ -326,7 +328,11 @@ function buyNowLine(
 ): CartLine | null {
   const colourway = params.get("buy")
   if (!colourway) return null
-  const line = lineFor(colourway, Number(params.get("qty") ?? "1"))
+  const line = lineFor(
+    colourway,
+    Number(params.get("qty") ?? "1"),
+    params.get("product") ?? undefined,
+  )
   return line ? { ...line, unitPrice: prices[line.sku] ?? line.unitPrice } : null
 }
 

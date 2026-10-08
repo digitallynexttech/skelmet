@@ -17,7 +17,7 @@ import { TrustStrip } from "@/components/marketing/trust-strip"
 import { WhyCare } from "@/components/marketing/why-care"
 import { StickyBuyBar } from "@/components/layout/sticky-buy-bar"
 import { ProductDetail } from "@/features/catalog/components/product-detail"
-import { PRODUCTS, getProduct } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, PRODUCTS, getProduct } from "@/features/catalog/catalog"
 import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { shippingCharge } from "@/features/settings/server/runtime-settings"
 import { PixelViewContent } from "@/features/visitors/components/meta-pixel"
@@ -39,7 +39,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const colours = product.colourways.map((c) => c.name)
   const last = colours.pop()
   const colourList = colours.length > 0 ? `${colours.join(", ")} and ${last}` : last
-  const description = `A 3D-printed flame-skull wall mount for motorcycle helmets, with hooks for gloves, jacket and keys. In ${colourList}. Made in India, delivered across India.`
+  const kind = product.slug === FLAME_SKULL_MOUNT.slug ? "flame-skull" : "piston-skull"
+  const description = `A 3D-printed ${kind} wall mount for motorcycle helmets, with hooks for gloves, jacket and keys. In ${colourList}. Made in India, delivered across India.`
 
   return pageMetadata({
     title: product.name,
@@ -89,6 +90,11 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const product = result.ok ? result.data : null
   if (!product) notFound()
 
+  // The Flame Skull's page carries the sections built from its own photos,
+  // specs and reviews. Another skull gets the ones true of any SKELMET mount,
+  // with its specs in the buy panel instead.
+  const isFlame = product.slug === FLAME_SKULL_MOUNT.slug
+
   return (
     <>
       <nav
@@ -102,7 +108,11 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-bone">{product.name}</span>
       </nav>
 
-      <ProductDetail product={product} freeShipping={charge.sharePercent === 0} />
+      <ProductDetail
+        product={product}
+        freeShipping={charge.sharePercent === 0}
+        showSpecs={!isFlame}
+      />
       <PixelViewContent
         sku={product.colourways[0]!.sku}
         name={product.name}
@@ -111,21 +121,40 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
 
       <TrustStrip />
 
-      {/* <ThePoint /> */}
-      <WhyCare />
-      <MoreThanMount />
-      <Anatomy />
-      {/* Links back up to the buy panel: on this page the product link
-          would only point at the page the reader is already on. */}
-      <Texture ctaHref="#buy" price={product.price} />
-      <InstallSteps />
-      {/* <TheHook /> */}
-      <Comparison />
-      <Reviews />
-      <RiderWall />
-      <FaqSection />
+      {isFlame ? (
+        <>
+          {/* <ThePoint /> */}
+          <WhyCare />
+          <MoreThanMount />
+          <Anatomy />
+          {/* Links back up to the buy panel: on this page the product link
+              would only point at the page the reader is already on. */}
+          <Texture ctaHref="#buy" price={product.price} />
+          <InstallSteps />
+          {/* <TheHook /> */}
+          <Comparison />
+          <Reviews />
+          <RiderWall />
+          <FaqSection />
+        </>
+      ) : (
+        <>
+          <WhyCare />
+          <Comparison />
+          <FaqSection
+            picture={{
+              src: product.gallery.ghost[product.gallery.ghost.length - 1]!.src,
+              alt: `The ${product.name} in Ghost Grey, from above`,
+            }}
+          />
+        </>
+      )}
 
-      <StickyBuyBar price={product.price} defaultColourway={product.colourways[0]!.id} />
+      <StickyBuyBar
+        productSlug={product.slug}
+        price={product.price}
+        defaultColourway={product.colourways[0]!.id}
+      />
     </>
   )
 }

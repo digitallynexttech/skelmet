@@ -10,6 +10,8 @@ import type { ColourwayId } from "@/features/catalog/catalog"
 
 type Props = Omit<ButtonProps, "onClick" | "children"> & {
   colourway: ColourwayId
+  /** The Flame Skull's colourway unless another product is named. */
+  productSlug?: string
   qty?: number
   label?: string
   showIcon?: boolean
@@ -17,6 +19,7 @@ type Props = Omit<ButtonProps, "onClick" | "children"> & {
 
 export function AddToCartButton({
   colourway,
+  productSlug,
   qty = 1,
   label = "Add to cart",
   showIcon = false,
@@ -34,7 +37,7 @@ export function AddToCartButton({
   }, [])
 
   function handleAdd(e: React.MouseEvent<HTMLButtonElement>) {
-    add(colourway, qty)
+    add(colourway, qty, productSlug)
     setJustAdded(true)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setJustAdded(false), 1800)

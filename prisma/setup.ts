@@ -7,7 +7,7 @@
  */
 import fs from "node:fs"
 
-import { COLOURWAYS, FLAME_SKULL_MOUNT } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, PRODUCTS } from "@/features/catalog/catalog"
 import { FULL_ACCESS_ROLES, PERMISSION_DEFINITIONS } from "@/lib/constants"
 import { hashPassword } from "@/lib/crypto"
 import type { Db } from "@/server/db"
@@ -159,55 +159,59 @@ export async function ensureFirstAdmin(
 }
 
 /**
- * The catalogue's product and a variant per colourway, where missing, with
- * their media. Existing rows - their prices, their stock - are left exactly
- * as they are. New variants start at `stock`.
+ * Every catalogue product and a variant per colourway, where missing, with
+ * their media. Existing rows - their prices, their stock, their status - are
+ * left exactly as they are. New variants start at `stock`. A new product
+ * other than the Flame Skull starts as a DRAFT, to be published from the
+ * console once it has stock (the Piston Skull's migration does the same).
  */
 export async function ensureCatalogue(
   db: Db,
   input: { stock: number },
 ): Promise<{ variantsCreated: number }> {
-  const product = await db.product.upsert({
-    where: { slug: FLAME_SKULL_MOUNT.slug },
-    create: {
-      slug: FLAME_SKULL_MOUNT.slug,
-      name: FLAME_SKULL_MOUNT.name,
-      strapline: FLAME_SKULL_MOUNT.strapline,
-      basePrice: FLAME_SKULL_MOUNT.price,
-      status: "ACTIVE",
-    },
-    update: {},
-    select: { id: true },
-  })
-
   let variantsCreated = 0
-  for (const c of COLOURWAYS) {
-    const existing = await db.variant.findUnique({ where: { sku: c.sku }, select: { id: true } })
-    if (existing) continue
-
-    const variant = await db.variant.create({
-      data: {
-        productId: product.id,
-        colourway: c.id,
-        sku: c.sku,
-        price: FLAME_SKULL_MOUNT.price,
-        stock: input.stock,
+  for (const item of PRODUCTS) {
+    const product = await db.product.upsert({
+      where: { slug: item.slug },
+      create: {
+        slug: item.slug,
+        name: item.name,
+        strapline: item.strapline,
+        basePrice: item.price,
+        status: item.slug === FLAME_SKULL_MOUNT.slug ? "ACTIVE" : "DRAFT",
       },
+      update: {},
       select: { id: true },
     })
-    variantsCreated += 1
 
-    // Media hangs off the variant, not the product: each finish has its own
-    // gallery, and a single product-level list could only ever hold one.
-    await db.mediaAsset.createMany({
-      data: FLAME_SKULL_MOUNT.gallery[c.id].map((g, i) => ({
-        productId: product.id,
-        variantId: variant.id,
-        key: g.src.replace(/^\//, ""),
-        alt: `${c.name} — ${g.alt}`,
-        sort: i,
-      })),
-    })
+    for (const c of item.colourways) {
+      const existing = await db.variant.findUnique({ where: { sku: c.sku }, select: { id: true } })
+      if (existing) continue
+
+      const variant = await db.variant.create({
+        data: {
+          productId: product.id,
+          colourway: c.id,
+          sku: c.sku,
+          price: item.price,
+          stock: input.stock,
+        },
+        select: { id: true },
+      })
+      variantsCreated += 1
+
+      // Media hangs off the variant, not the product: each finish has its own
+      // gallery, and a single product-level list could only ever hold one.
+      await db.mediaAsset.createMany({
+        data: item.gallery[c.id].map((g, i) => ({
+          productId: product.id,
+          variantId: variant.id,
+          key: g.src.replace(/^\//, ""),
+          alt: `${c.name} — ${g.alt}`,
+          sort: i,
+        })),
+      })
+    }
   }
   return { variantsCreated }
 }

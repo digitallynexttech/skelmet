@@ -3,7 +3,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-import { COLOURWAYS, FLAME_SKULL_MOUNT, type ColourwayId } from "@/features/catalog/catalog"
+import { FLAME_SKULL_MOUNT, getProduct, type ColourwayId } from "@/features/catalog/catalog"
 
 /**
  * Guest cart.
@@ -51,7 +51,8 @@ type CartState = {
    * hand-edited localStorage entry buys nothing.
    */
   couponCode: string | null
-  add: (colourway: ColourwayId, qty?: number) => void
+  /** A colourway of a product, the Flame Skull's unless another is named. */
+  add: (colourway: ColourwayId, qty?: number, productSlug?: string) => void
   setQty: (id: string, qty: number) => void
   remove: (id: string) => void
   setCoupon: (code: string | null) => void
@@ -70,21 +71,28 @@ type CartState = {
 const MAX_QTY = 9
 
 /**
- * A line for `qty` of one colourway, at the registry price - the cart's own
- * lines, and the single line Buy it now checks out without touching the cart.
+ * A line for `qty` of one colourway of a product, at the registry price - the
+ * cart's own lines, and the single line Buy it now checks out without
+ * touching the cart. The Flame Skull's unless another product is named, as
+ * every line was before there were two.
  */
-export function lineFor(colourwayId: string, qty: number): CartLine | null {
-  const colourway = COLOURWAYS.find((c) => c.id === colourwayId)
-  if (!colourway || !Number.isInteger(qty) || qty < 1) return null
+export function lineFor(
+  colourwayId: string,
+  qty: number,
+  productSlug: string = FLAME_SKULL_MOUNT.slug,
+): CartLine | null {
+  const product = getProduct(productSlug)
+  const colourway = product?.colourways.find((c) => c.id === colourwayId)
+  if (!product || !colourway || !Number.isInteger(qty) || qty < 1) return null
   return {
-    id: `${FLAME_SKULL_MOUNT.slug}:${colourway.id}`,
-    productSlug: FLAME_SKULL_MOUNT.slug,
-    productName: FLAME_SKULL_MOUNT.name,
+    id: `${product.slug}:${colourway.id}`,
+    productSlug: product.slug,
+    productName: product.name,
     colourway: colourway.id,
     colourwayName: colourway.name,
     sku: colourway.sku,
     image: colourway.image,
-    unitPrice: FLAME_SKULL_MOUNT.price,
+    unitPrice: colourway.price,
     qty: Math.min(MAX_QTY, qty),
   }
 }
@@ -95,9 +103,9 @@ export const useCart = create<CartState>()(
       items: [],
       couponCode: null,
 
-      add: (colourwayId, qty = 1) =>
+      add: (colourwayId, qty = 1, productSlug) =>
         set((state) => {
-          const line = lineFor(colourwayId, qty)
+          const line = lineFor(colourwayId, qty, productSlug)
           if (!line) return state
 
           const existing = state.items.find((l) => l.id === line.id)

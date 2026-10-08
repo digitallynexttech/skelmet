@@ -41,10 +41,16 @@ export function ProductDetail({
   product,
   freeShipping,
   initialColourway,
+  showSpecs = false,
 }: {
   product: Product
   /** No shipping charge anywhere (Settings > Shipping charge at 0%). */
   freeShipping: boolean
+  /**
+   * The specs in the panel, for a page without the Flame Skull's build
+   * section (anatomy.tsx), which lists them there.
+   */
+  showSpecs?: boolean
   /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
@@ -263,10 +269,15 @@ export function ProductDetail({
             {product.name}
           </h1>
           <div className="text-dim flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-mono text-[11px] tracking-[0.08em] sm:text-xs">
-            <Stars rating={product.rating} />
-            <span className="text-bone">{product.rating}</span>
-            <span>{product.reviewCount} REVIEWS</span>
-            <span aria-hidden className="hidden h-3 w-px bg-white/15 sm:block" />
+            {/* No stars for a product nobody has reviewed yet, rather than five empty ones. */}
+            {product.reviewCount > 0 ? (
+              <>
+                <Stars rating={product.rating} />
+                <span className="text-bone">{product.rating}</span>
+                <span>{product.reviewCount} REVIEWS</span>
+                <span aria-hidden className="hidden h-3 w-px bg-white/15 sm:block" />
+              </>
+            ) : null}
             <span>{colourway.sku}</span>
           </div>
         </div>
@@ -369,7 +380,7 @@ export function ProductDetail({
             className="min-w-[150px] flex-1 @max-[24rem]:px-5"
             disabled={soldOut}
             onClick={(e) => {
-              add(colourwayId, qty)
+              add(colourwayId, qty, product.slug)
               // The header's count was the only sign anything happened, and on
               // a phone it is easy to miss. The cart opens with the mount in it.
               setAdded(true)
@@ -402,7 +413,7 @@ export function ProductDetail({
             disabled={soldOut}
             onClick={() =>
               // Straight to checkout with just this, leaving the cart as it is.
-              router.push(buyNowHref(colourwayId, qty))
+              router.push(buyNowHref(colourwayId, qty, product.slug))
             }
           >
             Buy it now
@@ -440,6 +451,27 @@ export function ProductDetail({
           </ul>
         </div>
 
+        {showSpecs ? (
+          <div className="rounded-tile bg-carbon border border-white/[0.09] p-5">
+            <div className="text-dim mb-3.5 font-mono text-[11px] tracking-[0.14em] uppercase">
+              Specs
+            </div>
+            <dl className="flex flex-col">
+              {product.specs.map((spec) => (
+                <div
+                  key={spec.label}
+                  className="flex items-center justify-between gap-4 border-b border-white/[0.07] py-2.5 text-[13.5px] last:border-b-0"
+                >
+                  <dt className="text-dim">{spec.label}</dt>
+                  <dd className={cn("text-right", spec.pending ? "text-ember" : "text-bone")}>
+                    {spec.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+
         {/* The declarations the Legal Metrology (Packaged Commodities) Rules
             require of an online listing, in one place. Collapsed, because a
             buyer rarely needs them - but always in the page. The maker is
@@ -457,7 +489,7 @@ export function ProductDetail({
           </summary>
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">
             {[
-              ["Product", "Wall-mounted helmet holder (flame skull mount)"],
+              ["Product", product.productType],
               ["Net quantity", "1 unit: the mount and its wall fixings"],
               [
                 "MRP",
