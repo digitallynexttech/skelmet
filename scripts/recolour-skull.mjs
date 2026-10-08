@@ -71,16 +71,36 @@ export function printWeight(r, g, b) {
 }
 
 /**
+ * A studio key light washes the print's highlights to a pale peach, too pale
+ * for printWeight, which has leather and skin to keep out. A studio shot has
+ * neither - only the print, a black bracket and a grey backdrop - so there any
+ * bright, warm pixel is the print.
+ */
+function highlightWeight(r, g, b) {
+  const h = hue(r, g, b)
+  if (h > 48 && h < 345) return 0
+  return smoothstep(120, 160, r) * smoothstep(14, 30, r - Math.min(g, b))
+}
+
+/**
  * @param sharp the sharp module (the scripts resolve it out of the pnpm store)
  * @param rgb raw 8-bit RGB, recoloured in place
  * @param colourway "olive" or "ghost"
+ * @param options.studio the picture is a studio shot: count its pale highlights as print too
  */
-export async function recolourSkull(sharp, rgb, width, height, colourway) {
+export async function recolourSkull(sharp, rgb, width, height, colourway, options = {}) {
   const print = PRINTS[colourway]
   if (!print) throw new Error(`no print measured for ${colourway}`)
   const N = width * height
   const weight = new Float32Array(N)
-  for (let p = 0; p < N; p++) weight[p] = printWeight(rgb[p * 3], rgb[p * 3 + 1], rgb[p * 3 + 2])
+  for (let p = 0; p < N; p++) {
+    const r = rgb[p * 3]
+    const g = rgb[p * 3 + 1]
+    const b = rgb[p * 3 + 2]
+    weight[p] = options.studio
+      ? Math.max(printWeight(r, g, b), highlightWeight(r, g, b))
+      : printWeight(r, g, b)
+  }
 
   const neighbours = (p) => {
     const x = p % width

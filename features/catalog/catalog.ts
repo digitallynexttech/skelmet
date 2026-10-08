@@ -284,10 +284,13 @@ export const PISTON_COLOURWAYS: Colourway[] = [
 ]
 
 /**
- * Its pictures are renders of the print file itself, skull-design-2.stl, on
- * the same bracket as the Flame Skull (hanger.stl), lit as the studio shots
- * are: nothing in them is drawn by an image model, so every groove, tooth and
- * the piston are the real print's. Same framing in every finish.
+ * Its pictures start as renders of the two print files, skull-design-2.stl on
+ * its own bracket (Helmet Hanger 75mm final center hook.stl), seated as the
+ * owner's photos of the real mount show it: the post into the underside
+ * behind the jaw, the skull tipped forward. An image model then gave each the
+ * look of a studio photograph, and each kept the render's outline (97-99 %
+ * overlap). The other finishes are the orange ones recoloured
+ * (scripts/build-piston-colourways.mjs), so all three show the same skull.
  */
 const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"]): GalleryShot => ({
   alt,
@@ -303,10 +306,6 @@ const PISTON_SHOTS = [
   pistonShot("hero", "Piston skull mount on the wall, three-quarter view"),
   pistonShot("detail", "Close up of the face and the piston clenched in its teeth"),
   pistonShot("front", "Piston skull mount, front view"),
-  pistonShot("side", "Side view: the arm, its hooks and the skull above them", {
-    title: "Hooks under the arm",
-    body: "Gloves and keys hang below while the helmet sits on the skull.",
-  }),
   pistonShot("mohawk", "From above: the mohawk running back over the skull"),
 ]
 
