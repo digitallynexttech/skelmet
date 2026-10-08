@@ -318,7 +318,8 @@ export const PISTON_COLOURWAYS: Colourway[] = [
   }),
 ]
 
-// Renders of the print files made photographic; olive and grey are the orange recoloured.
+// The owner's photos of the mount in use, plus studio renders (front, detail); olive and
+// grey are the orange recoloured (scripts/build-piston-colourways.mjs).
 const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"]): GalleryShot => ({
   alt,
   ...(caption ? { caption } : {}),
@@ -329,11 +330,26 @@ const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"])
   },
 })
 
+// In the Flame Skull's order.
 const PISTON_SHOTS = [
-  pistonShot("hero", "Piston skull mount on the wall, three-quarter view"),
-  pistonShot("detail", "Close up of the face and the piston clenched in its teeth"),
   pistonShot("front", "Piston skull mount, front view"),
-  pistonShot("mohawk", "From above: the mohawk running back over the skull"),
+  pistonShot(
+    "fitting",
+    "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
+    {
+      title: "Up in four steps",
+      body: "Mark, drill, plug, screw. The template, screws and wall plugs are in the box.",
+    },
+  ),
+  pistonShot("placing-helmet", "Setting a helmet onto the piston skull on its wall mount"),
+  pistonShot("wall-gear", "A helmet on the mount, gloves hanging from the hook under its arm"),
+  pistonShot("garage-bike", "A helmet on the mount on a lit wall, a sports bike parked below it"),
+  pistonShot(
+    "helmet-held",
+    "A helmet on the piston skull, face on, the piston showing through its opening",
+  ),
+  pistonShot("back", "From behind: the mohawk running down the back of the skull"),
+  pistonShot("detail", "Close up of the face and the piston clenched in its teeth"),
 ]
 
 export const PISTON_SKULL_MOUNT: Product = {
@@ -354,11 +370,12 @@ export const PISTON_SKULL_MOUNT: Product = {
     olive: PISTON_SHOTS.map((shot) => inFinish(shot, "olive")),
     ghost: PISTON_SHOTS.map((shot) => inFinish(shot, "ghost")),
   },
-  // Weight, load rating (its own bracket) and helmet fit wait for the owner to confirm.
+  // Fit confirmed by the owner (2026-10-08). Weight and load rating (its own bracket) still wait.
   specs: [
     { label: "Material", value: "PLA+ · matte" },
     { label: "Skull", value: "15 × 28 × 21 cm" },
     { label: "Fixings", value: "3 × screws + wall plugs" },
+    { label: "Fits", value: "Full-face and open-face" },
   ],
   inTheBox: [
     "Skull mount, arm attached",
@@ -367,29 +384,27 @@ export const PISTON_SKULL_MOUNT: Product = {
     "Thank-you card",
     "Mystery box",
   ],
-  // Studio shots until pictures of it in use are made.
   sections: {
     inUse: [
       {
-        src: "/product/piston-hero-ghost-grey.jpg",
-        alt: "A Ghost Grey piston skull mount on the wall, three-quarter view",
+        src: "/product/piston-wall-gear-ghost-grey.jpg",
+        alt: "A helmet on a Ghost Grey piston skull mount, gloves hanging from the hook under its arm",
       },
       {
-        src: "/product/piston-front.jpg",
-        alt: "A Blaze Orange piston skull mount on the wall, face on",
+        src: "/product/piston-garage-bike.jpg",
+        alt: "A helmet on the mount on a lit wall, a sports bike parked below it",
       },
       {
-        src: "/product/piston-detail-olive.jpg",
-        alt: "A Militia Olive piston skull, close on its face and the piston in its teeth",
+        src: "/product/piston-helmet-held-olive.jpg",
+        alt: "A helmet on a Militia Olive piston skull, the piston showing through its opening",
       },
     ],
     build: {
       picture: {
-        src: "/product/piston-mohawk.jpg",
-        alt: "The piston skull on its black arm, from above, the mohawk running back over its head",
-        position: "50% 80%",
+        src: "/product/piston-back-wide.jpg",
+        alt: "The piston skull on its black arm, from behind, the mohawk running down its back",
       },
-      body: "The mount arm fixes to the wall with 3 screws. The skull rides on its post, tipped forward and facing out from the wall.",
+      body: "The mount arm fixes to the wall with 3 screws. The skull takes full-face and open-face helmets, and rides on its post facing out from the wall.",
     },
     finish: {
       picture: {
@@ -399,17 +414,19 @@ export const PISTON_SKULL_MOUNT: Product = {
       body: "We don't sand the print smooth and pretend it was moulded. The fine ridges of every layer catch the light, the mohawk's spikes and the piston's rings stay crisp, and the whole thing reads as made rather than manufactured.",
     },
     install: {
-      src: "/product/piston-hero-olive.jpg",
-      alt: "A Militia Olive piston skull mount fixed to the wall",
+      src: "/product/piston-fitting-olive.jpg",
+      alt: "Screwing a Militia Olive piston skull mount to a wooden wall, the skull already on its arm",
+      position: "50% 40%",
     },
     looksLike: "A mohawk skull, piston in its teeth",
     faq: {
-      src: "/product/piston-mohawk-ghost-grey.jpg",
-      alt: "The Piston Skull Helmet Mount in Ghost Grey, from above",
+      src: "/product/piston-back-ghost-grey.jpg",
+      alt: "The Piston Skull Helmet Mount in Ghost Grey, from behind",
     },
-    // Helmet fit and load are the owner's to confirm: until then the page claims neither.
+    // Fit confirmed for full-face and open-face only; the load rating is still unconfirmed.
     faqAnswers: {
-      "Will the SKELMET mount hold a full-face helmet?": null,
+      "Will the SKELMET mount hold a full-face helmet?":
+        "Yes. Full-face and open-face helmets sit on it. The skull goes inside the helmet and spreads its weight across the liner, so no single spot of the padding is pressed out of shape.",
       "Can the SKELMET mount hold my jacket and gloves as well as my helmet?":
         "Yes. The arm has hooks under the skull, so your gloves, jacket and keys hang right below your helmet.",
       "Can I put up the SKELMET mount without drilling?":

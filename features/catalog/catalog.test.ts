@@ -15,7 +15,8 @@ describe("product sections", () => {
     }
   })
 
-  it("claim no load rating or helmet fit for the Piston Skull until the owner confirms them", () => {
+  // The owner confirmed full-face and open-face (2026-10-08), not modular, and no load rating yet.
+  it("claim only what the owner has confirmed for the Piston Skull", () => {
     const { sections, specs } = PISTON_SKULL_MOUNT
     const answers = FAQ_ITEMS.flatMap((item) => {
       const own = sections.faqAnswers?.[item.question]
@@ -24,7 +25,8 @@ describe("product sections", () => {
     const words = [sections.build.body, ...answers, ...specs.map((s) => `${s.label} ${s.value}`)]
     for (const text of words) {
       expect(text).not.toMatch(/10 kg|load rating/i)
-      expect(text).not.toMatch(/full-face|open-face|modular/i)
+      expect(text).not.toMatch(/modular/i)
     }
+    expect(specs).toContainEqual({ label: "Fits", value: "Full-face and open-face" })
   })
 })
