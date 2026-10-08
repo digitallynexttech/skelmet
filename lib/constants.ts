@@ -1,7 +1,4 @@
-/**
- * App-wide constants. Permission scopes are `<entity>:<verb>`, the module is
- * the entity, never a department (§3).
- */
+// Permission scopes are `<entity>:<verb>`; the module is the entity, never a department.
 
 export const PERMISSIONS = {
   DASHBOARD_READ: "dashboard:read",
@@ -27,12 +24,7 @@ export const PERMISSIONS = {
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
-/**
- * The roles that hold every permission: the one the seed makes, and an owner
- * role if one exists. Matched without regard to case. Also the only roles
- * that may do what no narrower permission should reach, such as deleting
- * test orders.
- */
+/** Hold every permission (matched case-insensitively), and alone may delete orders. */
 export const FULL_ACCESS_ROLES = ["Admin", "Owner"]
 
 export const PERMISSION_DEFINITIONS: Array<{
@@ -65,7 +57,7 @@ export const PERMISSION_DEFINITIONS: Array<{
   { scope: PERMISSIONS.SETTING_WRITE, module: "setting", label: "Change settings" },
 ]
 
-/** Order workflow: each transition is its own verb route with an atomic claim (§5). */
+/** Each transition is its own verb route with an atomic claim. */
 export const ORDER_STATUSES = [
   "PENDING",
   "CONFIRMED",
@@ -80,12 +72,7 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
-/**
- * Orders the shop has to act on, and every stage after: paid for, or cash on
- * delivery accepted (CONFIRMED). The console's Orders page. Awaiting payment
- * and the unpaid orders cancelled after an hour are under All orders and
- * Abandoned carts instead.
- */
+/** The console's Orders page: paid or COD-confirmed, and every stage after. */
 export const PAID_ORDER_STATUSES = [
   "CONFIRMED",
   "PAID",
@@ -96,7 +83,6 @@ export const PAID_ORDER_STATUSES = [
   "REFUNDED",
 ] as const satisfies readonly OrderStatus[]
 
-/** Which orders a list covers: paid or confirmed onwards (the Orders page) or every one. */
 export type OrderScope = "paid" | "all"
 
 export function statusesIn(scope: OrderScope): readonly OrderStatus[] {
@@ -115,7 +101,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   REFUNDED: "Refunded",
 }
 
-/** Tone keys, not raw colours, StatusBadge maps these to tokens (§7). */
+/** Tone keys, not colours: StatusBadge maps them to tokens. */
 export const ORDER_STATUS_COLORS: Record<OrderStatus, "neutral" | "accent" | "success" | "danger"> =
   {
     PENDING: "neutral",
@@ -131,13 +117,5 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, "neutral" | "accent" | "su
 
 export const PAGE_SIZE = 20
 
-/**
- * The most rows one admin list request may return.
- *
- * The console asks for a whole window rather than a page of twenty, so
- * that sorting and exporting cover the entire filtered set instead of
- * whichever twenty happened to load - a spreadsheet that silently holds
- * one page is worse than no export at all. Bounded, because "all rows"
- * stops being a safe request once the shop has years of orders.
- */
+/** Lists load a whole window so sorting and export cover the filtered set; bounded for safety. */
 export const MAX_PAGE_SIZE = 200

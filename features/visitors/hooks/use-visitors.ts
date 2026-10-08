@@ -6,12 +6,11 @@ import { apiFetch } from "@/lib/api-fetch"
 import type { LinkedVisitor } from "@/features/visitors/server/linked-visitors"
 
 // ── wire types ────────────────────────────────────────────
-/** The tiles on the Visitors board, each also a filter. */
 export type VisitorView = "all" | "known" | "anonymous" | "contact" | "cart" | "bought"
 
 export type VisitorRow = {
   id: string
-  /** True for a visit made without accepting cookies: no IP, no contact, one visit. */
+  /** Without consent: no IP, no contact, one visit. */
   anonymous: boolean
   name: string | null
   email: string | null
@@ -35,7 +34,7 @@ export type VisitorRow = {
   engagedSeconds: number
   cartItems: number
   cartValue: string
-  /** Orders that were paid for. */
+  /** Paid orders. */
   orders: number
   spent: string
   firstSeenAt: string
@@ -91,12 +90,11 @@ export type VisitorDetail = Omit<VisitorRow, "orders" | "spent" | "cartItems" | 
   language: string | null
   timezone: string | null
   postalCode: string | null
-  /** Typed at checkout, which beats the one worked out from the IP. */
+  /** Typed at checkout; beats postalCode from the IP. */
   pincode: string | null
-  /** Cloudflare's approximate point for the connection; with consent only. */
+  /** Cloudflare's approximation; with consent only. */
   latitude: number | null
   longitude: number | null
-  /** Other records that are probably this person (linked-visitors.ts). */
   linked: LinkedVisitor[]
   customer: { id: string; name: string | null; email: string } | null
   cart: {
@@ -109,7 +107,6 @@ export type VisitorDetail = Omit<VisitorRow, "orders" | "spent" | "cartItems" | 
   sessions: VisitorSessionRow[]
 }
 
-/** A basket a visitor filled and never placed an order from. */
 export type LeftCartRow = {
   id: string
   visitorId: string
@@ -130,7 +127,7 @@ export type LeftCartRow = {
   value: string
   checkoutAt: string | null
   updatedAt: string
-  /** Seen in the last thirty minutes: still shopping, not gone. */
+  /** Seen in the last 30 minutes. */
   browsingNow: boolean
 }
 

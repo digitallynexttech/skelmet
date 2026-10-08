@@ -1,10 +1,6 @@
 import { z } from "zod"
 
-/**
- * Both fields are required together on purpose. An order number alone is a
- * short, guessable key - the email is what turns a lookup into a claim of
- * ownership. The same schema validates the form and the service (§6).
- */
+/** Both required: a number alone is guessable; the email proves ownership. */
 export const trackOrderSchema = z.object({
   orderNumber: z
     .string()

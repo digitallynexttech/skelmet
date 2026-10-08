@@ -3,27 +3,16 @@
  *
  *   node scripts/build-app-icons.mjs [path-to-brand-folder]
  *
- * Source is the standalone mark, `Skelmet - Branding (3).png` - orange cranium
- * over a near-black jaw, on transparency. Every ink is repainted the mark's own
- * orange on the way through, so the icon is one colour.
+ * Every ink in `Skelmet - Branding (3).png` is repainted the mark's orange: a
+ * two-tone mark loses its dark jaw on dark tab chrome (a white one on light), and
+ * orange reads on both. The features are cut-outs, so it still reads as a skull.
  *
- * A two-tone mark cannot survive a browser tab. Left as drawn, the near-black
- * jaw vanished against dark chrome and only the orange dome showed; repainted
- * white, it vanished against light chrome instead. Orange reads on both. The
- * skull still reads as a skull because its features - the eye sockets, the
- * slit through the cranium, the gaps around the teeth - are cut out of the
- * shape as transparency, not drawn in the second ink.
- *
- * Outputs, all picked up by the App Router file conventions:
+ * Outputs, picked up by the App Router file conventions:
  *   app/favicon.ico     16 + 32 + 48, PNG-in-ICO, transparent
  *   app/icon.png        512, transparent
- *   app/apple-icon.png  180, on void - iOS composites the icon onto its own
- *                       background and a transparent one goes black on the home
- *                       screen. Void rather than white because it is the site's
- *                       own ground, and orange holds on it.
+ *   app/apple-icon.png  180, on void: iOS turns a transparent icon black
  *
- * Hand-rolled ICO container because there is no image dependency in the project
- * beyond the one Next already ships, and this runs once per brand drop.
+ * Hand-rolled ICO container: this runs once per brand drop.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -57,12 +46,8 @@ const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
 const APPLE_BACKGROUND = { r: 7, g: 6, b: 10, alpha: 1 }
 
 /**
- * Repaint every pixel the mark's orange, keeping its alpha.
- *
- * Every pixel, not just the dark ones: where the cranium meets the jaw the
- * antialiasing blends the two inks, and recolouring only the pixels nearest
- * black would leave a brownish seam along that line. Alpha is straight, not
- * premultiplied, so the edges stay exactly as soft as they were drawn.
+ * Repaints every pixel the mark's orange, keeping its alpha. Every pixel, not
+ * just the dark ones, or the antialiased seam between the two inks stays brown.
  */
 async function allOrange() {
   const { data, info } = await sharp(SOURCE)
@@ -95,11 +80,7 @@ async function square(size, artwork) {
     .toBuffer()
 }
 
-/**
- * Wraps PNGs in an ICO container: a 6-byte header, one 16-byte directory entry
- * per image, then the payloads. A dimension byte of 0 means 256 in this format,
- * which is why it is masked rather than written straight.
- */
+/** Wraps PNGs in an ICO container. A dimension byte of 0 means 256, hence the mask. */
 function ico(images) {
   const header = Buffer.alloc(6)
   header.writeUInt16LE(0, 0) // reserved

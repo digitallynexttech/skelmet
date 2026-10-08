@@ -1,68 +1,25 @@
 import { siteConfig } from "@/config/site"
 
-/**
- * What a parcel looks like to the courier.
- *
- * Couriers bill on whichever is larger: the actual weight, or the volumetric
- * weight of the box (L x B x H in cm / 5000 for most Indian couriers). So these
- * numbers set the price of every shipment - a box a few centimetres too big
- * can cost more than the mount weighs.
- *
- * Both MEASURED by the shop: one mount ships in a 42.5 x 34 x 13 cm carton
- * that weighs 920 g with everything in it - mount, packing and fixings.
- *
- * That carton's volumetric weight (42.5 x 34 x 13 / 5000 = 3.76 kg) is four
- * times the real 0.92 kg, so couriers charge for 3.76 kg. The box, not the
- * mount, is what costs money: a carton cut closer to the mount is the single
- * biggest saving on shipping. Below about 4,600 cm3 (4,600 / 5000 = 0.92 kg)
- * the real weight would take over and the box stop mattering.
- *
- * A variant's own `weightGrams` (editable in the console) wins over
- * `defaultPackedWeightGrams` when it is set.
- */
-/** Which courier price stands for what a shipment costs - see `fee` below. */
+// Couriers bill the larger of real and volumetric weight (L x B x H cm / 5000),
+// so the carton's size, not the mount, sets the price.
+
+/** Which courier price stands for a shipment's cost; see `fee`. */
 export const FEE_BASES = ["twoCheapest", "average", "cheapest", "recommended"] as const
 export type FeeBasis = (typeof FEE_BASES)[number]
 
 export const shippingConfig = {
-  /** Outer carton for one mount, cm. Measured. More than one unit stacks on the 13 cm side. */
+  /** Outer carton for one mount, cm, measured. More units stack on the 13 cm side. */
   box: { lengthCm: 42.5, breadthCm: 34, heightCm: 13 },
-  /** Packed weight of one mount, grams: product + carton + filler + fixings. Measured. */
+  /** Packed weight of one mount, grams, measured. A variant's `weightGrams` wins. */
   defaultPackedWeightGrams: 920,
-  /**
-   * Stand-in pickup pincode for rate quotes, used only until
-   * SHIPROCKET_PICKUP_LOCATION is set. After that, the pickup address's own
-   * pincode is read from Shiprocket, since that is where the courier collects.
-   */
+  /** For rate quotes until SHIPROCKET_PICKUP_LOCATION is set; then that address's pincode. */
   pickupPincode: siteConfig.address.pin,
   /**
-   * What the buyer pays for shipping: nothing, unless reaching their pincode
-   * costs the shop more than `aboveRupees` - and then `sharePercent` of the
-   * part above it, rounded to the rupee. At 300 and 50%: a Rs 500 courier
-   * costs the buyer Rs 100, a Rs 300 one nothing. Worked out for the order's
-   * own parcel, from the couriers Shiprocket offers, and shown at checkout
-   * before payment.
-   *
-   * `basis` is which courier price stands for "what it costs":
-   *
-   *   "twoCheapest" - the mean of the two lowest offers, or the only one when
-   *                   there is one. The shop's choice: close to what it books
-   *                   when it picks the courier itself, without letting one
-   *                   unusually cheap courier decide on its own. Measured for
-   *                   one mount from Delhi: Delhi, Gurugram, Jaipur and
-   *                   Lucknow free; Ghaziabad (Rs 226 and 455, so 340.5),
-   *                   Kolkata and the distant metros above Rs 300.
-   *   "average"     - the mean of every courier offered. The premium air
-   *                   couriers Shiprocket always lists pull it over Rs 300
-   *                   everywhere, the shop's own Delhi included.
-   *   "cheapest"    - the lowest offer alone.
-   *   "recommended" - Shiprocket's pick, often an air courier even locally.
-   *
-   * When Shiprocket cannot be asked, shipping is free: an outage must not
-   * charge anyone, as it must not refuse anyone.
-   *
-   * These are the defaults. The console's Settings > Shipping charge replaces
-   * all three without a deploy (shippingCharge() in runtime-settings.ts).
+   * Owner's rule: free unless the courier costs more than `aboveRupees`, then the
+   * buyer pays `sharePercent` of the excess, rounded (300, 50%: Rs 500 costs Rs 100).
+   * If Shiprocket cannot be asked, shipping is free. `basis`: "twoCheapest" (the
+   * shop's choice: mean of the two lowest offers), "average", "cheapest", or
+   * "recommended" (Shiprocket's pick). Defaults; Settings > Shipping overrides.
    */
   fee: { aboveRupees: 300, sharePercent: 50, basis: "twoCheapest" as FeeBasis },
 } as const

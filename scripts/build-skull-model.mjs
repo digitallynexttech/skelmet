@@ -3,37 +3,13 @@
  *
  *   node scripts/build-skull-model.mjs [path/to/skelmet.stl]
  *
- * The model used to be generated from photographs, and every generator
- * invented what it could not see: horns for flames, a different eye, lumps
- * on the back of the head, a socket where the bracket goes. The STL the
- * skulls are printed from is the shape itself, so the site's model is that
- * file, turned to the site's axes and cut down to web size:
+ * The print's layer lines are smoothed out first (Taubin, so nothing shrinks):
+ * left in, they streak once simplified. After simplifying, vertices are relaxed
+ * along the surface, since long thin triangles shade as stripes. One flat
+ * filament colour, no textures. Prints REST_SILHOUETTE (skull-journey) and
+ * HALO_REST.r (skull-interaction), to update when the print changes.
  *
- * - The slicer's file is Z up with the face along -Y; three.js is Y up with
- *   the camera on +Z. It is welded (STL repeats every vertex per triangle)
- *   and centred.
- * - The file carries the print's own layer lines as fine ripples over every
- *   surface. At a tenth of the triangles they cannot survive, and left in
- *   they came out as streaks along the flames, so they are smoothed away
- *   first. Taubin smoothing - a pull toward the neighbours, then a push back,
- *   so nothing shrinks - takes the ripple out at this density and leaves the
- *   flames, a hundred times larger, as they are.
- * - 1.9 million triangles are simplified to about a tenth. The simplifier is
- *   given the surface normals as well as the positions, so it keeps vertices
- *   where the surface turns, and the vertices left are then relaxed along the
- *   surface to even out the triangles: long, thin ones along a ridge shade as
- *   stripes, however exact their corners are.
- * - One flat colour, the filament's orange, and no textures. The print is
- *   one colour; the light and shade are the scene's job (skull-canvas), and
- *   they go all the way round, so nothing can mismatch between front and back.
- * - Quantised and meshopt-compressed: 94 MB of STL becomes under 1 MB. The
- *   decoder skull-canvas registers on its loader is what reads the result.
- *
- * It also prints the two numbers the code holds for the model's proportions -
- * REST_SILHOUETTE in skull-journey and HALO_REST's radius in skull-interaction -
- * so they can be updated when the print changes.
- *
- * The STL is kept beside the repo, not in it (94 MB every deploy cloned):
+ * The STL lives beside the repo, not in it:
  * ../FILES_SKELMET/website-source-media/skelmet.stl by default.
  */
 import fs from "node:fs"
@@ -62,12 +38,7 @@ const SIMPLIFY_RATIO = 0.1
 const SIMPLIFY_ERROR = 0.0004
 /** How much a change of surface direction counts against a collapse, beside distance. */
 const NORMAL_WEIGHT = 0.5
-/**
- * Forward tilt, degrees. Standing on its base the print's face points 9°
- * above level - the jaw sits well ahead of the brow - and a level camera at
- * mid-height sees it looking up. Most of that is taken out so it meets the
- * visitor's eye; the base tilts with it, out of sight.
- */
+/** Forward tilt, degrees: the print's face points 9° up; most of that is taken out. */
 const PITCH = -7
 /** Passes of sliding vertices along the surface toward their neighbours, after simplifying. */
 const RELAX_PASSES = 10
@@ -319,8 +290,7 @@ doc
 
 await MeshoptEncoder.ready
 await doc.transform(
-  // Reordered for the compressor: neighbouring triangles side by side in the
-  // buffer is what lets meshopt find them, a third off the file.
+  // Reordering first takes about a third off the compressed file.
   reorder({ encoder: MeshoptEncoder }),
   quantize({ quantizeNormal: 8 }),
   meshopt({ encoder: MeshoptEncoder, level: "high" }),
@@ -332,8 +302,7 @@ const io = new NodeIO()
 // Named by its contents, so a rebuilt model is a file no browser has yet.
 const OUT = publishAsset("model", "skull", ".glb", await io.writeBinary(doc))
 
-// -- The numbers the code holds. skull-canvas: camera z 5.4, 32° fov, the
-// height normalised to SKULL_HEIGHT units, the model lifted by 0.06.
+// -- The proportions the code holds, seen through skull-canvas's camera and lift.
 const SKULL_HEIGHT = 2.36 // the same number as skull-canvas
 const CAM = 5.4
 const T = Math.tan((32 * Math.PI) / 360)

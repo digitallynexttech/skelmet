@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Logging in to Shiprocket. A refused login pauses the next ones, because
- * Shiprocket locks the API user after repeated failures and an attempt made
- * while it is locked can restart the lock.
- */
-
 const LOGIN = "https://apiv2.shiprocket.in/v1/external/auth/login"
 
 const json = (status: number, body: unknown) =>
@@ -14,10 +8,8 @@ const json = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json" },
   })
 
-/**
- * A fetch that answers logins with `logins`, in order, and everything else
- * with an empty 200. A Response body reads once, so each call builds its own.
- */
+// Answers logins with `logins` in order, anything else with an empty 200. Factories, since a
+// Response body reads once.
 function shiprocket(...logins: Array<() => Response>) {
   const queue = [...logins]
   return vi.fn(async (url: string | URL) => {
@@ -34,10 +26,7 @@ const refusedLogin = () =>
   json(400, { message: "User blocked due to too many failed login attempts." })
 const goodLogin = () => json(200, { token: "t0k3n" })
 
-/**
- * A fresh copy, so the env cache starts empty - and a reset session, since the
- * token and the pause live on globalThis and outlast the module.
- */
+// A fresh module, and a reset session: the token and pause live on globalThis.
 async function client() {
   vi.resetModules()
   const sr = await import("@/features/shipping/server/shiprocket")
@@ -105,8 +94,7 @@ describe("logging in to Shiprocket", () => {
   })
 
   it("tries a password corrected in Settings at once, without waiting out the old one's pause", async () => {
-    // The settings as saved in the console, changed underneath the client
-    // the way a save changes them.
+    // The console's saved settings, changed underneath the client as a save would.
     const login = { email: "api-user@example.com", password: "wrong" }
     vi.resetModules()
     vi.doMock("@/features/settings/server/runtime-settings", () => ({

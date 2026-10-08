@@ -3,11 +3,7 @@ import { describe, expect, it } from "vitest"
 import { lineFor } from "@/features/cart/hooks/use-cart"
 import { buyNowHref } from "@/features/catalog/hooks/use-buy-selection"
 
-/**
- * Two skulls in the same three colourways: a cart line has to be the right
- * product's, by its SKU, and a line or Buy it now link from before there were
- * two still means the Flame Skull.
- */
+// Two products share colourway ids; with no product named, a line means the Flame Skull.
 describe("lineFor", () => {
   it("is the named product's colourway, under its own SKU", () => {
     expect(lineFor("olive", 2, "piston-skull-mount")).toMatchObject({

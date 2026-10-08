@@ -1,26 +1,13 @@
 /**
- * The Rider wall's four pictures of the mount in use, the owner's own, into
- * public/product/rider-*.jpg.
+ * Builds the Rider wall's four pictures of the mount in use (the owner's own)
+ * into public/product/rider-*.jpg.
  *
  *   node scripts/build-rider-wall.mjs [source-dir]
  *
- * Real photographs where they can be: the rendered scenes that were here read
- * as made up. Each is cropped square for its tile, and the office shots are
- * toned a little down - a touch of contrast, five per cent less light - so a
- * white wall does not glare out of the dark page.
- *
- * Two are not straight photographs (both in rider-wall-edits/ beside them).
- * Every photograph had the same black helmet with an intercom, so IMG_0777
- * was reworked by Google's image model (Nano Banana Pro) into a cream retro
- * open-face helmet against a dark wall, in studio light. The skull there is
- * the model's redraw of the photographed one - checked against it: the same
- * flames, eye vent and teeth - because the photograph's skull, flat-lit, laid
- * back into that light came out patchy. The motorcycle wall is the owner's
- * picture as supplied. Both arrive finished, so they are cropped, not toned.
- *
- * Every skull was orange, so two are recoloured to the other colourways:
- * Militia Olive in the cream helmet, Ghost Grey on the dark door
- * (recolour-skull.mjs).
+ * Each is cropped square for its tile. Straight photographs are toned a little
+ * down so a white wall does not glare on the dark page; the two finished edits
+ * in rider-wall-edits/ are only cropped. Two skulls are recoloured to the other
+ * colourways (recolour-skull.mjs).
  *
  * A changed picture needs a new file name: /product is cached for 30 days as
  * immutable.

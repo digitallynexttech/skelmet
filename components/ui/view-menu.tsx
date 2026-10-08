@@ -4,11 +4,7 @@ import { ChevronsUpDown } from "lucide-react"
 
 import { Menu, MenuOption } from "@/components/ui/menu"
 
-/**
- * Which slice of a table to list - All, Unfulfilled, Unpaid - as Shopify's
- * "All" menu beside the search: one button showing the current choice, each
- * choice with its count.
- */
+/** Shopify-style view picker beside a table's search (All, Unpaid...), each with its count. */
 export function ViewMenu<T extends string>({
   value,
   options,
@@ -18,7 +14,7 @@ export function ViewMenu<T extends string>({
   value: T
   options: Array<{ value: T; label: string; count?: number }>
   onChange: (next: T) => void
-  /** What is being chosen, for screen readers: "View", "Status". */
+  /** Accessible name prefix: "View", "Status". */
   label?: string
 }) {
   const current = options.find((o) => o.value === value) ?? options[0]

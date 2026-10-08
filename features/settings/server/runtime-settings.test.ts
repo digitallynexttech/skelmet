@@ -11,11 +11,7 @@ import {
 } from "@/features/settings/server/runtime-settings"
 import { open, seal } from "@/features/settings/server/secret-box"
 
-/**
- * Which keys the site runs on. A mistake here charges customers on the wrong
- * Razorpay account or logs in to Shiprocket as the wrong user, so the rules
- * for mixing saved settings with .env are pinned down one by one.
- */
+// A mistake here charges on the wrong Razorpay account, so each saved-vs-.env rule is pinned.
 
 const original = { ...process.env }
 
@@ -40,8 +36,7 @@ describe("secret box", () => {
   })
 
   it("will not open a value edited in the database", () => {
-    // Flip one byte of the ciphertext itself. (Changing the last base64
-    // character is not enough: it can land on padding bits and decode the same.)
+    // Flip a ciphertext byte; the last base64 char can be padding bits and decode the same.
     const sealed = seal("rzp-secret-value")
     const [head, data] = [sealed.slice(0, sealed.lastIndexOf(".") + 1), sealed.split(".").at(-1)!]
     const bytes = Buffer.from(data, "base64url")
@@ -195,7 +190,7 @@ describe("resolveShipping", () => {
       { aboveRupees: 300, sharePercent: 49.5, basis: "average" as const },
       { aboveRupees: 300, sharePercent: 150, basis: "average" as const },
       { aboveRupees: 300, sharePercent: 50, basis: "median" as never },
-      // A charge saved under the old flat-fee rule is not this rule.
+      // The old flat-fee shape.
       { aboveRupees: 300, feeRupees: 350, basis: "twoCheapest" as const } as never,
       { aboveRupees: 300 },
     ]) {

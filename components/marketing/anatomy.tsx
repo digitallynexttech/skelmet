@@ -18,10 +18,8 @@ export function Anatomy({ product = FLAME_SKULL_MOUNT }: { product?: Product } =
               alt={picture.alt}
               style={{ objectPosition: picture.position }}
               fill
-              // Its real width: the page less its gutters, the 520px text
-              // column and the 64px gap beside it; full width less gutters
-              // when stacked. At 90, as the card's print and the table's grain
-              // went soft at the default 75.
+              // Real width: page less gutters, the 520px column and 64px gap.
+              // Quality 90: fine print and grain go soft at the default 75.
               sizes="(min-width: 1280px) calc(100vw - 696px), (min-width: 1024px) calc(100vw - 648px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
               quality={90}
               className="object-cover"

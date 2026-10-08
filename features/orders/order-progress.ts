@@ -3,23 +3,14 @@ import type { PaymentMethod } from "@/features/checkout/payment-options"
 import type { TrackingStage } from "@/features/shipping/server/shiprocket-mapping"
 import type { OrderStatus } from "@/lib/constants"
 
-/**
- * An order's one status, read the way Shopify's order list reads it: three
- * questions answered apart. Has the money come in? Has it left the building?
- * Where is the parcel? Each answer is worked out here from what the order
- * already records - its status, how it is paid for, and the courier's last
- * word on the shipment - so nothing new is stored and nothing can disagree.
- */
+// Payment, fulfilment and delivery, as Shopify's list shows them, derived from what
+// the order already records so nothing new is stored and nothing can disagree.
 
 // ── payment ────────────────────────────────────────────────
 
 /**
- * paid            all of it is in
- * partially_paid  the advance is in, the balance is the courier's to collect
- * pending         nothing in yet, and it is still coming
- * voided          nothing in, and none is coming: cancelled, or cash on
- *                 delivery that came back undelivered
- * refunded        it went back to the customer
+ * partially_paid  the advance is in, the courier collects the balance
+ * voided          nothing in and none coming: cancelled, or COD returned undelivered
  */
 export type PaymentState = "paid" | "partially_paid" | "pending" | "voided" | "refunded"
 
@@ -40,11 +31,10 @@ export function paymentState(status: OrderStatus, method: PaymentMethod): Paymen
     case "PENDING":
     case "CONFIRMED":
       return "pending"
-    // Cash on delivery is paid at the door.
+    // COD is paid at the door.
     case "DELIVERED":
       return "paid"
-    // Came back undelivered: whatever was paid online stays paid, and the
-    // courier collected nothing.
+    // Undelivered: what was paid online stays paid; the courier collected nothing.
     case "RETURNED":
       return method === "ONLINE" ? "paid" : method === "PARTIAL" ? "partially_paid" : "voided"
     default:
@@ -55,12 +45,10 @@ export function paymentState(status: OrderStatus, method: PaymentMethod): Paymen
 // ── fulfilment ─────────────────────────────────────────────
 
 /**
- * on_hold      waiting for an online payment; not to be packed yet
- * unfulfilled  to pack
- * packed       packed, waiting for the courier
- * fulfilled    handed to the courier, whatever happened after
- * expired      never paid for, and cancelled by itself to free its stock
- * cancelled    called off by staff, or refunded before it shipped
+ * on_hold    waiting for an online payment; not to be packed yet
+ * fulfilled  handed to the courier, whatever happened after
+ * expired    never paid, cancelled automatically to free its stock
+ * cancelled  by staff, or refunded before it shipped
  */
 export type FulfilmentState =
   "on_hold" | "unfulfilled" | "packed" | "fulfilled" | "expired" | "cancelled"
@@ -86,11 +74,7 @@ export const FULFILMENT_STATES: Record<
   },
 }
 
-/**
- * `shipped`: a shipment was booked for it and not called off.
- * `cancelledByStaff`: for a cancelled order, whether a person cancelled it
- * (cancelledByStaff in orders/server) rather than the clock.
- */
+/** `shipped`: a shipment booked and not called off. `cancelledByStaff`: a person, not the clock. */
 export function fulfilmentState(
   status: OrderStatus,
   { shipped, cancelledByStaff }: { shipped: boolean; cancelledByStaff: boolean },
@@ -109,7 +93,6 @@ export function fulfilmentState(
       return "fulfilled"
     case "CANCELLED":
       return cancelledByStaff ? "cancelled" : "expired"
-    // Refunded from wherever it was: shipped first, or refunded instead.
     case "REFUNDED":
       return shipped ? "fulfilled" : "cancelled"
   }
@@ -146,21 +129,17 @@ export type DeliveryState = { key: DeliveryKey; label: string }
 
 const delivery = (key: DeliveryKey): DeliveryState => ({ key, label: DELIVERY_STATES[key].label })
 
-/**
- * Where the parcel is. Null before there is one to speak of. `stage` is the
- * courier's status as shipping reads it (trackingStage); the finer points
- * Shopify shows - out for delivery, a failed attempt - come from its words.
- */
+/** Null before there is a parcel. Out for delivery and failed attempts come from courier words. */
 export function deliveryState(input: {
   orderStatus: OrderStatus
-  /** The shipment's status in the courier's words; null without a shipment. */
+  /** Null without a shipment. */
   courierStatus: string | null
   stage: TrackingStage | null
   pickupScheduled: boolean
 }): DeliveryState | null {
   const { orderStatus, courierStatus, stage, pickupScheduled } = input
 
-  // Shipped or delivered by hand with no shipment on record.
+  // Shipped or delivered by hand, no shipment on record.
   if (!courierStatus) {
     if (orderStatus === "SHIPPED") return delivery("in_transit")
     if (orderStatus === "DELIVERED") return delivery("delivered")
@@ -186,7 +165,7 @@ export function deliveryState(input: {
       return delivery(pickupScheduled || words.includes("PICKUP") ? "pickup_scheduled" : "booked")
     default:
       if (orderStatus === "DELIVERED") return delivery("delivered")
-      // Anything else - LOST, DAMAGED - in the courier's own words.
+      // LOST, DAMAGED and the like, in the courier's words.
       return { key: "other", label: words.charAt(0) + words.slice(1).toLowerCase() }
   }
 }

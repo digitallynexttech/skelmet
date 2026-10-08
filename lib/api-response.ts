@@ -27,11 +27,7 @@ const CODE_BY_STATUS: Record<number, string> = {
   500: "INTERNAL",
 }
 
-/**
- * Turns an ActionResult into the wire envelope. Route handlers are one
- * expression: `respond(await someService(...))`, no NextResponse.json,
- * no try/catch, no business logic (§5).
- */
+/** Routes are one expression: `respond(await someService(...))`, no try/catch or logic. */
 export function respond<T>(result: ActionResult<T>, successStatus = 200) {
   if (result.ok) {
     return NextResponse.json<ApiSuccess<T>>(
@@ -55,11 +51,7 @@ export function respond<T>(result: ActionResult<T>, successStatus = 200) {
   )
 }
 
-/**
- * A file, for the few routes that answer with one rather than JSON. A failure
- * is still the usual envelope. Private and never cached: invoices carry the
- * customer's address.
- */
+/** Never cached: invoices carry the customer's address. Failures stay JSON. */
 export function respondPdf(result: ActionResult<{ pdf: Buffer; filename: string }>) {
   if (!result.ok) return respond(result)
   return new NextResponse(new Uint8Array(result.data.pdf), {
@@ -71,10 +63,7 @@ export function respondPdf(result: ActionResult<{ pdf: Buffer; filename: string 
   })
 }
 
-/**
- * An image an id names for good, so any cache may keep it for a year: the
- * newsletter's pictures are never edited in place, only uploaded afresh.
- */
+/** Cached for a year: an image id is never reused for new content. */
 export function respondImage(result: ActionResult<{ data: Uint8Array; contentType: string }>) {
   if (!result.ok) return respond(result)
   return new NextResponse(new Uint8Array(result.data.data), {

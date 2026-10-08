@@ -35,7 +35,6 @@ const BASIS_DETAIL: Record<FeeBasis, string> = {
     "The price of the courier Shiprocket recommends, which is often an air courier even for nearby pincodes.",
 }
 
-/** The rule in one sentence, as a buyer would meet it. */
 function describe(charge: ShippingCharge): string {
   if (charge.sharePercent === 0) return "Shipping is free to every pincode."
   const example = charge.aboveRupees + 200

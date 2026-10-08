@@ -3,10 +3,7 @@
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-/**
- * List state (page, filters, tab) lives in the URL so a filtered view is
- * shareable and the back button behaves (§6).
- */
+/** List state in the URL, so a filtered view is shareable and Back works. */
 export function useUrlState<T extends Record<string, string>>(
   defaults: T,
 ): [T, (next: Partial<T>) => void] {
@@ -27,7 +24,7 @@ export function useUrlState<T extends Record<string, string>>(
     (next: Partial<T>) => {
       const params = new URLSearchParams(searchParams.toString())
       for (const [key, value] of Object.entries(next)) {
-        // Drop the param when it matches the default, so URLs stay short.
+        // Defaults stay out of the URL.
         if (value === undefined || value === "" || value === defaults[key]) params.delete(key)
         else params.set(key, String(value))
       }

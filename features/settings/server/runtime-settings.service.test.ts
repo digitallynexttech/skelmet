@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Saving the console's settings: two admins saving the same section cannot
- * silently undo each other, the Shiprocket password shows nothing of itself,
- * and the webhook token has to be long enough not to be guessed.
- */
-
 const mocks = vi.hoisted(() => ({
   setting: {
     findUnique: vi.fn(),

@@ -14,10 +14,7 @@ export function postMeta(post: Pick<BlogListItem, "publishedAt" | "readMinutes">
     .join(" · ")
 }
 
-/**
- * One post on the blog page. `lead` is the large one across the top: picture
- * beside the words once there is room, and the page's first image.
- */
+/** One post card. `lead` is the large one across the top, and the page's first image. */
 export function PostCard({
   post,
   lead = false,
@@ -48,7 +45,6 @@ export function PostCard({
             src={cover}
             alt={post.coverImage?.alt ?? ""}
             fill
-            // The lead is the first thing on the page; the rest wait their turn.
             preload={lead}
             fetchPriority={lead ? "high" : undefined}
             sizes={
@@ -59,7 +55,6 @@ export function PostCard({
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
         ) : null}
-        {/* The Studio's "featured" switch, said on the card as well as by its place. */}
         {post.featured ? (
           <Badge variant="blaze" className="absolute top-4 left-4">
             Featured
@@ -77,7 +72,7 @@ export function PostCard({
             lead ? "text-[26px] sm:text-[32px]" : "text-[20px]",
           )}
         >
-          {/* The whole card is the link: the stretched ::after covers it. */}
+          {/* The stretched ::after makes the whole card the link. */}
           <Link href={`/blog/${post.slug}`} className="after:absolute after:inset-0">
             {post.title}
           </Link>

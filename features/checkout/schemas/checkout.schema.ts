@@ -4,9 +4,8 @@ import { PAYMENT_METHODS } from "@/features/checkout/payment-options"
 import { INDIAN_STATES } from "@/lib/india"
 
 /**
- * The form checks these as the buyer types and the server checks them again,
- * from this one file, so the two cannot drift apart. Each rule that can fail
- * for more than one reason is split, so the message names the actual problem.
+ * Shared by the form and the server so they cannot drift. Rules are split so
+ * each message names the actual problem.
  */
 export const addressSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(60),
@@ -20,8 +19,7 @@ export const addressSchema = z.object({
     .max(80)
     .regex(/^[\p{L}][\p{L} .'()&-]*$/u, "Use letters only for the city"),
   state: z.enum(INDIAN_STATES, { error: "Choose your state" }),
-  // abort: a value that is not six digits gets that message alone, not a
-  // second one about its first digit as well.
+  // abort: one message, not a second about the first digit.
   pincode: z
     .string()
     .trim()
@@ -31,9 +29,7 @@ export const addressSchema = z.object({
 
 export const placeOrderSchema = z.object({
   email: z.email("That email doesn't look right"),
-  // Exactly ten digits, as couriers dial it: no +91, no leading 0, no spaces.
-  // The field strips those as they are typed, so this only ever meets them
-  // from a hand-made request.
+  // Ten digits as couriers dial it: no +91, leading 0 or spaces.
   phone: z
     .string()
     .trim()
@@ -53,12 +49,7 @@ export const placeOrderSchema = z.object({
     .min(1, "Your cart is empty")
     .max(20),
   couponCode: z.string().trim().max(40).optional().or(z.literal("")),
-  /**
-   * How it is paid for. The enum only says what exists: which of these a
-   * buyer may choose is set in the console (Settings > Pay on delivery) and
-   * checked by placeOrder, since hiding a button alone would still let a
-   * hand-made request place an order that never pays.
-   */
+  /** What exists only; placeOrder checks what this buyer is offered. */
   paymentMethod: z.enum(PAYMENT_METHODS).default("ONLINE"),
   saveAddress: z.boolean().default(false),
 })

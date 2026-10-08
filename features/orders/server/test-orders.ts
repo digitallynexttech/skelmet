@@ -14,34 +14,21 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { createAuditLog } from "@/server/audit"
 import { db } from "@/server/db"
 
-/**
- * Deleting orders that were never sales: the ones the shop placed to try
- * itself out, and the unpaid attempts a declined or abandoned payment left.
- *
- * Nothing here can tell a test from a sale on its own, so staff choose the
- * orders - and then everything that marks one as real keeps it, whatever was
- * ticked: money taken through Razorpay's live account, cash collected at the
- * door, a tax invoice number (the series must run without gaps), a parcel
- * still with Shiprocket, or a payment that may yet arrive. What is left goes
- * for good, with its items, payments and shipment; stock it still held goes
- * back on sale and a coupon use it held is given back. Each deletion is in
- * the audit log. Owners and admins only.
- */
+// Deletes test and never-paid orders that staff tick. Never deleted, whatever is
+// ticked (whyKeep): live Razorpay money, cash collected, an invoice number (the
+// series must have no gaps), a parcel with Shiprocket, a payment that may arrive.
+// Owners and admins only; every deletion is audited.
 
-/**
- * Orders still holding their stock. Cancelling, expiring and refunding
- * before shipping each gave theirs back already; shipped goods left.
- */
+/** Cancelling, expiring and refunding before shipping already gave stock back. */
 const HOLDS_STOCK: OrderStatus[] = ["PENDING", "CONFIRMED", "PAID", "PACKED"]
 
 const inputSchema = z.object({
   ids: z.array(z.uuid()).min(1).max(MAX_PAGE_SIZE),
-  /** Without it, nothing is deleted: the answer says what would be. */
+  /** Without it, a preview: nothing is deleted. */
   confirm: z.boolean().optional(),
 })
 
 export type TestOrderPlan = {
-  /** Deleted, or with `confirm` absent, what would be. */
   deletable: Array<{
     id: string
     number: string
@@ -114,7 +101,7 @@ export async function deleteTestOrders(raw: unknown): Promise<ActionResult<TestO
     if (!input.confirm) return ok(plan)
 
     for (const o of going) {
-      // Off Shiprocket first, while the order still says which one it was.
+      // Before the delete, while the order still names its Shiprocket order.
       if (o.shiprocketOrderId) await cancelShiprocketOrder(o.id, session)
 
       const gone = await db.$transaction(async (tx) => {

@@ -3,35 +3,10 @@ import "server-only"
 import { getEnv } from "@/lib/env"
 
 /**
- * Email, sent by the first of up to three routes that takes it:
- *
- *   1. Brevo's API, as BREVO_FROM (no-reply@skelmet.in)      BREVO_API_KEY
- *   2. Brevo's SMTP relay, as the same sender                BREVO_SMTP_LOGIN + BREVO_SMTP_KEY
- *   3. The shop's own SMTP account (Gmail), as MAIL_FROM     SMTP_HOST, SMTP_USER, SMTP_PASSWORD
- *
- * Each is used only when it is configured, and a route that fails hands the
- * message to the next. Brevo's API and its relay are two doors into one
- * account - a bad API key or an IP Brevo has not authorised stops one and not
- * the other - and Gmail is another company altogether, so a Brevo outage or a
- * spent daily quota still gets the receipt out, from the Gmail address.
- *
- * The cost of falling through: an API call that timed out may still have been
- * accepted, and the next route then sends a second copy. A receipt twice beats
- * no receipt.
- *
- * Two rules matter more than anything else here.
- *
- * It NEVER throws into a caller. Sending a receipt is not part of taking
- * money, and a mail server that is slow, full or simply wrong must not turn a
- * captured payment into a failed checkout. Every path returns a result object.
- *
- * It NO-OPS when no route is configured, rather than failing: nothing is sent,
- * `delivered` comes back false, and the order completes exactly as it would
- * have - which is what lets the whole flow be built and tested before the
- * credentials exist.
- *
- * nodemailer is imported dynamically so a route that never sends mail does not
- * pull it into its bundle.
+ * Routes, each only when set, falling through on failure: Brevo API, then Brevo
+ * SMTP (both from BREVO_FROM), then Gmail SMTP (MAIL_FROM). A fall-through after
+ * a timeout can send twice; better than no receipt.
+ * Never throws (mail must not fail a paid checkout); with no route it is a no-op.
  */
 export type MailResult =
   | { ok: true; delivered: true; messageId: string | null; via: MailVia }
@@ -41,7 +16,6 @@ export type MailResult =
 /** One route's refusal: the newsletter pauses only when every route says "later". */
 export type MailRefusal = { via: MailVia; error: string }
 
-/** Which route delivered it: Brevo's API, Brevo's SMTP relay, or the shop's own SMTP. */
 export type MailVia = "brevo-api" | "brevo-smtp" | "smtp"
 
 export type MailInput = {
@@ -51,34 +25,25 @@ export type MailInput = {
   html?: string
   replyTo?: string
   attachments?: MailAttachment[]
-  /** Extra headers, e.g. the newsletter's List-Unsubscribe pair. */
+  /** E.g. the newsletter's List-Unsubscribe pair. */
   headers?: Record<string, string>
 }
 
 export type MailAttachment = { filename: string; content: Buffer; contentType: string }
 
-/**
- * How long to wait on a mail server. nodemailer's own defaults are two
- * minutes to connect and ten for a quiet socket, which is how a mail server
- * that stopped answering held a request open for minutes.
- */
+/** nodemailer's defaults (2 min to connect, 10 idle) hold a request open for minutes. */
 export const SMTP_TIMEOUTS = {
   connectionTimeout: 10_000,
   greetingTimeout: 10_000,
   socketTimeout: 20_000,
 } as const
 
-/** The same patience for Brevo's API, which answers in well under a second. */
 export const BREVO_API_TIMEOUT_MS = 15_000
 
 export const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 export const BREVO_SMTP_HOST = "smtp-relay.brevo.com"
 
-/**
- * An address as the logs show it: `r***@example.in`. Enough to tell two
- * customers apart when chasing a failure, without the logs becoming a list
- * of every buyer's email.
- */
+/** `r***@example.in`: tells customers apart in logs without logging addresses. */
 export function maskEmail(address: string): string {
   const at = address.lastIndexOf("@")
   if (at <= 0) return "***"
@@ -93,8 +58,7 @@ export function isMailConfigured(): boolean {
 export async function sendMail(input: MailInput): Promise<MailResult> {
   const routes = configuredRoutes({ pooled: false })
   if (routes.length === 0) {
-    // Warn, not error: on a machine with no mail set up this is the expected
-    // path, and logging it at error level would train people to ignore the log.
+    // Warn, not error: expected on a machine with no mail set up.
     console.warn(
       `[MAILER] mail not configured, skipped "${input.subject}" to ${maskEmail(input.to)}`,
     )
@@ -108,14 +72,8 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
 }
 
 /**
- * For sending the same email to a list, one message at a time. Each SMTP
- * route keeps one connection open: sendMail logs in afresh for every message,
- * which is right for a receipt, but a few hundred logins in a row is what
- * Gmail reads as abuse. Brevo's API needs no connection. Close it when the
- * list is done.
- *
- * Same rules as sendMail: `send` never throws, and with nothing configured
- * every send is a no-op that says so.
+ * For list sends: one SMTP connection per route, since hundreds of logins in a
+ * row look like abuse to Gmail. `send` never throws. Close when done.
  */
 export type MailPool = {
   send: (input: MailInput) => Promise<MailResult>
@@ -135,7 +93,7 @@ export async function openMailPool(): Promise<MailPool> {
 
 type Route = {
   via: MailVia
-  /** Resolves to the message id, or throws why the route would not take it. */
+  /** Resolves to the message id; throws when the route refuses. */
   send: (input: MailInput) => Promise<string | null>
   close: () => void
 }
@@ -161,8 +119,7 @@ async function sendThrough(routes: Route[], input: MailInput): Promise<MailResul
       }
     }
   }
-  // One route: its own words, which the console shows staff as they are.
-  // Several: each route's, so the log says which door refused and why.
+  // One route: its error as is (staff see it). Several: each labelled by route.
   const error =
     failures.length === 1
       ? failures[0]!.error
@@ -204,7 +161,6 @@ function brevoSmtpConfigured(): boolean {
   return Boolean(env.BREVO_SMTP_LOGIN && env.BREVO_SMTP_KEY)
 }
 
-/** Where a reply goes: the caller's choice, else MAIL_REPLY_TO, else the sender. */
 function replyToFor(input: MailInput): string | undefined {
   return input.replyTo ?? getEnv().MAIL_REPLY_TO
 }
@@ -239,13 +195,13 @@ function brevoApiRoute(apiKey: string, from: string): Route {
   }
 }
 
-/** The message as Brevo's transactional API takes it. Exported for tests. */
+/** Brevo's transactional API body. Exported for tests. */
 export function brevoMessage(input: MailInput, from: string, replyTo?: string) {
   return {
     sender: parseAddress(from),
     to: [{ email: input.to }],
     subject: input.subject,
-    // Brevo wants an HTML body; a plain-text email gets its text, escaped.
+    // Brevo requires an HTML body.
     htmlContent: input.html ?? textAsHtml(input.text),
     textContent: input.text,
     ...(replyTo ? { replyTo: parseAddress(replyTo) } : {}),
@@ -261,13 +217,12 @@ export function brevoMessage(input: MailInput, from: string, replyTo?: string) {
   }
 }
 
-/** Brevo's own words for a refusal ({ code, message }), or the body as it came. */
 function brevoError(body: string): string {
   try {
     const parsed = JSON.parse(body) as { code?: string; message?: string }
     if (parsed.message) return parsed.code ? `${parsed.code}: ${parsed.message}` : parsed.message
   } catch {
-    // Not JSON: a proxy's error page, say.
+    // Not JSON, e.g. a proxy's error page.
   }
   return body.slice(0, 200) || "no reason given"
 }
@@ -330,7 +285,6 @@ function smtpRoute(via: MailVia, from: string, pooled: boolean, options: SmtpOpt
   }
 }
 
-/** The error text with the recipient's address masked, wherever it appears. */
 function scrub(error: string, to: string): string {
   if (!to) return error
   const literal = to.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")

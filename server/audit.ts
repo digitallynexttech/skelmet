@@ -6,7 +6,7 @@ import type { Session } from "next-auth"
 import { trustedClientIp } from "@/lib/rate-limit"
 import { db } from "@/server/db"
 
-/** Every mutation is audit-logged (§9). A null actor is the system (cron/webhook). */
+/** Every mutation is audit-logged. A null actor is the system (webhook). Never throws. */
 export async function createAuditLog(
   session: Session | null,
   entry: {
@@ -36,11 +36,7 @@ export async function createAuditLog(
   }
 }
 
-/**
- * Who did it, from where. The address is the trusted one (lib/rate-limit.ts):
- * the first X-Forwarded-For entry is whatever the client typed, which made
- * the IP column of the staff audit trail something a staff member could set.
- */
+/** Uses the trusted IP, never X-Forwarded-For, which the client sets. */
 export async function getAuditMeta(): Promise<{ ip: string; userAgent: string }> {
   const h = await headers()
   return {

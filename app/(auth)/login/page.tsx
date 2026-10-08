@@ -20,17 +20,10 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>
 }) {
   const { next } = await searchParams
-  // Only ever a console path, so a crafted ?next= cannot bounce someone
-  // off-site (features/account/lib/safe-next.ts).
+  // Console paths only: no off-site redirect via ?next=.
   const safeNext = safeNextPath(next)
 
-  // Already signed in? Send them on rather than showing a form they cannot
-  // usefully submit. Signing in again would only mint the same session.
-  //
-  // Deliberately not re-checking mustChangePassword here: the (app) layout
-  // owns that rule, and duplicating it is how the two drift apart. Someone
-  // with a temporary password takes one extra hop through /admin and lands
-  // on /change-password, which is the same place either way.
+  // Already signed in: send them on. mustChangePassword is left to the (app) layout.
   const session = await auth()
   if (session?.user) redirect(safeNext)
 
@@ -59,8 +52,7 @@ export default async function LoginPage({
         </div>
       </div>
 
-      {/* Lazy, not preloaded: it is hidden below lg, and a preload would
-          fetch it on every phone that never shows it. */}
+      {/* Lazy, not preloaded: hidden below lg. */}
       <div className="relative hidden lg:block">
         <Image
           src="/product/lifestyle-garage.jpg"

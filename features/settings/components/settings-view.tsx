@@ -30,7 +30,7 @@ const DEFAULTS = { tab: "payments" }
 function Tabs({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
   const refs = React.useRef<Array<HTMLButtonElement | null>>([])
 
-  // Arrow keys move between tabs, as a tab list is expected to.
+  // Arrow keys move between tabs (ARIA tab pattern).
   const onKeyDown = (e: React.KeyboardEvent, index: number) => {
     const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
     if (!step) return

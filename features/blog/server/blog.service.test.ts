@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Releasing posts from the console. What is pinned down here is what reaches
- * Sanity and when: a post that is not ready never does, a scheduled post goes
- * out dated in the future, and the site's cache is only cleared by a change
- * that happened.
- */
-
 const mocks = vi.hoisted(() => {
   const commit = vi.fn()
   const set = vi.fn(() => ({ commit }))
@@ -115,7 +108,7 @@ describe("listManagedPosts", () => {
       ok: true,
       data: { counts: { DRAFT: 1, SCHEDULED: 1, LIVE: 1 }, canPublish: true },
     })
-    // Drafts are only readable raw, with the token, and never from a cache.
+    // Drafts are readable only raw, with the token, uncached.
     expect(mocks.client.fetch).toHaveBeenCalledWith(
       expect.stringContaining('_type == "post"'),
       {},

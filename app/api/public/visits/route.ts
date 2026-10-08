@@ -5,14 +5,8 @@ import { withErrorHandler } from "@/server/api-handler"
 
 export const dynamic = "force-dynamic"
 
-/**
- * The storefront's visit tracker: page views, time on page, the cart, and the
- * visitor's cookie choice. Public, so rate-limited - generously, since one
- * person browsing sends a message for every page and every tab switch.
- *
- * The body is read as JSON whatever it is labelled: the last message from a
- * closing page goes by navigator.sendBeacon, which sends it as text/plain.
- */
+// Visit tracker, generously rate-limited (a message per page and tab switch). Parsed as JSON
+// whatever the label: sendBeacon sends text/plain.
 export const POST = withErrorHandler(async (req) => {
   rateLimit(`visits:${clientIp(req.headers)}`, 300, 10 * 60_000)
   return respond(await recordVisit(await req.json()))

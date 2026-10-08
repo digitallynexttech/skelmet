@@ -17,12 +17,8 @@ export const TICKER_ITEMS = [
 const PAY_QUESTION = "How do I pay for a SKELMET order?"
 
 /**
- * Each question names what it is about, so it reads on its own - in a search
- * result, or opened alone in the accordion.
- *
- * The figures in these answers come from siteConfig.promise, the same place
- * the policies take theirs from, so the FAQ cannot promise something the
- * policy pages do not.
+ * Each question names its subject so it reads alone (search results, the accordion).
+ * Figures come from siteConfig.promise, as the policies' do, so the FAQ cannot promise more.
  */
 export const FAQ_ITEMS = [
   {
@@ -65,16 +61,13 @@ export const FAQ_ITEMS = [
     answer: `We dispatch every order within ${P.dispatchHours} hours of payment, and delivery takes up to ${P.deliveryDays} from dispatch. Your tracking link comes by email as soon as the parcel leaves us.`,
   },
   {
-    // Worded as the rule, not the figures: the threshold and the share are set
-    // in the console's Settings and can change without a deploy. The shipping
-    // policy page states the live figures.
+    // The rule, not the figures: those are set in the console and change without a deploy.
     question: "How much is shipping on a SKELMET order?",
     answer:
       "It depends on your pincode. Where the courier charges us up to a set amount to reach it, shipping is free. Where it costs more, you pay a share of the difference and we pay the rest. The shipping policy has the current figures, and checkout shows the exact charge as soon as you enter your pincode, before you pay.",
   },
   {
-    // The answer for paying online only. With paying on delivery switched on
-    // in the console's Settings, faqItems() states that instead.
+    // Online payment only; faqItems() swaps in the answer for the options in force.
     question: PAY_QUESTION,
     answer: paymentCopy(DEFAULT_PAYMENT_OPTIONS).faq,
   },
@@ -176,12 +169,7 @@ export const COMPARISON_ROWS = [
 /** The comparison's last row: what SKELMET looks like is the skull the page sells. */
 export const COMPARISON_LOOKS = { label: "Looks like", floor: "A mess", hook: "A coat hook" }
 
-/**
- * The case for owning one, in two halves: what goes wrong without it, then
- * what it does beyond holding a helmet. Copy supplied by the client and kept
- * verbatim - the only additions are the short kickers on WHY_CARE, which are
- * drawn from the sentence each one sits above so the list can be scanned.
- */
+/** Client's copy, kept verbatim. Only the WHY_CARE kickers are ours. */
 export const WHY_CARE = [
   {
     kicker: "The scratches",

@@ -4,22 +4,16 @@ import { metadata as studioMetadata } from "next-sanity/studio"
 import { Studio } from "@/features/blog/components/studio"
 import { sanityConfigured } from "@/features/blog/sanity/env"
 
-/**
- * The blog's editor, at /studio. Sanity signs people in itself: nobody gets
- * past its login without being a member of the project, so this page needs no
- * fence of ours. Kept out of search results by the metadata below and by
- * robots.ts.
- */
+// The blog editor. Sanity does its own sign-in, so no fence of ours; noindex via metadata and robots.ts.
 export const dynamic = "force-static"
 
 export { viewport } from "next-sanity/studio"
 
-/** Sanity's own - no indexing, no referrer sent on - with a tab title that says where you are. */
+/** Sanity's metadata (noindex, no referrer) with our tab title. */
 export const metadata: Metadata = { ...studioMetadata, title: "Blog studio" }
 
 export default function StudioPage() {
-  // No project named in config/site.ts yet. The Studio cannot start without
-  // one, so say what is missing rather than show its error.
+  // The Studio cannot start without a project id: say what is missing.
   if (!sanityConfigured) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-6">

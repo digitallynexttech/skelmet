@@ -1,28 +1,18 @@
 import "server-only"
 
-/**
- * Where a visit came from, and how a page's address is kept.
- *
- * The source is decided once, on the page a visit lands on: campaign tags
- * win, then an ad network's click id, then the referring site, then the
- * in-app browser a link was opened in. Only then is it "direct".
- */
+// Source precedence on landing: utm tags, ad click id, referrer, in-app browser, "direct".
 
 export type Arrival = {
-  /** The referring page, without its query string. */
+  /** Without its query string. */
   referrer: string | null
-  /** "instagram", "google", "direct", or whatever utm_source says. */
+  /** "instagram", "google", "direct", or utm_source. */
   source: string
   /** "social", "organic", "cpc", "referral", "email", or utm_medium. */
   medium: string | null
   campaign: string | null
 }
 
-/**
- * Query parameters kept on a stored path: what was being looked at, and the
- * campaign tags. Anything else - an order number, an email typed into a form
- * that submits by GET - is dropped rather than kept by accident.
- */
+// Privacy: an allowlist, so an order number or email in a GET query is never stored.
 const KEPT_PARAMS = new Set([
   "colourway",
   "buy",
@@ -107,7 +97,7 @@ function parseReferrer(raw: string | null | undefined, ownHost: string | null | 
   if (url.protocol !== "http:" && url.protocol !== "https:") return null
   const bare = (h: string) => h.toLowerCase().replace(/^www\./, "")
   const host = bare(url.hostname)
-  // Moving between the shop's own pages is not an arrival.
+  // The shop's own pages are not an arrival.
   if (ownHost && host === bare(ownHost.split(":")[0] ?? "")) return null
   return { url: `${url.origin}${url.pathname}`.slice(0, 300), host, app: null } satisfies Referrer
 }
@@ -134,7 +124,7 @@ export function arrivalOf(input: {
     return { referrer, source: utmSource, medium: tag("utm_medium"), campaign: tag("utm_campaign") }
   }
 
-  // Ad clicks carry the network's click id even when nobody tagged the link.
+  // Ad clicks carry a click id even on untagged links.
   if (params.has("gclid") || params.has("gbraid") || params.has("wbraid")) {
     return { referrer, source: "google", medium: "cpc", campaign: null }
   }
@@ -158,7 +148,7 @@ export function arrivalOf(input: {
     return { referrer, source: ref.host, medium: "referral", campaign: null }
   }
 
-  // No referrer, but the app whose browser the page opened in gives it away.
+  // No referrer, but the in-app browser gives it away.
   if (/Instagram/.test(ua))
     return { referrer, source: "instagram", medium: "social", campaign: null }
   if (/FBAN|FBAV|FB_IAB/.test(ua)) {

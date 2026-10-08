@@ -19,31 +19,21 @@ import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 import { findLinkedVisitors } from "@/features/visitors/server/linked-visitors"
 
-/**
- * The console's view of storefront visitors: who came, on what, from where,
- * what they looked at, and the carts they left.
- *
- * Gated on ORDER_READ, as the customer list is: whoever can read the orders
- * already reads every buyer's name, phone and address, and this is the same
- * shop's visitors, most of whom never got that far.
- */
+// Gated on ORDER_READ, like the customer list: order readers already see every buyer's details.
 
-/** Visits are kept a year after they happened; the privacy policy says so. */
+/** The privacy policy promises both retention periods. */
 const VISIT_RETENTION_DAYS = 365
-/** Copied carts are kept 90 days after they last changed; so does the policy. */
 const CART_RETENTION_DAYS = 90
-/** Seen this recently, a visitor is still shopping rather than gone. */
+/** Seen this recently, a visitor is still shopping. */
 const BROWSING_MS = 30 * 60_000
 
-/** Orders the shop kept the money for. */
 const PAID_STATUSES = { notIn: ["PENDING", "CANCELLED"] as ("PENDING" | "CANCELLED")[] }
 
 let prunedAt = 0
 
 /**
- * Deletes what the privacy policy says is not kept. There is no scheduler on
- * this server, so it runs when staff open these lists - at most once an hour
- * per process, since each run is a delete over an indexed range.
+ * Deletes what the privacy policy says is not kept. No scheduler, so it runs when
+ * staff open the lists, at most hourly.
  */
 export async function pruneVisitorData(): Promise<void> {
   if (!hasDatabase() || Date.now() - prunedAt < 60 * 60_000) return
@@ -57,11 +47,11 @@ export async function pruneVisitorData(): Promise<void> {
       },
     })
     const visits = new Date(Date.now() - VISIT_RETENTION_DAYS * day)
-    // A visitor still coming back keeps their row; their old visits go.
+    // A returning visitor keeps their row; their old visits go.
     await db.visitorSession.deleteMany({ where: { lastSeenAt: { lt: visits } } })
     await db.visitor.deleteMany({ where: { lastSeenAt: { lt: visits } } })
   } catch (err) {
-    // Housekeeping. It must never be why a list fails to load.
+    // Must never fail the list.
     console.error("[VISITORS] pruning failed", err)
   }
 }
@@ -95,7 +85,7 @@ export async function listVisitors(params: {
     const days = Number(params.days)
     const q = params.q?.trim()
 
-    // The period and the search narrow every tile; the tile only narrows the list.
+    // Period and search narrow every tile; the tile only narrows the list.
     const scope: Prisma.VisitorWhereInput = {
       ...(Number.isFinite(days) && days > 0
         ? { lastSeenAt: { gte: new Date(Date.now() - days * 86_400_000) } }
@@ -203,7 +193,6 @@ function cartLines(
 const value = (lines: CartLineRow[]) =>
   lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0).toFixed(2)
 
-/** The most recent visits shown on a visitor's page, and the events shown per visit. */
 const SESSIONS_SHOWN = 25
 const EVENTS_PER_SESSION = 150
 
@@ -212,7 +201,7 @@ export async function getVisitor(id: string): Promise<ActionResult<VisitorDetail
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // A malformed id is simply not a visitor, not a database error.
+    // A malformed id is a 404, not a database error.
     if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("No such visitor.", undefined, 404)
 
     const v = await db.visitor.findUnique({
@@ -339,14 +328,7 @@ export async function getVisitor(id: string): Promise<ActionResult<VisitorDetail
   })
 }
 
-/**
- * Baskets filled and never turned into an order.
- *
- * A basket an order was placed from is not here: the tracker empties it when
- * the order is placed, and in case that message was lost, any basket that has
- * not changed since its visitor's latest order is dropped below too. Whether
- * that order was then paid for is the other tab's question.
- */
+/** Baskets never ordered; one unchanged since its visitor's last order is dropped too. */
 export async function listLeftCarts(): Promise<ActionResult<LeftCartsPayload>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
@@ -356,7 +338,7 @@ export async function listLeftCarts(): Promise<ActionResult<LeftCartsPayload>> {
     const carts = await db.cart.findMany({
       where: { visitorId: { not: null }, items: { some: {} } },
       orderBy: { updatedAt: "desc" },
-      // Some are dropped below, so read past the window rather than come up short.
+      // Some are dropped below, so read past the window.
       take: MAX_PAGE_SIZE * 2,
       select: {
         id: true,

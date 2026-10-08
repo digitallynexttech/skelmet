@@ -5,16 +5,8 @@ import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
 /**
- * The brand lockup, reversed for a dark ground.
- *
- * `/public/brand/skelmet-lockup.png` is derived from the supplied artwork with
- * the dark ink repainted as bone; the orange is untouched. The delivered files
- * are drawn for white paper, so the wordmark would otherwise sit at roughly
- * 1.1:1 against `--color-void` and disappear.
- *
- * Sized by height, never width: the skull rises above the caps and its jaw
- * drops below them, so height is what lines the lockup up with everything else
- * on the row.
+ * The brand lockup with the dark ink repainted as bone for a dark ground. Size it by height,
+ * never width: the skull overshoots the caps, so height is what lines it up with the row.
  */
 export const BRAND_LOCKUP = {
   src: "/brand/skelmet-lockup.png",
@@ -22,11 +14,7 @@ export const BRAND_LOCKUP = {
   height: 312,
 } as const
 
-/**
- * The same lockup as outlines, for anywhere it is drawn wider than the PNG's
- * 896px - the footer's full-width copy - where the PNG would go soft. Traced
- * from that PNG by scripts/build-brand-assets.mjs.
- */
+/** As outlines, for drawing wider than the PNG's 896px. Built by scripts/build-brand-assets.mjs. */
 export const BRAND_LOCKUP_VECTOR = {
   src: "/brand/skelmet-lockup.svg",
   width: 896,
@@ -41,12 +29,8 @@ export function Wordmark({
   className?: string
   size?: "sm" | "md"
   /**
-   * For a copy that starts hidden (the phone menu): a lazy image in a hidden
-   * panel is not fetched until the panel shows it, instead of downloading a
-   * second logo on every page. Served as the original file, whose size is
-   * exactly the width and height above: a hidden image reports those
-   * attributes as its size, and the optimiser's 128px copy is a hair off
-   * that ratio, which audits flag as a stretched image.
+   * For a copy that starts hidden (the phone menu), so it is fetched only when shown. Served
+   * unoptimised: the optimiser's copy is a hair off the ratio and audits flag it as stretched.
    */
   lazy?: boolean
 }) {
@@ -57,11 +41,9 @@ export function Wordmark({
         width={BRAND_LOCKUP.width}
         height={BRAND_LOCKUP.height}
         alt={siteConfig.name}
-        // h-10 against a 2.87:1 lockup is ~115px wide; h-8 is narrower still.
+        // h-10 at 2.87:1 is ~115px wide.
         sizes="120px"
-        // Above the fold on every page, so eager - but small and never the
-        // page's main image, so it must not queue ahead of the hero or product
-        // photo. (The splash uses a different, single-colour file.)
+        // Eager, but low priority so it never queues ahead of the hero or product photo.
         loading={lazy ? "lazy" : "eager"}
         unoptimized={lazy}
         fetchPriority="low"

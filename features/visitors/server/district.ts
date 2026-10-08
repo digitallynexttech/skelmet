@@ -4,26 +4,14 @@ import { PINCODE } from "@/lib/india"
 import { db } from "@/server/db"
 import { later } from "@/server/later"
 
-/**
- * The district a visit comes from.
- *
- * Cloudflare places a visitor at a pincode, worked out from their connection
- * (so approximate - often the telephone exchange, not the house), but names no
- * district. India Post's public directory does, per pincode. Each pincode is
- * asked about once and remembered in `pincode_places`, so a visit only ever
- * reads the table; a pincode seen for the first time is looked up after the
- * response and written onto the visit then.
- */
+// Cloudflare's pincode has no district; India Post names it. Each pincode is looked
+// up once, after the response, and cached in `pincode_places`.
 
 const INDIA_POST = "https://api.postalpincode.in/pincode/"
 
 type PostOffice = { District?: unknown; State?: unknown; DeliveryStatus?: unknown }
 
-/**
- * The district most of a pincode's post offices are filed under - a pincode
- * can straddle two - preferring those that deliver. Null when India Post has
- * no such pincode.
- */
+/** A pincode can straddle districts: the majority of its delivering offices wins. */
 export function placeFromIndiaPost(
   body: unknown,
 ): { district: string; state: string | null } | null {
@@ -47,7 +35,6 @@ export function placeFromIndiaPost(
   return best ? { district: best[0], state: best[1].state } : null
 }
 
-/** An Indian pincode Cloudflare gave for this visit, if it gave one. */
 export function visitPincode(facts: {
   country: string | null
   postalCode: string | null
@@ -56,10 +43,7 @@ export function visitPincode(facts: {
   return (facts.country === "IN" || facts.country === null) && PINCODE.test(pin) ? pin : null
 }
 
-/**
- * The district already on file for a pincode. Undefined when it has never
- * been looked up; null when India Post has no such pincode.
- */
+/** Undefined: never looked up. Null: India Post has no such pincode. */
 export async function knownDistrict(pincode: string): Promise<string | null | undefined> {
   const place = await db.pincodePlace.findUnique({
     where: { pincode },
@@ -68,7 +52,7 @@ export async function knownDistrict(pincode: string): Promise<string | null | un
   return place ? place.district : undefined
 }
 
-// One lookup per pincode at a time, however many visits arrive from it at once.
+// One lookup per pincode at a time.
 const shared = globalThis as unknown as {
   skelmetDistrictLookups?: Map<string, Promise<string | null>>
 }
@@ -93,11 +77,7 @@ async function lookUp(pincode: string): Promise<string | null> {
   return place?.district ?? null
 }
 
-/**
- * After the response: looks the pincode up, remembers it, and writes the
- * district onto the visit and the visitor. A failed lookup is not remembered,
- * so the next visit from there tries again.
- */
+/** After the response. A failed lookup is not cached, so the next visit retries. */
 export function fillDistrictLater(pincode: string, visitorId: string, sessionId: string): void {
   later(async () => {
     try {

@@ -5,25 +5,13 @@ import type { Session } from "next-auth"
 import { hasDatabase } from "@/lib/env"
 import { db } from "@/server/db"
 
-/**
- * How long a console session lives, and what ends it early.
- *
- * Sessions are JWTs, so nothing on the server remembers them: a token stays
- * good until it expires, and every request re-signed it for another week. A
- * password reset, a revoke or a stolen laptop therefore changed nothing for a
- * session already open, and one used every few days never ended at all.
- *
- * Two claims fix that. `sessionVersion` is copied from the user's row at
- * sign-in; resetting or changing the password, revoking the account or taking
- * a role away bumps the row, and every token minted before it stops working.
- * `loginAt` is when the password was typed, and no amount of activity keeps a
- * session past SESSION_ABSOLUTE_MS from it.
- */
+// JWT sessions live on the client, so two claims end them: `sessionVersion`
+// (bumped by a password change, revoke or role removal) and `loginAt` (caps
+// the session at SESSION_ABSOLUTE_MS however active).
 
-/** Idle timeout: the JWT's own maxAge, renewed by activity. */
+/** Idle timeout: the JWT's maxAge, renewed by activity. */
 export const SESSION_IDLE_SECONDS = 60 * 60 * 24 * 7
 
-/** Absolute lifetime, from sign-in, however active the session. */
 export const SESSION_ABSOLUTE_MS = 30 * 24 * 60 * 60_000
 
 export type SessionClaims = { sessionVersion: number | null; loginAt: number | null }
@@ -43,10 +31,7 @@ export function sessionClaims(session: Session): SessionClaims {
   return claimsOf(session.user as unknown as Record<string, unknown>)
 }
 
-/**
- * Past its absolute lifetime - or with no sign-in time at all, which is a
- * token minted before these claims existed. Those are signed out once.
- */
+/** Past its absolute lifetime, or with no sign-in time at all. */
 export function outlived(loginAt: number | null, now: number = Date.now()): boolean {
   if (loginAt === null) return true
   // A sign-in time in the future is not one this server wrote.
@@ -55,14 +40,8 @@ export function outlived(loginAt: number | null, now: number = Date.now()): bool
 }
 
 /**
- * Whether a token read back from its cookie may go on being a session. The
- * jwt callback asks on every read, and a `false` makes Auth.js clear the
- * cookie - so a reset password or a revoke signs the browser out on its next
- * page, not a week later.
- *
- * A database that cannot be reached keeps the session: signing every member
- * of staff out over a blip would be worse, and the guards in action-guard.ts
- * check the same row again before any action, failing closed.
+ * Asked by the jwt callback on every read; `false` clears the cookie. An
+ * unreachable database keeps the session: action-guard.ts fails closed anyway.
  */
 export async function tokenStillValid(
   token: Record<string, unknown>,

@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest"
 
 import { deliveryEta, formatEta } from "@/lib/delivery"
 
-/**
- * "Arriving by": dispatched within two working days, then delivered within
- * seven, Monday to Friday, counted from the day it was placed in India.
- */
-
 const day = (d: Date) => d.toISOString().slice(0, 10)
 
 describe("deliveryEta", () => {

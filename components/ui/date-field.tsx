@@ -6,16 +6,8 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * A date field that does not depend on the browser's own.
- *
- * `<input type="date">` renders a different control in every browser and shows
- * its own locale's order — a dd-mm-yyyy placeholder in one, mm/dd/yyyy in the
- * next — which is wrong for a console that has already chosen a palette and a
- * date format. This draws the calendar instead, so it looks the same
- * everywhere and reads the way the rest of the admin does.
- *
- * The value is mirrored into a hidden input as `YYYY-MM-DD`, so a plain
- * FormData submit still works.
+ * A drawn calendar instead of `<input type="date">`, which differs per browser and locale. The
+ * value is mirrored into a hidden input as `YYYY-MM-DD`, so a FormData submit still works.
  */
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"]
@@ -82,8 +74,6 @@ export function DateField({
 
   const [view, setView] = React.useState<Date>(() => selected ?? today)
 
-  // Both an outside click and Escape close it. Without them the panel sits
-  // over the rest of the form with no way back.
   React.useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
@@ -134,7 +124,7 @@ export function DateField({
         <div
           role="dialog"
           aria-label="Choose a date"
-          className="rounded-md bg-carbon absolute top-[calc(100%+6px)] left-0 z-50 w-[292px] border border-white/[0.14] p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]"
+          className="bg-carbon absolute top-[calc(100%+6px)] left-0 z-50 w-[292px] rounded-md border border-white/[0.14] p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.85)]"
         >
           <div className="mb-3 flex items-center justify-between">
             <button

@@ -9,11 +9,7 @@ import {
   type NewsletterDoc,
 } from "@/features/newsletter/newsletter-content"
 
-/**
- * The editor's document is the only thing the email is built from, so the
- * schema is the line between what staff type and what lands in every inbox:
- * it must admit what the editor makes and nothing else.
- */
+// The schema must admit what the editor makes and nothing else: it guards every inbox.
 
 const IMG =
   "https://www.skelmet.in/api/public/newsletter/images/0b6f7f3e-4c1a-4d8e-9a55-1f2e3d4c5b6a"
@@ -130,7 +126,7 @@ describe("docToHtml", () => {
       doc({ type: "image", attrs: { src: IMG, width: 300 } }) as NewsletterDoc,
     )
     expect(small).toContain('width="300"')
-    // The id is kept, the host is this site's own, not whatever the editor saw.
+    // The id is kept; the host is this site's, not whatever the editor saw.
     expect(wide).toContain("/api/public/newsletter/images/0b6f7f3e-4c1a-4d8e-9a55-1f2e3d4c5b6a")
   })
 

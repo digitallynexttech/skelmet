@@ -5,15 +5,8 @@ import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 
 /**
- * The problem, before the product. Magenta throughout, because this is the
- * one section on the page that is not selling anything - it is describing
- * what already happens to a helmet that lives on the floor.
- *
- * A picture of exactly that, and the three ways it goes wrong as a numbered
- * list beside it. It was three thin cards with small type stretched across
- * the page, which on a wide screen read as empty boxes. The picture is
- * generated (Nano Banana Pro, source in FILES_SKELMET/product-images/
- * why-edits) and shows no SKELMET, so there is nothing in it to get wrong.
+ * The problem, before the product: magenta, as the one section not selling anything.
+ * The picture is generated and shows no SKELMET, so it cannot show the mount wrong.
  */
 export function WhyCare() {
   return (

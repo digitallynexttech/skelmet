@@ -6,10 +6,7 @@ import { whatsappLink } from "@/features/visitors/lib/format"
 const BUTTON =
   "text-ash hover:text-bone flex size-9 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/30"
 
-/**
- * WhatsApp, call and email for someone who left without paying. The message
- * is only typed in, never sent: staff read it over and send it themselves.
- */
+/** The message is only prefilled, never sent: staff send it themselves. */
 export function ContactActions({
   phone,
   email,

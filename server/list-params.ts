@@ -4,17 +4,9 @@ import { z } from "zod"
 
 import { MAX_PAGE_SIZE } from "@/lib/constants"
 
-/**
- * Query strings for the console's list endpoints, parsed rather than cast.
- *
- * `Number(searchParams.get("page"))` turned `?page=abc` into NaN, which went
- * straight into Prisma's skip and take and came back as a 500; a status
- * string was cast to the enum and reached the database as whatever was
- * typed. A value that does not parse is a 422 with the field named, from the
- * route wrapper, before any service runs.
- */
+// List query strings are parsed, never cast: a bad value is a 422, not a Prisma 500.
 
-/** An absent or empty parameter is "not given", so the default applies. */
+// Absent or empty: the default applies.
 const given = (value: unknown) => (value === null || value === "" ? undefined : value)
 
 export const pageParam = z.preprocess(

@@ -63,7 +63,6 @@ function Tabs({
 }) {
   const refs = React.useRef<Array<HTMLButtonElement | null>>([])
 
-  // Arrow keys move between tabs, as a tab list is expected to.
   const onKeyDown = (e: React.KeyboardEvent, index: number) => {
     const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
     if (!step) return
@@ -121,7 +120,7 @@ function UnpaidOrders({
 }: {
   show: Show
   onShow: (show: Show) => void
-  /** For Export in the page's header. */
+  /** For Export in the header. */
   handle: React.Ref<DataTableHandle<UnpaidOrderRow>>
 }) {
   const { data, isLoading, isError, error } = useUnpaidOrders()
@@ -289,8 +288,7 @@ function UnpaidOrders({
             />
           </div>
         }
-        // The board's value tile, as a line: it filters nothing. There from
-        // the first render, so the bar does not rearrange itself when it loads.
+        // Rendered from the start, so the bar does not shift when data loads.
         barEnd={
           <span className="text-dim text-[12.5px] whitespace-nowrap">
             {summary ? (
@@ -329,11 +327,7 @@ function UnpaidOrders({
   )
 }
 
-/**
- * Everyone who got close and did not pay, in the two places they stopped:
- * at the payment, with an order already written, or before it, with only a
- * cart.
- */
+/** Unpaid orders, and carts that never became an order. */
 export function AbandonedCarts() {
   const [state, setState] = useUrlState(DEFAULTS)
   const active: TabId = TABS.some((t) => t.id === state.tab) ? (state.tab as TabId) : "unpaid"
@@ -341,11 +335,11 @@ export function AbandonedCarts() {
     ? (state.show as Show)
     : "all"
 
-  // For the tab counts; the panels read the same cached queries.
+  // For the tab counts; the panels share these cached queries.
   const unpaid = useUnpaidOrders()
   const carts = useLeftCarts()
 
-  // One per tab: Export in the header takes the table of the tab that is open.
+  // Export takes the open tab's table.
   const unpaidTable = React.useRef<DataTableHandle<UnpaidOrderRow>>(null)
   const cartsTable = React.useRef<DataTableHandle<LeftCartRow>>(null)
 

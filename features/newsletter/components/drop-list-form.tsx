@@ -9,14 +9,7 @@ import { siteConfig } from "@/config/site"
 import { pixelLead } from "@/features/visitors/lib/meta-pixel"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 
-/**
- * "Notify me" on the home page: joins the drop list, which staff see and email
- * under Newsletter in the console.
- *
- * It used to go through the contact endpoint and land in the inquiry inbox as
- * a message, where an address was a row to resolve rather than someone to
- * email - with no unsubscribe, and nothing to send from.
- */
+/** "Notify me" on the home page: joins the drop list (console > Newsletter). */
 export function DropListForm() {
   const [state, setState] = React.useState<"idle" | "pending" | "done">("idle")
   const [error, setError] = React.useState<string | null>(null)
@@ -64,7 +57,7 @@ export function DropListForm() {
   }
 
   return (
-    // Hidden from Microsoft Clarity's recordings: an email address.
+    // Masked in Clarity recordings: an email address.
     <form data-clarity-mask="true" onSubmit={handleSubmit} className="relative max-w-[460px]">
       <div className="flex flex-col gap-2.5 sm:flex-row">
         <Input
@@ -81,7 +74,7 @@ export function DropListForm() {
         </Button>
       </div>
 
-      {/* Honeypot, as on the contact form: off-screen, never seen by a person. */}
+      {/* Honeypot: off-screen, never seen by a person. */}
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="drop-list-website">Do not fill this in</label>
         <input id="drop-list-website" name="website" type="text" tabIndex={-1} autoComplete="off" />

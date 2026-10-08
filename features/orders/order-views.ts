@@ -1,15 +1,8 @@
 import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { ORDER_STATUSES, statusesIn, type OrderScope, type OrderStatus } from "@/lib/constants"
 
-/**
- * The tabs over the order list: the few views staff reach for all day.
- *
- * Each view is described once, here, and both the query that fetches it and
- * the count on its tab are read from that description, so a tab can never
- * say 3 and open on 4. An order is in a view when it matches any of the
- * view's clauses: its status is one the clause names and, where the clause
- * names payment methods too, it was paid for by one of them.
- */
+// Order list tabs. The query and the tab count both read these definitions, so they
+// cannot disagree. An order is in a view if it matches any clause.
 
 type Clause = { statuses: readonly OrderStatus[]; methods?: readonly PaymentMethod[] }
 
@@ -28,15 +21,10 @@ export type OrderView = (typeof ORDER_VIEW_KEYS)[number]
 type ViewDef = { label: string; clauses: readonly Clause[] | null }
 
 export const ORDER_VIEWS: Record<OrderView, ViewDef> = {
-  // Everything but the cancelled, which have a view of their own: on All
-  // orders those are mostly payments that never came, one per attempt, and
-  // listed with the rest they buried the orders that are real.
+  // Not CANCELLED: mostly failed payment attempts, which would bury the real orders.
   all: { label: "All", clauses: [{ statuses: ORDER_STATUSES.filter((s) => s !== "CANCELLED") }] },
-  // Not yet handed to a courier: COD accepted, paid, or packed.
   unfulfilled: { label: "Unfulfilled", clauses: [{ statuses: ["CONFIRMED", "PAID", "PACKED"] }] },
-  // Payment pending or partially paid (order-progress.ts), as Shopify's
-  // Unpaid tab is: an online payment not made yet, cash on delivery not yet
-  // delivered, or an advance whose balance never came in.
+  // Payment pending or partially paid, as in order-progress.ts.
   unpaid: {
     label: "Unpaid",
     clauses: [
@@ -59,10 +47,7 @@ export function isInView(view: OrderView, status: OrderStatus, method: PaymentMe
   )
 }
 
-/**
- * The views a list offers: those that can hold anything in its scope. The
- * Orders page has no Cancelled tab, since nothing cancelled is in it.
- */
+/** Only views that can hold something in the scope. */
 export function viewsIn(scope: OrderScope): OrderView[] {
   const inScope = statusesIn(scope)
   return ORDER_VIEW_KEYS.filter((view) => {
@@ -71,7 +56,6 @@ export function viewsIn(scope: OrderScope): OrderView[] {
   })
 }
 
-/** The view as a database filter, for the query that lists it. */
 export function viewWhere(view: OrderView) {
   const clauses = ORDER_VIEWS[view].clauses
   if (!clauses) return {}

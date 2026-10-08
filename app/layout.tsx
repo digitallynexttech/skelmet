@@ -5,9 +5,7 @@ import { siteConfig } from "@/config/site"
 
 import "./globals.css"
 
-// latin-ext on the two faces prices are set in: the rupee sign (U+20B9) lives
-// in that file, not in latin, so without it every price above the fold waited
-// on a late, un-preloaded font request and then swapped.
+// latin-ext: the rupee sign (U+20B9) is in that subset, so prices need it preloaded.
 const display = Anton({
   weight: "400",
   subsets: ["latin", "latin-ext"],
@@ -23,8 +21,7 @@ const sans = Space_Grotesk({
   fallback: ["Helvetica Neue", "Arial", "sans-serif"],
 })
 
-// Small labels only, and never the largest thing on screen: not worth
-// competing with the page's main image for the first round of downloads.
+// Small labels only: not preloaded, so it does not compete with the main image.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono-loaded",
@@ -33,13 +30,8 @@ const mono = JetBrains_Mono({
   fallback: ["Courier New", "monospace"],
 })
 
-/**
- * Runs as <body> is parsed, before anything in it can paint, and marks <html>
- * so CSS can decide before React exists: data-cart-empty when the saved cart
- * (use-cart's persisted store) is empty and this is not a Buy-now checkout, so
- * /checkout holds the place of its empty state rather than a full
- * page that then collapses.
- */
+// Runs before first paint: sets data-cart-empty on <html> when the saved cart is empty and
+// this is not a Buy-now, so /checkout paints its empty state without a layout jump.
 const BEFORE_PAINT = `try{var c=JSON.parse(localStorage.getItem("skelmet.cart")||"null");if(!/[?&]buy=/.test(location.search)&&!(c&&c.state&&c.state.items&&c.state.items.length))document.documentElement.setAttribute("data-cart-empty","")}catch(e){}`
 
 export const metadata: Metadata = {
@@ -56,8 +48,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: `${siteConfig.name} - ${siteConfig.tagline}`,
     description: siteConfig.description,
-    // The file's real size: a card declared smaller than its image is
-    // cropped or refused by some crawlers.
+    // Declares the image's real size; some crawlers crop or refuse a mismatch.
     images: [siteConfig.shareImage],
   },
   twitter: {
@@ -81,10 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en-IN"
-      // globals.css sets scroll-behavior: smooth. Without this attribute Next
-      // cannot tell a deliberate choice from an accident, so it disables smooth
-      // scrolling during route transitions and warns. Opting in keeps the
-      // in-page anchors smooth and the console quiet.
+      // Tells Next the smooth scrolling in globals.css is deliberate (else it warns).
       data-scroll-behavior="smooth"
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
       // The script below may add data-cart-empty before hydration.

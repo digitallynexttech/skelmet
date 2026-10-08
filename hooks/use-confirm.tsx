@@ -4,26 +4,19 @@ import * as React from "react"
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
-/**
- * A question put before an action that is hard to take back - a refund, a
- * courier booking, new payment keys. One click could otherwise do it by
- * mistake.
- */
+/** For actions hard to take back, e.g. a refund or a courier booking. */
 export type Confirmation = {
   title: string
   body: React.ReactNode
   confirmLabel: string
   tone?: "primary" | "danger"
-  /** Runs the action and calls `done` once it has settled, which closes the dialog. */
+  /** Call `done` once settled; it closes the dialog. */
   run: (done: () => void) => void
 }
 
 export type Ask = (confirmation: Confirmation) => void
 
-/**
- * One dialog for a screen, asked by whichever action wants confirming.
- * Render `dialog` once; pass `ask` to anything that needs it.
- */
+/** One dialog per screen: render `dialog` once, pass `ask` around. */
 export function useConfirm(): { ask: Ask; dialog: React.ReactNode } {
   const [confirmation, setConfirmation] = React.useState<Confirmation | null>(null)
   const [pending, setPending] = React.useState(false)

@@ -66,24 +66,20 @@ export type OrderRow = {
   dueOnDelivery: string
   itemCount: number
   customer: string
-  /** City and state. */
   location: string
-  /** The three statuses of order-progress.ts, as Shopify's list shows them. */
   payment: PaymentState
   fulfilment: FulfilmentState
   delivery: DeliveryState | null
-  /** Paid through Razorpay's test account: the shop trying itself out. */
+  /** Paid through Razorpay's test account. */
   testPayment: boolean
   createdAt: string
   placedAt: string | null
 }
 
-/** What a row needs beyond the order: who cancelled it, and which Razorpay account is which. */
 type RowContext = { byStaff: ReadonlySet<string>; payments: PaymentConfig }
 
 type Address = { firstName?: string; lastName?: string; city?: string; state?: string }
 
-/** The cancelled ones, whose row has to say who cancelled them. */
 const cancelledIds = (rows: Array<{ id: string; status: string }>) =>
   rows.filter((r) => r.status === "CANCELLED").map((r) => r.id)
 
@@ -143,13 +139,7 @@ function serializeRow(
   }
 }
 
-/**
- * Admin order queue. Never an unbounded findMany (§7).
- *
- * `scope` is which orders the list is about at all - "paid" for the Orders
- * page (paid and every stage after), "all" for All orders. The search and the
- * tabs stay inside it; the view (a tab) and the status filter narrow within it.
- */
+/** Admin order queue. `scope` bounds everything; view and status narrow within it. */
 export async function listOrders(params: {
   page?: number
   pageSize?: number
@@ -170,16 +160,14 @@ export async function listOrders(params: {
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // So the list staff read never shows an abandoned cart's order as live.
+    // So an abandoned checkout's order never shows as live.
     await releaseStaleOrders()
 
     const page = Math.max(1, params.page ?? 1)
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
 
-    // The search narrows the counts; the view and the status filter do not.
-    // A tab showing "In transit 4" has to keep saying 4 while you are looking
-    // at the shipped ones, or the counts stop meaning anything.
+    // Search narrows the tab counts; view and status filter do not.
     const searched = q
       ? {
           OR: [
@@ -209,8 +197,7 @@ export async function listOrders(params: {
         take: size,
       }),
       db.order.count({ where }),
-      // One grouped query rather than a count per status and per tab. By
-      // method too, since the Unpaid tab depends on how an order is paid.
+      // By method too: the Unpaid tab depends on it.
       db.order.groupBy({
         by: ["status", "paymentMethod"],
         where: scoped,
@@ -218,8 +205,7 @@ export async function listOrders(params: {
       }),
     ])
 
-    // Every status and tab is present, including the ones at zero: a count
-    // that disappears when it empties is one you cannot trust to be there.
+    // Every status and tab present, zeros included.
     const counts = Object.fromEntries(ORDER_STATUSES.map((s) => [s, 0])) as Record<
       OrderStatus,
       number
@@ -367,17 +353,12 @@ export async function getOrder(id: string): Promise<ActionResult<unknown>> {
                 : null,
           }
         : null,
-      // Whether the console can book couriers here, or only take them typed in.
       shiprocket: { configured: await isShiprocketConfigured(), orderId: order.shiprocketOrderId },
     })
   })
 }
 
-/**
- * Workflow transitions. Each is its own verb with an atomic `updateMany` claim,
- * never `PATCH { status }` - two operators clicking at once must not both
- * succeed (§5, §7).
- */
+// An atomic updateMany claim, never PATCH { status }: two clicks at once must not both succeed.
 async function transition(
   id: string,
   from: OrderStatus[],
@@ -417,13 +398,7 @@ async function transition(
   })
 }
 
-/**
- * Cash on delivery is packed while still unpaid, because the money arrives at
- * the door: from CONFIRMED, the state it is placed in - and from PENDING for
- * the COD orders placed before CONFIRMED existed. An unpaid card order must
- * never reach this state, so the PENDING case is claimed by payment method
- * rather than by widening the status list.
- */
+// COD is packed unpaid (PENDING for older COD orders); an unpaid online order must never be packed.
 export async function markPacked(id: string) {
   const order = await db.order.findUnique({
     where: { id },
@@ -435,11 +410,7 @@ export async function markPacked(id: string) {
   return transition(id, from, "PACKED", PERMISSIONS.ORDER_FULFIL, "order:pack")
 }
 
-/**
- * Ships with a courier and AWB typed in by hand - for anything not booked
- * through Shiprocket (see shipping.service for that). Validated before the
- * claim, so a bad body can no longer leave the order SHIPPED with no shipment.
- */
+/** Courier and AWB typed by hand. Validated before the claim, so SHIPPED always has a shipment. */
 export async function markShipped(
   id: string,
   raw: unknown,
@@ -484,26 +455,19 @@ export async function markDelivered(id: string) {
         data: { status: "DELIVERED", deliveredAt: new Date() },
       })
 
-      // COD money changes hands on the doorstep, so this is when the order is
-      // genuinely paid and when it should start counting as revenue.
+      // COD is paid, and counts as revenue, at the door.
       await db.order.updateMany({
         where: { id, paymentMethod: "COD", placedAt: null },
         data: { placedAt: new Date() },
       })
     },
   )
-  // The invoice goes to the customer once the parcel is in their hands.
   if (result.ok) queueInvoiceEmail(id)
   return result
 }
 
 export async function cancelOrder(id: string) {
-  // Unpaid orders only: one still waiting for its online payment, or cash on
-  // delivery that has not been packed. Cancelling a PAID one used to restock
-  // it and keep the customer's money, with no way to refund it afterwards -
-  // refund refused a CANCELLED order. A paid order is taken back with Refund,
-  // which returns the money and restocks what never shipped, and needs the
-  // refund permission that handing money back should need.
+  // Unpaid orders only. A paid order goes through refundOrder, which returns the money.
   const result = await transition(
     id,
     ["PENDING", "CONFIRMED"],
@@ -517,10 +481,7 @@ export async function cancelOrder(id: string) {
       })
       if (!order) return
 
-      // One batched transaction, not an update per line. Sequential awaits meant
-      // a round trip per item, and - worse - a partial restock: the order is
-      // already CANCELLED by the time this runs, so a failure halfway left stock
-      // permanently short with nothing to replay it from.
+      // One transaction: the order is already CANCELLED, so a partial restock can't be replayed.
       await db.$transaction([
         ...order.items.map((item) =>
           db.variant.update({
@@ -528,7 +489,6 @@ export async function cancelOrder(id: string) {
             data: { stock: { increment: item.qty } },
           }),
         ),
-        // The coupon use it claimed at checkout goes back too.
         ...(order.couponId
           ? [
               db.coupon.updateMany({
@@ -540,13 +500,12 @@ export async function cancelOrder(id: string) {
       ])
     },
   )
-  // A cash-on-delivery order was sent to Shiprocket when it was placed, so it
-  // is called off there too. Nothing to do for one that never got that far.
+  // COD orders reach Shiprocket when placed.
   if (result.ok) await cancelShiprocketOrder(id, null)
   return result
 }
 
-/** Statuses whose goods never left the building, so a refund puts them back on sale. */
+/** Goods never left, so a refund restocks them. */
 const UNSHIPPED: OrderStatus[] = ["PAID", "PACKED"]
 
 export async function refundOrder(
@@ -573,16 +532,12 @@ export async function refundOrder(
     if (!order) return fail("Order not found.", undefined, 404)
 
     const paymentId = order.payments[0]?.gatewayPaymentId ?? null
-    // What came through the gateway, which is all that can go back through
-    // it: the whole order, or only its advance. Anything paid to the courier
-    // is handed back outside Razorpay.
+    // Only what came through Razorpay (order or advance); courier cash is refunded outside it.
     const paidOnline = order.payments[0]?.amount.toString() ?? "0"
     // Refunded from the account that took it, whichever is switched on now.
     const paymentMode = modeOfPayment(order.payments[0]?.mode, await paymentConfig())
 
-    // CANCELLED qualifies only while it still holds captured money: orders
-    // cancelled while paid, before cancel stopped accepting them, and anything
-    // a payment landed on after it was cancelled.
+    // CANCELLED only while it still holds captured money.
     const refundable: OrderStatus[] = [
       "PAID",
       "PACKED",
@@ -595,8 +550,7 @@ export async function refundOrder(
       return fail("That order cannot be refunded.", undefined, 409)
     }
 
-    // Claimed on the exact status read above, so the restock decision below
-    // is made on the state this refund actually moved the order out of.
+    // Claimed on the exact status read, so the restock below decides on the state it left.
     const claimed = await db.order.updateMany({
       where: { id, status: order.status },
       data: { status: "REFUNDED" },
@@ -612,9 +566,7 @@ export async function refundOrder(
           mode: paymentMode,
         })
       } catch (err) {
-        // The order was marked REFUNDED before the money moved, and a refusal
-        // used to leave it there: refunded on screen, never refunded in fact,
-        // and no longer offering the button to try again. Put it back.
+        // Marked REFUNDED before the money moved: put it back so it can be retried.
         await db.order.updateMany({
           where: { id, status: "REFUNDED" },
           data: { status: order.status },
@@ -643,11 +595,9 @@ export async function refundOrder(
       )
     }
 
-    // Still on our shelf, so call off the courier and the Shiprocket order.
     if (UNSHIPPED.includes(order.status)) await cancelShiprocketOrder(id, session)
 
-    // An invoiced sale is reversed on paper too: its credit note is issued
-    // now, and the tax invoice can no longer be printed or emailed.
+    // Issues the credit note; the tax invoice can no longer be printed or emailed.
     await creditNoteOnRefund(id, session)
 
     await createAuditLog(session, {
@@ -670,11 +620,7 @@ export async function refundOrder(
 
 const IST_OFFSET_MS = 5.5 * 60 * 60_000
 
-/**
- * Midnight in India, as an instant. The shop's day is India's: a "today" that
- * began at UTC midnight began at 05:30 here, so every order from midnight to
- * half past five counted towards yesterday.
- */
+/** Midnight IST as an instant: the shop's day is India's, not UTC's. */
 export function startOfIndianDay(now: Date): Date {
   const ist = new Date(now.getTime() + IST_OFFSET_MS)
   return new Date(
@@ -682,7 +628,6 @@ export function startOfIndianDay(now: Date): Date {
   )
 }
 
-/** Dashboard counters. One query per tile, all bounded. */
 export async function getDashboard(): Promise<ActionResult<unknown>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.DASHBOARD_READ)
@@ -692,10 +637,7 @@ export async function getDashboard(): Promise<ActionResult<unknown>> {
     const startOfWeek = new Date(startOfToday.getTime() - 6 * 86_400_000)
 
     const [todayCount, weekRevenue, awaiting, lowStock, recent] = await Promise.all([
-      // Orders paid for today, and cash on delivery accepted today - an order
-      // from the moment it is placed, though not revenue until the door.
-      // Counting every order written counted each closed payment window as a
-      // sale.
+      // Paid today, or COD accepted today (an order once placed, revenue only at the door).
       db.order.count({
         where: {
           OR: [

@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Deleting test orders: whatever staff tick, nothing that took real money,
- * collected cash, holds a tax invoice number or is still with the courier is
- * deleted - and a preview deletes nothing at all.
- */
-
 const mocks = vi.hoisted(() => ({
   db: {
     order: { findMany: vi.fn(), deleteMany: vi.fn() },

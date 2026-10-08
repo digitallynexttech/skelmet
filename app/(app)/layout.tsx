@@ -9,26 +9,16 @@ import { QueryProvider } from "@/components/providers/query-provider"
 import { auth } from "@/server/auth"
 import { staffSession } from "@/server/action-guard"
 
-/**
- * Shell + session gate. One query, for access that is current rather than
- * whatever the week-old token remembers: a revoked staff member is sent away
- * here on their next page load, and the sidebar only offers what they can
- * still do.
- */
+/** Shell + session gate: reads access from the database, not the token, so revocation is immediate. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   if (!(await auth())?.user) redirect("/login?next=/admin")
   const session = await staffSession()
   if (!session || session.user.kind !== "STAFF") redirect("/")
 
-  // The flag was set by createStaff and resetStaffPassword, carried onto the
-  // JWT, typed on the session - and read by nothing, so a temporary password
-  // an admin chose stayed valid for as long as its owner never bothered. This
-  // is the half that makes it mean something. The target is in the (auth)
-  // group precisely so this redirect cannot loop into itself.
+  // A temporary password must be replaced. /change-password is in (auth), so this cannot loop.
   if (session.user.mustChangePassword) redirect("/change-password?next=/admin")
 
-  // The sidebar as it was left (components/layout/admin-shell.tsx), read
-  // here so the page opens that way instead of correcting itself after load.
+  // Read on the server so the sidebar opens as it was left, with no jump.
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "closed"
 
   return (

@@ -44,11 +44,7 @@ export default function ContactPage() {
 
       <Section className="pt-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          {/* The form reads ?topic= (the footer's "Bulk & clubs" link sends
-              ?topic=bulk). This page is prerendered, so the part that reads
-              the query renders in the browser; until it does, the same form
-              with the default topic stands in, and the page is never
-              without one. */}
+          {/* Reads ?topic= in the browser (the page is prerendered); the fallback is the same form. */}
           <Suspense fallback={<ContactForm />}>
             <ContactFormFromLink />
           </Suspense>

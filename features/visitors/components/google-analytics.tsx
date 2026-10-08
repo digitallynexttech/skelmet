@@ -28,31 +28,19 @@ const DENIED = {
 }
 
 /**
- * Google Analytics 4 (gtag.js), following the cookie card through Google's
- * consent mode - the same promise the rest of the tracking keeps.
- *
- * Every visit is measured. Until a visitor accepts, consent is "denied":
- * Google Analytics sets no cookies and sends cookieless pings, which Google
- * models into its reports without recognising anyone. Accept turns on its
- * cookies and the ad measurement that remarketing needs; Decline, or taking
- * an Accept back, turns them off again.
- *
- * The saved choice is read by the same inline script that sets the default,
- * before the `config` line, so a returning visitor who accepted is measured
- * in full from their first page rather than from whenever React hydrates.
- * The key and shape are use-consent's zustand store as persisted.
+ * GA4 through Google's consent mode: granted unless the saved choice is "denied" (then no
+ * cookies, cookieless pings only). The inline script applies the saved choice (use-consent's
+ * persisted store) before `config`, so it holds from the first page.
  */
 export function GoogleAnalytics({ id }: { id: string }) {
   const consent = useConsent((s) => s.consent)
   const loaded = React.useRef(false)
-  // gtag.js - 170 KB, much of it unused on a first page - waits for the
-  // visitor to do something. The stub below queues every call into dataLayer
-  // until then, so the page view and consent state still reach Google.
+  // gtag.js (170 KB) waits for the first interaction; the stub queues calls until then.
   const [library, setLibrary] = React.useState(false)
   React.useEffect(() => afterFirstInteraction(() => setLibrary(true)), [])
 
   React.useEffect(() => {
-    // On load the inline script has already applied the saved choice.
+    // On load the inline script already applied the saved choice.
     if (!loaded.current) {
       loaded.current = true
       return

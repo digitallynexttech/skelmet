@@ -142,19 +142,12 @@ export async function setInquiryStatus(
 }
 
 /**
- * Public. No session, so the route rate-limits by IP and the honeypot field
- * catches the bots that fill every input they can find.
- *
- * The home page's "Notify me" used to post here under DROP_LIST_TOPIC and be
- * filed as an inquiry. It has its own endpoint now; a page loaded before that
- * change still posts here, and is handed on to the newsletter.
+ * Public: the route rate-limits by IP. DROP_LIST_TOPIC posts (from pages loaded before the
+ * newsletter had its own endpoint) are handed on to the newsletter.
  */
 export async function createInquiry(raw: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
-    // Read the honeypot BEFORE parsing: the schema rejects a filled one, and a
-    // validation error would tell the bot exactly which check it tripped.
-    // A human never sees this field, so anything in it is a bot. Answer as if
-    // it worked and write nothing.
+    // Honeypot before parsing, so a bot gets a fake success, not a validation hint.
     if (typeof raw === "object" && raw !== null && "website" in raw) {
       const pot = (raw as { website?: unknown }).website
       if (typeof pot === "string" && pot.length > 0) return ok({ id: "ok" })

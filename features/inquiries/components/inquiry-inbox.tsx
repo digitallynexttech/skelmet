@@ -118,7 +118,7 @@ export function InquiryInbox() {
       cell: (i) => <span className="text-dim font-mono text-[11.5px]">{when(i.createdAt)}</span>,
     },
     {
-      // No value: buttons are not data, so this neither sorts nor exports.
+      // No value: neither sorts nor exports.
       key: "actions",
       header: "",
       align: "right",
@@ -203,8 +203,7 @@ export function InquiryInbox() {
               ? "No inquiry matches that search."
               : "Inbox is clear. Nothing is waiting on you right now."
           }
-          // The message is the point of the row and will not fit in a cell,
-          // so it opens underneath instead of being truncated into nonsense.
+          // The message opens underneath rather than being truncated in a cell.
           expandable={(i) => (
             <p className="text-ash max-w-[80ch] text-[14.5px] leading-[1.7] whitespace-pre-wrap">
               {i.message}

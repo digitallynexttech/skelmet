@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * What ends a console session: its absolute lifetime, and the user's row
- * having moved on - a password reset or change, a revoke, a role removal.
- */
-
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   hasDatabase: vi.fn(() => true),

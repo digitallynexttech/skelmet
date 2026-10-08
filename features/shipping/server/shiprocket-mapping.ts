@@ -1,18 +1,8 @@
 import { shippingConfig, type FeeBasis } from "@/config/shipping"
 import type { PaymentMethod } from "@/features/checkout/payment-options"
 
-/**
- * Translation between our orders and Shiprocket's API, as pure functions.
- *
- * Nothing here talks to the network or the database, so every rule about what
- * Shiprocket is sent, and how its answers are read, is covered by
- * shiprocket-mapping.test.ts. The calls themselves live in shiprocket.ts, and
- * what the shop does with the answers in shipping.service.ts.
- *
- * Shaped from Shiprocket's published API collection (apidocs.shiprocket.in).
- * Their numbers arrive as numbers or strings depending on the endpoint, and
- * their dates in three formats, all Indian time - so every read is defensive.
- */
+// Pure mapping between our orders and Shiprocket's API; the calls are in shiprocket.ts.
+// Shiprocket sends numbers as numbers or strings and dates in three IST formats: read defensively.
 
 // ── the order, as the mapping needs it ─────────────────────────────────────
 
@@ -58,10 +48,7 @@ const round = (value: number, places: number) => {
   return Math.round(value * f) / f
 }
 
-/**
- * The bare ten-digit mobile. Checkout accepts "+91 98765 43210" and friends;
- * Shiprocket wants 9876543210.
- */
+/** Shiprocket wants the bare ten-digit mobile, e.g. 9876543210. */
 export function bareMobile(phone: string): string {
   return phone.replace(/\D/g, "").slice(-10)
 }
@@ -73,11 +60,7 @@ export function istStamp(at: Date): string {
   return `${ist.getUTCFullYear()}-${p(ist.getUTCMonth() + 1)}-${p(ist.getUTCDate())} ${p(ist.getUTCHours())}:${p(ist.getUTCMinutes())}`
 }
 
-/**
- * The parcel for a set of lines. Weight is per unit, from the variant when it
- * has one; more than one unit stacks on the box's height, which is how two
- * mounts actually go into one carton.
- */
+/** The parcel for a set of lines. Extra units stack on the box's height, as they are packed. */
 export function parcelFor(items: ShippableOrder["items"]): Parcel {
   const units = items.reduce((n, i) => n + i.qty, 0)
   const grams = items.reduce(
@@ -95,27 +78,11 @@ export function parcelFor(items: ShippableOrder["items"]): Parcel {
 }
 
 /**
- * POST /orders/create/adhoc.
- *
- * `order_id` is our order number, so staff can find the order in the
- * Shiprocket panel by the number the customer quotes - and because Shiprocket
- * refuses a second order with the same id, a retry can never create a
- * duplicate shipment.
- *
- * `sub_total` is what the lines cost BEFORE the coupon. Shiprocket's docs call
- * it the total "after deductions", but Shiprocket takes `total_discount` off it
- * again: SKM-2026-E2Q9 went out as sub_total 101 with a 3398 discount and its
- * label printed "Order Total: ₹1" - below zero, floored. Sent before the
- * coupon, the label reads what the customer actually paid, and that is also
- * the value the courier's liability for a lost parcel is capped at.
- *
- * An order paid for at the door goes as "COD", and the courier collects
- * Shiprocket's order total: sub_total plus the charges, less total_discount.
- * So the cash-on-delivery charge is sent as `transaction_charges`, which the
- * total includes, and an advance already paid online is sent as part of
- * `total_discount` - Shiprocket's API has no field for an amount already
- * paid - which leaves exactly the balance to collect and to print on the
- * label.
+ * POST /orders/create/adhoc. `order_id` is our order number; Shiprocket refuses a duplicate, so a
+ * retry cannot double-ship. `sub_total` is before the coupon: despite its docs, Shiprocket takes
+ * `total_discount` off it again. The COD charge goes as `transaction_charges`, and an advance paid
+ * online as part of `total_discount` (the API has no field for it), so the courier collects and
+ * the label prints exactly the balance.
  */
 export function buildAdhocOrder(order: ShippableOrder, pickupLocation: string) {
   const parcel = parcelFor(order.items)
@@ -181,13 +148,10 @@ function fromIst(y: number, mo: number, d: number, h = 0, mi = 0, s = 0): Date |
 }
 
 /**
- * Reads the three date formats Shiprocket uses, all on Indian time:
- *
+ * Shiprocket's three date formats, all IST. Anything else (their "NA" too) is null.
  *   "2023-05-23 15:40:19"  most timestamps
  *   "23 05 2023 11:43:52"  a webhook's current_timestamp
  *   "Sep 27, 2026"         a serviceability etd
- *
- * Anything else - including their "NA" - is null, never a guess.
  */
 export function parseShiprocketDate(value: unknown): Date | null {
   if (typeof value !== "string") return null
@@ -208,18 +172,8 @@ export function parseShiprocketDate(value: unknown): Date | null {
 // ── tracking ───────────────────────────────────────────────────────────────
 
 /**
- * Where a shipment is, reduced to what the shop acts on.
- *
- *   booked      AWB, pickup, manifest - still with us
- *   in_transit  the courier has it
- *   delivered   done
- *   returning   RTO: coming back to us
- *   returned    RTO delivered: back on our shelf
- *   cancelled   the shipment was called off
- *   unknown     anything else - recorded, never acted on
- *
- * Read from the status text rather than Shiprocket's numeric ids, which their
- * documentation does not list. The order of the checks matters: "RTO
+ * Where a shipment is, reduced to what the shop acts on ("unknown" is never acted on). Read from
+ * the status text, as Shiprocket does not document its numeric ids. Check order matters: "RTO
  * DELIVERED" and "UNDELIVERED" both contain "DELIVERED".
  */
 export type TrackingStage =
@@ -345,10 +299,7 @@ export type CourierOption = {
   recommended: boolean
 }
 
-/**
- * GET /courier/serviceability/, as a list the console can offer: Shiprocket's
- * recommendation first, then cheapest first.
- */
+/** GET /courier/serviceability/ as console options: Shiprocket's pick first, then cheapest. */
 export function courierOptions(body: unknown): {
   options: CourierOption[]
   recommendedId: number | null
@@ -387,10 +338,8 @@ export function courierOptions(body: unknown): {
 }
 
 /**
- * How many couriers in a serviceability answer collect payment at the door.
- * Asked with `cod: 1`, Shiprocket lists the couriers for a COD parcel and
- * marks each with `cod`; one that says 0 does not collect, and one that does
- * not say is taken at the question's word.
+ * Couriers that collect payment at the door, from a `cod: 1` serviceability answer. `cod: 0`
+ * means no; a courier without the field counts as yes.
  */
 export function collectingCouriers(body: unknown): number {
   const data = (body as { data?: Record<string, unknown> } | null)?.data
@@ -400,10 +349,7 @@ export function collectingCouriers(body: unknown): number {
   return list.filter((c) => c.cod === undefined || c.cod === null || Number(c.cod) === 1).length
 }
 
-/**
- * The delivery estimate to quote a shopper: Shiprocket's recommended courier,
- * which is the one a booking takes by default, else the quickest.
- */
+/** The estimate to quote: Shiprocket's pick (booking's default), else the quickest. */
 export function deliveryEstimate(options: CourierOption[]): CourierOption | null {
   return (
     options.find((o) => o.recommended) ??
@@ -413,9 +359,8 @@ export function deliveryEstimate(options: CourierOption[]): CourierOption | null
 }
 
 /**
- * What a shipment costs the shop, read by `basis` (see shippingConfig.fee).
- * Null when no courier quoted a price, which is also when none delivers. A
- * courier without a usable price is left out, not counted as free.
+ * What a shipment costs the shop, by `basis` (shippingConfig.fee). Null when no courier quoted a
+ * price; an unpriced courier is left out, not counted as free.
  */
 export function shipmentCost(options: CourierOption[], basis: FeeBasis): number | null {
   const priced = options.filter((o) => o.rate > 0)

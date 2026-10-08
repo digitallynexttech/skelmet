@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The tracker's promises to visitors, pinned down: a visit made without
- * consent keeps no IP address, sets no cookie and keeps nothing typed at
- * checkout; taking consent back forgets the device; bots and staff are never
- * counted. These are what the cookie bar and the privacy policy say, so a
- * change that breaks one should fail here, not in front of a customer.
- */
+// The cookie bar's and privacy policy's promises: without consent no IP, cookie or
+// checkout details; withdrawing forgets the device; bots and staff are not counted.
 
 const mocks = vi.hoisted(() => ({
   headers: { current: new Headers() },
@@ -156,7 +151,6 @@ describe("recordVisit without consent", () => {
     try {
       await recordVisit(view(false))
 
-      // Not known yet: written in once the lookup answers.
       expect(mocks.db.visitor.create.mock.calls[0]![0].data.district).toBeUndefined()
       await vi.waitFor(() =>
         expect(mocks.db.visitorSession.updateMany).toHaveBeenCalledWith({
@@ -199,7 +193,7 @@ describe("recordVisit without consent", () => {
   })
 
   it("will not keep them even from a visitor the cookie says accepted", async () => {
-    // The message's own flag wins: the browser is the record of the choice.
+    // The message's flag wins: the browser holds the choice.
     mocks.cookies.get.mockReturnValue({ value: KNOWN })
     mocks.db.visitor.findUnique.mockResolvedValue({ id: "visitor-1", anonymous: true })
     mocks.db.visitorSession.findUnique.mockResolvedValue({ id: "session-1", pageviews: 3 })
@@ -283,7 +277,6 @@ describe("recordVisit with consent", () => {
       where: { visitorId: KNOWN },
       data: { visitorId: null },
     })
-    // The order number on a "placed" event would lead back to the person.
     expect(mocks.db.visitorEvent.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { visitorId: KNOWN, type: "placed" } }),
     )
@@ -311,7 +304,7 @@ describe("recordVisit with consent", () => {
   })
 
   it("folds an anonymous stretch into the visit the device already has, not beside it", async () => {
-    // Known device, whose choice was cleared mid-visit and then given again.
+    // Known device, choice cleared mid-visit and given again.
     mocks.cookies.get.mockReturnValue({ value: KNOWN })
     mocks.db.visitor.findFirst.mockResolvedValue({ id: KNOWN, anonymous: false })
     mocks.db.visitor.findUnique.mockResolvedValue({ id: "anon-1", anonymous: true })

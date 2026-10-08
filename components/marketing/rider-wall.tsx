@@ -5,11 +5,8 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { siteConfig } from "@/config/site"
 
 /**
- * Our own pictures for now - of the mount in use, one reworked by an image
- * model so the wall is not the same helmet every time, and two skulls
- * recoloured so it shows all three colourways (scripts/build-rider-wall.mjs).
- * The alt text says they are ours rather than passing them off as customers'
- * walls. Riders' shots go here once people tag us and agree to be featured.
+ * Our own photos until riders tag us and agree to be featured. The alt text says they are
+ * ours, never customers'. Recolours: scripts/build-rider-wall.mjs.
  */
 const SHOTS = [
   {
@@ -24,9 +21,6 @@ const SHOTS = [
     src: "/product/rider-motorcycle-wall.jpg",
     alt: "A black helmet on our mount over a riding jacket and gloves, a motorcycle parked below",
   },
-  // rider-cream-helmet.jpg with its dark studio wall swapped for a plain
-  // white one (GPT Image 2.5 on Higgsfield), modelled on the owner's
-  // rider-bare-skull.jpg, so it reads as a photo taken at home.
   {
     src: "/product/rider-cream-helmet-white-wall.jpg",
     alt: "Our mount in Militia Olive wearing a cream open-face helmet with brown leather trim, gloves and a riding jacket hanging below it on a white wall",

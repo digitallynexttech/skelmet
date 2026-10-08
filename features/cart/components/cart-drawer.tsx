@@ -35,31 +35,13 @@ import { apiFetch } from "@/lib/api-fetch"
 import { discountPercent } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-/** A product's MRP, by slug: the Flame Skull's for a line saved before there were two. */
+/** A product's MRP by slug; the Flame Skull's for an unknown slug. */
 const mrpOf = (slug: string) => Number((getProduct(slug) ?? FLAME_SKULL_MOUNT).compareAtPrice)
 
 /**
- * The cart, as a drawer from the right of whatever page the visitor is on.
- *
- * It used to be a page of its own at /cart. A drawer keeps the buyer where
- * they were: adding a mount opens it over the product page, and closing it
- * leaves them there, one tap from checkout either way. /cart still answers,
- * by sending old links and bookmarks to the home page with `?cart=open`
- * (next.config), which opens this.
- *
- * A modal sheet, as the phone menu is: focus moves in when it opens and stays
- * in, Escape and the backdrop close it, the page behind does not scroll, and
- * focus goes back to whatever opened it.
- *
- * Full width on a phone, 440px from `sm`. Inside, the lines scroll and the
- * summary stays put at the bottom - except on a screen too short to hold
- * both (a phone on its side), where the summary scrolls with the lines
- * rather than squeezing them out.
- *
- * What it shows is a preview, as the cart page's was: checkout re-reads the
- * coupon and the prices and the server charges what it works out. The prices
- * are brought up to the live ones each time the drawer opens, so the total
- * here is the one checkout starts from.
+ * The cart, as a modal drawer from the right. /cart redirects to `?cart=open`
+ * (next.config), which opens it. Its totals are a preview: the server prices
+ * the order.
  */
 export function CartDrawer() {
   const open = useCartDrawer((s) => s.open)
@@ -68,13 +50,10 @@ export function CartDrawer() {
   const pathname = usePathname()
   const panel = React.useRef<HTMLDivElement>(null)
 
-  // Nothing is rendered inside until the first time it opens: every storefront
-  // page carries this component, and most visits never open it. Derived during
-  // render rather than in an effect, which React 19 flags as a cascading render.
+  // Contents are built on first open, or once the page is idle so the first
+  // slide is smooth. Set during render: an effect would cascade (React 19).
   const [used, setUsed] = React.useState(false)
   if (open && !used) setUsed(true)
-  // Or once the page is idle, so the first opening slides in a panel that is
-  // already built instead of building it on the frame the slide starts.
   React.useEffect(() => {
     const build = () => setUsed(true)
     if (typeof window.requestIdleCallback === "function") {
@@ -85,9 +64,7 @@ export function CartDrawer() {
     return () => window.clearTimeout(id)
   }, [])
 
-  // Any navigation closes it: Checkout, a link in the empty state, the back
-  // button. Only a change of page, not the mount - which development runs
-  // twice, and the second run would shut a drawer the address had just opened.
+  // A change of page closes it; not the mount, which dev runs twice.
   const lastPath = React.useRef(pathname)
   React.useEffect(() => {
     if (lastPath.current === pathname) return
@@ -95,8 +72,7 @@ export function CartDrawer() {
     hide()
   }, [pathname, hide])
 
-  // An old /cart link arrives as ?cart=open. Open, and tidy the address so a
-  // reload or a shared link is just the page.
+  // ?cart=open (an old /cart link): open, and drop the param from the address.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("cart") !== "open") return
@@ -125,9 +101,7 @@ export function CartDrawer() {
         panel.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input") ??
           [],
       )
-    // preventScroll: the button is still off the right edge when this runs,
-    // and a plain focus() scrolls the drawer's box to show it - the panel
-    // snapped into place at once while its slide played on unseen.
+    // preventScroll: the panel is still off screen, and focus() would snap it in.
     panel.current?.querySelector<HTMLElement>("[data-first-focus]")?.focus({ preventScroll: true })
 
     const onKey = (e: KeyboardEvent) => {
@@ -157,11 +131,9 @@ export function CartDrawer() {
     }
   }, [open, hide])
 
-  // A line keeps the price it was added at; an admin can have changed it
-  // since. Read the live ones each time the drawer opens.
+  // Live prices and offers, read each time it opens.
   const syncPrices = useCart((s) => s.syncPrices)
   const [prices, setPrices] = React.useState<Record<string, string>>({})
-  // The codes staff switched on for the cart, asked for each time it opens.
   const [offers, setOffers] = React.useState<CartOffer[]>([])
   React.useEffect(() => {
     if (!open) return
@@ -195,9 +167,7 @@ export function CartDrawer() {
   }, [open, syncPrices])
 
   return (
-    // Over the header and the cookie card; the splash is over this. The
-    // wrapper is what keeps the closed panel, parked off the right edge, from
-    // making the page wider than the screen.
+    // The wrapper keeps the off-screen panel from widening the page.
     <div
       className={cn(
         // clip, not hidden: a hidden box can still be scrolled by the browser.
@@ -222,10 +192,8 @@ export function CartDrawer() {
         aria-modal="true"
         aria-label="Your cart"
         className={cn(
-          // A plain transform on a layer of its own, so the compositor slides
-          // it, right to left. The curve is an even one: a steep ease-out
-          // covered most of the distance in the first few frames, and the
-          // panel read as jumping in while the backdrop faded.
+          // Transform only, so the compositor slides it. An even curve: a steep
+          // ease-out reads as a jump.
           "bg-carbon absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-white/[0.08] shadow-[-24px_0_60px_rgb(0_0_0_/_0.45)] transition-[transform] will-change-transform sm:max-w-[440px]",
           open
             ? "[transform:translate3d(0,0,0)] duration-[450ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
@@ -243,9 +211,8 @@ function CartContents({
   offers,
   onClose,
 }: {
-  /** Live prices by SKU, once the drawer has asked; the registry's until then. */
+  /** Live prices by SKU; empty until fetched. */
   prices: Record<string, string>
-  /** The codes offered in the cart. */
   offers: CartOffer[]
   onClose: () => void
 }) {
@@ -254,16 +221,12 @@ function CartContents({
   const items = useCart((s) => s.items)
   const setQty = useCart((s) => s.setQty)
   const clear = useCart((s) => s.clear)
-  // Emptying the cart asks once: one tap on the bin, then Clear or Keep.
+  // Emptying the cart asks to confirm.
   const [clearing, setClearing] = React.useState(false)
 
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
-  // The coupon comes off the total here as it does at checkout and on the
-  // server.
   const totals = calculateTotals(items, coupon?.discount ?? 0)
   const lines = mounted ? items : []
-  // Against the MRP printed on each line's product page, as the bill in a shop
-  // app shows what the prices beside it are already taking off.
   const mrpTotal = items.reduce((sum, line) => sum + mrpOf(line.productSlug) * line.qty, 0)
   const saving = Math.max(0, mrpTotal - totals.total)
 
@@ -292,7 +255,6 @@ function CartContents({
       {!mounted ? null : lines.length === 0 ? (
         <div className="bg-void flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="rounded-tile bg-carbon flex flex-col items-center border border-white/[0.07] px-6 pt-7 pb-8 text-center">
-            {/* The 3D skull's own front-facing frame, the hero's poster. */}
             <div className="relative mb-4 aspect-[4/5] w-28 shrink-0">
               <Image src={SKULL_POSTER} alt="" fill sizes="112px" className="object-contain" />
             </div>
@@ -315,9 +277,7 @@ function CartContents({
           <Recommendations inCart={[]} prices={prices} />
         </div>
       ) : (
-        // Cards on the page's own black, as a delivery app's cart is laid out:
-        // the shipment and its items, offers, the recommendations, the bill,
-        // then the policy. All of it scrolls; the way to checkout stays at the foot.
+        // All of it scrolls; the checkout bar stays at the foot.
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="bg-void flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain p-3">
             <section aria-labelledby="cart-shipment" className={cn(CARD, "p-0")}>
@@ -411,8 +371,7 @@ function CartContents({
                         </div>
                       </div>
 
-                      {/* Minus at one takes this item out; the bin above empties
-                          the whole cart. */}
+                      {/* Minus at one removes the line. */}
                       <div className="bg-blaze text-void flex h-9 shrink-0 items-center rounded-lg">
                         <button
                           type="button"
@@ -496,9 +455,7 @@ function CartContents({
                     </dd>
                   </div>
                 ) : null}
-                {/* Shipping depends on the delivery pincode (free, or a flat fee
-                    where couriers cost more), which the cart does not have.
-                    Checkout shows it as soon as the pincode is typed. */}
+                {/* Shipping needs the pincode, which only checkout asks for. */}
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-ash flex items-center gap-2">
                     <Truck className="size-4 shrink-0" strokeWidth={1.7} />
@@ -525,9 +482,7 @@ function CartContents({
               <h3 id="cart-policy" className={`${CARD_TITLE} mb-1.5`}>
                 Cancellation &amp; returns
               </h3>
-              {/* The policies' own terms: free cancellation until dispatch, and
-                  unused and undrilled, because a mount that has been drilled in
-                  cannot come back. */}
+              {/* The policies' own terms. */}
               <p className="text-ash text-[13px] leading-[1.55]">
                 Cancel free any time before dispatch for a full refund. Doesn&apos;t fit your wall?
                 Send it back unused and undrilled within {siteConfig.promise.returnDays} days - we
@@ -537,13 +492,10 @@ function CartContents({
           </div>
 
           <div className="bg-carbon shrink-0 border-t border-white/[0.08] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            {/* The total and the way on, in one bar: what they will pay before
-                shipping on the left, where it goes on the right. */}
             <Link
               href="/checkout"
               onClick={onClose}
-              // Plain type at one size, as a shop app's bar has it: the display
-              // face at 24px and a mono label read as two different buttons.
+              // One plain face: mixing display and mono read as two buttons.
               className="bg-blaze text-void hover:bg-ember flex min-h-[54px] items-center justify-between gap-4 rounded-xl px-4 py-2 transition-colors"
             >
               <span className="flex flex-col">
@@ -564,34 +516,24 @@ function CartContents({
   )
 }
 
-/** A card of the drawer, on its black. */
 const CARD = "rounded-tile bg-carbon border border-white/[0.07] p-4"
 const CARD_TITLE = "text-bone text-[15px] font-bold"
 
 /** Each card's width plus the gap, for the arrows' step. */
 const CARD_STEP = 162
 
-/**
- * "Recommended products": the colourways not in the cart yet, as a rail of
- * cards with their own Add button, as a bag drawer suggests what goes with
- * what is in it. There is one product, so what goes with it is its other
- * colours. Adding keeps the drawer open and puts the line straight in, and
- * the card leaves the rail; with all three in the cart the rail is gone.
- *
- * Swiped on a touch screen, with arrows where a pointer can use them.
- */
+/** The Flame Skull colourways not yet in the cart, as a swipeable rail. */
 function Recommendations({
   inCart,
   prices,
 }: {
-  /** The SKUs already in the cart. */
+  /** SKUs already in the cart. */
   inCart: string[]
   prices: Record<string, string>
 }) {
   const add = useCart((s) => s.add)
   const rail = React.useRef<HTMLDivElement>(null)
-  // The Flame Skull's colourways: the Piston Skull is offered here once it is
-  // on sale, not while it is a draft checkout would refuse.
+  // Not the Piston Skull while it is a draft: checkout would refuse it.
   const picks = COLOURWAYS.filter((c) => !inCart.includes(c.sku))
   if (picks.length === 0) return null
 

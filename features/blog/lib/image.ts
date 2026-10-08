@@ -3,21 +3,13 @@ import { createImageUrlBuilder } from "@sanity/image-url"
 import type { SanityImage } from "@/features/blog/blog"
 import { dataset, projectId, sanityConfigured } from "@/features/blog/sanity/env"
 
-/**
- * Addresses of a post's pictures on Sanity's image CDN. Client-safe: the post
- * cards render in the browser and need only this arithmetic, not the Sanity
- * client.
- *
- * The pictures are served by that CDN at the width each screen asks for
- * (components/sanity-image.tsx), not through this server's image optimiser:
- * they are already on a CDN that resizes, and the box here has two cores.
- */
+// Client-safe URLs on Sanity's image CDN, which resizes, so this server's two-core optimiser is
+// skipped.
 
 type Builder = ReturnType<typeof createImageUrlBuilder>
 type Source = Parameters<Builder["image"]>[0]
 
-// Made on first use, and only with a project to point at, so an unconfigured
-// blog gets no pictures instead of a throw at import time.
+// Made on first use, so an unconfigured blog gets no pictures instead of an import-time throw.
 let builder: Builder | null = null
 
 function getBuilder(): Builder | null {
@@ -27,11 +19,8 @@ function getBuilder(): Builder | null {
 }
 
 /**
- * The URL of an image at `width`, cropped to `height` around its hotspot when
- * one is given. Null when there is no image, or no Sanity project.
- *
- * With both, the URL carries `w` and `h`: SanityImage's loader reads the two
- * to keep the shape while it asks for other widths.
+ * An image at `width`, cropped to `height` around its hotspot when given (sanityLoader keeps that
+ * shape at other widths). Null with no image or no Sanity project.
  */
 export function imageUrl(
   source: SanityImage | null | undefined,
@@ -46,12 +35,7 @@ export function imageUrl(
   return size.height ? image.height(size.height).fit("crop").url() : image.fit("max").url()
 }
 
-/**
- * The pixel size of the original, which its reference carries
- * (`image-<id>-<width>x<height>-<format>`). An image in the body is given
- * these as its width and height, so the text below it does not jump when the
- * picture arrives.
- */
+/** The original's pixel size, from its reference (`image-<id>-<width>x<height>-<format>`). */
 export function imageDimensions(
   source: SanityImage | null | undefined,
 ): { width: number; height: number } | null {
@@ -61,11 +45,7 @@ export function imageDimensions(
   return width > 0 && height > 0 ? { width, height } : null
 }
 
-/**
- * next/image's loader for these URLs: the same picture at the width a screen
- * asks for. When the URL carries both `w` and `h` it is a crop, and the
- * height follows the width so every size keeps the same shape.
- */
+/** next/image loader. With both `w` and `h` it is a crop, so `h` scales with the width. */
 export function sanityLoader({
   src,
   width,

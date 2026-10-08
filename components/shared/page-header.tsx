@@ -4,12 +4,9 @@ import { ChevronRight, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * The head of every admin page, as Shopify's are: the section's icon and a
- * short title on the left, the page's buttons on the right (HeaderButton).
- * A page inside a section names its parent first, as a link back: Orders >
- * Abandoned carts. No paragraph of explanation under it - the page's
- * metadata describes it - but a detail page can carry a line of its own facts
- * (a code's terms, a customer's email) as `subtitle`.
+ * The head of every admin page, Shopify-style: icon, optional parent link and title on the left,
+ * HeaderButton actions on the right. No explanatory paragraph; `subtitle` is for a detail page's
+ * own facts.
  */
 export function PageHeader({
   icon: Icon,
@@ -22,9 +19,8 @@ export function PageHeader({
 }: {
   icon?: LucideIcon
   title: React.ReactNode
-  /** The section this page sits in, linked. */
   parent?: { label: string; href: string }
-  /** Status pills after the title, as on an order's page. */
+  /** Status pills after the title. */
   tags?: React.ReactNode
   subtitle?: React.ReactNode
   actions?: React.ReactNode

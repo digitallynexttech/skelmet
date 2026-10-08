@@ -25,16 +25,11 @@ function message(r: LeftCartRow): string {
 
 const who = (r: LeftCartRow) => visitorName({ ...r, id: r.visitorId })
 
-/**
- * Carts filled and never turned into an order. A visitor who accepted cookies
- * and typed their details at checkout can be contacted; an anonymous one can
- * only be counted - which is still worth knowing: it says what people want
- * and where they stop.
- */
+/** Only visitors who accepted cookies and typed details can be contacted; others are counted. */
 export function LeftCartsTable({
   handle,
 }: {
-  /** For Export in the page's header. */
+  /** For Export in the header. */
   handle?: React.Ref<DataTableHandle<LeftCartRow>>
 }) {
   const { data, isLoading, isError, error } = useLeftCarts()
@@ -187,8 +182,7 @@ export function LeftCartsTable({
           />
         </div>
       }
-      // The board's value tile, as a line: it filters nothing. There from the
-      // first render, so the bar does not rearrange itself when it loads.
+      // Rendered from the start, so the bar does not shift when data loads.
       barEnd={
         <span className="text-dim text-[12.5px] whitespace-nowrap">
           {summary ? (

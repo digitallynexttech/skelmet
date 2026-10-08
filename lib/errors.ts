@@ -1,4 +1,4 @@
-/** Wire error shape: `{ success: false, error: { code, message, details? } }` (§5). */
+/** Wire error shape: `{ success: false, error: { code, message, details? } }`. */
 export type ApiErrorBody = {
   code: string
   message: string

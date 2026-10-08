@@ -3,14 +3,7 @@ import "server-only"
 import { siteConfig } from "@/config/site"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 
-/**
- * "It's arrived - here's your invoice." Sent once, when an order is delivered,
- * with the tax invoice attached as a PDF. Staff can send it again from the
- * order page.
- *
- * Same rules as the other customer emails: tables for layout, inline styles,
- * a plain-text part always.
- */
+/** Sent on delivery with the tax invoice PDF. Same email rules as order-confirmed.ts. */
 export type OrderInvoiceData = {
   number: string
   invoiceNumber: string
@@ -32,8 +25,7 @@ export function renderOrderInvoice(data: OrderInvoiceData): {
     `Your order ${data.number} has been delivered. Ride safe.`,
     ``,
     `The tax invoice ${data.invoiceNumber} is attached to this email as a PDF.`,
-    // ₹ as in the HTML part: the mailer sends UTF-8, and "Rs" beside a ₹ in
-    // the other part read as two different amounts.
+    // ₹, matching the HTML part (the mailer sends UTF-8).
     `Amount: ₹${data.total}`,
     ``,
     `Questions: just reply to this email.`,

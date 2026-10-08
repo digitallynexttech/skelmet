@@ -32,13 +32,8 @@ const when = (iso: string) =>
     minute: "2-digit",
   })
 
-/**
- * The drop list: everyone who pressed "Notify me" on the home page, with the
- * date they joined and, if they left, the date they left. Export gives the
- * list as a spreadsheet; Write an email sends to it from here.
- */
 export function SubscriberList() {
-  // Opens on the people an email would reach, as it always has.
+  // Opens on the people an email would reach.
   const [status, setStatus] = React.useState<Filter>("SUBSCRIBED")
   const [search, setSearch] = React.useState("")
   const q = useDebounce(search, 300)
@@ -91,7 +86,7 @@ export function SubscriberList() {
       ),
     },
     {
-      // No value: buttons are not data, so this neither sorts nor exports.
+      // No value, so it neither sorts nor exports.
       key: "actions",
       header: "",
       align: "right",

@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-/**
- * When the saved settings cannot be read, payments stop rather than guess:
- * .env's keys may be a different Razorpay account from the one switched on.
- */
+// Unreadable saved settings stop payments: .env's keys may be a different Razorpay account.
 
 const original = { ...process.env }
 const findMany = vi.fn()
@@ -53,7 +50,7 @@ describe("paymentConfig", () => {
     findMany.mockRejectedValue(new Error("connection refused"))
     expect((await settings.paymentConfig()).test.keyId).toBe("rzp_test_env")
 
-    // Forgotten by a save, so nothing known: fails closed rather than guessing.
+    // Forgotten by a save, so nothing known: fails closed.
     settings.forgetSettings()
     await expect(settings.paymentConfig()).rejects.toMatchObject({ status: 503 })
   })

@@ -32,7 +32,7 @@ const STATE_TONE = {
   EXHAUSTED: "ember",
 } as const
 
-// As Shopify's orders have it: All is every code not archived.
+// All is every code not archived.
 const VIEWS: { value: CouponView; label: string }[] = [
   { value: "codes", label: "All" },
   { value: "archived", label: "Archived" },
@@ -41,7 +41,6 @@ const VIEWS: { value: CouponView; label: string }[] = [
 // Stable, since useUrlState memoises on it.
 const DEFAULTS = { q: "", view: "codes" }
 
-/** An on/off switch, for whether a code is offered in the cart. */
 function CartSwitch({
   on,
   label,
@@ -76,50 +75,38 @@ function CartSwitch({
   )
 }
 
-/** Digits only, so `onlyDigits("1a2") === "12"` and an empty box stays empty. */
 const onlyDigits = (s: string) => s.replace(/[^0-9]/g, "")
 
-/** The form's amounts as the box shows them: digits, blank for none. */
+/** An amount as its box shows it: digits, blank for none or zero. */
 const asBox = (n: number | string | null | undefined) =>
   n === null || n === undefined || Number(n) === 0 ? "" : String(Math.round(Number(n)))
 
 /**
- * A new code, or - given `renewing` - an old one run again with new terms.
- * Renewing keeps the code (past orders point at it), starts the uses again
- * and brings it out of the archive; the old expiry is not carried over.
+ * A new code, or with `renewing` an old one run again with new terms: same
+ * code, uses from 0, out of the archive, old expiry dropped.
  */
 function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: CouponRow }) {
   const { create, renew } = useCouponMutations()
   const [kind, setKind] = React.useState<"PERCENT" | "FLAT">(renewing?.kind ?? "FLAT")
-  // A code typed here that turned out to exist and to be over: the way to
-  // renew it instead, with what is in the form.
+  // A typed code that exists and is over: offered for renewal instead.
   const [clash, setClash] = React.useState<{ id: string; code: string } | null>(null)
   const [error, setError] = React.useState<string | null>(null)
-  // What is wrong with each field, shown under it: from the checks below
-  // before sending, or from the server's answer.
   const [fields, setFields] = React.useState<Record<string, string>>({})
 
-  // The amounts are held here rather than read off the form on submit. They
-  // used to be <input type="number">, which brought two problems with it: a
-  // spinner that invites clicking a value up one press at a time, and a wheel
-  // that quietly edits a focused field while you scroll past — 250 became 251
-  // on one notch. Plain text boxes filtered to digits have neither.
+  // Digit-filtered text boxes, not type="number", whose scroll wheel edits a focused value.
   const [amount, setAmount] = React.useState(asBox(renewing?.value))
   const [minSubtotal, setMinSubtotal] = React.useState(asBox(renewing?.minSubtotal))
   const [maxUses, setMaxUses] = React.useState(asBox(renewing?.maxUses))
   const [expiresAt, setExpiresAt] = React.useState("")
   const [showInCart, setShowInCart] = React.useState(renewing?.showInCart ?? false)
 
-  /** The form's terms as the API takes them. */
   const terms = () => ({
     kind,
     value: Number(amount),
-    // Blank means no minimum, which is zero.
     minSubtotal: Number(minSubtotal || 0),
-    // Blank means unlimited, which the service reads as null.
+    // Blank is unlimited.
     maxUses: maxUses ? Number(maxUses) : null,
-    // The field hands back local YYYY-MM-DD; end the day rather than
-    // start it, or a code set to expire today dies at midnight.
+    // End of the local day, or a code expiring today dies at midnight.
     expiresAt: expiresAt ? new Date(expiresAt + "T23:59:59").toISOString() : null,
     showInCart,
   })
@@ -152,8 +139,7 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
           .trim()
           .toUpperCase()
 
-    // The server's own rules, checked here first so the answer is instant
-    // and sits under the box it is about.
+    // The server's rules, checked first for an instant answer.
     const found: Record<string, string> = {}
     if (!/^[A-Z0-9-]{3,24}$/.test(code)) {
       found.code =
@@ -187,7 +173,6 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
       await create.mutateAsync({ code, ...terms() })
       onDone()
     } catch (err) {
-      // The server's own words: which field, and what is wrong with it.
       if (err instanceof ApiFetchError) {
         setFields(err.fieldErrors)
         setError(err.message)
@@ -273,8 +258,7 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
           />
         </Field>
         <Field label="Minimum subtotal (₹)" error={fields.minSubtotal}>
-          {/* Placeholder, not a value. It held a literal 0 before, so typing
-              500 into it gave 0500 unless you deleted the zero first. */}
+          {/* A placeholder 0, not a value, so typing 500 does not give 0500. */}
           <Input
             value={minSubtotal}
             onChange={(e) => setMinSubtotal(onlyDigits(e.target.value))}
@@ -344,8 +328,7 @@ function CreateForm({ onDone, renewing }: { onDone: () => void; renewing?: Coupo
 }
 
 export function CouponManager() {
-  // Search lives in the URL so a filtered view is shareable; paging is the
-  // table's job now, over the window the server sent.
+  // Search in the URL so a filtered view is shareable; the table pages.
   const [state, setState] = useUrlState(DEFAULTS)
   const view: CouponView = state.view === "archived" ? "archived" : "codes"
   const [rawQuery, setRawQuery] = React.useState(state.q)
@@ -367,8 +350,7 @@ export function CouponManager() {
   }, [debounced, state.q, setState])
 
   const { data, isLoading, isError, error } = useCoupons({ page: 1, q: state.q, view })
-  // The other view too, for its count in the view menu. Codes are few, and
-  // switching to it is then instant.
+  // The other view too, for its count in the view menu.
   const other = useCoupons({
     page: 1,
     q: state.q,
@@ -387,7 +369,6 @@ export function CouponManager() {
       key: "code",
       header: "Code",
       value: (c) => c.code,
-      // Opens the code's own page: its runs, its orders and its log.
       cell: (c) => (
         <Link
           href={`/admin/coupons/${encodeURIComponent(c.code)}`}
@@ -407,8 +388,7 @@ export function CouponManager() {
       key: "value",
       header: "Discount",
       align: "right",
-      // Percent and flat are different units, so this sorts within a kind
-      // rather than pretending 10% and ₹250 sit on one scale.
+      // Percent and flat are different units; the sort is only meaningful within a kind.
       value: (c) => Number(c.value),
       cell: (c) => (
         <span className="text-bone text-[14px]">
@@ -463,8 +443,7 @@ export function CouponManager() {
             header: "In cart",
             align: "right",
             value: (c: CouponRow) => (c.showInCart ? 1 : 0),
-            // A code that cannot be used is not offered, whatever the switch
-            // says; it is shown off, and can be switched on again after an edit.
+            // An unusable code is never offered, so it shows off whatever was saved.
             cell: (c: CouponRow) => (
               <CartSwitch
                 on={c.showInCart && c.state === "ACTIVE"}
@@ -477,7 +456,7 @@ export function CouponManager() {
         ]
       : []),
     {
-      // No value: a button is not data. Named, for the column picker.
+      // No value, so it is not exported or sorted.
       key: "actions",
       header: "Actions",
       align: "right",
@@ -519,7 +498,6 @@ export function CouponManager() {
     },
   ]
 
-  // The codes or the archive, in a menu beside the search.
   const bar = (
     <div className="flex items-center gap-2">
       <ViewMenu

@@ -5,11 +5,6 @@ import { z } from "zod"
 import { withErrorHandler } from "@/server/api-handler"
 import { listParams, pageParam, pageSizeParam, enumParam, textParam } from "@/server/list-params"
 
-/**
- * What the route wrapper answers before a service ever runs: an id that
- * cannot be a row, and a query string that does not parse.
- */
-
 const req = (url = "https://skelmet.in/api/admin/orders") => new NextRequest(url)
 
 describe("withErrorHandler", () => {

@@ -1,6 +1,4 @@
-# Every text file is committed with LF, whatever the checkout machine does.
-# The deploy server builds from the repository, and a CRLF shell script or
-# SQL migration there fails in ways that do not show up on Windows.
+# LF everywhere: CRLF scripts and migrations fail on the Linux deploy server.
 * text=auto eol=lf
 
 *.png binary

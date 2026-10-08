@@ -15,17 +15,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import type { Permission } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
-/**
- * The "↳" from a section down into one of its pages, as in the KYG console.
- *
- * The numbers come from the section's row, not the eye: px-3.5 and an 18px
- * icon put the icon's centre 23px in, and the stroke sits at x=1 here, so the
- * svg goes at left-[22px]. The pages' list is py-0.5, so -top-0.5 starts the
- * line on the section row's bottom edge; a page row is h-9, so its centre is
- * 2 + 18 = 20px down, where the line turns and the arrowhead points. The page
- * pill starts at 36px, clear of the arrow's tip at 33. Change the row's
- * padding or icon and these move with it.
- */
+// The "↳" from a section into one of its pages. Its offsets follow the section row's px-3.5,
+// 18px icon and the page rows' h-9: change those and these move with them.
 function Elbow() {
   return (
     <svg
@@ -49,10 +40,7 @@ function Elbow() {
 const within = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`)
 
-/**
- * The child a page belongs to: the longest href it sits under. None for the
- * section's own pages - an order's page belongs to Orders itself.
- */
+// The longest child href the page sits under; none for the section's own pages.
 function currentChild(pathname: string, children: NavChild[]): NavChild | undefined {
   return children
     .filter((c) => within(pathname, c.href))
@@ -61,20 +49,15 @@ function currentChild(pathname: string, children: NavChild[]): NavChild | undefi
 
 export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
   const pathname = usePathname()
-  // Open and closed live in the shell, so the header's toggle and Ctrl+B
-  // reach them too.
   const { collapsed, drawerOpen: open, closeDrawer } = useAdminShell()
   const [confirmingSignOut, setConfirmingSignOut] = React.useState(false)
-  // signOut navigates away, so this never has to be unset — it keeps the
-  // button from being pressed twice while the redirect is in flight.
+  // Never unset: signOut navigates away. Stops a second press during the redirect.
   const [signingOut, setSigningOut] = React.useState(false)
 
   // Cosmetic filter only - proxy.ts and requirePermission are the enforcement.
   const items = NAV.filter((item) => permissions.includes(item.scope))
 
-  // compact: the desktop rail closed to its icons - the skull mark for the
-  // lockup, each section an icon named by its tooltip and for screen readers,
-  // and no pages under a section. The phone drawer is never compact.
+  // compact: the closed desktop rail, icons only with sr-only labels. The drawer is never compact.
   const body = (compact: boolean) => (
     <>
       <div
@@ -104,10 +87,8 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
           const active = within(pathname, item.href)
           const current =
             item.children && active ? currentChild(pathname, item.children) : undefined
-          // The section's own page, rather than one of the pages under it.
           const here = active && !current
-          // On the closed rail the pages under a section are not shown, so
-          // the section lights up for any of them.
+          // The closed rail hides child pages, so the section lights for any of them.
           const lit = compact ? active : here
           return (
             <div key={item.href}>
@@ -115,9 +96,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                 href={item.href}
                 aria-current={here ? "page" : lit ? "true" : undefined}
                 title={compact ? item.label : undefined}
-                // Only the page you are on lights up: on one of the section's
-                // pages the section itself stays plain, or two rows would both
-                // read as the current page. The arrow says which section.
+                // Only one row lights, or two would read as the current page.
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl text-[14px] transition-colors",
                   compact ? "justify-center" : "px-3.5",
@@ -131,8 +110,6 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                   strokeWidth={1.8}
                 />
                 <span className={compact ? "sr-only" : undefined}>{item.label}</span>
-                {/* Says the section has pages under it; turns down while
-                    they are showing. */}
                 {item.children && !compact ? (
                   <ChevronRight
                     aria-hidden
@@ -144,9 +121,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                   />
                 ) : null}
               </Link>
-              {/* A section's pages show only while you are in it, so the
-                  menu stays short: on Visitors, Orders is one row. Opening
-                  the section is one click on its name. */}
+              {/* A section's pages show only while you are in it. */}
               {item.children && active && !compact ? (
                 <ul className="flex flex-col gap-0.5 py-0.5">
                   {item.children.map((child) => {
@@ -154,8 +129,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
                     return (
                       <li key={child.href} className="relative">
                         <Elbow />
-                        {/* ml-[36px] insets the pill past the arrow; with px-2
-                            the label lands on 44px, level with the section's. */}
+                        {/* ml-[36px] clears the arrow; px-2 aligns the label with the section. */}
                         <Link
                           href={child.href}
                           aria-current={on ? "page" : undefined}
@@ -197,7 +171,6 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
 
   return (
     <>
-      {/* Closed, the rail narrows to its icons rather than going away. */}
       <aside
         id="admin-sidebar"
         className={cn(
@@ -241,8 +214,7 @@ export function AdminSidebar({ permissions }: { permissions: Permission[] }) {
         </div>
       </div>
 
-      {/* Mounted once, outside both copies of `body`, or the drawer and the
-          desktop rail would each render their own dialog. */}
+      {/* Outside both copies of `body`, or each would render its own dialog. */}
       <ConfirmDialog
         open={confirmingSignOut}
         title="Sign out?"

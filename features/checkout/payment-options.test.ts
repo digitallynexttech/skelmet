@@ -14,12 +14,6 @@ import {
   type PaymentOptions,
 } from "@/features/settings/schemas/runtime-settings.schema"
 
-/**
- * The arithmetic of paying on delivery. Checkout previews with it and the
- * server charges with it, so everything here is about what a customer pays
- * now, what they pay the courier, and what the shop tells them about both.
- */
-
 const options = (over: Partial<PaymentOptions> = {}): PaymentOptions => ({
   ...structuredClone(DEFAULT_PAYMENT_OPTIONS),
   ...over,

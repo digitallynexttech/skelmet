@@ -3,12 +3,6 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { isCrossSiteWrite, proxy, usesSecureCookie } from "@/proxy"
 
-/**
- * The console's API rides on a cookie, so a write another site makes the
- * browser send has to be refused before it is read - without getting in the
- * way of the console itself, or of Auth.js's own routes.
- */
-
 const req = (url: string, init: { method?: string; headers?: Record<string, string> } = {}) =>
   new NextRequest(url, { method: init.method ?? "GET", headers: init.headers })
 

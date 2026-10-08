@@ -9,24 +9,8 @@ import {
 } from "@/features/settings/server/runtime-settings"
 import { parseShiprocketDate } from "@/features/shipping/server/shiprocket-mapping"
 
-/**
- * Shiprocket's REST API, called directly with `fetch` - no SDK, the same way
- * payment-gateway.ts talks to Razorpay.
- *
- * Server-only, always: the login is an API user's email and password, and the
- * token it returns can book couriers against the shop's wallet. Both come from
- * the console's Settings, falling back to .env (runtime-settings.ts).
- *
- * The token lasts 240 hours. It is cached in memory and reused until a day
- * before that, and one 401 - a token revoked early, or a password changed in
- * the panel - logs in again and retries once. Concurrent callers share one
- * login rather than racing to make several, and a refused login pauses the
- * next for REFUSED_PAUSE_MS.
- *
- * Every failure is a ShippingError carrying Shiprocket's own message, because
- * "Wallet balance is low" or "pickup location not found" is exactly what the
- * person in the console needs to read.
- */
+// Shiprocket's REST API over fetch. Server-only: the token can book couriers against the wallet.
+// A 401 logs in again and retries once. Errors carry Shiprocket's own message for staff to read.
 
 export class ShippingError extends AppError {
   constructor(message: string, status = 502) {
@@ -39,18 +23,8 @@ const TIMEOUT_MS = 20_000
 const TOKEN_TTL_MS = 9 * 24 * 60 * 60_000
 
 /**
- * How long to wait after Shiprocket refuses a login before asking again.
- *
- * Shiprocket locks the API user after a run of failed logins, and an attempt
- * made while it is locked - even with the right password - can restart the
- * lock. Nothing here used to remember a refusal, so every paid order and every
- * pincode check tried again: a wrong password locked the account, and ordinary
- * shopping kept it locked. One refusal now pauses logins for this long. A
- * different login - a new user or password saved in Settings, or a restart
- * picking up a corrected .env - is not held by it.
- *
- * Only a refusal counts. Shiprocket failing to answer, or answering with its
- * own 5xx, says nothing about the password and is retried as before.
+ * Pause after a refused login: Shiprocket locks the API user after failed logins, and any attempt
+ * while locked restarts the lock. A different login is not held; a timeout or 5xx is not a refusal.
  */
 const REFUSED_PAUSE_MS = 15 * 60_000
 
@@ -59,10 +33,7 @@ export async function isShiprocketConfigured(): Promise<boolean> {
   return Boolean(config.email && config.password)
 }
 
-/**
- * The pickup address's name as configured. Orders cannot be created without
- * one; pickupAddress() resolves it against Shiprocket.
- */
+/** The configured pickup name; pickupAddress() resolves it against Shiprocket. */
 export async function pickupLocation(): Promise<string | null> {
   return (await shiprocketConfig()).pickupLocation
 }
@@ -71,12 +42,8 @@ function baseUrl(config: ShiprocketConfig): string {
   return `${config.apiUrl.replace(/\/+$/, "")}/v1/external`
 }
 
-/**
- * A token is only good for the account and environment that issued it, and a
- * refusal only for the password that earned it - so the password is part of
- * the key, as a hash. A corrected password is then tried at once instead of
- * waiting out the pause the wrong one caused.
- */
+// A refusal holds only for its password, so the password's hash is in the key: a corrected one is
+// tried at once.
 function tokenKey(config: ShiprocketConfig): string {
   const password = createHash("sha256")
     .update(config.password ?? "")
@@ -85,13 +52,8 @@ function tokenKey(config: ShiprocketConfig): string {
   return `${config.apiUrl}|${config.email}|${password}`
 }
 
-/**
- * The token, a refusal's pause and the pickup address, held on globalThis as
- * the Prisma client is. Next can load this module more than once in a process
- * - a copy per route bundle - and the pause only protects the account if every
- * copy sees it: one refused login has to stop the pincode checks, the paid
- * orders and the console alike, not just the route that got refused.
- */
+// On globalThis: Next can load this module once per route bundle, and a refusal's pause must stop
+// every copy.
 type Session = {
   token: { value: string; expiresAt: number; key: string } | null
   loggingIn: { promise: Promise<string>; key: string } | null
@@ -106,10 +68,7 @@ const session = (shared.skelmetShiprocket ??= {
   pickup: null,
 })
 
-/**
- * Forgets the token, any pause and the pickup address - for when Settings
- * changes the login, so the next call starts from the new one.
- */
+/** Forgets token, pause and pickup, for when Settings changes the login. */
 export function resetShiprocketSession(): void {
   session.token = null
   session.refused = null
@@ -188,11 +147,7 @@ async function currentToken(config: ShiprocketConfig): Promise<string> {
   return attempt.promise
 }
 
-/**
- * Logs in with the details in use, for Settings' "Test connection". Holds to
- * the same pause as everything else, so testing a login that was just
- * refused does not ask Shiprocket again.
- */
+/** For Settings' "Test connection". Honours the refusal pause. */
 export async function checkLogin(): Promise<void> {
   const config = await shiprocketConfig()
   if (!config.email || !config.password) {
@@ -280,10 +235,8 @@ export function serviceability(query: {
 }
 
 /**
- * GET /open/postcode/details. The city and state Shiprocket files a pincode
- * under, for filling in an address. Null when Shiprocket has no such pincode,
- * which it reports as an error ("City/State not found for this pincode")
- * rather than an empty answer.
+ * GET /open/postcode/details: a pincode's city and state. Null when there is no such pincode,
+ * which Shiprocket reports as a "not found" error.
  */
 export async function postcodeDetails(
   pincode: string,
@@ -305,9 +258,8 @@ export async function postcodeDetails(
 }
 
 /**
- * POST /courier/assign/awb. With no courier id, Shiprocket picks by the
- * account's courier priority settings. This is the call that charges the
- * wallet, and the one that fails when it is empty.
+ * POST /courier/assign/awb. Without a courier id Shiprocket uses the account's priority.
+ * This call charges the wallet.
  */
 export async function assignAwb(
   shipmentId: string,
@@ -385,13 +337,8 @@ export function trackAwb(awb: string): Promise<Record<string, unknown>> {
 const PICKUP_TTL_MS = 6 * 60 * 60_000
 
 /**
- * The configured pickup address, as Shiprocket holds it: its exact name, for
- * creating orders, and its pincode, for quoting rates from where the courier
- * actually collects - which need not be the office address on the site.
- *
- * GET /settings/company/pickup, cached for six hours. Null when no pickup
- * location is configured; an error when the configured name matches nothing
- * in Shiprocket, since every order would then be refused.
+ * GET /settings/company/pickup: the pickup's exact name (for orders) and pincode (for rates),
+ * cached six hours. Null when none is configured; throws when the name matches nothing.
  */
 export async function pickupAddress(): Promise<{ name: string; pincode: string } | null> {
   const configured = await pickupLocation()

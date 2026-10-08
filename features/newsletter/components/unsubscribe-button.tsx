@@ -7,11 +7,7 @@ import { Button } from "@/components/ui/button"
 import { siteConfig } from "@/config/site"
 import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 
-/**
- * The press that takes someone off the list. A button, not the page load: mail
- * scanners and link previews open every link in an email, and a page that
- * unsubscribed on sight would take people off the list who never asked.
- */
+/** A button, not on page load: mail scanners and link previews open every link in an email. */
 export function UnsubscribeButton({ token }: { token: string }) {
   const [state, setState] = React.useState<"idle" | "pending" | "done">("idle")
   const [error, setError] = React.useState<string | null>(null)

@@ -11,10 +11,7 @@ import { cn } from "@/lib/utils"
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-/**
- * `2026-09-28` → `28 Sep 2026`. Spelled out by hand: en-GB's short September
- * is "Sept" in current ICU, and the date should read the same everywhere.
- */
+/** `2026-09-28` to `28 Sep 2026`. By hand: ICU's en-GB short September is "Sept". */
 function formatUpdated(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number)
   return `${d} ${MONTHS[(m ?? 1) - 1]} ${y}`
@@ -111,9 +108,8 @@ function Block({ block, accent }: { block: PolicyBlock; accent: Policy["accent"]
     )
   }
 
-  // Contact block. The Consumer Protection (E-Commerce) Rules ask for the
-  // grievance officer's contact details and designation; a designation rather
-  // than a personal name, so the block outlives any one person in the role.
+  // Contact block: the E-Commerce Rules require the grievance officer's contact and
+  // designation. A designation, not a personal name.
   const { address, promise } = siteConfig
   return (
     <div className="grid max-w-[720px] gap-3.5 sm:grid-cols-2">
@@ -189,9 +185,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
         </div>
       </div>
 
-      {/* Body */}
-      {/* minmax(0,1fr) below lg too: an auto column grew to fit a table's
-          min-width, and the whole page scrolled sideways on a phone. */}
+      {/* Body. minmax(0,1fr) on phones too, or a table's min-width widens the page. */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 px-5 py-11 pb-20 sm:px-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:px-14">
         <aside>
           <div className="lg:sticky lg:top-24">

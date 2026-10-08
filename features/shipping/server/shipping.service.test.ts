@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The storefront's pincode check: a slow Shiprocket must not hold a buyer at
- * checkout, and the answers it keeps must not grow without bound.
- */
-
 const mocks = vi.hoisted(() => ({
   serviceability: vi.fn(),
   postcodeDetails: vi.fn(),

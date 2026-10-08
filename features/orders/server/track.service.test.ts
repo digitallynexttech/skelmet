@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The public order lookup is limited per email as well as per address, so
- * one customer's order numbers cannot be walked from a pool of addresses.
- */
-
 const findUnique = vi.fn()
 vi.mock("@/server/db", () => ({ db: { order: { findUnique } } }))
 vi.mock("@/lib/env", () => ({ hasDatabase: () => true }))

@@ -8,24 +8,10 @@ import { invoiceConfig } from "@/config/invoice"
 import { siteConfig } from "@/config/site"
 import { paymentTerms, type Invoice } from "@/features/invoices/invoice"
 
-/**
- * The tax invoice as an A4 PDF, laid out as Gee Star Spinning Solutions' own
- * invoices are - seller and invoice details at the top, the buyer, the goods
- * with the tax beneath them, the amount in words, the HSN-wise tax summary,
- * the declaration and the signatory - with the SKELMET mark above the seller.
- *
- * The same layout makes a credit note: the same amounts, titled "Credit Note"
- * under its own number, and naming the invoice it reverses.
- *
- * Noto Sans is embedded because the PDF standard fonts have no rupee sign.
- */
+// The A4 invoice or credit note, laid out like the seller's own invoices.
+// Noto Sans is embedded because the PDF standard fonts have no rupee sign.
 
-/**
- * Only the three files the PDF needs, in a folder of their own. The path is
- * traced at build time, and pointing it at the whole of assets/ copied 250 MB
- * of product photography and video into every server bundle that could reach
- * this file.
- */
+// A folder of its own: this path is traced at build, and all of assets/ is 250 MB.
 const ASSETS = path.join(process.cwd(), "assets", "invoice")
 const FONT = path.join(ASSETS, "NotoSans-Regular.ttf")
 const BOLD = path.join(ASSETS, "NotoSans-Bold.ttf")
@@ -41,7 +27,7 @@ const LINE = "#6b6b75"
 const money = (n: number) =>
   new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 
-/** 26-Sep-26, as the Gee Star invoices date things, in India's time. */
+/** 26-Sep-26, in IST. */
 const day = (d: Date) => {
   const part = (o: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat("en-GB", { ...o, timeZone: "Asia/Kolkata" }).format(d)
@@ -305,8 +291,7 @@ export function renderInvoicePdf(inv: Invoice, as: PdfKind = { kind: "invoice" }
     align: "right",
   })
   const sumBottom = sumRow + 18
-  // Full-height lines between the columns; the Rate | Amount split inside
-  // each tax only below its heading.
+  // Rate | Amount split only below each tax's heading.
   vline(sx[1]!, sumTop, sumBottom)
   inv.taxes.forEach((_, i) => {
     vline(sx[2 + i * 2]!, sumTop, sumBottom)

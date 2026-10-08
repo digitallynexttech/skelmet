@@ -51,11 +51,10 @@ const TIMELINE: Array<{ status: OrderStatus; label: string; Icon: typeof Truck }
   { status: "DELIVERED", label: "Delivered", Icon: Home },
 ]
 
-/** CONFIRMED is cash on delivery's first step, where PAID is everyone else's. */
+/** CONFIRMED is COD's first step, PAID everyone else's. */
 const ORDER_OF = (s: OrderStatus) =>
   s === "CONFIRMED" ? 0 : TIMELINE.findIndex((t) => t.status === s)
 
-/** The first step's name: nothing is paid on a COD order, and only part with an advance. */
 const FIRST_STEP: Record<PaymentMethod, string> = {
   ONLINE: "Paid",
   PARTIAL: "Advance paid",
@@ -71,7 +70,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-/** "IN TRANSIT" -> "In transit". The courier's words, readable. */
+/** "IN TRANSIT" -> "In transit". */
 function readable(status: string): string {
   const s = status.replace(/_/g, " ").trim().toLowerCase()
   return s ? s[0]!.toUpperCase() + s.slice(1) : "-"
@@ -86,15 +85,8 @@ function when(iso: string | null, withTime = true): string {
   })
 }
 
-/**
- * Booking through Shiprocket, for a packed order.
- *
- * Rates are only fetched when asked for - each is a lookup on the shop's
- * account - and Shiprocket's recommendation is preselected, which is also what
- * "Book Shiprocket's pick" takes without looking. A booking that got its AWB
- * but not its pickup comes back here as "Finish booking", which carries on
- * from where it stopped rather than asking for a second courier.
- */
+// A booking with an AWB but no pickup shows "Finish booking", which keeps that AWB
+// rather than booking (and charging for) a second courier.
 function BookCourier({
   order,
   actions,
@@ -349,13 +341,12 @@ function ShipDialog({
   )
 }
 
-/** Paid for, or cash on delivery that has been packed - as the server decides. */
+/** Must match the server's rule. */
 const INVOICEABLE: OrderStatus[] = ["PAID", "PACKED", "SHIPPED", "DELIVERED"]
 
-/** The sale was undone: the invoice is replaced by a credit note (invoice.service). */
+/** The invoice is replaced by a credit note (invoice.service). */
 const CREDITED: OrderStatus[] = ["REFUNDED", "CANCELLED"]
 
-/** The credit note fields the order API sends beside the invoice's. */
 type CreditNote = { creditNoteNumber?: string | null; creditedAt?: string | null }
 
 function InvoiceSection({
@@ -395,7 +386,6 @@ function InvoiceSection({
     )
   }
 
-  // Refunded or cancelled after it was invoiced: the credit note, not the invoice.
   if (order.invoiceNumber && CREDITED.includes(order.status)) {
     return (
       <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
@@ -505,8 +495,7 @@ export function OrderDetailView({ id }: { id: string }) {
   const { data: order, isLoading, isError, error } = useOrder(id)
   const actions = useOrderAction(id)
 
-  // Everything that moves the order along, charges the courier wallet or
-  // sends money back asks first: one mistaken click is hard to take back.
+  // Every action that moves the order, charges the wallet or refunds asks first.
   const { ask, dialog } = useConfirm()
 
   if (isLoading) {
@@ -538,19 +527,16 @@ export function OrderDetailView({ id }: { id: string }) {
   const busy = Object.values(actions).some((a) => a.isPending)
   const units = order.items.reduce((n, i) => n + i.qty, 0)
   const unitsText = `${units} item${units === 1 ? "" : "s"}`
-  // Refund restocks what never left; the server makes the same call.
+  // Refund restocks what never left; must match the server.
   const unshipped = order.status === "PAID" || order.status === "PACKED"
-  // What came through Razorpay - all a refund can send back through it - and
-  // what the courier is to collect, or has.
+  // Only what came through Razorpay can be refunded through it.
   const captured = order.payments.find((p) => p.status === "CAPTURED")
   const due = Number(order.dueOnDelivery)
-  // Back to the list this order is on: Orders only shows it once it is paid.
+  // Orders lists only paid ones.
   const back = (PAID_ORDER_STATUSES as readonly OrderStatus[]).includes(order.status)
     ? { href: "/admin/orders", label: "Orders" }
     : { href: "/admin/orders/all", label: "All orders" }
-  // As the order list reads them: Paid, Partially paid, Payment pending... and
-  // Unfulfilled, Packed, Fulfilled. Who cancelled one is the list's to say; here
-  // a cancelled order just reads Cancelled.
+  // Who cancelled is the list's to say; here it just reads Cancelled.
   const payment = paymentState(order.status, order.paymentMethod)
   const fulfilment = fulfilmentState(order.status, {
     shipped: order.shipment != null && order.shipment.status.toUpperCase() !== "CANCELLED",
@@ -584,7 +570,6 @@ export function OrderDetailView({ id }: { id: string }) {
         })} · ${PAYMENT_METHOD_LABEL[order.paymentMethod]}`}
       />
 
-      {/* Fulfilment timeline */}
       {!dead ? (
         <div className="bg-carbon rounded-md border border-white/[0.09] p-6">
           <ol className="grid gap-5 sm:grid-cols-4">
@@ -614,7 +599,6 @@ export function OrderDetailView({ id }: { id: string }) {
         </div>
       ) : null}
 
-      {/* Actions */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2.5">
           {order.status === "PAID" ||
@@ -653,8 +637,7 @@ export function OrderDetailView({ id }: { id: string }) {
               Mark delivered
             </HeaderButton>
           ) : null}
-          {/* Unpaid only - a paid order comes back through Refund, which
-              returns the money as well as the stock. */}
+          {/* Unpaid only: a paid order goes through Refund. */}
           {order.status === "PENDING" || order.status === "CONFIRMED" ? (
             <HeaderButton
               disabled={busy}
@@ -726,7 +709,6 @@ export function OrderDetailView({ id }: { id: string }) {
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        {/* Items */}
         <div className="bg-carbon rounded-md border border-white/[0.09]">
           <h2 className="text-bone border-b border-white/[0.07] px-6 py-4 text-[15px] font-semibold">
             Items
@@ -801,7 +783,6 @@ export function OrderDetailView({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Customer + payment + shipment */}
         <div className="flex flex-col gap-5">
           <section className="bg-carbon rounded-md border border-white/[0.09] p-6">
             <div className="mb-4 flex items-center gap-2.5">
@@ -861,7 +842,6 @@ export function OrderDetailView({ id }: { id: string }) {
                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
                       <span className="text-bone flex items-center gap-2 text-[13.5px] capitalize">
                         {p.gateway}
-                        {/* Test money never arrives, so say so once live payments exist beside it. */}
                         {p.mode === "test" ? <Badge variant="violet">Test mode</Badge> : null}
                       </span>
                       <span className="flex items-center gap-2.5">

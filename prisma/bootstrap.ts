@@ -1,19 +1,7 @@
 /**
- * Makes a fresh database administrable, and is safe on one already in use:
- * it only ever adds what is missing (prisma/setup.ts).
- *
- *   pnpm db:migrate      # the schema first
- *   pnpm db:bootstrap
- *
- * - every permission in code, and every one of them on the Admin (and any
- *   Owner) role
- * - the Admin role
- * - the first administrator, SEED_ADMIN_EMAIL with SEED_ADMIN_PASSWORD, who
- *   has to choose a new password at first sign-in. An existing member of
- *   staff at that address keeps theirs; the password is only needed when
- *   the account has to be created.
- * - the catalogue's product and variants, at stock 0 - set the real stock
- *   in the console. Existing prices and stock are never touched.
+ * Run after `pnpm db:migrate`. Safe on a live database: only adds permissions,
+ * the Admin role, the first admin (SEED_ADMIN_PASSWORD needed only to create
+ * one) and missing variants at stock 0.
  */
 import { PERMISSION_DEFINITIONS } from "@/lib/constants"
 import { db } from "@/server/db"

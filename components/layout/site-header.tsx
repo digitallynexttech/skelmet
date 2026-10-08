@@ -18,16 +18,13 @@ export function SiteHeader() {
   const [openedOn, setOpenedOn] = React.useState(pathname)
   const menuButton = React.useRef<HTMLButtonElement>(null)
   const sheet = React.useRef<HTMLDivElement>(null)
-  // On the product page, Buy now buys what is picked there - as the phone's
-  // sticky bar does - instead of linking to the page it is already on.
+  // On a product page, Buy now buys what is picked there, as the sticky bar does.
   const onProduct = pathname.startsWith("/product/")
-  // Which product, from /product/<slug>: there are two now.
   const productSlug = onProduct ? pathname.split("/")[2] : undefined
   const picked = useBuySelection((s) => s.colourway)
   const pickedQty = useBuySelection((s) => s.qty)
 
-  // Close the sheet on navigation. Derived during render rather than in an
-  // effect, React 19 flags setState-in-effect as a cascading render.
+  // Close on navigation, during render: React 19 flags setState-in-effect.
   if (open && openedOn !== pathname) {
     setOpen(false)
   }
@@ -39,8 +36,7 @@ export function SiteHeader() {
     }
   }, [open])
 
-  // A modal sheet behaves like one: focus moves in when it opens, stays in
-  // while it is open, Escape closes it, and focus goes back to the button.
+  // Modal: focus moves in and is trapped, Escape closes, focus returns to the button.
   React.useEffect(() => {
     if (!open) return
     const panel = sheet.current
@@ -76,8 +72,7 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Near-opaque with no blur on phones: a backdrop blur recomputed on
-          every scroll frame costs a phone more than it shows. Blurred from lg. */}
+      {/* No backdrop blur below lg: it janks scrolling on phones. */}
       <header className="bg-void/95 lg:bg-void/80 sticky top-0 z-50 border-b border-white/[0.07] lg:backdrop-blur-xl">
         <div className="flex h-[74px] items-center justify-between px-5 sm:px-8 xl:px-14">
           <div className="flex items-center gap-3">
@@ -107,7 +102,7 @@ export function SiteHeader() {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    // A 44px-tall target, not the 20px of the text itself.
+                    // 44px tap target.
                     "inline-flex min-h-11 items-center text-[13.5px] font-medium tracking-[0.06em] uppercase transition-colors",
                     active ? "text-bone" : "text-ash hover:text-bone",
                   )}
@@ -136,8 +131,7 @@ export function SiteHeader() {
         </div>
       </header>
 
-      {/* Mobile sheet. Inert while closed, so its links are neither tabbable
-          nor read out off-screen; a modal dialog while open. */}
+      {/* Inert while closed, so its off-screen links are neither tabbable nor read out. */}
       <div
         className={cn(
           "fixed inset-0 z-60 lg:hidden",

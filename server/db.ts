@@ -1,14 +1,9 @@
-// NOTE: no `import "server-only"` here, tsx maintenance scripts import this
-// file directly, which is the one documented exception (§6).
+// No `import "server-only"`: the tsx maintenance scripts import this file.
 import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 
-/**
- * Prisma 7 requires a driver adapter at construction, so building without
- * DATABASE_URL would throw at module load. The client is therefore created
- * lazily on first property access: routes that guard with `hasDatabase()`
- * never touch it, and the build stays green before Postgres exists.
- */
+// Created lazily on first access: Prisma 7 needs the adapter at construction,
+// which would throw at load without DATABASE_URL.
 function createClient() {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) {
@@ -20,9 +15,7 @@ function createClient() {
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString }),
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-    // Secrets are deny-by-default in the omit, opted back in only where
-    // verified (§6). This also narrows the client's type, so `Db` is inferred
-    // rather than annotated as a bare PrismaClient.
+    // Security: secrets omitted by default, selected only where verified.
     omit: {
       user: { passwordHash: true },
     },

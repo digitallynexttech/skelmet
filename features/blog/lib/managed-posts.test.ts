@@ -8,12 +8,6 @@ import {
   type RawPost,
 } from "@/features/blog/lib/managed-posts"
 
-/**
- * What the console's Blog page says about each post. A post shown as Live
- * that is not on the site, or as ready when it has no cover, is a post
- * published by mistake - so each state is pinned down.
- */
-
 const NOW = Date.parse("2026-09-30T06:00:00Z")
 
 const doc = (over: Partial<RawPost> = {}): RawPost => ({
@@ -48,7 +42,7 @@ describe("managedPost", () => {
   it("is scheduled while its date is still to come", () => {
     const post = managedPost("abc", null, doc({ publishedAt: "2026-10-05T04:30:00Z" }), NOW)
     expect(post).toMatchObject({ status: "SCHEDULED", publishedAt: "2026-10-05T04:30:00Z" })
-    // And live the moment it passes, with nothing having changed in Sanity.
+    // Live once it passes, with no change in Sanity.
     expect(
       managedPost("abc", null, doc({ publishedAt: "2026-10-05T04:30:00Z" }), NOW + 6 * 86_400_000)
         .status,

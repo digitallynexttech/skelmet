@@ -9,31 +9,13 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
-/**
- * Customers are a by-product of orders, not accounts.
- *
- * Nobody signs up here - checkout is the only thing that ever creates one of
- * these rows. The point is that the shop knows who has bought before, so the
- * admin console can show a customer list and a returning buyer does not have
- * to retype an address they have already given us.
- *
- * The row is deliberately thin: no password, no session, nothing to sign in
- * with. `kind` stays CUSTOMER and these accounts hold no roles, so none of
- * this widens what the staff console can be reached with.
- */
+// Customers are created only by checkout: no password, no roles, nothing to sign in with.
 
 /**
- * Finds or creates the customer behind an order and returns their id. Writes
- * nothing to a row that already exists.
- *
- * Runs INSIDE the order transaction: a customer record for an order that then
- * failed to write would be a person who never bought anything.
- *
- * It used to save the order's phone and address onto the customer here, at
- * placement - so anyone could check out with someone else's email, close the
- * payment window, and overwrite that person's saved address and number
- * without paying a rupee. Those details are saved once the order is paid
- * (rememberCustomerDetails), when the money is the proof.
+ * Finds or creates the customer behind an order. Writes nothing to an existing row:
+ * phone and address wait for payment (rememberCustomerDetails), or anyone could
+ * overwrite another person's details by checking out with their email.
+ * Runs inside the order transaction.
  */
 export async function attachCustomer(
   tx: Prisma.TransactionClient,
@@ -41,10 +23,7 @@ export async function attachCustomer(
 ): Promise<string> {
   const email = input.email.toLowerCase()
 
-  // `kind` is never written on an existing row. A staff member ordering with
-  // their work address must not be demoted to CUSTOMER, and - far worse - a
-  // customer must never be handed STAFF by typing an address that happens to
-  // match one.
+  // Never write `kind` on an existing row: a matching email must not grant or drop STAFF.
   const existing = await tx.user.findUnique({ where: { email }, select: { id: true } })
   if (existing) return existing.id
 
@@ -56,16 +35,9 @@ export async function attachCustomer(
 }
 
 /**
- * Saves a paid order's name, phone and delivery address onto its customer.
- * Called by the payment capture, never at placement (see attachCustomer).
- *
- * Customers only: a member of staff who orders with their work address keeps
- * the details they have. Existing names and numbers are only filled in where
- * blank; the address is the most recent paid order's - one per customer,
- * since there is no account screen to choose between several, and a pile of
- * old addresses would only be a way to ship to the wrong one.
- *
- * Best effort: it never fails the payment it follows.
+ * Saves a paid order's name, phone and address onto its customer (never at placement).
+ * Customers only; name and phone fill blanks only; one address, the latest paid order's.
+ * Best effort: never fails the payment it follows.
  */
 export async function rememberCustomerDetails(orderId: string): Promise<void> {
   try {
@@ -124,18 +96,7 @@ export type CustomerRow = {
   createdAt: string
 }
 
-/**
- * The admin customer list: people who have paid for at least one order.
- *
- * Checkout writes a customer row the moment an order is placed, before any
- * payment, so without that condition everyone who closed the payment window
- * was listed as a customer with nothing bought. They are in Abandoned
- * carts instead, where they can be followed up.
- *
- * Staff accounts are excluded: they are colleagues with console logins, not
- * people who bought a skull, and mixing them into a customer list is how
- * someone ends up emailing a marketing blast to the owner's own admin address.
- */
+/** Admin customer list: anyone with a paid order (unpaid ones are in Abandoned carts); no staff. */
 export async function listCustomers(
   params: { page?: number; pageSize?: number; search?: string } = {},
 ): Promise<
@@ -148,8 +109,7 @@ export async function listCustomers(
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // MAX_PAGE_SIZE, the window the table asks for: capped at 100, a list of
-    // 150 customers silently showed - and exported - only 100 of them.
+    // MAX_PAGE_SIZE, not 100: the table asks for its whole window and exports it.
     const page = Number.isFinite(params.page) ? Math.max(1, Math.trunc(params.page!)) : 1
     const pageSize = Number.isFinite(params.pageSize)
       ? Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize!)))
@@ -182,8 +142,7 @@ export async function listCustomers(
           createdAt: true,
           addresses: { where: { isDefault: true }, select: { city: true }, take: 1 },
           orders: {
-            // Cancelled and refunded orders still happened, but they are not
-            // money the shop kept, so they do not count toward spend.
+            // Spend counts only money the shop kept.
             where: { status: { notIn: ["PENDING", "CANCELLED", "REFUNDED"] } },
             select: { total: true, placedAt: true, createdAt: true },
           },
@@ -263,17 +222,7 @@ export type CustomerDetail = {
 /** Orders that exist but are not money the shop kept. */
 const NOT_REVENUE = new Set(["PENDING", "CANCELLED", "REFUNDED"])
 
-/**
- * One customer, with everything the console knows about them.
- *
- * Gated on ORDER_READ, the same scope as the list it is reached from: this is
- * the personal data already on an order, grouped by the person rather than by
- * the purchase, so it needs no scope of its own.
- *
- * Staff are excluded here as they are from the list. A colleague's console
- * account is not a customer record, and letting /admin/customers/<id> render
- * one would turn a customer screen into a directory of staff addresses.
- */
+/** One customer and their orders. ORDER_READ like the list; staff are excluded. */
 export async function getCustomer(id: string): Promise<ActionResult<CustomerDetail>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
@@ -318,8 +267,7 @@ export async function getCustomer(id: string): Promise<ActionResult<CustomerDeta
 
     if (!user) return fail("No such customer.", undefined, 404)
 
-    // Every order is listed, including the cancelled ones — they are part of
-    // this person's history. Only the kept money counts toward spend.
+    // Every order is listed; only kept money counts toward spend.
     const revenue = user.orders.filter((o) => !NOT_REVENUE.has(o.status))
     const spent = revenue.reduce((sum, o) => sum + Number(o.total), 0)
     const dates = user.orders
@@ -338,7 +286,6 @@ export async function getCustomer(id: string): Promise<ActionResult<CustomerDeta
         number: o.number,
         status: o.status,
         paymentMethod: o.paymentMethod,
-        // Money is a string on the wire (§7).
         total: Number(o.total).toFixed(2),
         itemCount: o._count.items,
         placedAt: o.placedAt ? o.placedAt.toISOString() : null,

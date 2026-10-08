@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 
 export type AppliedCoupon = { code: string; discount: number; label: string }
 
-/** A code the shop offers in the cart (listCartOffers), for the buyer to apply with a tap. */
+/** A code offered in the cart (listCartOffers). */
 export type CartOffer = {
   code: string
   label: string
@@ -19,20 +19,12 @@ export type CartOffer = {
   expiresAt: string | null
 }
 
-/** A code the server has actually refused, as opposed to a check that failed. */
+/** The server refused the code, as opposed to the check failing. */
 function refused(err: unknown) {
   return err instanceof ApiFetchError && (err.status === 400 || err.status === 422)
 }
 
-/**
- * The discount box that used to be decoration: a form whose only handler was
- * `preventDefault`, next to a `/api/coupons/validate` endpoint that already
- * worked and had no caller.
- *
- * What it shows is a preview. The code is kept on the cart so checkout can
- * send it, but checkout re-reads the coupon from the database and re-prices
- * the whole order, so nothing decided here can change what is charged.
- */
+/** The discount box. A preview only: checkout re-reads the coupon and re-prices the order. */
 export function CouponBox({
   subtotal,
   applied,
@@ -46,21 +38,12 @@ export function CouponBox({
   subtotal: number
   applied: AppliedCoupon | null
   onApplied: (c: AppliedCoupon | null) => void
-  /**
-   * Set together with `onCode` to keep the code somewhere other than the cart:
-   * a Buy-now checkout prices one line, and a code tried there must not end
-   * up on - or be taken off - the cart the customer is leaving for later.
-   */
+  /** With `onCode`, keeps the code off the cart (a Buy-now checkout). */
   code?: string | null
   onCode?: (code: string | null) => void
-  /**
-   * Whether this box re-checks the code as the subtotal moves. A page showing
-   * the box twice (a phone layout and a desktop one) lets one of them do it.
-   */
+  /** Re-check as the subtotal moves. With two boxes on a page, only one should. */
   recheck?: boolean
-  /** The space under the box: a page's summary and the cart drawer differ. */
   className?: string
-  /** Codes to list under the box, each with its own Apply. */
   offers?: CartOffer[]
 }) {
   const cartCode = useCart((s) => s.couponCode)
@@ -71,17 +54,9 @@ export function CouponBox({
   const [error, setError] = React.useState<string | null>(null)
   const [pending, setPending] = React.useState(false)
 
-  // Re-check on mount and whenever the subtotal moves: a code valid at three
-  // items can fall under its minimum when one is removed, and the customer
-  // should not reach checkout still believing it applies.
-  // Debounced, so stepping a quantity from 1 to 4 is one request, not three.
-  // Only a refusal takes the code off: a rate limit or a dropped connection
-  // says nothing about the code, and checkout re-checks it anyway.
+  // Re-check (debounced) as the subtotal moves: it can fall under the minimum.
+  // Only a refusal removes the code, not a rate limit or a dropped connection.
   React.useEffect(() => {
-    // No synchronous clear here - with no code there is simply nothing to
-    // check, and `shown` below derives the empty state instead. Writing it
-    // back through setState would schedule a second render for a fact already
-    // visible in the store.
     if (!couponCode || !recheck) return
     let cancelled = false
     const timer = window.setTimeout(() => {
@@ -131,8 +106,7 @@ export function CouponBox({
     }
   }
 
-  // Derived, not stored: the store is the single source of whether a code is
-  // on the cart, so removing one cannot leave a stale panel behind.
+  // Derived from the store, so removing a code cannot leave a stale panel.
   const shown = couponCode ? applied : null
 
   const list =
@@ -228,7 +202,7 @@ export function CouponBox({
           placeholder="Discount code"
           aria-label="Discount code"
           onKeyDown={(e) => {
-            // Enter applies the code without reaching the order form around it.
+            // Enter applies the code without submitting the order form around it.
             if (e.key !== "Enter") return
             e.preventDefault()
             void apply()

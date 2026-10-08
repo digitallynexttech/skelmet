@@ -2,25 +2,10 @@ import "server-only"
 
 import { db } from "@/server/db"
 
-/**
- * Other visitor records that are probably the same person - the same phone
- * seen in Chrome and in Brave, say, which keep separate cookies and so arrive
- * as two visitors.
- *
- * Only from what a visitor who accepted cookies already gave us, and nothing
- * gathered for the purpose: no fingerprinting (Brave scrambles it anyway).
- * Two kinds of evidence, and the page says which:
- *
- * - "contact": the same email or phone typed at checkout. As good as proof.
- * - "network": the same connection and the same kind of device within a few
- *   hours. For IPv6 the connection is the /64 prefix - a phone or a home
- *   router's own block - so this is strong. For IPv4 it is the exact address,
- *   which a mobile carrier can share between many subscribers, so it is only
- *   ever a hint.
- *
- * A visitor who refused cookies has no IP address or contact details stored,
- * so is never matched, and never matched to.
- */
+// Visitor records that are probably one person (e.g. Chrome and Brave on one phone).
+// Privacy: only from what accepted visitors already gave, no fingerprinting; a
+// visitor who refused has no IP or contact stored, so is never matched.
+// "network" is the IPv6 /64 (strong) or the exact IPv4 (a carrier may share it: a hint).
 
 export type LinkedVisitor = {
   id: string
@@ -31,27 +16,21 @@ export type LinkedVisitor = {
   deviceModel: string | null
   lastSeenAt: string
   reason: "contact" | "network"
-  /** Plain words for the admin: why these are thought to be one person. */
+  /** Plain words for the admin. */
   because: string
 }
 
-/** How far apart two visits on one connection may start and still count. */
 const NETWORK_WINDOW_MS = 12 * 60 * 60_000
-/** Candidate visits read per lookup: a busy day's worth, no more. */
+/** A busy day's worth of visits. */
 const CANDIDATES = 3000
 const SHOWN = 10
 
-/**
- * The part of an address that names one subscriber's connection: the whole
- * address for IPv4, the first four groups (the /64) for IPv6, expanded so
- * "2405:201::1" and "2405:0201:0000:0000::9" compare equal. Null for anything
- * that is not an address.
- */
+/** The whole IPv4, or the expanded IPv6 /64 so spellings compare equal. Null if not an IP. */
 export function networkKey(ip: string | null | undefined): string | null {
   if (!ip) return null
   const raw = ip.trim().toLowerCase()
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(raw)) return `v4:${raw}`
-  // An IPv4-mapped IPv6 address is the IPv4 address.
+  // IPv4-mapped IPv6.
   const mapped = raw.match(/^::ffff:(\d{1,3}(\.\d{1,3}){3})$/)
   if (mapped) return `v4:${mapped[1]}`
   if (!raw.includes(":") || !/^[0-9a-f:]+$/.test(raw)) return null
@@ -102,7 +81,7 @@ export async function findLinkedVisitors(v: Subject): Promise<LinkedVisitor[]> {
     lastSeenAt: true,
   } as const
 
-  // Contact first: it outranks a shared connection for the same visitor.
+  // Contact first: it outranks a shared connection.
   const phone = v.phone ? digits(v.phone) : ""
   const byContact = [
     ...(v.email ? [{ email: { equals: v.email, mode: "insensitive" as const } }] : []),
@@ -131,7 +110,6 @@ export async function findLinkedVisitors(v: Subject): Promise<LinkedVisitor[]> {
     }
   }
 
-  // Then the connection, visit by visit.
   const mine = v.sessions
     .map((s) => ({ key: networkKey(s.ip), from: s.startedAt, to: s.lastSeenAt }))
     .filter((s): s is { key: string; from: Date; to: Date } => s.key !== null)
@@ -157,8 +135,7 @@ export async function findLinkedVisitors(v: Subject): Promise<LinkedVisitor[]> {
     for (const c of candidates) {
       const other = c.visitor
       if (other.anonymous || found.has(other.id)) continue
-      // Same kind of device, where both are known: a laptop and a phone on
-      // one home connection are two people as often as one.
+      // A laptop and a phone on one home connection are as often two people as one.
       if (v.os && other.os && v.os !== other.os) continue
       if (v.deviceType && other.deviceType && v.deviceType !== other.deviceType) continue
       const key = networkKey(c.ip)

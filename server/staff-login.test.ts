@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Signing in to the console: staff only, limited per address and per
- * account, and no faster for an address that has no login.
- */
-
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   update: vi.fn(),
@@ -51,7 +46,7 @@ const STAFF = {
 }
 
 let ip = 0
-/** A fresh address per test, so one test's attempts do not use up another's. */
+// A fresh IP per call, so tests do not share rate limits.
 const from = () => new Headers({ "x-real-ip": `198.51.100.${++ip}` })
 
 beforeEach(() => {

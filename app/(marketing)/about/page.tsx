@@ -24,15 +24,7 @@ export const metadata: Metadata = pageMetadata({
 /** Regenerated at most once a minute: the finish section quotes the live price. */
 export const revalidate = 60
 
-/**
- * Four things that are true on the day the shop opens.
- *
- * This used to read "Mounts shipped [N]" and "Cities delivered to [N]".
- * Both are counts of a track record, and filling them in with a figure
- * nobody has earned yet would be a claim a customer cannot check. They
- * are spec instead, which needs no volume to be impressive and no edit to
- * stay honest. Swap the counts back in once they are worth printing.
- */
+// Spec, not sales counts: no figure the shop has not earned yet.
 const NUMBERS = [
   { value: "10 kg", label: "Load rated" },
   {
@@ -60,9 +52,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Three across from sm up, stacked below it. Two columns would leave
-          the third tile orphaned beside an empty cell, and three columns on a
-          phone gives "Working days to deliver" about 90px to wrap into. */}
+      {/* Never two columns (orphans the third tile); stacked on phones. */}
       <dl className="grid grid-cols-1 border-b border-white/[0.07] sm:grid-cols-3">
         {NUMBERS.map((n) => (
           <div

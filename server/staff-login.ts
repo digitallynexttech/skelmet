@@ -5,11 +5,7 @@ import { hashPassword, needsRehash, verifyPassword, verifyPasswordOfNobody } fro
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { db } from "@/server/db"
 
-/**
- * The console's sign-in check, called by the Credentials provider in
- * server/auth.ts. Every failure is the same `null`, which Auth.js turns into
- * the same opaque error, so nothing here tells a caller why.
- */
+// Security: every failure is the same `null`, so a caller never learns why.
 
 export type AuthorizedStaff = {
   id: string
@@ -22,12 +18,7 @@ export type AuthorizedStaff = {
   sessionVersion: number
 }
 
-/**
- * Per address AND per account. The address limit alone let a botnet try an
- * account's password from a thousand addresses ten times each; the account
- * limit alone would let one address walk the whole staff list. A blocked
- * attempt is refused exactly like a wrong password.
- */
+/** Per IP and per account (each alone is beatable); blocked looks like a wrong password. */
 export const LOGIN_LIMITS = {
   perIp: { limit: 10, windowMs: 10 * 60_000 },
   perEmail: { limit: 10, windowMs: 15 * 60_000 },
@@ -40,7 +31,7 @@ export async function authorizeStaff(
   const email = typeof raw?.email === "string" ? raw.email.trim().toLowerCase() : ""
   const password = typeof raw?.password === "string" ? raw.password : ""
   if (!email || !password) return null
-  // scrypt over a megabyte of "password" is a cheap way to make the server work.
+  // Huge inputs would make scrypt cheap DoS.
   if (email.length > 254 || password.length > 1_024) return null
 
   try {
@@ -52,8 +43,7 @@ export async function authorizeStaff(
 
   const user = await db.user.findUnique({
     where: { email },
-    // select overrides the global omit in server/db.ts, which is the one
-    // place passwordHash is genuinely needed (§6).
+    // Overrides db.ts's global omit: the one place passwordHash is needed.
     select: {
       id: true,
       email: true,
@@ -75,18 +65,15 @@ export async function authorizeStaff(
     },
   })
 
-  // Only staff sign in: customers have rows here, made by checkout, but no
-  // accounts. A missing user, a customer and a revoked member of staff are
-  // all checked against a hash nobody matches, so the answer takes as long
-  // as a wrong password - otherwise the timing alone says who has a login.
+  // Only staff sign in. Non-staff still pay a hash check, so timing does not
+  // reveal who has a login.
   if (!user || user.kind !== "STAFF" || !user.passwordHash) {
     await verifyPasswordOfNobody(password)
     return null
   }
   if (!(await verifyPassword(password, user.passwordHash))) return null
 
-  // Hashes made before the cost was raised are rewritten while the password
-  // is at hand. Best effort: failing to upgrade must not fail the sign-in.
+  // Best effort: a failed upgrade must not fail the sign-in.
   if (needsRehash(user.passwordHash)) {
     try {
       await db.user.update({

@@ -5,27 +5,17 @@ import type { Prisma } from "@prisma/client"
 import { formatMoney } from "@/lib/money"
 import { db } from "@/server/db"
 
-/**
- * The rules for using a coupon, shared by the cart's check and checkout so
- * the two cannot drift apart.
- */
+// Coupon rules shared by the cart's check and checkout, so they cannot drift.
 
-/**
- * One answer for a code that does not exist, has expired or has run out.
- * Telling those apart let anyone walk a list of guesses and learn which
- * codes were real - and which were only used up, so worth trying later.
- */
+/** One answer for missing, expired or used up, so guesses cannot learn which codes exist. */
 export const COUPON_UNUSABLE = "This code can't be used."
 
-/** The one refusal worth being specific about: the buyer can do something about it. */
+/** The one specific refusal: the buyer can act on it. */
 export function minimumSpendMessage(minSubtotal: { toString(): string } | number): string {
   return `Spend at least ${formatMoney(Number(minSubtotal.toString()))} to use that code.`
 }
 
-/**
- * Not archived, not expired and not used up, as of `now`. For the early,
- * friendly check only.
- */
+/** Not archived, expired or used up. The early check only; claimCouponUse is the real one. */
 export function couponIsLive(
   coupon: {
     expiresAt: Date | null
@@ -42,14 +32,9 @@ export function couponIsLive(
 }
 
 /**
- * Takes one use of a coupon, only if it is still live - inside the order's
- * own transaction.
- *
- * The check used to run before the transaction and the increment inside it
- * unconditionally, so two buyers racing for the last use of a code both got
- * it, and a code that expired between the two still went through. One
- * conditional UPDATE is the check and the claim at once: false means another
- * order took the last use, or the code expired, and nothing was changed.
+ * Takes one use if the coupon is still live, inside the order's transaction.
+ * One conditional UPDATE is check and claim at once, so two buyers cannot both
+ * take the last use. False: nothing changed.
  */
 export async function claimCouponUse(
   tx: Prisma.TransactionClient,

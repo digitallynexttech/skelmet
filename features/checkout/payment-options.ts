@@ -7,25 +7,15 @@ import type {
 import { formatMoney } from "@/lib/money"
 
 /**
- * The ways to pay, and the arithmetic of each, as pure functions.
- *
- *   ONLINE   all of it now, through Razorpay
- *   PARTIAL  an advance now, the balance to the courier
- *   COD      all of it to the courier
- *
- * Client-safe: checkout previews with these and the server charges with them,
- * so the amount on the button is the amount taken. What is on offer, and what
- * each costs, is set in the console (Settings > Pay on delivery).
+ * The ways to pay and their arithmetic: ONLINE (all now), PARTIAL (advance now,
+ * balance to the courier), COD (all to the courier). Client-safe: checkout
+ * previews and the server charges with the same functions.
  */
 
 export const PAYMENT_METHODS = ["ONLINE", "PARTIAL", "COD"] as const
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 
-/**
- * Until something is saved: online only, as the shop has always sold. Here
- * rather than beside its schema, so the storefront pages that only state how
- * to pay do not pull the schema's validation into their bundle.
- */
+/** Online only until saved. Here, not beside its schema, to keep zod out of storefront bundles. */
 export const DEFAULT_PAYMENT_OPTIONS: PaymentOptions = {
   cod: { offer: "off", feeRupees: 0 },
   partial: { offer: "off", feeRupees: 0, advanceKind: "PERCENT", advanceValue: 20 },
@@ -33,12 +23,11 @@ export const DEFAULT_PAYMENT_OPTIONS: PaymentOptions = {
 
 export type Advance = { kind: AdvanceKind; value: number }
 
-/** Whether a way of paying is shown to this viewer. */
 export function offered(offer: Offer, staff: boolean): boolean {
   return offer === "everyone" || (offer === "staff" && staff)
 }
 
-/** What paying this way adds to the order, rupees. Paying online never adds anything. */
+/** Rupees this method adds to the order; 0 for ONLINE. */
 export function methodFee(options: PaymentOptions, method: PaymentMethod): number {
   if (method === "COD") return options.cod.feeRupees
   if (method === "PARTIAL") return options.partial.feeRupees
@@ -59,13 +48,9 @@ export type Split = {
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
 /**
- * How an order's `total` - the method's own charge included - is paid.
- *
- * For PARTIAL the courier collects whole rupees, since nobody at a door has
- * paise: the balance is rounded down and the advance carries the rest, so a
- * 20% advance on ₹3,599 is ₹720 now and ₹2,879 on delivery. Null when the
- * total cannot be split - an advance that would cover all of it, or leave
- * under a rupee either side - and the order has to be paid another way.
+ * How an order's `total` (method fee included) is paid. For PARTIAL the courier
+ * collects whole rupees and the advance carries the paise. Null when either
+ * side would be under ₹1.
  */
 export function splitPayment(
   method: PaymentMethod,
@@ -83,29 +68,25 @@ export function splitPayment(
   return { payNow, dueOnDelivery }
 }
 
-/** "20%" or "₹500": the advance as the console set it. */
+/** "20%" or "₹500". */
 export function advanceLabel(advance: Advance): string {
   return advance.kind === "PERCENT" ? `${advance.value}%` : formatMoney(advance.value)
 }
 
-/** How the console names an order's way of paying. */
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   ONLINE: "Paid online",
   PARTIAL: "Advance + on delivery",
   COD: "Cash on delivery",
 }
 
-/** The same, for a table column. */
+/** For a table column. */
 export const PAYMENT_METHOD_SHORT: Record<PaymentMethod, string> = {
   ONLINE: "Online",
   PARTIAL: "Advance + COD",
   COD: "COD",
 }
 
-/**
- * What to call a status where its own label would mislead: "Paid" on an
- * order that has only had its advance paid. Undefined leaves the label as is.
- */
+/** "Advance paid" for a PAID partial order; undefined keeps the usual label. */
 export function statusLabelFor(status: string, method: PaymentMethod): string | undefined {
   return status === "PAID" && method === "PARTIAL" ? "Advance paid" : undefined
 }
@@ -115,10 +96,7 @@ export function statusLabelFor(status: string, method: PaymentMethod): string | 
 const charge = (rupees: number) =>
   rupees > 0 ? `costs ${formatMoney(rupees)} extra` : "costs nothing extra"
 
-/**
- * How to pay, as the FAQ and the terms state it. Only what every customer is
- * offered is mentioned: an option on test with staff changes nothing here.
- */
+/** How to pay, for the FAQ and terms. Staff-only options are not mentioned. */
 export function paymentCopy(options: PaymentOptions): { faq: string; terms: string } {
   const cod = options.cod.offer === "everyone"
   const partial = options.partial.offer === "everyone"
@@ -140,8 +118,7 @@ export function paymentCopy(options: PaymentOptions): { faq: string; terms: stri
     )
   }
   if (cod) {
-    // Everywhere else the dispatch promise runs from payment, which a
-    // cash-on-delivery order has none of until the door.
+    // Elsewhere dispatch runs from payment; COD has none until the door.
     onDelivery.push(
       `${partial ? "Or pay" : "You can also pay"} the whole amount to the courier on delivery, which ${charge(options.cod.feeRupees)}; those orders are dispatched within ${siteConfig.promise.dispatchHours} hours of being placed.`,
     )

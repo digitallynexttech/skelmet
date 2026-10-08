@@ -1,14 +1,8 @@
 import { isLive, isPostSlug } from "@/features/blog/blog"
 import type { ManagedPost, PostStatus } from "@/features/blog/hooks/use-blog"
 
-/**
- * Turning what Sanity holds into what the console's Blog page lists. Pure, so
- * every rule about a post's state is tested without Sanity.
- *
- * Sanity keeps a post as up to two documents: the published one under its id,
- * and a draft under "drafts.<id>" - the only one there is until the post is
- * first published, and afterwards the edits not yet published.
- */
+// Sanity documents into the console's post list, as pure functions. A post is up to two documents:
+// the published one under its id, and unpublished edits under "drafts.<id>".
 
 /** A post document, draft or published, with the fields the console needs. */
 export type RawPost = {
@@ -28,11 +22,7 @@ const DRAFT = "drafts."
 
 export const draftIdOf = (id: string) => `${DRAFT}${id}`
 
-/**
- * What a draft still needs before it may be published. The Studio checks the
- * same things on its own Publish button; publishing from the console goes
- * round the Studio, so they are checked here.
- */
+/** What a draft still needs. Repeats the Studio's checks, since the console publishes round it. */
 export function missingFor(post: RawPost): string[] {
   const missing: string[] = []
   if (!post.title?.trim()) missing.push("a title")
@@ -75,8 +65,7 @@ export function managedPost(
     category: latest.category ?? null,
     author: latest.author ?? null,
     status,
-    // The date in force is the published document's; a draft's is what it
-    // would be published with.
+    // The published document's date is the one in force.
     publishedAt: (published ?? latest).publishedAt ?? null,
     hasChanges: Boolean(draft && published),
     missing: draft ? missingFor(draft) : [],
@@ -84,11 +73,7 @@ export function managedPost(
   }
 }
 
-/**
- * Every post, newest edit first. Documents of Sanity's other namespaces -
- * "versions.<release>.<id>", which the free plan does not have - are not posts
- * of their own and are left out.
- */
+/** Every post, newest edit first. Other namespaces ("versions.<release>.<id>") are left out. */
 export function managedPosts(docs: RawPost[], now: number = Date.now()): ManagedPost[] {
   const pairs = new Map<string, { draft: RawPost | null; published: RawPost | null }>()
   for (const doc of docs) {

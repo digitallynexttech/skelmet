@@ -12,26 +12,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-/**
- * Deliberately in the (auth) group, not (app).
- *
- * The gate that sends people here lives in the (app) layout, so a page inside
- * that layout would be redirected to itself forever. Sitting beside /login
- * also matches what this is: a door, not a console screen.
- */
+// In (auth), not (app): the (app) layout redirects here, so inside it this would loop.
 export default async function ChangePasswordPage({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string }>
 }) {
-  // Live, not the token's snapshot: whether the password is temporary is
-  // read from the database, as the guards read it.
+  // From the database, not the token, as the guards read it.
   const session = await staffSession()
   if (!session?.user?.email) redirect("/login?next=/change-password")
 
   const { next } = await searchParams
-  // Only ever a console path, so a crafted ?next= cannot bounce someone
-  // off-site after they authenticate (features/account/lib/safe-next.ts).
+  // Console paths only: no off-site redirect via ?next=.
   const safeNext = safeNextPath(next)
   const forced = session.user.mustChangePassword
 

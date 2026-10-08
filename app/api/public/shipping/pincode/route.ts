@@ -5,11 +5,7 @@ import { withErrorHandler } from "@/server/api-handler"
 
 export const dynamic = "force-dynamic"
 
-/**
- * The product page's and checkout's delivery check, and checkout's shipping
- * fee: `?pincode=110044&units=2`. Public, so rate-limited: each miss in the
- * cache is a call to Shiprocket on the shop's account.
- */
+// Delivery check and shipping fee: `?pincode=110044&units=2`. Each cache miss calls Shiprocket.
 export const GET = withErrorHandler(async (req) => {
   rateLimit(`pincode:${clientIp(req.headers)}`, 30, 10 * 60_000)
   const params = req.nextUrl.searchParams

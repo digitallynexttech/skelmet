@@ -7,13 +7,9 @@ import { Check, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * A button that opens a short list of actions: Export, More actions, the
- * column picker. The keyboard works as it does in a native menu - arrows,
- * Home and End move, Escape closes and puts focus back on the button.
- *
- * The panel hangs off the button, and is nudged sideways when that would put
- * any of it off the screen: on a phone the button can sit anywhere in a
- * wrapped row, and a panel past the edge would be cut off by the page.
+ * A button opening a short list of actions, with native-menu keys (arrows, Home/End, Escape
+ * refocuses the button). The panel is nudged sideways to stay on screen, so it never widens the
+ * page.
  */
 
 const MenuContext = React.createContext<(refocus?: boolean) => void>(() => {})
@@ -35,9 +31,8 @@ export function Menu({
   label: string
   button: React.ReactNode
   buttonClassName?: string
-  /** Which edge of the button the panel lines up with. */
   align?: "start" | "end"
-  /** Called as the menu opens, for a menu whose items depend on that moment. */
+  /** For a menu whose items depend on the moment it opens. */
   onOpen?: () => void
   className?: string
   children: React.ReactNode
@@ -146,7 +141,7 @@ export function Menu({
 const itemClass =
   "flex w-full items-center gap-2.5 rounded-sm px-3 py-2 text-left text-[13.5px] text-ash outline-none transition-colors hover:bg-white/[0.07] hover:text-bone focus-visible:bg-white/[0.07] focus-visible:text-bone disabled:pointer-events-none disabled:opacity-40"
 
-/** An action. The menu closes once it has run. */
+/** Closes the menu, then runs. */
 export function MenuItem({
   icon: Icon,
   onSelect,
@@ -157,7 +152,6 @@ export function MenuItem({
   icon?: LucideIcon
   onSelect: () => void
   disabled?: boolean
-  /** Shown muted on the right. */
   hint?: React.ReactNode
   children: React.ReactNode
 }) {
@@ -180,7 +174,6 @@ export function MenuItem({
   )
 }
 
-/** Another page. */
 export function MenuLink({
   icon: Icon,
   href,
@@ -199,7 +192,7 @@ export function MenuLink({
   )
 }
 
-/** One of a set, as in a select: ticked while it is the current one. */
+/** One of a set, as in a select. */
 export function MenuOption({
   checked,
   onSelect,
@@ -236,7 +229,7 @@ export function MenuOption({
   )
 }
 
-/** A setting that stays open on change, so several can be flipped in a row. */
+/** Leaves the menu open, so several can be flipped in a row. */
 export function MenuCheckbox({
   checked,
   onChange,
@@ -270,7 +263,6 @@ export function MenuCheckbox({
   )
 }
 
-/** A heading over a group of items, or a line saying what they act on. */
 export function MenuLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-dim px-3 pt-1.5 pb-1 font-mono text-[10.5px] tracking-[0.14em] uppercase">

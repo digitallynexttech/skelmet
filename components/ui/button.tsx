@@ -11,13 +11,10 @@ const buttonVariants = cva(
       variant: {
         primary:
           "bg-gradient-to-r from-blaze to-ember text-void shadow-[0_14px_40px_rgb(255_90_31_/_0.34)] hover:shadow-[0_16px_48px_rgb(255_90_31_/_0.46)]",
-        // Primary's gradient and glow in whatever colour an ancestor sets as
-        // --tint and --tint-to: the lineup cards each dress it in their own
-        // colourway.
+        // Primary's look in an ancestor's --tint / --tint-to.
         tint: "bg-gradient-to-r from-(--tint) to-(--tint-to) text-void shadow-[0_14px_40px_color-mix(in_oklab,var(--tint)_34%,transparent)] hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--tint)_46%,transparent)]",
         accent: "bg-acid text-void hover:bg-[#e2ff6a]",
-        // A shade deeper than --color-violet: bone on the brand violet is 4.3:1,
-        // under the 4.5 small text needs; this is 4.9.
+        // Deeper than --color-violet so bone text passes 4.5:1 contrast.
         violet: "bg-[#6a4bf2] text-bone hover:bg-violet",
         light: "bg-bone text-void hover:bg-white",
         ghost:

@@ -48,7 +48,7 @@ const when = (iso: string | null) =>
       })
     : "-"
 
-/** A moment as a datetime-local input writes it: the clock on the wall here, no zone. */
+/** A datetime-local value: local wall-clock time, no zone. */
 function localInput(date: Date): string {
   const p = (n: number) => String(n).padStart(2, "0")
   return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}T${p(date.getHours())}:${p(date.getMinutes())}`
@@ -65,13 +65,7 @@ function tomorrowMorning(): string {
 /** The Studio, open on one post. */
 const studioLink = (id: string) => `${STUDIO_PATH}/structure/post;${id}`
 
-/**
- * The blog, from the desk it is released from. Posts are written in the
- * Studio; here each one is published, given a time to go live, or taken down.
- *
- * Scheduling is the reason this page exists: a scheduled post is published
- * with a date still to come, and the site shows it from that moment on.
- */
+/** Publishes, schedules or takes down posts written in the Studio. */
 export function PostManager() {
   const [filter, setFilter] = React.useState<PostStatus | "ALL">("ALL")
   const [scheduling, setScheduling] = React.useState<ManagedPost | null>(null)

@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The cart's coupon check must not tell a guesser which codes exist, and an
- * edit must keep to the same 90% rule a new coupon does.
- */
-
 const mocks = vi.hoisted(() => ({
   db: {
     coupon: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn() },

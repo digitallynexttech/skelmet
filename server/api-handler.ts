@@ -10,31 +10,22 @@ import "@/server/zod-messages"
 type Ctx<P> = { params: P }
 type Handler<P> = (req: NextRequest, ctx: Ctx<P>) => Promise<NextResponse> | NextResponse
 
-/**
- * The wrapper owns error mapping. A local try/catch inside a route hides the
- * envelope, so routes never have one (§7).
- *
- * Dynamic routes MUST pass the param type or `params.id` is `string | undefined`
- * under noUncheckedIndexedAccess and the build fails:
- *
- *   export const PATCH = withErrorHandler<{ id: string }>(async (req, { params }) => …)
- */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/**
- * Every `[id]` in this API is a uuid primary key. Anything else cannot name a
- * row, and passed on it made Postgres refuse the query - a 500 for what is
- * simply a page that does not exist.
- */
+// Every `[id]` is a uuid: anything else is a 404, not a Postgres 500.
 function badId(params: unknown): boolean {
   const id = (params as { id?: unknown } | null)?.id
   return typeof id === "string" && !UUID.test(id)
 }
 
+/**
+ * Owns error mapping, so routes have no try/catch. Dynamic routes must pass the
+ * param type: `withErrorHandler<{ id: string }>(...)`.
+ */
 export function withErrorHandler<P = Record<string, never>>(handler: Handler<P>) {
   return async (req: NextRequest, ctx: { params: Promise<P> } | Ctx<P>) => {
     try {
-      // Next 16 hands route params in as a promise.
+      // Next 16 passes params as a promise.
       const raw = (ctx as { params: Promise<P> }).params
       const params = raw instanceof Promise ? await raw : ((raw ?? {}) as P)
       if (badId(params)) {

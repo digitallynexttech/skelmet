@@ -2,11 +2,6 @@ import type { LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-/**
- * One figure on a card: the dashboard's orders today, a customer's total
- * spent, a code's discount given. A label in words over the figure, and an
- * optional line saying what it counts.
- */
 export function StatTile({
   label,
   hint,
@@ -18,7 +13,7 @@ export function StatTile({
   /** What the figure includes, under it. */
   hint?: React.ReactNode
   icon?: LucideIcon
-  /** Text colour for the icon. */
+  /** Text colour class for the icon. */
   tone?: string
   children: React.ReactNode
 }) {

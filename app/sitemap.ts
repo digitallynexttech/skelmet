@@ -6,14 +6,8 @@ import { getBlogPosts } from "@/features/blog/server/sanity"
 import { PRODUCTS } from "@/features/catalog/catalog"
 import { POLICIES } from "@/features/policies/policies"
 
-/**
- * When each page's content last changed, bumped by hand when it does.
- *
- * `new Date()` used to stamp every URL with the moment of the request, telling
- * crawlers that every page changed every time they asked - which teaches them
- * to ignore the field altogether. Policies carry their own date, the one
- * printed at the top of the page.
- */
+// When each page's content last changed: bump by hand. Never `new Date()`, or crawlers
+// learn to ignore lastModified. Policies carry their own date.
 const UPDATED = {
   home: "2026-09-28",
   about: "2026-09-28",
@@ -24,16 +18,14 @@ const UPDATED = {
   product: "2026-09-28",
 }
 
-/** Rebuilt at most once an hour, which is how soon a new post is listed. */
+// Hourly: how soon a new post is listed.
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const url = (path: string) => `${siteConfig.url}${path}`
   const on = (iso: string) => new Date(`${iso}T00:00:00Z`)
 
-  // The blog, and each post with the date Sanity last saw it change. None
-  // of it is listed while there are no posts, and a Sanity that cannot be
-  // reached costs the sitemap its posts, not the rest of it.
+  // An unreachable Sanity drops only the posts, not the sitemap.
   let posts: BlogListItem[] = []
   try {
     posts = await getBlogPosts()

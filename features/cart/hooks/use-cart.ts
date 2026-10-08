@@ -5,16 +5,7 @@ import { persist } from "zustand/middleware"
 
 import { FLAME_SKULL_MOUNT, getProduct, type ColourwayId } from "@/features/catalog/catalog"
 
-/**
- * Guest cart.
- *
- * Deviation from §2, deliberate and temporary: until Postgres is wired up the
- * cart is client-owned and persisted to localStorage, so the storefront is
- * usable end to end today. When the database lands this file becomes a
- * TanStack Query hook over `/api/cart`, `features/cart/server/cart.service.ts`
- * and the routes are already written against that shape, and the component
- * API below (`items`, `add`, `setQty`, `remove`, `totals`) does not change.
- */
+// Guest cart, client-owned in localStorage: a deliberate deviation from §2.
 
 export type CartLine = {
   /** `<productSlug>:<colourway>`, stable, so quantity merges rather than duplicates. */
@@ -32,50 +23,32 @@ export type CartLine = {
 export type CartTotals = {
   itemCount: number
   subtotal: number
-  /** The coupon's reduction, which is the whole discount now. */
+  /** Equal to `couponOff` today: the coupon is the only discount. */
   discount: number
-  /** The coupon's share of `discount`, so a screen can name it separately. */
   couponOff: number
   shipping: number
-  /** What the way of paying adds - the cash-on-delivery charge. */
+  /** The cash-on-delivery charge. */
   paymentFee: number
   total: number
 }
 
 type CartState = {
   items: CartLine[]
-  /**
-   * The code accepted in the cart drawer, so checkout can send it without the customer
-   * typing it twice. The value is a claim, never an authority - checkout
-   * re-validates it against the database and re-prices from scratch, so a
-   * hand-edited localStorage entry buys nothing.
-   */
+  /** The code accepted in the cart drawer. A claim only: checkout re-validates it. */
   couponCode: string | null
-  /** A colourway of a product, the Flame Skull's unless another is named. */
+  /** The Flame Skull unless another product is named. */
   add: (colourway: ColourwayId, qty?: number, productSlug?: string) => void
   setQty: (id: string, qty: number) => void
   remove: (id: string) => void
   setCoupon: (code: string | null) => void
-  /**
-   * Brings every line up to the live price, keyed by SKU. A line keeps the
-   * price it was added at, which is the registry's - and an admin can change
-   * the database price that checkout actually charges. The cart drawer asks
-   * for the live prices when it opens and the checkout page reads them on the
-   * server; both hand them in here, so the total on screen is the total that
-   * gets charged.
-   */
+  /** Brings lines up to the live database prices, by SKU, so the total shown is the one charged. */
   syncPrices: (prices: Record<string, string>) => void
   clear: () => void
 }
 
 const MAX_QTY = 9
 
-/**
- * A line for `qty` of one colourway of a product, at the registry price - the
- * cart's own lines, and the single line Buy it now checks out without
- * touching the cart. The Flame Skull's unless another product is named, as
- * every line was before there were two.
- */
+/** A line at the registry price, for the cart or Buy now. The Flame Skull unless named. */
 export function lineFor(
   colourwayId: string,
   qty: number,
@@ -151,15 +124,8 @@ export const useCart = create<CartState>()(
 )
 
 /**
- * Pure pricing, mirrored by `features/cart/server/cart-pricing.ts` so the server
- * is the authority at checkout and this is only ever a preview.
- */
-/**
- * Mirrors `priceCart` in features/cart/server/cart-pricing.ts deliberately,
- * including the clamp: the two are the same arithmetic on purpose so the
- * number on screen matches the one the server charges. This copy is a preview
- * only - checkout recomputes from the database and can disagree, and when it
- * does the server wins.
+ * A preview: the same arithmetic as `priceCart` (features/cart/server/cart-pricing.ts),
+ * clamp included, so the screen matches the charge. The server wins.
  */
 export function calculateTotals(
   items: CartLine[],
@@ -168,7 +134,7 @@ export function calculateTotals(
   paymentFee = 0,
 ): CartTotals {
   const itemCount = items.reduce((n, line) => n + line.qty, 0)
-  // In paise, as the server sums it, so the preview and the charge agree.
+  // Summed in paise, as the server does.
   const subtotal =
     items.reduce((sum, line) => sum + Math.round(Number(line.unitPrice) * 100) * line.qty, 0) / 100
 
@@ -176,9 +142,8 @@ export function calculateTotals(
   // Never past the subtotal, so a coupon cannot make an order negative.
   const discount = Math.min(subtotal, coupon)
 
-  // From the pincode check at checkout; 0 until a pincode has been checked.
+  // 0 until checkout has checked a pincode.
   const shipping = Math.max(0, Math.round(shippingFee))
-  // The charge for the way of paying chosen at checkout; 0 anywhere else.
   const fee = Math.max(0, Math.round(paymentFee))
 
   return {
@@ -192,7 +157,7 @@ export function calculateTotals(
   }
 }
 
-/** Reads the live count without re-rendering on unrelated cart changes. */
+/** Re-renders only when the count changes. */
 export function useCartCount(): number {
   return useCart((state) => state.items.reduce((n, line) => n + line.qty, 0))
 }

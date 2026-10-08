@@ -16,25 +16,15 @@ const GRANTED = { ad_Storage: "granted", analytics_Storage: "granted" }
 const DENIED = { ad_Storage: "denied", analytics_Storage: "denied" }
 
 /**
- * Microsoft Clarity - heatmaps and session recordings - for visitors who
- * accepted cookies, and nobody else.
- *
- * It used to load for everyone with its consent API set to "denied", which
- * keeps Clarity's own first-party cookies off but not the ones its tag sets
- * on clarity.ms and bing.com (CLID, MUID and others): eight third-party
- * cookies on a visitor who had not answered, contrary to what the cookie
- * card says. So the tag is not loaded at all until Accept. Taking an Accept
- * back turns Clarity's cookies off for the rest of that page, and it does not
- * load on the next.
- *
- * Forms and pages carrying a name, phone, email or address are marked
- * data-clarity-mask, so recordings show their shape but not what was typed.
+ * Loads unless the saved choice is "denied" (so also before any choice); with "denied"
+ * it never loads, as its tag sets third-party cookies (CLID, MUID) even then.
+ * Personal details are hidden from recordings with data-clarity-mask.
  */
 export function MicrosoftClarity({ id }: { id: string }) {
   const hydrated = useHydrated()
   const consent = useConsent((s) => s.consent)
   const granted = hydrated && consent !== "denied"
-  // Once loaded it stays loaded for this page; only its consent can change.
+  // Once loaded it stays for this page; only its consent can change.
   const [load, setLoad] = React.useState(false)
   if (granted && !load) setLoad(true)
 

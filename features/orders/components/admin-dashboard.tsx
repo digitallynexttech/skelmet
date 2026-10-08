@@ -89,7 +89,7 @@ export function AdminDashboard() {
       <div className="bg-carbon rounded-md border border-white/[0.09]">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
           <h2 className="text-bone text-[15px] font-semibold">Latest orders</h2>
-          {/* The latest of every status, paid or not, so the full list it continues. */}
+          {/* Recent orders include unpaid ones, so link to All orders. */}
           <Link
             href="/admin/orders/all"
             className="text-ash hover:text-bone flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
@@ -117,7 +117,6 @@ export function AdminDashboard() {
                   <span className="text-ash min-w-0 flex-1 truncate text-[13.5px]">
                     {order.customer} · {order.location}
                   </span>
-                  {/* The same two statuses the order list leads with. */}
                   <ToneBadge tone={PAYMENT_STATES[order.payment].tone}>
                     {PAYMENT_STATES[order.payment].label}
                   </ToneBadge>

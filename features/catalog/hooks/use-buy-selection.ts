@@ -2,14 +2,11 @@
 
 import { create } from "zustand"
 
-/**
- * The colourway and quantity picked on the product page, for the phone's
- * sticky bar to buy - it sits outside the buy panel that owns them.
- */
+// The product page's pick, for the phone's sticky bar, which sits outside the buy panel.
 type BuySelection = {
   colourway: string | null
   qty: number
-  /** The picked colourway's live price, so the bar quotes what Buy now charges. */
+  /** Live price, so the bar quotes what Buy now charges. */
   price: string | null
   /** Shipping is free everywhere (Settings > Shipping charge at 0%). */
   freeShipping: boolean | null

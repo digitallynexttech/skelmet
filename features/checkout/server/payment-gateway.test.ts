@@ -4,19 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { toPaise } from "@/features/checkout/server/payment-gateway"
 
-/**
- * The signature checks are the only thing standing between a POST and a free
- * order, so they get tested for what they REFUSE rather than what they accept.
- *
- * No database here, so the keys come from .env - the fallback every setting
- * has. What Settings adds on top is covered in runtime-settings.test.ts.
- */
+// Signatures are tested for what they REFUSE. No database: keys come from .env.
 const KEY_SECRET = "test-key-secret"
 const WEBHOOK_SECRET = "test-webhook-secret"
 
 const original = { ...process.env }
 
-/** A fresh copy, so the env cache is read again after a test changes it. */
+/** A fresh import, so the env cache is re-read. */
 async function gateway() {
   vi.resetModules()
   return import("@/features/checkout/server/payment-gateway")
@@ -79,7 +73,6 @@ describe("verifyPaymentSignature", () => {
   })
 
   it("rejects a signature lifted from a different order", async () => {
-    // Replaying someone else's valid pair must not authorise this one.
     const gw = await gateway()
     expect(
       await gw.verifyPaymentSignature(
@@ -94,8 +87,7 @@ describe("verifyPaymentSignature", () => {
   })
 
   it("rejects empty and malformed signatures without throwing", async () => {
-    // timingSafeEqual throws on a length mismatch, so the length pre-check
-    // matters as much as the comparison.
+    // timingSafeEqual throws on a length mismatch.
     const gw = await gateway()
     for (const signature of ["", "deadbeef", "z".repeat(64)]) {
       expect(
@@ -108,8 +100,7 @@ describe("verifyPaymentSignature", () => {
   })
 
   it("checks against the account the payment was opened on, which has no keys here", async () => {
-    // .env holds test keys only. A payment recorded as live must not be
-    // waved through with the test secret.
+    // .env holds test keys only.
     const gw = await gateway()
     expect(
       await gw.verifyPaymentSignature(
@@ -135,7 +126,7 @@ describe("verifyWebhookSignature", () => {
   })
 
   it("rejects when the body has been re-serialised", async () => {
-    // The whole reason the route reads text() and never re-stringifies.
+    // Why the route reads text() and never re-stringifies.
     const gw = await gateway()
     const reserialised = JSON.stringify(JSON.parse(body), null, 2)
     expect(await gw.verifyWebhookSignature(reserialised, sign(body))).toBe(false)
@@ -147,7 +138,6 @@ describe("verifyWebhookSignature", () => {
   })
 
   it("FAILS CLOSED when no webhook secret is configured", async () => {
-    // Unset, every delivery must be refused - never waved through.
     delete process.env.PAYMENT_WEBHOOK_SECRET
     const gw = await gateway()
     expect(await gw.verifyWebhookSignature(body, sign(body))).toBe(false)

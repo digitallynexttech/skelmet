@@ -12,7 +12,6 @@ import type {
 } from "@/features/settings/schemas/runtime-settings.schema"
 import { cn } from "@/lib/utils"
 
-/** A card on the settings screen. */
 export function Panel({
   title,
   description,
@@ -40,7 +39,6 @@ export function Panel({
   )
 }
 
-/** Where a value in use comes from: saved here, the server's .env, or nowhere. */
 export function SourceBadge({
   source,
   unreadable,
@@ -54,7 +52,7 @@ export function SourceBadge({
   return <Badge variant="ember">Not set</Badge>
 }
 
-/** A labelled field, with the label tied to its input and room for a hint or an error. */
+/** Error and hint get ids `${id}-error` / `${id}-hint` for aria-describedby. */
 export function SettingField({
   id,
   label,
@@ -92,11 +90,7 @@ export function SettingField({
   )
 }
 
-/**
- * A secret is never filled in: the saved one stays on the server. The field
- * starts empty, says what is in place, and only what is typed into it is
- * sent - to replace that.
- */
+/** Always starts empty (the saved secret stays on the server); only a typed value is sent. */
 export function SecretInput({
   id,
   value,
@@ -123,7 +117,7 @@ export function SecretInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        // Stops the browser offering, or quietly filling in, the console's own login.
+        // Stops password managers filling in the console's own login.
         autoComplete="new-password"
         data-1p-ignore
         data-lpignore="true"
@@ -151,7 +145,6 @@ export function SecretInput({
   )
 }
 
-/** A value to paste somewhere else - a webhook URL - with a copy button. */
 export function CopyLine({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = React.useState(false)
 
@@ -168,7 +161,7 @@ export function CopyLine({ label, value }: { label: string; value: string }) {
               setCopied(true)
               window.setTimeout(() => setCopied(false), 1600)
             } catch {
-              // No clipboard access (an http page): the value is on screen to select.
+              // No clipboard on an http page; the value is on screen to select.
             }
           }}
         >
@@ -184,7 +177,7 @@ export function CopyLine({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** The first message zod gives for each field, keyed by the field's own name. */
+/** First zod message per field, keyed by the last path segment. */
 export function fieldErrors(issues: Array<{ path: PropertyKey[]; message: string }>) {
   const out: Record<string, string> = {}
   for (const issue of issues) {
@@ -194,7 +187,6 @@ export function fieldErrors(issues: Array<{ path: PropertyKey[]; message: string
   return out
 }
 
-/** Said once under a form with secrets in it. */
 export function SecretsNote() {
   return (
     <p className="text-dim text-[12.5px] leading-[1.5]">
@@ -204,7 +196,6 @@ export function SecretsNote() {
   )
 }
 
-/** A bulleted list of what a save will change, for its confirmation. */
 export function ChangeList({ lines, children }: { lines: string[]; children?: React.ReactNode }) {
   return (
     <>

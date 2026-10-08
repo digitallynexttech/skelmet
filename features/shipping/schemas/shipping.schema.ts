@@ -16,11 +16,7 @@ export const pincodeSchema = z.object({
     .string()
     .trim()
     .regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit pincode"),
-  /**
-   * How many mounts the parcel holds, which sets its size and so its price.
-   * One on the product page; the cart's count at checkout. The ceiling is
-   * the largest order checkout accepts: 20 lines of 9.
-   */
+  /** Mounts in the parcel, which sets its price. Max is checkout's largest order: 20 lines of 9. */
   units: z.coerce.number().int().min(1).max(180).default(1),
 })
 

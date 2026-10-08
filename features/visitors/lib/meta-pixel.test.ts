@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The pixel against a stand-in browser: what it sends, and above all what it
- * does not send without an Accept that covers it. The module keeps whether
- * it has loaded, so each test imports a fresh copy.
- */
+// The module remembers whether it loaded, so each test imports a fresh copy.
 
 type Queue = unknown[][]
 const g = globalThis as unknown as Record<string, unknown>
@@ -118,7 +114,7 @@ describe("the pixel", () => {
     expect(appended).toEqual([
       expect.objectContaining({ src: "https://connect.facebook.net/en_US/fbevents.js" }),
     ])
-    // Meta's automatic setup (button presses, page markup, form fields) off, before init.
+    // autoConfig off, before init.
     expect(queue().slice(0, 2)).toEqual([
       ["set", "autoConfig", false, "1023005070753961"],
       ["init", "1023005070753961"],
@@ -127,7 +123,7 @@ describe("the pixel", () => {
       ["track", "PageView"],
       ["track", "PageView"],
     ])
-    // Left on: route changes are Meta's to report, from history.pushState.
+    // Left on: Meta reports route changes itself.
     expect(g.fbq).not.toHaveProperty("disablePushState")
   })
 
@@ -157,7 +153,7 @@ describe("the pixel", () => {
   })
 
   it("keeps the first page view of a new Accept", async () => {
-    // The order MetaPixel runs them in on the page where the visitor accepts.
+    // The order MetaPixel runs them in.
     const pixel = await load({ consent: "granted", revision: 2 })
     pixel.pixelConsent(true)
     pixel.pixelPageView()

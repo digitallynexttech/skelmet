@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The limiter is only as good as the key it is given. These pin down that
- * the key is an address the client cannot choose, and that the map cannot be
- * grown without bound by a flood of new keys.
- */
-
 async function limiter() {
   vi.resetModules()
   return import("@/lib/rate-limit")
@@ -59,7 +53,7 @@ describe("rateLimit", () => {
     const { MAX_BUCKETS, rateLimit, rateLimitBucketCount } = await limiter()
     for (let i = 0; i < MAX_BUCKETS + 250; i++) rateLimit(`flood:${i}`, 1, 60_000)
     expect(rateLimitBucketCount()).toBe(MAX_BUCKETS)
-    // The first key was evicted, so it has a fresh window; the newest has not.
+    // The first key was evicted; the newest was not.
     expect(() => rateLimit("flood:0", 1, 60_000)).not.toThrow()
     expect(() => rateLimit(`flood:${MAX_BUCKETS + 249}`, 1, 60_000)).toThrow()
   })

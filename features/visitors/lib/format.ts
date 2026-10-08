@@ -1,8 +1,3 @@
-/**
- * How the console writes visitor facts. Client-safe, shared by the Visitors
- * screens and the abandoned carts screen.
- */
-
 /** "42s", "4m 12s", "1h 03m". */
 export function duration(seconds: number): string {
   const s = Math.max(0, Math.round(seconds))
@@ -32,7 +27,7 @@ export function ago(iso: string, now = Date.now()): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
 }
 
-/** "Samsung SM-S911B · Android 14 · Chrome 128", from whatever is known. */
+/** "Samsung SM-S911B · Android 14 · Chrome 128". */
 export function deviceLine(v: {
   deviceModel?: string | null
   os?: string | null
@@ -41,11 +36,7 @@ export function deviceLine(v: {
   return [v.deviceModel, v.os, v.browser].filter(Boolean).join(" · ") || "-"
 }
 
-/**
- * "Noida, Gautam Buddha Nagar, Uttar Pradesh" - city, district, state - or the
- * country code alone when that is all there is. A district named like its
- * city ("Jaipur, Jaipur") is said once.
- */
+/** City, district, state, or just the country. A district named like its city is said once. */
 export function placeLine(v: {
   city?: string | null
   district?: string | null
@@ -63,16 +54,12 @@ export function sourceLine(v: { source?: string | null; medium?: string | null }
   return v.medium ? `${v.source} / ${v.medium}` : v.source
 }
 
-/**
- * A WhatsApp chat with the number, the message typed in and left for staff
- * to read over and send. Indian mobiles only, which is all checkout accepts.
- */
+/** Indian mobiles only, which is all checkout accepts. The message is left for staff to send. */
 export function whatsappLink(phone: string, message: string): string {
   const digits = phone.replace(/\D/g, "").slice(-10)
   return `https://wa.me/91${digits}?text=${encodeURIComponent(message)}`
 }
 
-/** The name a visitor goes by in the console. */
 export function visitorName(v: {
   id: string
   name: string | null
@@ -81,6 +68,5 @@ export function visitorName(v: {
 }): string {
   if (v.name) return v.name
   if (v.email) return v.email
-  // The id's first characters, so two unnamed visitors can be told apart.
   return `${v.anonymous ? "Anonymous" : "Visitor"} #${v.id.slice(0, 6)}`
 }

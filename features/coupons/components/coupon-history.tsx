@@ -43,7 +43,6 @@ function termsText(t: CouponTerms | null): string {
   return `${off}${min}${max}`
 }
 
-/** What each log entry says, in words. */
 const ACTION: Record<string, string> = {
   "coupon:create": "Created",
   "coupon:update": "Edited",
@@ -95,16 +94,11 @@ function eventDetail(e: CouponEvent): string | null {
   return null
 }
 
-/**
- * One discount code, from the day it was made: each run it has had (it can
- * be renewed, year after year), the orders placed with it, and who did what
- * to it when. Opened from its row in Offers & codes.
- */
+/** One discount code's runs, orders and log. */
 export function CouponHistoryView({ code }: { code: string }) {
   const { data, isLoading, isError, error } = useCouponHistory(code)
 
-  // Until the code loads, the header has the name from the address. Codes
-  // are kept in capitals, and found whatever case the address has.
+  // The name from the URL until the code loads; codes are stored in capitals.
   const header = <PageHeader icon={Percent} parent={PARENT} title={code.toUpperCase()} />
 
   if (isLoading) {
@@ -176,7 +170,7 @@ export function CouponHistoryView({ code }: { code: string }) {
       header: "Uses",
       align: "right",
       value: (r) => r.uses ?? -1,
-      // Against that run's own limit, as the code counted them.
+      // Against that run's own limit.
       cell: (r) => (
         <span className="text-bone font-mono text-[13px]">
           {r.uses === null ? "-" : r.uses}
@@ -283,7 +277,6 @@ export function CouponHistoryView({ code }: { code: string }) {
       <PageHeader
         icon={Percent}
         parent={PARENT}
-        // The code's state beside its name, as Shopify puts an order's.
         title={
           <>
             {coupon.code}

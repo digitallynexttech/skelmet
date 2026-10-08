@@ -6,10 +6,7 @@ import { AppError } from "@/lib/errors"
 import { validationMessage } from "@/lib/validation-message"
 import "@/server/zod-messages"
 
-/**
- * Every service export returns an ActionResult. Expected failures `return fail(…)`
- * rather than throwing, Next redacts thrown messages in production (§7).
- */
+/** Services return this; expected failures `return fail(…)`, never throw (Next redacts thrown messages). */
 export type ActionResult<T> =
   { ok: true; data: T } | { ok: false; error: string; status: number; details?: unknown }
 
@@ -21,10 +18,7 @@ export function fail(message: string, details?: unknown, status = 400): ActionRe
   return { ok: false, error: message, status, details }
 }
 
-/**
- * Wraps a service body so an unexpected throw becomes a well-shaped failure
- * instead of a 500 with a redacted message.
- */
+/** Turns an unexpected throw into a well-shaped failure. */
 export async function runAction<T>(body: () => Promise<ActionResult<T>>): Promise<ActionResult<T>> {
   try {
     return await body()
@@ -33,9 +27,7 @@ export async function runAction<T>(body: () => Promise<ActionResult<T>>): Promis
       return fail(err.message, err.details, err.status)
     }
 
-    // Services parse their input inside this body, so a schema failure lands
-    // here rather than at the route wrapper. Map it, or every bad form field
-    // in the app reads as a 500.
+    // Services parse input in here, so map schema failures or they read as 500s.
     if (err instanceof ZodError) {
       return fail(validationMessage(err), flattenError(err), 422)
     }

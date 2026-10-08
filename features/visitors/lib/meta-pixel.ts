@@ -2,28 +2,8 @@ import { siteConfig } from "@/config/site"
 import { useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { acceptedNow, useConsent } from "@/features/visitors/hooks/use-consent"
 
-/**
- * Meta Pixel - the Facebook and Instagram ads tag - for visitors who accepted
- * cookies, and nobody else.
- *
- * As with Microsoft Clarity, nothing of Meta's loads until Accept: no script,
- * no request, no _fbp cookie. Meta's base code ends with a <noscript> image
- * that reports a page view without JavaScript; it is left out, because a
- * browser without JavaScript can never have answered the cookie card. Taking
- * an Accept back revokes the pixel for the rest of the page and deletes its
- * cookies, and it does not load on the next.
- *
- * Production builds only, like the other tags: a laptop running `pnpm dev` is
- * not a visitor, and an ad account fed its clicks would optimise for them.
- *
- * Meta's standard events, so ads can optimise for them with no setup in
- * Events Manager: PageView on every page (the first from here, the rest from
- * Meta's own script, which follows the route changes - see install), ViewContent on the product page,
- * AddToCart, InitiateCheckout, Purchase (once per order) and Lead (the Next
- * drop list). Amounts are rupees; content ids are SKUs.
- *
- * Browser-only: every export is called from an effect or an event handler.
- */
+// Meta Pixel, production only, browser-only. Runs on a current Accept or before any
+// choice (acceptedNow). No <noscript> image: a browser without JavaScript never sees the card.
 
 type Fbq = ((...args: unknown[]) => void) & {
   callMethod?: (...args: unknown[]) => void
@@ -41,7 +21,7 @@ declare global {
 }
 
 const SCRIPT = "https://connect.facebook.net/en_US/fbevents.js"
-/** Orders whose Purchase this browser has already reported, newest first. */
+/** Order numbers whose Purchase was already reported, newest first. */
 const PURCHASES_KEY = "skm.pixel.purchases"
 
 const enabled = () => process.env.NODE_ENV === "production" && Boolean(siteConfig.metaPixelId)
@@ -49,19 +29,14 @@ const enabled = () => process.env.NODE_ENV === "production" && Boolean(siteConfi
 const granted = () => acceptedNow(useConsent.getState())
 
 let installed = false
-/** Accept taken back on this page while the pixel was running. */
 let revoked = false
 
-/**
- * Meta's base code, as a function, run the first time anything is reported
- * with consent. Returns whether the pixel is running.
- */
+/** Meta's base code, run on the first event with consent. Returns whether the pixel runs. */
 function install(): boolean {
-  // Asked on every event, not once: an Accept can be taken back.
+  // Checked on every event: an Accept can be taken back.
   if (typeof window === "undefined" || !enabled() || !granted()) return false
   if (installed) return true
   if (!window.fbq) {
-    // The queue Meta's script empties when it arrives.
     const fbq = function (...args: unknown[]) {
       if (fbq.callMethod) fbq.callMethod(...args)
       else fbq.queue.push(args)
@@ -72,18 +47,14 @@ function install(): boolean {
     fbq.loaded = true
     fbq.version = "2.0"
     fbq.queue = []
-    // Left on: Meta's script reports each route change itself, from
-    // history.pushState. It keeps one PageView per page load from anyone else,
-    // so the site cannot report them.
+    // Meta's script reports route-change PageViews itself and drops ours, so it is left to.
     const script = document.createElement("script")
     script.async = true
     script.src = SCRIPT
     document.head.appendChild(script)
   }
-  // Meta's automatic setup off: it reports button presses with their text,
-  // reads page markup, and can pick up what is typed into a form. The privacy
-  // policy promises the pixel does not see what is typed at checkout, and that
-  // holds whatever is switched on in Events Manager. Before init, as Meta asks.
+  // autoConfig off, before init: the privacy policy promises the pixel never sees
+  // what is typed at checkout, whatever Events Manager has switched on.
   window.fbq("set", "autoConfig", false, siteConfig.metaPixelId)
   window.fbq("init", siteConfig.metaPixelId)
   installed = true
@@ -99,7 +70,7 @@ function track(event: string, params?: Record<string, unknown>, eventId?: string
 
 type Line = { sku: string; qty: number; unitPrice: string | number }
 
-/** Meta's product parameters for some lines: ids, quantities, value in rupees. */
+/** Content ids are SKUs; value is in rupees. */
 export function contentsOf(lines: Line[]) {
   const value = lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0)
   return {
@@ -112,12 +83,10 @@ export function contentsOf(lines: Line[]) {
   }
 }
 
-/** The page on screen. */
 export function pixelPageView(): void {
   track("PageView")
 }
 
-/** The product page. */
 export function pixelViewContent(product: { sku: string; name: string; price: string }): void {
   track("ViewContent", {
     content_ids: [product.sku],
@@ -128,13 +97,12 @@ export function pixelViewContent(product: { sku: string; name: string; price: st
   })
 }
 
-/** The basket that reached checkout: the cart, or the one line Buy it now sends. */
 export function pixelInitiateCheckout(lines: Line[]): void {
   if (lines.length === 0) return
   track("InitiateCheckout", contentsOf(lines))
 }
 
-/** A sign-up: the Next drop list. */
+/** A Next drop list sign-up. */
 export function pixelLead(name: string): void {
   track("Lead", { content_name: name })
 }
@@ -148,10 +116,7 @@ function reportedPurchases(): string[] {
   }
 }
 
-/**
- * An order placed, from its confirmation page. Once per order in this
- * browser: the page can be reloaded, or opened again from the email.
- */
+/** Once per order per browser: the confirmation page can be reloaded or reopened. */
 export function pixelPurchase(order: { number: string; total: string; items: Line[] }): void {
   if (!enabled() || !granted()) return
   const reported = reportedPurchases()
@@ -168,11 +133,7 @@ export function pixelPurchase(order: { number: string; total: string; items: Lin
   }
 }
 
-/**
- * Reports what goes into the cart: one AddToCart per change that adds, with
- * what it added. Not on load: the cart coming back out of localStorage is not
- * the visitor adding anything.
- */
+/** One AddToCart per change that adds. Not for the cart restored from storage on load. */
 export function watchCartForPixel(): () => void {
   let last: Map<string, number> | null = null
   const snapshot = (items: CartLine[]) => new Map(items.map((l) => [l.sku, l.qty]))
@@ -198,7 +159,7 @@ export function watchCartForPixel(): () => void {
   }
 }
 
-/** The pixel's cookies, on this host and each domain above it, where Meta may have set them. */
+// On this host and every parent domain, wherever Meta may have set them.
 function forgetCookies(): void {
   const parts = location.hostname.split(".")
   const domains = [""]
@@ -208,13 +169,8 @@ function forgetCookies(): void {
   }
 }
 
-/**
- * Meta holds back what it is asked while revoked and sends it all on the next
- * grant. Nothing of ours is asked then (install), so what it holds is its
- * own: the PageViews of route changes after Decline, which a later Accept
- * does not hand over. Before Meta's script has arrived the queue is still
- * the page's, and only what came after the revoke goes.
- */
+// Meta queues events while revoked and sends them all on grant. Drop those
+// (route-change PageViews after Decline) so a later Accept does not hand them over.
 function forgetHeldEvents(queue: ArrayLike<unknown>[]): void {
   let from = 0
   queue.forEach((call, i) => {
@@ -223,11 +179,7 @@ function forgetHeldEvents(queue: ArrayLike<unknown>[]): void {
   queue.splice(from)
 }
 
-/**
- * A change of mind on a page where the pixel is already running: taking
- * Accept back stops it and deletes its cookies; a new Accept after that
- * resumes it.
- */
+/** A change of mind while the pixel runs: revoke deletes its cookies, a new Accept resumes it. */
 export function pixelConsent(accepted: boolean): void {
   if (!installed || !window.fbq) return
   if (!accepted) {

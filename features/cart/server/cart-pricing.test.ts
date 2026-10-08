@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest"
 
 import { couponReduction, priceCart } from "@/features/cart/server/cart-pricing"
 
-/**
- * Pricing is the one pure module in the money path, and it is the authority -
- * checkout re-runs it against the database rather than trusting the browser.
- * Everything here is about what a customer is charged.
- */
 describe("priceCart", () => {
   const line = (unitPrice: string, qty: number) => ({ unitPrice, qty })
 
@@ -89,7 +84,6 @@ describe("couponReduction", () => {
   })
 
   it("accepts Decimal-like values without importing the Prisma runtime", () => {
-    // What Prisma actually hands back is an object with toString().
     const decimalish = {
       kind: "FLAT" as const,
       value: { toString: () => "250" },

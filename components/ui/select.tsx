@@ -6,16 +6,9 @@ import { Check, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * A select that obeys the palette.
- *
- * `<select>` draws its option list with the operating system, not the page:
- * on Windows that is a white panel with a blue highlight sitting in the middle
- * of a black console. Nothing in CSS reaches inside it, so the list is drawn
- * here instead.
- *
- * What the native control gives away by being replaced — keyboard support and
- * the accessibility tree — is put back explicitly: roles, arrow keys, Home and
- * End, Enter and Escape, and focus returned to the trigger on close.
+ * A select drawn by the page, since CSS cannot style a native `<select>`'s OS option list. The
+ * native keyboard and accessibility behaviour is rebuilt here: roles, arrows, Home/End,
+ * Enter/Escape, type-ahead, and focus back to the trigger on close.
  */
 
 export type SelectOption<T extends string> = {
@@ -42,19 +35,14 @@ export function Select<T extends string>({
   value: T
   options: SelectOption<T>[]
   onChange: (next: T) => void
-  /** Accessible name for the trigger. */
+  /** Accessible name for the trigger and list. */
   label: string
-  /**
-   * Shown while `value` matches no option. Without one, an unmatched value
-   * shows the first option, which is right for a filter that always has a
-   * choice and wrong for a form field nobody has answered yet.
-   */
+  /** Shown while `value` matches no option; without one, the first option shows. */
   placeholder?: string
-  /** Magenta border, as on an Input with aria-invalid. */
   invalid?: boolean
   /** sm: a filter in a toolbar rather than a form field. */
   size?: "md" | "sm"
-  /** Which way the list opens: up for a select at the foot of a table. */
+  /** "top" for a select at the foot of a table. */
   placement?: "bottom" | "top"
   className?: string
   /** Set by Field, which ties its label and message to the trigger. */
@@ -81,17 +69,12 @@ export function Select<T extends string>({
     return () => document.removeEventListener("mousedown", onDown)
   }, [open])
 
-  // Keep the focused row in view when arrowing past the panel's edge.
   React.useEffect(() => {
     if (!open) return
     list.current?.querySelectorAll("[role=option]")[focused]?.scrollIntoView({ block: "nearest" })
   }, [open, focused])
 
-  /**
-   * Opening puts the cursor on the current choice rather than the top. Done
-   * here rather than in an effect on `open`: setting state from an effect
-   * costs a second render every time the panel appears.
-   */
+  // Focuses the current choice here, not in an effect on `open`, to avoid a second render.
   function show() {
     setFocused(
       Math.max(
@@ -109,9 +92,7 @@ export function Select<T extends string>({
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
-    // Type-ahead, as a native select does: a letter moves to the next option
-    // starting with it. A long list - the 36 states at checkout - is otherwise
-    // a lot of arrowing.
+    // Type-ahead: a letter moves to the next option starting with it.
     if (e.key.length === 1 && e.key.trim() && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const letter = e.key.toLowerCase()
       const from = open ? focused : options.findIndex((o) => o.value === value)

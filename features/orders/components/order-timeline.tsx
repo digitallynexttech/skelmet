@@ -6,15 +6,8 @@ import type { PaymentMethod } from "@/features/checkout/payment-options"
 import type { OrderStatus } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
-/**
- * The happy path as a rail, because "where is it?" is a question about
- * PROGRESS and a single status badge does not answer it. A buyer looking at
- * "Paid" cannot tell whether that is one step from done or four.
- *
- * Only the forward flow is drawn. Cancelled, returned and refunded orders
- * leave it - a rail implies motion toward delivery, and drawing one under a
- * refund would promise a parcel that is not coming. The caller renders those.
- */
+// Forward flow only: the caller renders cancelled, returned and refunded orders,
+// since a rail would promise a parcel that is not coming.
 const FLOW = ["PAID", "PACKED", "SHIPPED", "DELIVERED"] as const
 
 const LABELS: Record<(typeof FLOW)[number], string> = {
@@ -24,11 +17,7 @@ const LABELS: Record<(typeof FLOW)[number], string> = {
   DELIVERED: "Delivered",
 }
 
-/**
- * The first step, by how the order is paid for: nothing has been paid on a
- * cash-on-delivery order, and only part of one with an advance, so neither
- * may read "Payment confirmed".
- */
+/** COD and PARTIAL must never read "Payment confirmed". */
 const FIRST_STEP: Record<PaymentMethod, string> = {
   ONLINE: LABELS.PAID,
   PARTIAL: "Advance paid",
@@ -41,7 +30,7 @@ export type TimelineDates = {
   deliveredAt: string | null
 }
 
-/** Short and unambiguous: "23 Sep". The year is almost never the question. */
+/** "23 Sep". */
 function formatDay(iso: string | null): string | null {
   if (!iso) return null
   const d = new Date(iso)
@@ -58,12 +47,10 @@ export function OrderTimeline({
   dates: TimelineDates
   paymentMethod?: PaymentMethod
 }) {
-  // PENDING sits before the rail entirely - nothing has happened yet.
-  // CONFIRMED is cash on delivery's first step, where PAID is everyone else's.
+  // PENDING is before the rail (-1); CONFIRMED is COD's first step.
   const reached = status === "CONFIRMED" ? 0 : (FLOW as readonly string[]).indexOf(status)
 
-  // Only PACKED has no timestamp of its own on the order, so it borrows the
-  // step's position rather than inventing a date.
+  // PACKED has no timestamp on the order.
   const at: Record<(typeof FLOW)[number], string | null> = {
     PAID: dates.placedAt,
     PACKED: null,

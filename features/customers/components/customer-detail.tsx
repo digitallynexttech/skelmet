@@ -19,12 +19,6 @@ import type { CustomerDetail, CustomerOrder } from "@/features/customers/server/
 import { apiFetch } from "@/lib/api-fetch"
 import type { OrderStatus } from "@/lib/constants"
 
-/**
- * One customer: who they are, where their parcels go, and what they have
- * bought. Reached from the customer list, which is the only way in - there
- * are no customer accounts, so nobody arrives here but staff.
- */
-
 const day = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -115,7 +109,7 @@ export function CustomerDetailView({ id }: { id: string }) {
       key: "total",
       header: "Total",
       align: "right",
-      // Money is a string on the wire; as text "1000" sorts below "2".
+      // Money arrives as a string: sort it as a number.
       value: (o) => Number(o.total),
       cell: (o) => (
         <span className="text-bone font-mono text-[13.5px]">
@@ -231,8 +225,7 @@ export function CustomerDetailView({ id }: { id: string }) {
               </span>
             </address>
           ) : (
-            // Possible: a customer row exists the moment an order is written,
-            // and an order that never reached payment carries no address.
+            // The address is saved only once an order is paid.
             <p className="text-dim text-[13.5px] leading-[1.6]">
               No address on file. It is saved with the first completed order.
             </p>

@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Changing your own password: it needs the current one, clears the temporary
- * flag, and ends every session opened with the old password.
- */
-
 const mocks = vi.hoisted(() => ({
   requireStaff: vi.fn(),
   findUnique: vi.fn(),

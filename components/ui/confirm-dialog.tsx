@@ -5,15 +5,7 @@ import * as React from "react"
 import { HeaderButton } from "@/components/ui/header-button"
 import { cn } from "@/lib/utils"
 
-/**
- * A yes/no dialog for an action worth pausing on.
- *
- * Built on <dialog>, so the browser handles the top layer, the backdrop and
- * the focus trap rather than a div pretending to be modal. showModal() also
- * gives Escape-to-close for free — but it fires a `cancel` event rather than
- * a click, so that is wired to onClose or Escape would dismiss the dialog
- * while React still believed it was open.
- */
+/** A yes/no dialog on native <dialog>: the browser handles top layer, backdrop and focus trap. */
 export function ConfirmDialog({
   open,
   title,
@@ -37,8 +29,7 @@ export function ConfirmDialog({
   onClose: () => void
 }) {
   const ref = React.useRef<HTMLDialogElement>(null)
-  // The sidebar keeps one of these on every admin page, so a fixed id would
-  // label a second dialog with the first one's title.
+  // Unique: the sidebar keeps one of these on every admin page.
   const titleId = React.useId()
 
   React.useEffect(() => {
@@ -52,7 +43,7 @@ export function ConfirmDialog({
     <dialog
       ref={ref}
       onCancel={(e) => {
-        // Escape closes it; let the parent know so its state agrees.
+        // Escape fires `cancel`, not a click: route it to onClose so React's state agrees.
         e.preventDefault()
         if (!pending) onClose()
       }}

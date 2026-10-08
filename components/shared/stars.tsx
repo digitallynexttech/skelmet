@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-/** Renders a 0–5 rating as filled/hollow stars. Rounds to the nearest half up. */
+/** A 0–5 rating as filled/hollow stars, rounded to the nearest whole star. */
 export function Stars({ rating, className }: { rating: number; className?: string }) {
   const filled = Math.round(rating)
   return (

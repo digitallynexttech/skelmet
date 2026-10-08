@@ -34,7 +34,7 @@ import { regionOf } from "@/lib/india"
 const VIEWS: Array<{ id: VisitorView; label: string }> = [
   { id: "all", label: "All" },
   { id: "known", label: "Accepted cookies" },
-  // Each anonymous row is one visit, not one person: the count says so.
+  // Each anonymous row is one visit, not one person.
   { id: "anonymous", label: "Anonymous visits" },
   { id: "contact", label: "With contact details" },
   { id: "cart", label: "Items in cart" },
@@ -52,10 +52,6 @@ const PERIODS = [
 // Stable, since useUrlState memoises on it.
 const DEFAULTS = { view: "all", days: "30", q: "" }
 
-/**
- * Everyone who has browsed the shop - a visitor who accepted cookies as one
- * row across all their visits, and everyone else one anonymous row per visit.
- */
 export function VisitorTable() {
   const [state, setState] = useUrlState(DEFAULTS)
   const [rawQuery, setRawQuery] = React.useState(state.q)
@@ -216,8 +212,7 @@ export function VisitorTable() {
               />
             </div>
           }
-          // Its own menu on the right, so the view and the search keep the
-          // first row to themselves on a phone.
+          // On the right, so view and search keep the first row on a phone.
           barEnd={
             <ViewMenu
               label="Period"

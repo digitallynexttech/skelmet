@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Staff management: what revoking and resetting actually take away, and the
- * rule that the console always keeps someone who can administer it.
- */
-
 const mocks = vi.hoisted(() => {
   const tx = {
     $queryRaw: vi.fn(),

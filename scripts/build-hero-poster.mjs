@@ -5,29 +5,11 @@
  *   pnpm dev                       (or any server running this code)
  *   node scripts/build-hero-poster.mjs [http://localhost:3000]
  *
- * The poster stands in for the 3D skull until the model arrives, and for good
- * for the visitors who never download it (see SkullStage). It used to be the
- * front-on product photo keyed to alpha, and the swap was plain to see: a flat
- * studio shot, smaller than the mesh, gave way to a lit render in the hero's
- * orange and violet. The only picture that matches the mesh is the mesh.
- *
- * So this drives the real component in headless Chrome over the DevTools
- * protocol - Node's own WebSocket, no puppeteer - rather than rebuilding the
- * scene here, which would drift from skull-scene the first time anyone relit
- * it. It waits for the model to take over, stops the clock where the bob
- * crosses its middle, hides everything but the canvas and screenshots the
- * stage with a transparent background.
- *
- * The scene normally draws in a worker, whose clock this script cannot reach.
- * So it takes away the browser's means of handing a canvas to a worker before
- * the page loads, and the scene runs on the page's own thread instead - the
- * same code, the same picture (see skull-renderer).
- *
- * The frame is the whole 4:5 stage, so the poster and the canvas fill the same
- * box and line up at every size with no numbers to keep in step. It is taken
- * at the canvas's own resolution on a desktop: the largest stage (720px, at
- * xl) at skull-canvas's 1.75 pixel ratio cap. WebGL runs on SwiftShader, on
- * the CPU, so the frame does not depend on the machine's graphics card.
+ * Drives the real scene in headless Chrome over DevTools (Node's WebSocket, no
+ * puppeteer), so the poster cannot drift from skull-scene. The worker is turned
+ * off so the scene's clock can be stopped on the bob's rest line. The frame is
+ * the whole 4:5 stage at the canvas's own resolution, so poster and canvas line
+ * up at every size. SwiftShader keeps the frame independent of the GPU.
  */
 import { spawn } from "node:child_process"
 import fs from "node:fs"
@@ -178,8 +160,7 @@ try {
   await page("Page.navigate", { url: new URL("/", BASE).href })
   await loaded
 
-  // The poster's bob, which the mesh keeps time with: when it began and how
-  // long one lasts, read off the animation rather than copied from the source.
+  // When the poster's bob began and its period, read off the animation.
   const bob = await waitFor(
     `(() => {
       const a = document.querySelector("[data-skull-home] img")?.getAnimations()[0]
@@ -208,9 +189,8 @@ try {
     LIVE_TIMEOUT_MS,
   )
 
-  // Stop the clock where the bob's cosine crosses zero, so the frame sits
-  // exactly on the rest line the poster bobs about. Later than now, or the
-  // canvas's idle throttle would read it as too soon to draw.
+  // Stop the clock on the bob's rest line (its cosine at zero). Later than now,
+  // or the canvas's idle throttle skips the draw.
   await evaluate(`(() => {
     const { start, period } = ${JSON.stringify(bob)}
     const k = Math.ceil((performance.now() + 500 - start - period / 4) / (period / 2))

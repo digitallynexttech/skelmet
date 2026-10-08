@@ -11,7 +11,7 @@ import { ApiFetchError, apiFetch } from "@/lib/api-fetch"
 
 export function ChangePasswordForm({ next = "/admin", email }: { next?: string; email: string }) {
   const [error, setError] = React.useState<string | null>(null)
-  // Under each box, what the server said is wrong with it.
+  // Server field errors, shown under each box.
   const [fields, setFields] = React.useState<Record<string, string>>({})
   const [pending, setPending] = React.useState(false)
 
@@ -43,9 +43,7 @@ export function ChangePasswordForm({ next = "/admin", email }: { next?: string; 
       return
     }
 
-    // The change ended every session opened with the old password, this one
-    // included. Signing straight back in with the new one issues a fresh
-    // session - with the flag cleared - so they carry on where they were.
+    // The change ended this session too: sign straight back in with the new password.
     const destination = safeNextPath(next)
     const again = await signIn("credentials", {
       email,
@@ -58,8 +56,7 @@ export function ChangePasswordForm({ next = "/admin", email }: { next?: string; 
       return
     }
 
-    // Could not sign back in (a sign-in limit, say): the password is changed
-    // either way, so sign out cleanly and let them use it.
+    // Could not sign back in (rate limit, say): the password is changed, so sign out cleanly.
     await signOut({ redirectTo: `/login?next=${encodeURIComponent(destination)}` })
   }
 

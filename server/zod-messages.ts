@@ -3,16 +3,8 @@ import "server-only"
 import { z } from "zod"
 
 /**
- * Plain words for the schema rules written without their own message.
- *
- * A rule like `z.number().min(0)` answered in zod's words - "Too small:
- * expected number to be >=0" - and those reach staff as they are, now that
- * a rejected form names each field (lib/validation-message). A rule's own
- * message still wins; this only fills the gaps.
- *
- * Set once for the server, where every request body is parsed. Imported by
- * the two places that turn a schema failure into an answer, so it is in
- * place before any service parses anything.
+ * Plain words for rules without their own message (zod's reach staff as is).
+ * Installed globally on import, before any service parses.
  */
 export function plainMessage(issue: {
   code: string

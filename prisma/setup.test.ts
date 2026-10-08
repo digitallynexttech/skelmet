@@ -9,12 +9,6 @@ import {
 } from "@/prisma/setup"
 import type { Db } from "@/server/db"
 
-/**
- * Setting a database up only ever adds: no existing password is replaced,
- * no stock or price touched, and the destructive seed knows which databases
- * are this machine's.
- */
-
 vi.mock("@/lib/crypto", () => ({ hashPassword: async (p: string) => `hashed:${p}` }))
 
 const db = {

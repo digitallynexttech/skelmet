@@ -2,11 +2,7 @@ import Image from "next/image"
 
 import { cn } from "@/lib/utils"
 
-/**
- * The half-and-half band used four times down the page. Copy always sits on a
- * solid panel beside the photograph, never on top of it, that is what keeps
- * the text legible at every width.
- */
+/** Half-and-half band. Copy sits on a solid panel beside the photo, never on it, for legibility. */
 export function SplitFeature({
   image,
   alt,

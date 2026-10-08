@@ -26,19 +26,10 @@ import { cn } from "@/lib/utils"
 
 const P = siteConfig.promise
 
-/**
- * The lookup this page has always displayed but never performed - the form was
- * markup with no handler, so "Track it" reloaded the page and nothing else.
- *
- * Form and result sit side by side once there is room for both: the result is
- * the thing people came for, and stacking it under a form pushed it below the
- * fold on the very screens with space to spare.
- */
-
-/** Orders that have left the delivery path. A progress rail would mislead. */
+/** Off the delivery path: a progress rail would mislead. */
 const OFF_PATH = new Set<OrderStatus>(["CANCELLED", "RETURNED", "REFUNDED"])
 
-/** Refund timing is the returns policy's one statement, word for word. */
+/** Refund timing must match the returns policy word for word. */
 const OFF_PATH_NOTE: Partial<Record<OrderStatus, string>> = {
   CANCELLED: `This order was cancelled, so nothing is on its way. If you paid for it, the refund goes to the original payment method within ${P.refundDays}, and banks usually take ${P.bankDays} more to show it.`,
   RETURNED: `This order came back to us. Once it passes inspection, the refund goes to the original payment method within ${P.refundDays}, and banks usually take ${P.bankDays} more to show it.`,
@@ -67,8 +58,7 @@ export function TrackForm() {
       })
       setOrder(found)
     } catch (err) {
-      // The service answers 404 the same way for a bad number and a bad email,
-      // so its message is already the right thing to show.
+      // The service gives one 404 message for a bad number or email.
       setError(
         err instanceof ApiFetchError ? err.message : "That did not work. Try again in a moment.",
       )
@@ -78,7 +68,7 @@ export function TrackForm() {
   }
 
   return (
-    // Hidden from Microsoft Clarity's recordings: an email, an order and where it is going.
+    // Privacy: masked from Clarity recordings.
     <div
       data-clarity-mask="true"
       className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8"
@@ -98,7 +88,7 @@ export function TrackForm() {
             <Input
               name="orderNumber"
               required
-              // A number that could exist: order numbers never use 0, 1, I or O.
+              // Order numbers never use 0, 1, I or O.
               placeholder="SKM-2026-4F2K"
               autoComplete="off"
               spellCheck={false}
@@ -134,8 +124,7 @@ export function TrackForm() {
         ) : order ? (
           <OrderResult order={order} />
         ) : (
-          // Desktop only: on a phone the form already fills the screen, and an
-          // empty box under it is just one more thing to scroll past.
+          // Desktop only: on a phone it is just more to scroll past.
           <div className="rounded-card hidden place-items-center border border-dashed border-white/[0.09] p-10 lg:grid">
             <p className="text-dim text-center text-[13.5px] leading-[1.6]">
               Your order and where it has got to
@@ -153,14 +142,13 @@ function OrderResult({ order }: { order: TrackedOrder }) {
   const [copied, setCopied] = React.useState(false)
   const status = order.status as OrderStatus
   const placed = formatDay(order.placedAt)
-  // Still to be paid at the door: nothing once it is delivered, or called off.
   const due =
     Number(order.dueOnDelivery) > 0 && !order.deliveredAt && !OFF_PATH.has(status)
       ? order.dueOnDelivery
       : null
 
-  // The courier's own estimate wins once it has given one: it knows where the
-  // parcel is. Until then, the far end of the published window.
+  // The courier's estimate once given; until then the far end of the promised window,
+  // so a normal delivery never reads as late.
   const arrival = OFF_PATH.has(order.status as OrderStatus)
     ? null
     : order.deliveredAt
@@ -189,8 +177,7 @@ function OrderResult({ order }: { order: TrackedOrder }) {
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1600)
     } catch {
-      // Clipboard is blocked in some in-app browsers. The number is on screen
-      // to read either way, so there is nothing useful to say here.
+      // Blocked in some in-app browsers; the number is on screen anyway.
     }
   }
 
@@ -206,11 +193,6 @@ function OrderResult({ order }: { order: TrackedOrder }) {
         </p>
       ) : null}
 
-      {/* The date is the question. Delivered orders show the day it actually
-          landed; anything still moving shows the far end of the published
-          window, because quoting the optimistic end turns a normal delivery
-          into a late one. Cancelled and returned orders get neither - there
-          is nothing coming. */}
       {arrival ? (
         <div
           className={cn(

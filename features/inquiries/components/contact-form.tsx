@@ -21,11 +21,7 @@ const TOPICS = [
 
 type Topic = (typeof TOPICS)[number]
 
-/**
- * Short names a link can use for a topic: /contact?topic=bulk opens the form
- * with "Bulk / club order" already picked. Anything unknown is ignored rather
- * than trusted, and the form starts on its usual first topic.
- */
+/** `?topic=` short names, e.g. /contact?topic=bulk. Unknown ones are ignored. */
 const TOPIC_LINKS = new Map<string, Topic>([
   ["order", "My order"],
   ["fitting", "Fitting help"],
@@ -36,11 +32,7 @@ const TOPIC_LINKS = new Map<string, Topic>([
   ["other", "Something else"],
 ])
 
-/**
- * The form with its topic taken from `?topic=`. Reading the query suspends
- * while the page is prerendered, so the page wraps this in <Suspense> with
- * a plain <ContactForm /> as the fallback.
- */
+/** The form with its topic from `?topic=`. Suspends on prerender: wrap in <Suspense>. */
 export function ContactFormFromLink() {
   const wanted = useSearchParams().get("topic")?.toLowerCase() ?? ""
   return <ContactForm initialTopic={TOPIC_LINKS.get(wanted)} />
@@ -51,7 +43,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
   const [sent, setSent] = React.useState(false)
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  // Under each box, what the server said is wrong with it.
+  // Server field errors, shown under each box.
   const [fields, setFields] = React.useState<Record<string, string>>({})
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -79,9 +71,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
     } catch (err) {
       setPending(false)
       if (err instanceof ApiFetchError) setFields(err.fieldErrors)
-      // A 4xx names what is wrong with the message, so it is worth showing as
-      // is. Anything else - our side down, the connection dropped - gets a
-      // way round the form.
+      // A 4xx message is shown as is; anything else offers the support email.
       setError(
         err instanceof ApiFetchError && err.status < 500
           ? err.message
@@ -107,7 +97,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
   }
 
   return (
-    // Hidden from Microsoft Clarity's recordings: a name, email, phone and message.
+    // Masked from Clarity recordings.
     <form
       data-clarity-mask="true"
       onSubmit={handleSubmit}
@@ -170,8 +160,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: Topic }) {
           <input type="hidden" name="topic" value={topic} />
         </fieldset>
 
-        {/* Honeypot. Positioned off-screen rather than display:none, which some
-            bots skip. A real person never sees it, so anything in it is a bot. */}
+        {/* Honeypot: off-screen, not display:none, which some bots skip. */}
         <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
           <label htmlFor="website">Do not fill this in</label>
           <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />

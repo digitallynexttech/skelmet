@@ -26,7 +26,7 @@ import type { Ask } from "@/hooks/use-confirm"
 
 type Shiprocket = RuntimeSettingsView["shiprocket"]
 
-/** 32 random bytes as hex: a token nobody could guess, for Shiprocket to send back. */
+// 32 random bytes as hex.
 function newToken(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
     b.toString(16).padStart(2, "0"),
@@ -64,8 +64,7 @@ function ShiprocketForm({
     if (password) input.password = password
     if (pickupChanged) input.pickupLocation = pickupLocation.trim()
     if (webhookToken.trim()) input.webhookToken = webhookToken.trim()
-    // A password is saved with its user. When the user shown is .env's, a
-    // new password for it saves the two together.
+    // A password is saved with its user: a new password for .env's user saves the pair.
     if (input.password && !emailChanged && data.email.source !== "saved" && email.trim()) {
       input.email = email.trim()
     }
@@ -244,7 +243,7 @@ function ShiprocketForm({
           </HeaderButton>
           <HeaderButton
             type="button"
-            // Tests what is saved, so not while there are unsaved changes.
+            // Tests what is saved, so off while there are unsaved changes.
             disabled={!data.ready || dirty || testShiprocket.isPending}
             onClick={() => {
               setResult(null)

@@ -1,40 +1,17 @@
 import DOCKS from "@/components/marketing/skull-docks.json"
 
 /**
- * The hero skull's route down the page, as a pure function of scroll.
- *
- * The skull has a home - the hero stage - and a run of docks further down:
- * photographs of the skull, each marked with `data-skull-dock` by SkullDock.
- * Docked, the mesh sits exactly over the photographed skull, at its size, and
- * moves with the page as if it were part of the picture. Between two stops it
- * flies: it lifts off, floats alongside the reader, turns once, and lands on
- * the next one as that scrolls into place.
- *
- * Everything is derived from the scroll position and the measured anchors,
- * with no state carried between frames, so scrolling back up simply runs the
- * route in reverse and a reload mid-page puts the skull wherever that point on
- * the route is.
- *
- * Coordinates are document pixels throughout, because the flying element is
- * positioned in the document rather than fixed to the viewport. That is what
- * lets a docked skull scroll with its photo natively - a fixed element moved
- * from requestAnimationFrame trails threaded scrolling by a frame, and a skull
- * sliding against the bracket it is supposed to be sitting on is the one
- * artefact this cannot afford.
+ * The hero skull's route down the page, a pure function of scroll: from home
+ * (the hero stage) it flies between and sits on the docks (`data-skull-dock`
+ * photos, see SkullDock). No state between frames. Document px throughout: the
+ * flying box is absolute, not fixed, so a docked skull scrolls natively.
  */
 
 /**
- * Where the mesh's silhouette falls in its canvas box: its height as a share
- * of the box height, and its middle as shares of the box width and height.
- * Every dock is matched against the silhouette, not the model's box, because
- * perspective makes the two differ - the jaw is nearer the camera than the
- * crown, so it projects larger and lower. Sized from the bounding box (0.807
- * tall, lifted 1.9%), a docked skull came out a tenth oversize.
- *
- * skull-canvas measures the silhouette off the model's own vertices, at
- * whatever angle a dock turns it to. REST_SILHOUETTE is that measurement
- * facing the camera, for the frames before the model has loaded; the build
- * script (scripts/build-skull-model.mjs) prints it for a new model.
+ * Where the silhouette falls in its box: height as a share of box height, centre
+ * as shares of width and height. Docks match the silhouette, not the bounding
+ * box, since perspective makes the jaw project larger. REST_SILHOUETTE faces the
+ * camera, for before the model loads; scripts/build-skull-model.mjs prints it.
  */
 export type Silhouette = { height: number; centreX: number; centreY: number }
 export const REST_SILHOUETTE: Silhouette = { height: 0.829, centreX: 0.5, centreY: 0.512 }
@@ -45,37 +22,19 @@ const ARRIVE = 0.58
 const LEAVE = 0.32
 /** Shortest scroll a flight is allowed, so two close anchors still read as a trip. */
 const MIN_FLIGHT = 240
-/**
- * Scroll over which the skull eases between riding with the page and floating
- * free of it, at each end of a flight. Without it the skull would stop dead
- * against the scroll the instant it left a dock.
- */
+/** Scroll, at each end of a flight, over which the skull eases from riding with the page. */
 const RAMP = 280
 /** How far a flight bows toward the middle of the viewport, as a share of the way there. */
 const SWING = 0.7
 /** How much smaller the skull gets mid-flight, as if pulled back in depth. */
 const DIP = 0.14
 /**
- * How far the skull nods toward the camera once seated in a photo, radians.
- * The camera sits level with the middle of the skull, which puts the eyes
- * above it, and a skull seen from below its eyes reads as looking up. The
- * photographs were taken from a little above eye level, so seated the skull
- * tips forward to meet that camera, and faces the reader as the prints beside
- * it do. Eased in over the landing with `docked`; the hero is untouched.
- *
- * 18°, chosen against the orange product photo: the skull's outline overlaps
- * the photographed one most closely here (0.927), less at 14° and at 22°,
- * and to the eye it is at 18° that the seated skull meets the camera as the
- * photograph does.
+ * Nod toward the camera once seated, radians (18°): the photos were shot from
+ * above eye level, so the seated skull tips forward to match. Eased in with `docked`.
  */
 const DOCK_PITCH = 0.31
 
-/**
- * Phones, as Tailwind's `sm` breakpoint draws the line. Here the route is cut
- * short: the skull flies from the hero to the docks marked `phone` (see
- * SkullDock) and stays there, rather than following the reader down a page
- * that is several screens longer on a phone than on a desktop.
- */
+/** Below Tailwind's `sm`, the route ends at the docks marked `phone` (see SkullDock). */
 const PHONE = "(width < 40rem)"
 
 type Dock = { plate: string; width: number; height: number; skull: number[] }
@@ -95,7 +54,7 @@ export type Anchor = {
   cx: number
   cy: number
   h: number
-  /** The photo's box - a docked skull is cropped by it, as the photo is. */
+  /** The photo's box, which crops a docked skull as it crops the photo. */
   clip: Box | null
 }
 
@@ -116,19 +75,11 @@ export type Pose = {
   clip: Box | null
   /** How far each photo's own skull should be hidden, 0..1. */
   plates: Map<HTMLElement, number>
-  /**
-   * How seated the skull is in its nearest photo: 0 in the hero or mid-flight,
-   * 1 at a dock. The canvas moves its lighting from stage to studio by this,
-   * so a skull sitting in a product card is lit like the photos beside it.
-   */
+  /** How seated in the nearest photo, 0 in the hero or mid-flight to 1; drives the lighting. */
   docked: number
 }
 
-/**
- * Read every anchor on the page into document coordinates, top to bottom.
- * `rest` is where the silhouette sits facing the camera, which is what puts
- * the flying box exactly over the hero stage when the skull is home.
- */
+/** Every anchor on the page in document px, top to bottom. `rest` fits home to the hero stage. */
 export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
   const anchors: Anchor[] = []
   // On a phone, only the docks marked for it are stops.
@@ -159,8 +110,7 @@ export function measureAnchors(rest: Silhouette = REST_SILHOUETTE): Anchor[] {
 
     const dock = docks[el.dataset.skullDock ?? ""]
     if (!dock) continue
-    // The photo is `object-cover`, centred: scale to fill, crop the overflow
-    // evenly. The skull box is in source pixels, so it goes through the same.
+    // The photo is `object-cover`, centred; the skull box (source px) is mapped the same way.
     const scale = Math.max(rect.width / dock.width, rect.height / dock.height)
     const offsetX = (rect.width - dock.width * scale) / 2
     const offsetY = (rect.height - dock.height * scale) / 2
@@ -192,11 +142,9 @@ const smoothstep = (lo: number, hi: number, v: number) => {
 }
 
 /**
- * Linear through the middle, with rounded ends of width `r`. Used for the
- * vertical path: zero slope at both ends means the skull leaves and joins a
- * dock moving exactly with the page, and the straight middle keeps it
- * floating in view however long the flight - a full ease would carry a long
- * flight off the top of the screen and back.
+ * Linear in the middle with rounded ends of width `r`: zero slope at the ends,
+ * so the skull leaves and joins a dock moving with the page, while the straight
+ * middle keeps a long flight in view (a full ease would carry it off screen).
  */
 function ramp(t: number, r: number) {
   const v = 1 / (1 - r)
@@ -205,11 +153,7 @@ function ramp(t: number, r: number) {
   return v * (r / 2 + t - r)
 }
 
-/**
- * How close the skull is to a photo's skull, 1 when on it. Drives both the
- * plate that hides the photographed skull and the crop, so the swap happens
- * exactly while the two overlap and either can cover for the other.
- */
+/** 1 when on a photo's skull. Drives plate and crop, so the swap happens while they overlap. */
 function proximity(cx: number, cy: number, anchor: Anchor) {
   const distance = Math.hypot(cx - anchor.cx, cy - anchor.cy) / anchor.h
   return 1 - smoothstep(0.12, 0.8, distance)
@@ -220,8 +164,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
   const home = anchors[0]
   if (!home) return null
 
-  // Scroll positions at which the skull lands on and leaves each anchor. Home
-  // is where it starts, and it lifts off with the first pixel of scroll.
+  // Scroll at which the skull lands on and leaves each anchor; it leaves home at 0.
   const arrive: number[] = [-Infinity]
   const leave: number[] = [0]
   for (let k = 1; k < anchors.length; k++) {
@@ -257,8 +200,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     const glide = smootherstep(t)
     const float = ramp(t, Math.min(0.45, RAMP / span))
 
-    // Vertical is interpolated in viewport space, where the ramp's straight
-    // middle holds the skull steady on screen, then put back into the page.
+    // Vertical is eased in viewport space, so the ramp's middle holds the skull steady on screen.
     const ay = a.cy - scroll
     const by = b.cy - scroll
     cy = lerp(ay, by, float) + scroll
@@ -268,8 +210,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     cx = lerp(a.cx, b.cx, glide) + bow * (vw / 2 - mid) * SWING
     h = lerp(a.h, b.h, glide) * (1 - DIP * bow)
     bob = Math.max(lerp(a.home ? 1 : 0, b.home ? 1 : 0, glide), bow)
-    // One full turn, in the direction of travel. A multiple of 2π, so it
-    // lands facing exactly the way it left.
+    // One full turn (2π) in the direction of travel, so it lands facing as it left.
     spin = (b.cx >= a.cx ? 1 : -1) * Math.PI * 2 * glide
     turn = lerp(a.turn, b.turn, glide)
   }
@@ -283,8 +224,7 @@ export function journey(anchors: Anchor[], scroll: number, vw: number, vh: numbe
     plates.set(a.el, a.hideOwn ? 1 : w)
     if (w > nearest) {
       nearest = w
-      // Relaxed away from the photo's edges as the skull leaves, so the crop
-      // never slices it mid-air.
+      // Loosened as the skull leaves, so the crop never slices it mid-air.
       const slack = (1 - w) * vh
       clip = {
         left: a.clip.left - slack,

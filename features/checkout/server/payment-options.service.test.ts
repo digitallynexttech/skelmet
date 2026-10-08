@@ -3,12 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_PAYMENT_OPTIONS } from "@/features/checkout/payment-options"
 import type { PaymentOptions } from "@/features/settings/schemas/runtime-settings.schema"
 
-/**
- * Who is offered which way of paying. The point of "staff only" is that the
- * owner can try cash on delivery on the live site before any customer sees
- * it, so what a signed-out visitor is shown is pinned down here.
- */
-
+// "Staff only" lets the owner try COD live before customers see it.
 const mocks = vi.hoisted(() => ({
   paymentOptions: vi.fn(),
   collectsOnDelivery: vi.fn(),

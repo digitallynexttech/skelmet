@@ -57,28 +57,21 @@ import { can, requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
 /**
- * Settings > Payments, Shiprocket, Shipping charge and Pay on delivery: what
- * the console shows of them, and saving them.
- *
- * A secret never leaves the server once saved. The console gets whether it is
- * set, where it comes from, and its last four characters - enough to tell
- * which key is in place without being able to copy it. Every save is
- * audit-logged by field name, never by value.
+ * Payments, Shiprocket, shipping charge and pay-on-delivery settings. A saved secret never leaves
+ * the server: the console sees only whether it is set, its source and last four characters.
+ * Saves are audit-logged by field name, never by value.
  */
 
 const NO_DATABASE = "Settings need the database, which is not configured."
 
 // ── what the console is shown ────────────────────────────────
 
-/** The last four characters, and only of a secret long enough that four gives little away. */
+/** Last four characters, only of a secret long enough that four gives little away. */
 function hint(secret: string | null): string | null {
   return secret && secret.length >= 12 ? `…${secret.slice(-4)}` : null
 }
 
-/**
- * A secret as the console sees it. `saved` is the sealed value, `env` the
- * .env value when .env applies to this slot.
- */
+// `saved` is the sealed value, `env` the .env value when .env applies to this slot.
 function secretState(saved: string | undefined, env: string | null | undefined): SecretState {
   const opened = open(saved)
   if (opened) return { set: true, source: "saved", hint: hint(opened), unreadable: false }
@@ -135,9 +128,7 @@ function view(
       email: { value: shiprocket.email, source: loginSource },
       password: {
         ...secretState(savedLogin ? stored.shiprocket?.password : undefined, shiprocket.password),
-        // Set or not set, nothing more. The last four characters of a key
-        // secret tell two keys apart; of a password a person chose, they
-        // are a quarter of what someone would need to guess it.
+        // No hint for a password: four characters of one a person chose help a guesser.
         hint: null,
         unreadable: Boolean(stored.shiprocket?.password) && !open(stored.shiprocket?.password),
       },
@@ -163,7 +154,7 @@ function view(
   }
 }
 
-/** When each section was last saved - the version a save has to still find. */
+/** When each section was last saved: the version a save must still find. */
 async function settingVersions(): Promise<SettingVersions> {
   const rows = await db.setting.findMany({
     where: { key: { in: [...SETTING_KEYS] } },
@@ -196,12 +187,8 @@ export async function getRuntimeSettings(): Promise<ActionResult<RuntimeSettings
 // ── saving ──────────────────────────────────────────────────
 
 /**
- * Two admins saving the same section at once used to both succeed, the second
- * quietly undoing the first: each merged its change into the section as it
- * read it and wrote the whole of it back. Now every save is conditional on the
- * section still being the version it was merged into - the one the console
- * showed when the form was opened, which it sends back as `version`, or failing
- * that the one read here - and the loser is told to reload.
+ * A save only lands if the section is still at the version it was merged into (the `version` the
+ * console sent, else the one read here), so two admins cannot silently undo each other.
  */
 export const STALE_SETTINGS =
   "Someone else saved these settings a moment ago. Reload to see what they changed, then save again."
@@ -217,7 +204,6 @@ function takeVersion(raw: unknown): { version: string | null | undefined; body: 
   return { version: versionSchema.parse(version), body }
 }
 
-/** One section as it is in the database now, with its version. */
 async function currentRow<K extends SettingKey>(
   key: K,
 ): Promise<{ value: StoredSettings[K] | undefined; version: string | null }> {
@@ -266,13 +252,9 @@ async function save(
 }
 
 /**
- * The Razorpay keys, and which account takes payments.
- *
- * A key id and its secret are one pair: a new id is only saved with its
- * secret, and clearing the id clears the secret, so a saved id can never sit
- * beside a secret that belongs to another key. And the account switched on
- * cannot be left unable to take payments - a save that would do that is
- * refused, rather than finding out at the next checkout.
+ * The Razorpay keys and live/test mode. A key id and secret are one pair (a new id needs its
+ * secret; clearing the id clears it). A save that leaves the active account unable to take
+ * payments is refused.
  */
 export async function savePaymentSettings(
   raw: unknown,
@@ -367,10 +349,8 @@ export async function savePaymentSettings(
 }
 
 /**
- * The Shiprocket login, pickup location and tracking webhook token. A new API
- * user is only saved with its password, as with the Razorpay keys. Saving
- * drops the cached login, any refused-login pause and the cached rates, so the
- * next request runs on the new account.
+ * Shiprocket login, pickup location and webhook token. A new API user needs its password. Saving
+ * drops the cached login, refused-login pause and cached rates.
  */
 export async function saveShiprocketSettings(
   raw: unknown,
@@ -464,11 +444,7 @@ export async function saveShippingCharge(raw: unknown): Promise<ActionResult<Run
   })
 }
 
-/**
- * Cash on delivery and the advance: who is offered each, and what each adds
- * to an order. Checkout reads it on the next order; the FAQ and the terms,
- * which say how to pay, are refreshed.
- */
+/** Cash on delivery and the advance. Refreshes the FAQ and terms, which say how to pay. */
 export async function savePaymentOptions(raw: unknown): Promise<ActionResult<RuntimeSettingsView>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
@@ -499,10 +475,7 @@ export async function testPaymentKeys(raw: unknown): Promise<ActionResult<{ mode
   })
 }
 
-/**
- * Logs in to Shiprocket with the saved login and looks the pickup location
- * up. Creates nothing, and keeps to the refused-login pause.
- */
+/** Logs in and looks up the pickup. Creates nothing; honours the refused-login pause. */
 export async function testShiprocket(): Promise<
   ActionResult<{ pickup: { name: string; pincode: string } | null }>
 > {

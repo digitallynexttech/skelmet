@@ -35,16 +35,11 @@ function structuredData(post: BlogPost) {
   }
 }
 
-/**
- * One post: its header, cover, body, and what to read next.
- *
- * `more` is the other posts, newest first; the first three are offered at the
- * end.
- */
+/** One post. `more` is the other posts, newest first. */
 export function BlogArticle({ post, more }: { post: BlogPost; more: BlogListItem[] }) {
   const cover = imageUrl(post.coverImage, { width: 1600, height: 900 })
   const photo = imageUrl(post.author?.photo, { width: 112, height: 112 })
-  // Sub-headings stay out of the list: it is for finding a part, not a map of all of them.
+  // h2 only: the list is for finding a part, not a full map.
   const contents = extractHeadings(post.body).filter((h) => h.level === 2)
   const hasContents = contents.length >= 3
   const product = PRODUCTS[0]!
@@ -53,7 +48,7 @@ export function BlogArticle({ post, more }: { post: BlogPost; more: BlogListItem
     <>
       <script
         type="application/ld+json"
-        // The post's own words, serialised: "<" is escaped so a title cannot close the tag.
+        // "<" is escaped so a title cannot close the tag.
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData(post)).replace(/</g, "\\u003c"),
         }}
@@ -112,7 +107,6 @@ export function BlogArticle({ post, more }: { post: BlogPost; more: BlogListItem
               src={cover}
               alt={post.coverImage?.alt ?? ""}
               fill
-              // The page's main image.
               preload
               fetchPriority="high"
               sizes="(min-width: 1280px) 1328px, 100vw"
@@ -125,7 +119,6 @@ export function BlogArticle({ post, more }: { post: BlogPost; more: BlogListItem
       <Section className="pt-10 sm:pt-12 xl:pt-14">
         <div className="mx-auto flex max-w-[1080px] flex-col gap-10 lg:flex-row lg:gap-16">
           <article className="min-w-0 flex-1 lg:max-w-[760px]">
-            {/* The first paragraph sits flush with the top of the column. */}
             <div className="[&>*:first-child]:mt-0">
               <PostBody body={post.body ?? []} />
             </div>
@@ -178,7 +171,6 @@ export function BlogArticle({ post, more }: { post: BlogPost; more: BlogListItem
         </div>
       </Section>
 
-      {/* What all of this is about: the mount. One line and one button. */}
       <Section className="bg-carbon border-y border-white/[0.07]">
         <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>

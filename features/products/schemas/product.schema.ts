@@ -9,8 +9,7 @@ export const updateProductSchema = z.object({
 
 export const updateVariantSchema = z.object({
   price: z.coerce.number().positive("Must be more than zero").optional(),
-  // Absolute stock. Use adjustStock for a delta, so two people counting the
-  // same shelf cannot overwrite each other with a stale number.
+  // Absolute stock. Prefer adjustStock (a delta), which concurrent counts cannot overwrite.
   stock: z.coerce.number().int().min(0, "Cannot go below zero").optional(),
   weightGrams: z.coerce.number().int().positive().nullable().optional(),
 })

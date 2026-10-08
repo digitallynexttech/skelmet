@@ -38,18 +38,9 @@ import { apiFetch, ApiFetchError } from "@/lib/api-fetch"
 import { cn } from "@/lib/utils"
 
 /**
- * The newsletter's message editor: TipTap (ProseMirror underneath), holding a
- * JSON document rather than HTML.
- *
- * It offers exactly what the email can render (newsletter-content.ts) - bold,
- * italic, underline, strike, links, two heading sizes, lists, quotes, a divider
- * and pictures - and nothing that would be dropped on the way to the inbox.
- * Code and code blocks are left out; a pasted table or colour simply does not
- * come across.
- *
- * Pictures are uploaded as they are added, from the toolbar, a paste or a
- * drop, and go in as links to the shop's own copy: a picture pasted inline as
- * data would be stripped by Gmail and Outlook.
+ * TipTap editor holding a JSON document. Offers exactly what the email renders
+ * (newsletter-content.ts). Pictures upload as added and go in as links: inline data images are
+ * stripped by Gmail and Outlook.
  */
 
 type UploadedImage = { id: string; url: string; width: number; height: number }
@@ -125,8 +116,7 @@ export function RichEditor({
       Placeholder.configure({ placeholder: placeholder ?? "Write your message" }),
     ],
     content: initial,
-    // Rendered on the client only: the console page is a client component,
-    // and TipTap warns when it would render on the server.
+    // TipTap warns if it would render on the server.
     immediatelyRender: false,
     onUpdate: ({ editor }) => onChangeRef.current(editor.getJSON()),
     editorProps: {
@@ -351,8 +341,7 @@ function Tool({
       aria-label={label}
       aria-pressed={active}
       disabled={disabled}
-      // Keeps the text selection: a mousedown on the button would move focus
-      // out of the editor and lose what the format is meant to apply to.
+      // Keeps focus, and so the selection, in the editor.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
@@ -370,7 +359,7 @@ function Divider() {
   return <span aria-hidden className="mx-1 h-5 w-px bg-white/[0.1]" />
 }
 
-/** A web address on its own gets https:// in front, as a browser would. */
+// A bare address gets https:// (or mailto: for an email), as a browser would.
 function normaliseHref(raw: string): string | null {
   const v = raw.trim()
   if (!v) return null

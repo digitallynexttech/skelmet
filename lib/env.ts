@@ -1,25 +1,10 @@
 import { z } from "zod"
 
-/**
- * Validated once at boot from instrumentation.ts, so a missing variable fails
- * the process rather than the first request that needs it (§6).
- *
- * Deviation from the standard, deliberate and temporary: DATABASE_URL and
- * AUTH_SECRET are optional while the storefront runs from the catalogue
- * registry, so `pnpm build` and `pnpm start` work before Postgres exists.
- *
- *   ── FLIP THIS THE DAY THE DATABASE LANDS ──
- *   Set REQUIRE_BACKEND=1 in the deployment environment (or change the default
- *   below to `true`) and boot fails fast on a missing secret, exactly as §6
- *   intends. instrumentation.ts already warns loudly while it is off.
- *
- * An empty value counts as unset. `.env.example` is copied with its blanks,
- * and `DATABASE_URL=""` used to fail validation - so every page answered 500
- * - rather than boot without a database as the example says it will.
- */
+// Validated at boot (instrumentation.ts). DATABASE_URL and AUTH_SECRET are
+// optional unless REQUIRE_BACKEND=1, which production must set.
 const REQUIRE_BACKEND = process.env.REQUIRE_BACKEND === "1"
 
-/** "" and whitespace are "not set", so the schema's own default or optional applies. */
+/** "" and whitespace are unset, so `.env.example`'s blanks get the default. */
 const blank = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? undefined : value
 
@@ -44,43 +29,35 @@ const schema = z
     PAYMENT_KEY_SECRET: optionalString(),
     PAYMENT_WEBHOOK_SECRET: optionalString(),
 
-    // Mail goes out by the first of these that takes it (lib/mailer.ts):
-    // Brevo's API, Brevo's SMTP relay, then the shop's own SMTP account.
+    // Mail routes in order (lib/mailer.ts): Brevo API, Brevo SMTP, then SMTP_*.
     BREVO_API_KEY: optionalString(),
     BREVO_SMTP_LOGIN: optionalString(),
     BREVO_SMTP_KEY: optionalString(),
-    // Brevo's sender: an address on a domain authenticated in Brevo.
+    // Must be on a domain authenticated in Brevo.
     BREVO_FROM: z.preprocess(blank, z.string().default("SKELMET <no-reply@skelmet.in>")),
 
     SMTP_HOST: optionalString(),
     SMTP_PORT: z.preprocess(blank, z.coerce.number().int().positive().default(587)),
     SMTP_USER: optionalString(),
     SMTP_PASSWORD: optionalString(),
-    // The mailbox the shop actually sends from. Gmail refuses to send as an
-    // address it cannot prove the account owns, so a default on the shop's
-    // own domain got every message rejected until someone noticed.
+    // Must be the Gmail account's own mailbox, or Gmail rejects every message.
     MAIL_FROM: z.preprocess(blank, z.string().default("SKELMET <skelmetindia@gmail.com>")),
-    // Where replies go, on every route. A no-reply sender's own replies go
-    // nowhere; unset, a reply goes to the sender.
+    // Unset, replies go to the sender.
     MAIL_REPLY_TO: optionalString(),
 
-    // Shiprocket. All optional: without them the console falls back to typing
-    // the courier and AWB by hand, and the pincode check to the static promise.
+    // Optional: without them couriers are typed by hand and the pincode check
+    // uses the static promise.
     SHIPROCKET_API_URL: z.preprocess(blank, z.url().default("https://apiv2.shiprocket.in")),
     SHIPROCKET_EMAIL: optionalString(),
     SHIPROCKET_PASSWORD: optionalString(),
     SHIPROCKET_PICKUP_LOCATION: optionalString(),
     SHIPROCKET_WEBHOOK_TOKEN: optionalString(),
 
-    // The blog. The console's Blog page needs it, with the Editor role, to
-    // read drafts and to publish; the site itself reads a public dataset
-    // without one. The project is named in config/site.ts.
+    // Editor role, for the console's Blog page; a public dataset needs none.
     SANITY_API_TOKEN: optionalString(),
   })
   .superRefine((env, ctx) => {
-    // The database holds staff logins, and sessions are signed with this: a
-    // database without it is a console nobody can sign in to, and settings
-    // secrets that cannot be sealed.
+    // Signs sessions and seals settings secrets: a database is useless without it.
     if (env.DATABASE_URL && !env.AUTH_SECRET) {
       ctx.addIssue({
         code: "custom",
@@ -92,12 +69,7 @@ const schema = z
 
 export type Env = z.infer<typeof schema>
 
-/**
- * Why the site's own address is wrong for production, or null when it is
- * fine. Every link in every email, the Razorpay and Shiprocket webhook URLs
- * the console shows, and whether cookies are Secure all come from it, and
- * the default is localhost.
- */
+/** Why NEXT_PUBLIC_SITE_URL is wrong for production, or null. Defaults to localhost. */
 export function siteUrlProblem(raw: Record<string, string | undefined>): string | null {
   if (raw.NODE_ENV !== "production") return null
   const value = raw.NEXT_PUBLIC_SITE_URL?.trim()
@@ -137,7 +109,7 @@ export function getEnv(): Env {
   return cached
 }
 
-/** True once a real database is configured. Guards the DB-backed paths. */
+/** Guards the DB-backed paths. */
 export function hasDatabase(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim())
 }

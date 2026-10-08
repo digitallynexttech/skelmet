@@ -57,7 +57,6 @@ export type CouponRow = {
   state: "ACTIVE" | "EXPIRED" | "EXHAUSTED"
 }
 
-/** A code as the cart offers it: what it takes off, and from what spend. */
 export type CartOffer = {
   code: string
   label: string
@@ -121,8 +120,7 @@ export async function listCoupons(params: {
       ...(q ? { code: { contains: q.toUpperCase() } } : {}),
     }
 
-    // The state is worked out from the row, so the order is too: every code
-    // is read (a shop has tens, not thousands) and sorted here, then paged.
+    // State is derived, so all codes (tens, not thousands) are sorted here, then paged.
     const rows = (
       await db.coupon.findMany({ where, select: COUPON_SELECT, orderBy: { createdAt: "desc" } })
     ).map(serialize)
@@ -132,11 +130,7 @@ export async function listCoupons(params: {
   })
 }
 
-/**
- * The codes the cart offers: switched on for it, not archived, and still
- * usable. Public - the cart asks when it opens - and only ever codes staff
- * chose to show, so it tells nobody anything they were not meant to see.
- */
+/** Public: only live, unarchived codes staff switched on for the cart. */
 export async function listCartOffers(): Promise<ActionResult<CartOffer[]>> {
   return runAction(async () => {
     if (!hasDatabase()) return ok([])
@@ -167,11 +161,7 @@ export async function listCartOffers(): Promise<ActionResult<CartOffer[]>> {
   })
 }
 
-/**
- * Archive or restore. Archived, a code leaves the list for the Archive tab,
- * stops being offered in the cart and is no longer accepted anywhere;
- * restored, it is exactly what it was.
- */
+/** An archived code is accepted nowhere; restoring brings it back unchanged. */
 export async function setCouponArchived(
   id: string,
   archived: boolean,
@@ -208,8 +198,7 @@ export async function createCoupon(raw: unknown): Promise<ActionResult<CouponRow
 
     const input = createCouponSchema.parse(raw)
 
-    // A code is unique for good: past orders point at it. One that has run
-    // its course is renewed instead (renewCoupon), and the answer says so.
+    // Codes are unique for good (past orders point at them); a finished one is renewed instead.
     const clash = await db.coupon.findUnique({ where: { code: input.code }, select: COUPON_SELECT })
     if (clash) {
       const existing = serialize(clash)
@@ -267,8 +256,7 @@ export async function updateCoupon(id: string, raw: unknown): Promise<ActionResu
     })
     if (!exists) return fail("Coupon not found.", undefined, 404)
 
-    // The 90% rule for the coupon as it will be after this edit, not only for
-    // the half of it the edit happens to send.
+    // The 90% rule on the coupon as edited, not only the fields sent.
     if (percentTooHigh(input.kind ?? exists.kind, input.value ?? Number(exists.value))) {
       return fail(PERCENT_TOO_HIGH, { fieldErrors: { value: [PERCENT_TOO_HIGH] } }, 422)
     }
@@ -299,10 +287,8 @@ export async function updateCoupon(id: string, raw: unknown): Promise<ActionResu
 }
 
 /**
- * Runs an old code again - DIWALI200 next Diwali - with new terms. The code
- * and its row stay, so last year's orders still point at it; the uses start
- * again from nought against the new limit (the old ones are still on those
- * orders), and it comes out of the archive if it was there.
+ * Runs an old code again with new terms. The row stays, so past orders still
+ * point at it; uses restart at 0 and it leaves the archive.
  */
 export async function renewCoupon(id: string, raw: unknown): Promise<ActionResult<CouponRow>> {
   return runAction(async () => {
@@ -340,7 +326,7 @@ export async function renewCoupon(id: string, raw: unknown): Promise<ActionResul
         previousUses: before.usedCount,
         previousExpiry: before.expiresAt?.toISOString() ?? null,
         wasArchived: before.archivedAt !== null,
-        // What this run starts on, for the code's history.
+        // The new run's terms, read by the code's history.
         kind: row.kind,
         value: row.value.toString(),
         minSubtotal: row.minSubtotal.toString(),
@@ -364,10 +350,7 @@ export type CouponHistory = {
   events: CouponEvent[]
 }
 
-/**
- * Everything that has happened to one code: its runs, the orders placed with
- * it, and who did what to it when (features/coupons/coupon-history).
- */
+/** One code's runs, orders and audit events (features/coupons/coupon-history). */
 export async function getCouponHistory(
   key: { id: string } | { code: string },
 ): Promise<ActionResult<CouponHistory>> {
@@ -375,8 +358,7 @@ export async function getCouponHistory(
     const session = await requirePermission(PERMISSIONS.COUPON_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // The console's address names the code (/admin/coupons/DIWALI200), in
-    // whatever case it was typed.
+    // From the URL (/admin/coupons/DIWALI200), in any case.
     const where = "code" in key ? { code: key.code.trim().toUpperCase() } : { id: key.id }
     const row = await db.coupon.findUnique({ where, select: COUPON_SELECT })
     if (!row) return fail("No code by that name.", undefined, 404)
@@ -450,8 +432,7 @@ export async function getCouponHistory(
       orders,
     })
 
-    // The totals are the code's; the orders carry customers' names and
-    // emails, which are for staff who may see orders.
+    // Orders carry customers' names and emails: only for staff who may read orders.
     const canSeeOrders = can(session, PERMISSIONS.ORDER_READ)
     const runAt = (at: string) => {
       for (let i = runs.length - 1; i >= 0; i--) if (at >= runs[i]!.start) return runs[i]!.index
@@ -517,8 +498,7 @@ export async function validateCoupon(
       },
     })
 
-    // Missing, archived, expired and used up all read the same, so this cannot be used
-    // to find out which codes exist (coupon-rules.ts).
+    // Every unusable code reads the same, so this cannot reveal which codes exist.
     if (!coupon || !couponIsLive(coupon)) return fail(COUPON_UNUSABLE, undefined, 422)
 
     const discount = couponReduction(coupon, input.subtotal)

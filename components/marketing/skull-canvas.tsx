@@ -15,31 +15,11 @@ import { BLEED, haloPointOf, haloRadiusOf, silhouetteOf } from "@/components/mar
 import { mountSkull } from "@/components/marketing/skull-renderer"
 
 /**
- * The hero skull on the page: where its canvas is, how the skull in it is
- * turned, and what the rest of the page is told about it.
- *
- * The drawing is not done here. The scene - three.js, the model, the draw
- * loop - belongs to skull-renderer, which runs it in a worker where it can
- * and keeps it for the life of the page. This component is handed the
- * renderer's canvas and does the part that needs the document:
- *
- * Where. The canvas sits in `flightRef`, a box the size of the hero stage
- * positioned in the document, and skull-journey says where the skull should
- * be for any scroll position - at home in the hero, docked over a photograph
- * further down, or flying between the two. Moving the box rather than the
- * camera keeps every number in skull-optics true in the box's own terms.
- * Where the browser has scroll-driven animations the whole route is handed to
- * it as keyframes on the page's scroll, and the box is moved by the
- * compositor in the same frame as the page. Moved from here instead, one
- * requestAnimationFrame behind a scroll that has already happened, a skull in
- * flight shivered against the page under it on anything but a fast machine.
- *
- * How turned. Final rotation = `follow` + `userRot`, plus what the route asks:
- *   follow  - eased toward wherever the cursor is, so the skull "looks at" you.
- *   userRot - free spin accumulated while dragging. It keeps its momentum on
- *             release, then decays back to zero, handing the skull back to the
- *             follow pose instead of leaving it stranded facing backwards.
- * Sent to the scene only when it changes; the idle bob is the scene's own.
+ * The hero skull on the page: where its canvas is and how it is turned; the
+ * scene is skull-renderer's. The route moves the box, not the camera, as
+ * scroll-driven keyframes on the compositor where supported (moved a frame
+ * behind the scroll, it shivers). Rotation: `follow` (eased toward the cursor)
+ * + `userRot` (drag spin with momentum, decaying to 0) + the route's.
  */
 
 /** How far the look-at pose swings at the edges of the viewport (radians). */
@@ -59,7 +39,7 @@ const BLEED_STYLE = {
   height: `${BLEED.y * 100}%`,
 } as const
 
-/** Flare per radian-per-second of spin, and its ceiling. A hard fling hits it. */
+/** Flare per radian-per-second of spin, and its ceiling. */
 const HALO_FLARE_GAIN = 0.03
 const HALO_FLARE_MAX = 0.35
 
@@ -67,22 +47,13 @@ const HALO_FLARE_MAX = 0.35
 const BANK_GAIN = 0.0003
 const BANK_MAX = 0.3
 
-/**
- * Frames in a row with nothing moving before the loop stops asking for more.
- * Half a second: long enough for an eased turn to have settled. A page that
- * is only being read then costs the main thread nothing here at all; a
- * scroll, a pointer or a change of layout starts it again.
- */
+/** Still frames (half a second) before the loop stops; scroll, pointer or layout restarts it. */
 const REST_AFTER = 30
 
-/**
- * How finely the route is sampled into keyframes, in px of scroll. The browser
- * draws straight lines between them; at this spacing the curve and its chords
- * are a fifth of a pixel apart at most.
- */
+/** Keyframe spacing along the route, px of scroll: the chords stay within a fifth of a pixel. */
 const ROUTE_STEP = 12
 
-/** Not in lib.dom yet. Chrome and Safari have it; Firefox does not, and takes the frame-by-frame path. */
+/** Not in lib.dom yet. Firefox lacks it and takes the frame-by-frame path. */
 type ScrollTimelineConstructor = new (options: {
   source: Element
   axis: "block"
@@ -100,11 +71,8 @@ export function SkullCanvas({
 }) {
   const hostRef = useRef<HTMLDivElement>(null)
 
-  // Behind refs so neither lands in the effect's dependency list - a parent
-  // re-render must never be able to take the canvas off the page.
-  //
-  // Synced in an effect, not assigned during render, which React forbids.
-  // Declared above the main effect so it has already run when that starts.
+  // Behind refs so a parent re-render never takes the canvas off the page.
+  // Synced in an effect declared above the main one, so it runs first.
   const readyRef = useRef(onReady)
   const errorRef = useRef(onError)
 
@@ -121,9 +89,7 @@ export function SkullCanvas({
     /** The skull is drawn: the route may seat it on photographs, and it may be grabbed. */
     let ready = false
 
-    // The model's surface, handed over by the scene once it loads. The route
-    // sizes the skull by its outline, and a dock can turn it side-on, so the
-    // outline is measured off these at whatever angle is asked for.
+    // The model's surface, from the scene once loaded: the outline is measured off it at any angle.
     let surface: Float32Array | null = null
     const extent = { width: 0, depth: 0 }
     const box = { width: 0, height: 0 }
@@ -141,11 +107,7 @@ export function SkullCanvas({
       return measured
     }
 
-    /**
-     * Where the box goes for a pose: sized so the outline at the dock's angle
-     * matches the photographed one, and scaled about its top left, so the
-     * translate is simply where that corner lands.
-     */
+    /** The box for a pose: sized so the outline matches the photo, scaled about its top left. */
     const place = (pose: Pose) => {
       const shape = silhouette(pose.turn, pose.pitch)
       const s = pose.h / (shape.height * box.height)
@@ -155,7 +117,6 @@ export function SkullCanvas({
       const top = pose.cy - shape.centreY * h
       return { s, w, h, left, top }
     }
-    /** That placing as the box's transform. */
     const transformOf = ({ left, top, s }: { left: number; top: number; s: number }) =>
       `translate3d(${left.toFixed(2)}px, ${top.toFixed(2)}px, 0) scale(${s.toFixed(5)})`
 
@@ -163,11 +124,7 @@ export function SkullCanvas({
     const written = { transform: "", clip: "" }
     const plates = new Map<HTMLElement, number>()
 
-    /**
-     * The route as a scroll-driven animation: the box's transform at every
-     * ROUTE_STEP of scroll, keyed to the page's own scroll position. Null
-     * where the browser has none, and the loop writes the transform instead.
-     */
+    /** The route as a scroll-driven animation; null without support, and the loop moves the box. */
     const ScrollTimeline = (window as unknown as { ScrollTimeline?: ScrollTimelineConstructor })
       .ScrollTimeline
     let route: Animation | null = null
@@ -186,8 +143,7 @@ export function SkullCanvas({
         return
       }
 
-      // Measuring is asked for far more often than the route changes: every
-      // image that loads resizes the body. Only what the route is made of.
+      // Re-chart only when an input changes: every image load resizes the body.
       const from = [
         end,
         vw,
@@ -199,8 +155,7 @@ export function SkullCanvas({
       ].join(" ")
       if (route && from === charted) return
 
-      // A seated skull does not move against the page, so most of the route is
-      // runs of one transform; only the ends of each run are kept.
+      // Runs of one transform (a seated skull) keep only their ends.
       const frames: Keyframe[] = []
       let run: Keyframe | null = null
       for (let y = 0; ; y = Math.min(end, y + ROUTE_STEP)) {
@@ -223,9 +178,7 @@ export function SkullCanvas({
       charted = ""
       if (frames.length < 2) return
 
-      // A new animation takes a frame to start, and for that frame the box
-      // shows its own transform - which would be none, the top left of the
-      // page. Leave it where the route has it now.
+      // A new animation starts a frame late and the box shows its inline transform until then.
       const here = journey(anchors, window.scrollY, vw, vh)
       if (here) {
         written.transform = transformOf(place(here))
@@ -243,12 +196,8 @@ export function SkullCanvas({
       }
     }
 
-    // The route. Re-read whenever layout can have moved: a resize, the body
-    // changing height as fonts and images settle, the fonts themselves. Done
-    // there and then, inside the observer's callback, which the browser runs
-    // before it paints: a section above a seated skull growing as it renders
-    // must move the skull in the same frame, or it sits off its photograph
-    // for one.
+    // Re-measured whenever layout can move, inside the observer callback (before
+    // paint), so a seated skull moves in the same frame as the content above it.
     let stale = true
     const remeasure = () => {
       measure()
@@ -270,16 +219,14 @@ export function SkullCanvas({
         flight.style.height = `${rect.height}px`
       }
       anchors = measureAnchors(silhouette(0, 0))
-      // A photo that has dropped off the route - resized down to a phone,
-      // where the route is shorter - gets its own skull back.
+      // A photo dropped from the route (e.g. resized to a phone) gets its own skull back.
       for (const el of plates.keys()) {
         if (anchors.some((a) => a.el === el)) continue
         el.style.removeProperty("--skull-dock")
         plates.delete(el)
       }
       chart()
-      // Without a charted route the box is placed by the loop, a frame from
-      // now; place it for this frame here.
+      // Without a route the loop places the box a frame late; place it now.
       if (!route) {
         const here = journey(
           anchors,
@@ -344,9 +291,7 @@ export function SkullCanvas({
 
     /** One frame. True if anything was in motion, so another frame is wanted. */
     const step = (): boolean => {
-      // A tab left in the background comes back with one huge interval, and an
-      // ordinary stalled frame - a long GC - with a large one; neither should
-      // fling the skull. Nor should the first frame after a rest.
+      // Clamped: a background tab, a long GC or the first frame after a rest must not fling it.
       const now = performance.now()
       const d = Math.min((now - last) / 1000, 0.05)
       last = now
@@ -366,8 +311,7 @@ export function SkullCanvas({
       const pose = journey(anchors, scroll, vw, vh)
       if (!pose || !flight || box.height === 0) return moving
 
-      // Put the box where the route says the skull is - unless the browser is
-      // already doing that from the keyframes.
+      // Place the box, unless the keyframes already do.
       const placed = place(pose)
       const { s, w, h, left, top } = placed
       if (!route) {
@@ -378,8 +322,7 @@ export function SkullCanvas({
         }
       }
 
-      // The crop is an inset of the canvas - the box plus its bleed - in the
-      // canvas's own unscaled pixels.
+      // The crop: an inset of the canvas (box plus bleed), in its unscaled pixels.
       const hostLeft = left - ((BLEED.x - 1) / 2) * w
       const hostTop = top - ((BLEED.y - 1) / 2) * h
       const clip = pose.clip
@@ -414,8 +357,7 @@ export function SkullCanvas({
             : null
       }
 
-      // The skull looks at the cursor from wherever it is, not from the middle
-      // of the screen: docked on the left, a cursor to its right turns it right.
+      // Look at the cursor from where the skull is, not from the screen's centre.
       if (i.cursor) {
         i.pointer.x = Math.max(-1, Math.min(1, (i.cursor.x - pose.cx) / (vw / 2)))
         i.pointer.y = Math.max(-1, Math.min(1, (i.cursor.y - (pose.cy - scroll)) / (vh / 2)))
@@ -437,9 +379,7 @@ export function SkullCanvas({
       }
 
       const t = 1 - Math.pow(FOLLOW_SMOOTHING, d)
-      // Positive rotation.x tips the face downward, and pointer.y is positive
-      // toward the bottom of the screen - so they share a sign. Negating it
-      // here made the skull look up as the cursor went down.
+      // Positive rotation.x tips the face down and pointer.y grows downward: same sign.
       follow.x += (i.pointer.y * MAX_PITCH - follow.x) * t
       follow.y += (i.pointer.x * MAX_YAW - follow.y) * t
 
@@ -450,18 +390,14 @@ export function SkullCanvas({
       }
       lastCx = pose.cx
 
-      // Seated in a photo the skull is a picture: it neither looks at the
-      // cursor nor turns under a drag, so the card reads like the still images
-      // beside it - and turned or pitched, it ran into the card's edges. The
-      // hold fades in over the landing and out again on take-off.
+      // Seated in a photo it holds still (no follow, no drag) like the photos
+      // beside it; the hold fades in over the landing.
       const free = 1 - pose.docked
       const rx = (follow.x + i.userRot.x) * free + pose.pitch
       const ry = (follow.y + i.userRot.y) * free + pose.spin + pose.turn
       const rz = bank
 
-      // Stage light in the hero and in flight, studio light once seated in a
-      // photo. Quantised, so a skull hovering at the edge of a dock does not
-      // relight and redraw on every sub-pixel of scroll.
+      // Stage light in flight, studio light once seated; quantised as in the scene.
       const studio = Math.round(pose.docked * 200) / 200
       if (
         Math.abs(rx - told.x) > 1e-5 ||
@@ -478,21 +414,18 @@ export function SkullCanvas({
         skull.pose({ x: rx, y: ry, z: rz, bob: pose.bob, studio })
         moving = true
       }
-      // The poster's bob, which the mesh keeps time with (see BOB_PERIOD). The
-      // stage reads it off the poster after this component has mounted.
+      // The poster's bob epoch (see BOB_PERIOD); the stage sets it after this mounts.
       if (i.bobEpoch !== told.clock) {
         told.clock = i.bobEpoch
         skull.clock(i.bobEpoch)
       }
 
       if (ready) {
-        // Tell the headline where to burn: the crown, projected as the scene's
-        // camera projects it.
+        // Where the headline burns: the crown, projected by the scene's camera.
         const point = haloPointOf(rx, ry, rz, box.width / box.height)
 
-        // A flung skull flares the burn, which settles again as it slows.
-        // Measured on the visitor's own turning, not the route's: the flight
-        // spin is not something they did, and it wraps a full turn on landing.
+        // A fling flares the burn. Only the visitor's own turning counts: the
+        // route's spin wraps a full turn on landing.
         const ownPitch = follow.x + i.userRot.x
         const ownYaw = follow.y + i.userRot.y
         if (d > 0) {
@@ -508,8 +441,6 @@ export function SkullCanvas({
         i.halo.flare = flare
       }
 
-      // Still turning under its own momentum, or still easing toward the
-      // cursor, or the headline's flare still dying down.
       return (
         moving ||
         i.dragging ||
@@ -550,10 +481,9 @@ export function SkullCanvas({
       layout.disconnect()
       window.removeEventListener("resize", remeasure)
       route?.cancel()
-      // The canvas leaves the page and the scene stops drawing, but neither is
-      // thrown away: a return to this page puts them straight back.
+      // Canvas and scene are kept, not destroyed: a return to this page puts them back.
       skull.unmount()
-      // The poster takes over from here, and it sits in the rest pose.
+      // The poster takes over, in the rest pose.
       ready = false
       release()
       Object.assign(getSkullInteraction().halo, HALO_REST)

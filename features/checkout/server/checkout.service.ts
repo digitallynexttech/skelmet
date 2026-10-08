@@ -68,13 +68,8 @@ const PAYS_ONLINE: PaymentMethod[] = ["ONLINE", "PARTIAL"]
 /**
  * True only for a unique-constraint violation on the order number.
  *
- * Checked structurally rather than with `instanceof`, so it does not depend on
- * which Prisma entrypoint happened to construct the error. It used to read
- * only `meta.target`, which Prisma 7's driver adapters do not fill in - the
- * column arrives under `meta.driverAdapterError`, or only in the message - so
- * the retry below never fired. Now the whole error is searched for the
- * `number` column or the `orders_number_key` index, as a whole word, so
- * `invoice_number` and every other unique index still never retry.
+ * Prisma 7's driver adapters leave `meta.target` empty, so the whole error is
+ * searched for `number` as a whole word (not `invoice_number`) or `orders_number_key`.
  */
 export function isDuplicateNumber(err: unknown): boolean {
   if (!err || typeof err !== "object") return false
@@ -90,14 +85,10 @@ export function isDuplicateNumber(err: unknown): boolean {
 }
 
 /**
- * Gives back everything a committed order took, when its payment could never
- * be started.
+ * Gives back the stock and coupon use of an unpaid order.
  *
- * The status claim goes first and is conditional on PENDING, so two concurrent
- * releases cannot both restock the same lines - whoever flips it wins and the
- * loser returns having done nothing. All of it rides one transaction because a
- * half-undo is worse than none: stock back while the order is still PENDING
- * would let it be paid for goods that have already been re-sold.
+ * The conditional PENDING claim goes first so two concurrent releases cannot
+ * both restock. One transaction: a half-undo is worse than none.
  */
 async function releaseOrder(input: {
   orderId: string
@@ -128,53 +119,32 @@ async function releaseOrder(input: {
       return true
     })
   } catch (err) {
-    // A cleanup that fails must not replace the gateway error the customer is
-    // waiting on. The order stays PENDING and an admin can cancel it, which
-    // restocks down this same path.
+    // Must not replace the error the customer is waiting on. The order stays
+    // PENDING; an admin cancel restocks it.
     console.error("[CHECKOUT] release failed for", input.orderId, err)
     return false
   }
 }
 
 /**
- * How long an unpaid online order may hold its stock and coupon use.
- *
- * Long enough for any real payment to finish - a UPI collect request lives
- * about fifteen minutes, a slow netbanking redirect a few more - and short
- * enough that a closed payment window does not take a unit off sale for good.
- * A payment that lands after this still counts: capturePayment revives the
- * order rather than leaving the money on a cancelled one.
+ * How long an unpaid online order holds its stock and coupon use. Outlasts a UPI
+ * collect request (~15 min); a later payment still counts (capturePayment revives).
  */
 const UNPAID_HOLD_MS = 60 * 60_000
 
-/**
- * How many unpaid online orders one email or phone may hold at once.
- *
- * Every order takes its stock the moment it is written and keeps it for the
- * hour above, so without a ceiling one script could place order after order
- * and take the whole shop off sale without paying for any of it. Three is
- * more than a real buyer retrying a declined card ever needs.
- */
+/** Unpaid online orders one email or phone may hold, so a script cannot hold all the stock. */
 const OPEN_UNPAID_LIMIT = 3
 
 const OPEN_UNPAID_REFUSAL =
   "You already have orders waiting to be paid for. Finish paying for one of those, or try again in an hour."
 
-/**
- * How young an unpaid order must be for paying again to reopen it rather than
- * write another: well inside its hour, so the new attempt is not racing the
- * order's release (releaseStaleOrders).
- */
+/** Max age of a reopenable unpaid order: well inside its hour, so it does not race release. */
 const REOPEN_WITHIN_MS = UNPAID_HOLD_MS - 15 * 60_000
 
 /** Payment rows that moved no money: an order with only these can take another attempt. */
 const NO_MONEY_MOVED = ["CREATED", "FAILED"]
 
-/**
- * A buyer's unpaid online orders young enough to reopen, newest first. One
- * query, read before anything else, so the ceiling below can tell a retry
- * from a new order.
- */
+/** A buyer's unpaid online orders young enough to reopen, newest first. */
 async function openAttempts(email: string, phone: string, method: PaymentMethod) {
   return db.order.findMany({
     where: {
@@ -207,7 +177,7 @@ type OpenAttempt = Awaited<ReturnType<typeof openAttempts>>[number]
 const sameMoney = (a: { toString(): string } | number, b: { toString(): string } | number) =>
   Math.abs(Number(a.toString()) - Number(b.toString())) < 0.005
 
-/** The same things in the same numbers, whatever order they were listed in. */
+/** Same SKUs and quantities, in any order. */
 function sameBasket(
   attempt: OpenAttempt,
   items: ReadonlyArray<{ sku: string; qty: number }>,
@@ -223,18 +193,10 @@ function sameBasket(
 }
 
 /**
- * Paying again for an order that is still open, instead of writing another.
- *
- * A declined card, a closed payment window or a page reloaded mid-checkout
- * used to leave one unpaid order per attempt - the same buyer, the same
- * basket, three orders, two of them expiring an hour later. Razorpay takes
- * any number of attempts on one of its orders until one is paid, so an
- * attempt for the same basket at the same price, from the same email and
- * phone, reopens the order already holding that stock. The address may have
- * changed and is saved onto it; the price was checked to be the same.
- *
- * Never an order any money has moved on, nor one opened on the other
- * Razorpay account: those are not for a second attempt.
+ * Reopens the buyer's open order for the same basket at the same price instead
+ * of writing another; Razorpay takes any number of attempts on one order. The
+ * new address is saved onto it. Never an order money has moved on, nor one
+ * opened on the other Razorpay account.
  */
 async function reopenUnpaidOrder(
   attempts: OpenAttempt[],
@@ -289,13 +251,8 @@ async function reopenUnpaidOrder(
 }
 
 /**
- * How many cash-on-delivery orders one email or phone may have waiting to be
- * sent, and how many one address may place in an hour.
- *
- * A COD order takes its stock the moment it is written and nothing gives it
- * back by itself - there is no payment to wait an hour for - so these are the
- * only ceiling on someone ordering the shop empty without paying a rupee.
- * Staff cancel the ones that turn out not to be real.
+ * COD orders one email or phone may have waiting to ship, and per IP per hour.
+ * COD stock is never released by itself, so these are the only ceiling.
  */
 const OPEN_COD_LIMIT = 2
 const COD_PER_HOUR = 6
@@ -305,11 +262,8 @@ const STALE_BATCH = 10
 const GATEWAY_CHECK_MS = 5_000
 
 /**
- * One run at a time per process, so a burst of checkouts does not ask
- * Razorpay ten times over - and, per order, when Razorpay could not answer
- * about it, when to ask again. Without that pause the oldest few orders
- * Razorpay cannot answer for would fill every batch, and nothing behind them
- * would ever be released.
+ * One run at a time per process. Orders Razorpay could not answer for wait
+ * before being asked again, so they cannot fill every batch.
  */
 const releasing = globalThis as unknown as {
   skelmetReleasingStale?: boolean
@@ -331,15 +285,8 @@ type GatewayVerdict =
   | { kind: "unknown" }
 
 /**
- * Whether Razorpay took money for an order we were about to call abandoned.
- *
- * A payment can be captured at Razorpay while neither the browser's /verify
- * nor the webhook ever reaches us - a closed tab, a webhook misconfigured or
- * down. Cancelling such an order on the clock kept the customer's money on
- * an order that would never ship. So before one is cancelled, Razorpay is
- * asked; any doubt - a timeout, an error, keys that cannot be read - is
- * "unknown", which leaves the order for the next run rather than cancelling
- * one that may be paid.
+ * Whether Razorpay took money for an order about to be called abandoned (/verify
+ * and the webhook can both miss). Any doubt is "unknown": never cancel one that may be paid.
  */
 async function paidAtGateway(
   payments: { gatewayOrderId: string; mode: string | null }[],
@@ -375,18 +322,10 @@ async function paidAtGateway(
 }
 
 /**
- * Hands back the stock and coupon uses of online orders that were never paid.
+ * Hands back the stock and coupon uses of online orders never paid.
  *
- * Every checkout claims stock and a coupon use when the order is written, and
- * only a gateway error on the spot used to release them - a customer who simply
- * closed the payment window, or whose card was declined, left the order PENDING
- * with its units held forever. There is no scheduler on this server, so this
- * runs lazily: at the start of every checkout, which is exactly when held stock
- * would turn a buyer away, and when staff open the orders list.
- *
- * Bounded: ten orders a run, and `budgetMs` in all, so a slow Razorpay costs
- * the checkout that triggered it seconds at most. What is not reached is left
- * for the next run, still holding its stock - never cancelled blind.
+ * No scheduler: runs lazily at each checkout and when staff open the orders
+ * list. Bounded by STALE_BATCH and `budgetMs`; what is not reached waits.
  */
 export async function releaseStaleOrders(options: { budgetMs?: number } = {}): Promise<void> {
   if (!hasDatabase()) return
@@ -459,7 +398,7 @@ export async function releaseStaleOrders(options: { budgetMs?: number } = {}): P
       }
     }
   } catch (err) {
-    // Housekeeping. It must never be the reason a checkout fails.
+    // Housekeeping must never fail a checkout.
     console.error("[CHECKOUT] releasing stale orders failed", err)
   } finally {
     releasing.skelmetReleasingStale = false
@@ -467,13 +406,9 @@ export async function releaseStaleOrders(options: { budgetMs?: number } = {}): P
 }
 
 /**
- * Places the order and, unless it is cash on delivery, opens a Razorpay order
- * for what is paid now - all of it, or the advance.
- *
- * The client sends SKUs, quantities and the way of paying it chose. Prices,
- * any coupon, the charge for paying on delivery and the advance are worked
- * out here from the database and the console's settings, so a tampered cart
- * cannot change what is charged.
+ * Places the order and, unless COD, opens a Razorpay order for what is paid now.
+ * The client sends only SKUs, quantities and the method; every amount is priced
+ * here, so a tampered cart cannot change the charge.
  */
 export async function placeOrder(raw: unknown): Promise<ActionResult<StartedCheckout>> {
   return runAction(async () => {
@@ -483,8 +418,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     const method = input.paymentMethod
     const paysOnline = PAYS_ONLINE.includes(method)
 
-    // Whether this buyer is offered this way of paying at all. The page only
-    // shows what is on offer, but the page is only a courtesy.
+    // The page only shows what is on offer, but the page is only a courtesy.
     const chosen = (await offeredMethods()).methods.find((m) => m.id === method)
     if (!chosen) {
       return fail(
@@ -494,12 +428,8 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       )
     }
 
-    // Then, before any stock is looked at or Shiprocket asked: the ceiling on
-    // orders one buyer may hold without having paid for them
-    // (OPEN_UNPAID_LIMIT, OPEN_COD_LIMIT). Paying again for one of those is
-    // not a new order - it reopens that one - so a buyer at the ceiling whose
-    // basket matches an open order goes on, and is refused further down only
-    // if it turns out not to be a retry after all.
+    // Unpaid-order ceiling. A buyer at it whose basket matches an open order
+    // goes on as a retry, and is refused below if it does not reopen.
     const attempts = paysOnline ? await openAttempts(email, input.phone, method) : []
     let atCeiling = false
     if (paysOnline) {
@@ -535,15 +465,9 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       rateLimit(`cod-order:${(await getAuditMeta()).ip}`, COD_PER_HOUR, 60 * 60_000)
     }
 
-    // The checkout page has already told the buyer this, but the page is only
-    // a courtesy: a paid order no courier can reach is money to refund and a
-    // customer to disappoint. Only a definite no refuses - Shiprocket being
-    // down, slow or not set up must never stop a sale - and the answer is
-    // cached, usually from the page's own check a moment ago.
-    //
-    // The same answer carries the shipping fee, asked for this order's own
-    // parcel - the page asks with the same count, so the fee it showed is the
-    // fee charged. No answer means no fee, as it means no refusal.
+    // Only a definite no refuses: Shiprocket down or unset must never stop a
+    // sale. The page asks with the same unit count, so the fee shown is the fee
+    // charged; no answer means no fee.
     const pin = input.address.pincode
     const units = input.items.reduce((n, i) => n + i.qty, 0)
     const reach = await checkPincode({ pincode: pin, units })
@@ -558,8 +482,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       )
     }
 
-    // Paying at the door needs a courier that collects there. Again only a
-    // definite no refuses; not knowing leaves it to booking to find out.
+    // Again only a definite no refuses.
     if (method !== "ONLINE" && (await collectsOnDelivery(pin, units)) === false) {
       return fail(
         `Couriers don't collect payment at pincode ${pin}, so this order has to be paid for online.`,
@@ -568,9 +491,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       )
     }
 
-    // Before the stock check, so units held by abandoned orders are back on
-    // sale for this buyer. A short budget: a slow Razorpay must not hold up
-    // the buyer who is here now.
+    // Before the stock check, so abandoned orders' units are back on sale.
     await releaseStaleOrders({ budgetMs: 3_000 })
 
     const session = await optionalSession()
@@ -587,8 +508,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       },
     })
 
-    // A draft or archived product is not for sale, whatever its variants'
-    // stock says - the SKU alone used to be enough to buy one.
+    // A draft or archived product is not for sale, whatever its stock.
     if (
       variants.length !== input.items.length ||
       variants.some((v) => v.product.status !== "ACTIVE")
@@ -630,8 +550,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         },
       })
 
-      // The same answers as the cart's own check (coupons.service), so the
-      // two cannot be played against each other to learn which codes exist.
+      // Same answers as the cart's check, so neither reveals which codes exist.
       if (!coupon || !couponIsLive(coupon)) return fail(COUPON_UNUSABLE, undefined, 422)
 
       couponOff = couponReduction(coupon, base.subtotal)
@@ -639,14 +558,12 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       couponId = coupon.id
     }
 
-    // Before the transaction, not after: failing here once the order exists
-    // leaves an orphan holding stock nobody can buy.
+    // Before the transaction, or a failure leaves an orphan holding stock.
     if (paysOnline && !(await isGatewayConfigured())) {
       return fail("Payments are temporarily unavailable. Please try again shortly.", undefined, 503)
     }
 
-    // The charge for paying this way is the console's, as is the advance;
-    // checkout showed both from the same settings and the same arithmetic.
+    // Fee and advance come from the console's settings, as the page showed them.
     const priced = priceCart(lines, { couponOff, shippingFee, paymentFee: chosen.fee })
     const split = splitPayment(method, priced.total, chosen.advance)
     if (!split) {
@@ -698,22 +615,16 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     // ── write the order and claim stock in one transaction ──
     const writeOrder = (number: string) =>
       db.$transaction(async (tx) => {
-        // Who bought, before the order row, so it can point at them. A guest
-        // checkout still produces a customer: there is no signup here, so this
-        // is the only moment the shop ever learns who someone is. Their
-        // details are saved once the order is paid, not now.
+        // A guest checkout still makes a customer; details are saved once paid.
         const customerId = await attachCustomer(tx, { email })
 
         const created = await tx.order.create({
           data: {
             number,
             paymentMethod: method,
-            // A signed-in staff id wins when there is one, so an admin placing an
-            // order on someone's behalf still owns it. Otherwise the order points
-            // at the customer record checkout just wrote.
+            // A signed-in staff id wins, so an admin ordering for someone owns it.
             userId: session?.user?.id ?? customerId,
-            // Cash on delivery is accepted as it is placed: there is no
-            // payment to wait for. Anything paid online waits for its money.
+            // COD has no payment to wait for.
             status: paysOnline ? "PENDING" : "CONFIRMED",
             email,
             phone: input.phone,
@@ -738,8 +649,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           select: { id: true, number: true, total: true },
         })
 
-        // Atomic claim per line - a concurrent order cannot oversell (§5).
-        // Losing that race is the buyer's problem to know about, not a 500.
+        // Atomic claim per line so a concurrent order cannot oversell (§5).
         for (const line of lines) {
           const claimed = await tx.variant.updateMany({
             where: { id: line.variant.id, stock: { gte: line.qty } },
@@ -752,8 +662,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
           }
         }
 
-        // The coupon's use is claimed here, conditionally, not merely counted:
-        // the check above is only the friendly early answer (coupon-rules.ts).
+        // The real, conditional claim; the check above is only the early answer.
         if (couponId && !(await claimCouponUse(tx, couponId))) {
           throw new ConflictError(`${COUPON_UNUSABLE} Remove it and try again.`)
         }
@@ -761,12 +670,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
         return created
       })
 
-    // SKM-YYYY-XXXX draws 4 characters from a 32-letter alphabet, so a year's
-    // numbers collide with each other at about a one-in-a-million chance per
-    // pair - rare, and `number` is @unique, so the loser used to get a raw
-    // P2002 rendered as "Something went wrong" after their card was already
-    // charged. A fresh number costs nothing; only a genuine duplicate retries,
-    // and an out-of-stock or coupon refusal still aborts on the first attempt.
+    // Order numbers can collide (4 random chars); only a duplicate number retries.
     let order: Awaited<ReturnType<typeof writeOrder>> | null = null
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
@@ -779,15 +683,7 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
     if (!order) return fail("Could not place the order just now. Try again.", undefined, 503)
 
     // ── open the gateway order ─────────────────────────────
-    //
-    // The transaction above has already committed, so a failure here cannot be
-    // rolled back - it has to be compensated. The isGatewayConfigured() check
-    // further up only proves the keys are PRESENT; Razorpay can still refuse
-    // the call itself, and does: rejected credentials answer 401, and an
-    // outage or a dropped connection never answers at all. Every one of those
-    // used to leave exactly the orphan that check was written to prevent - a
-    // PENDING order nobody can pay, sitting on claimed stock and on a coupon
-    // redemption nobody used.
+    // The order has committed, so a gateway failure is compensated by releaseOrder.
     let gatewayOrderId: string | null = null
     let gatewayKeyId: string | null = null
     if (paysOnline) {
@@ -831,11 +727,10 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       ...(await getAuditMeta()),
     })
 
-    // The one moment we know for certain this browser owns this order.
+    // The one moment we know this browser owns this order.
     await rememberOrder(order.number)
 
-    // And which visitor it was, when they accepted cookies. Best effort: it
-    // swallows its own failures, so it can never cost the sale.
+    // Best effort: swallows its own failures.
     await attachOrderToVisitor({
       orderId: order.id,
       email: input.email,
@@ -843,11 +738,8 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
       name: `${input.address.firstName} ${input.address.lastName}`.trim(),
     })
 
-    // An order paid online is real when its payment clears, so confirmPayment
-    // and the webhook own its receipt: sending one here would confirm an
-    // abandoned payment page. Cash on delivery is real now - nothing more
-    // comes from the buyer until the door - so what a capture does for a paid
-    // order is done here for it.
+    // An online order's receipt waits for its capture. COD is real now, so what
+    // a capture does is done here.
     if (method === "COD") {
       await rememberCustomerDetails(order.id)
 
@@ -882,30 +774,11 @@ export async function placeOrder(raw: unknown): Promise<ActionResult<StartedChec
 }
 
 /**
- * Records a captured payment and marks its order paid - the one place the
- * browser's /verify, the Razorpay webhook and the stale-order check all do
- * this.
- *
- * The order is found through the payment row for this Razorpay order, never
- * through anything the caller names. /verify used to mark whichever `orderId`
- * the browser sent once the signature checked out, and the signature only
- * proves a payment for ONE Razorpay order: paying for a cheap order and sending
- * an expensive order's id marked the expensive one paid.
- *
- * The payment row is the claim. The first capture to flip it from unpaid, by
- * any path, does the work and sends the receipt; every later arrival - the
- * other path, a webhook redelivery - finds it CAPTURED and does nothing. The
- * claim and the order update share a transaction, so a crash between them
- * cannot leave a captured payment on an unpaid order with nothing to retry.
- *
- * An order that was cancelled before its money arrived - released after sitting
- * unpaid (`releaseStaleOrders`), or cancelled by hand - is revived rather than
- * left cancelled with the customer's money held. Its stock is taken again
- * without the usual floor: the customer has paid, so if the units were re-sold
- * in the meantime the variant goes negative, which is the honest signal that
- * the shop owes one more than it has. Its coupon use is claimed again the same
- * way: conditionally, and when the code has since run out or expired, counted
- * anyway and audited, because the discount was already paid for.
+ * Records a captured payment and marks its order paid, for /verify, the webhook
+ * and the stale-order check alike. The order comes from the payment row, never
+ * from the caller. Idempotent: the first flip of the payment row does the work.
+ * A cancelled order is revived; its stock may go negative and its coupon use is
+ * counted even past the limit (audited), because the customer has paid.
  */
 async function capturePayment(input: {
   gatewayOrderId: string
@@ -994,18 +867,15 @@ async function capturePayment(input: {
       })
     }
 
-    // Paid, so now - and only now - the order's name, phone and address are
-    // saved onto its customer (see attachCustomer).
+    // Only once paid are the order's details saved onto its customer.
     await rememberCustomerDetails(payment.orderId)
 
-    // The receipt after the response: a slow or unreachable mail server must
-    // not hold up the payment confirmation the customer is waiting on.
+    // After the response, so a slow mail server cannot hold up the confirmation.
     const mail = renderOrderConfirmed({
       number: order.number,
       email: order.email,
       total: order.total.toString(),
-      // Money came through the gateway, so this is never the cash-on-delivery
-      // wording, whatever the order's method field says.
+      // Money came through the gateway, so never the COD wording.
       paymentMethod: order.paymentMethod === "PARTIAL" ? "PARTIAL" : "ONLINE",
       dueOnDelivery: order.paymentMethod === "PARTIAL" ? order.dueOnDelivery.toString() : "0",
       items: order.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
@@ -1015,12 +885,10 @@ async function capturePayment(input: {
       await sendMail({ to, ...mail })
     })
 
-    // Into Shiprocket after the response, so it is ready when staff book the
-    // courier. Best effort: booking sends it if this does not.
+    // Best effort: booking sends it if this does not.
     queueShiprocketOrder(payment.orderId)
   } else if (outcome.kind === "untouched") {
-    // Money captured against an order in a state nothing here should move -
-    // refunded, say. Loud, so someone looks at it.
+    // Captured against an order in a state nothing should move (e.g. refunded). Loud on purpose.
     console.error("[PAYMENT] captured against order in", order.status, payment.orderId)
     await createAuditLog(null, {
       action: "payment:captured-unexpected",
@@ -1034,14 +902,9 @@ async function capturePayment(input: {
 }
 
 /**
- * What Razorpay itself says about a payment whose signature checked out.
- *
- * A valid signature proves Razorpay handed this browser that (order, payment)
- * pair, not that the money moved: an account set to capture by hand leaves a
- * successful payment `authorized`, held rather than taken. So the payment is
- * read back, captured if it is only authorised, and the order is marked paid
- * only once it is captured. "unreachable" - Razorpay timing out or failing -
- * falls back to the signature alone, as before, and is audited.
+ * Reads back a signed payment and captures it if only `authorized`: a valid
+ * signature does not prove the money moved. "unreachable" falls back to the
+ * signature alone (audited by the caller).
  */
 async function confirmAtGateway(
   gatewayPaymentId: string,
@@ -1077,11 +940,9 @@ async function confirmAtGateway(
 }
 
 /**
- * Called by the browser after Razorpay's handler fires. The webhook is the
- * source of truth; this exists so the customer sees confirmation immediately
- * instead of waiting on a server-to-server round trip.
- *
- * `orderId` in the body is not used to decide anything - see capturePayment.
+ * Called by the browser after Razorpay's handler fires, so the customer sees
+ * confirmation at once; the webhook is the source of truth. `orderId` in the
+ * body decides nothing.
  */
 export async function confirmPayment(
   raw: unknown,
@@ -1090,8 +951,7 @@ export async function confirmPayment(
     const input = verifyPaymentSchema.parse(raw)
     if (!hasDatabase()) return fail("Checkout is not available yet.", undefined, 503)
 
-    // Checked with the secret of the account the payment was opened on, which
-    // is not necessarily the one switched on now.
+    // Verified with the account the payment was opened on, not the current one.
     const opened = await db.payment.findUnique({
       where: {
         gateway_gatewayOrderId: { gateway: "razorpay", gatewayOrderId: input.gatewayOrderId },
@@ -1101,9 +961,7 @@ export async function confirmPayment(
     const mode = modeOfPayment(opened?.mode, await paymentConfig())
 
     if (!(await verifyPaymentSignature(input, mode))) {
-      // One row, and none of the ids the caller sent: they are whatever the
-      // caller chose, and writing them under an order's entity id let anyone
-      // fill any order's audit trail with forged failures.
+      // No caller-sent ids: they would let anyone forge any order's audit trail.
       await createAuditLog(null, {
         action: "payment:signature-invalid",
         module: "order",
@@ -1184,14 +1042,8 @@ export async function applyPaymentWebhook(event: {
     if (!payment) return ok({ handled: false })
 
     if (event.event === "payment.failed") {
-      // Conditional on CREATED, the same way the capture above claims PENDING.
-      //
-      // A customer whose first card is declined and whose second succeeds
-      // generates BOTH events, and Razorpay does not promise the order they
-      // arrive in. An unconditional write here let a late failure land on a
-      // row that had already been captured - flipping a paid order's payment
-      // to FAILED and, worse, overwriting the gatewayPaymentId with the
-      // declined attempt's, which is the id a refund would later resolve by.
+      // Conditional on CREATED: Razorpay may deliver a declined attempt's
+      // failure after a later attempt's capture, which must not be overwritten.
       const claimed = await db.payment.updateMany({
         where: { id: payment.id, status: "CREATED" },
         data: { status: "FAILED", gatewayPaymentId: gatewayPaymentId ?? null },
@@ -1229,12 +1081,8 @@ export type Confirmation = {
 }
 
 /**
- * The order behind the confirmation screen.
- *
- * Authorised by the cookie `placeOrder` set, or by owning the order when
- * signed in. A wrong number, someone else's number and a number that never
- * existed all answer the same 404 - anything else turns this into an oracle
- * for which order numbers are real.
+ * The order behind the confirmation screen, for the browser that placed it or
+ * its signed-in owner. Every miss is the same 404, so numbers cannot be probed.
  */
 export async function getConfirmation(rawNumber: string): Promise<ActionResult<Confirmation>> {
   return runAction(async () => {

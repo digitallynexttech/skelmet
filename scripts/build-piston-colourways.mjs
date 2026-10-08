@@ -1,14 +1,11 @@
 /**
- * The Piston Skull's pictures in the other two colourways.
+ * Builds the Piston Skull's pictures in the other two colourways.
  *
  *   node scripts/build-piston-colourways.mjs
  *
- * The orange photographs (public/product/piston-*.jpg) are the sources: each
- * is the print file, skull-design-2.stl, on the new bracket, rendered in the
- * pose fitted to the owner's photos of the real mount, then given a
- * photographic finish and checked against that render's outline. Only the
- * colour changes here (recolour-skull.mjs), so all three finishes show the
- * same skull in the same light.
+ * The orange public/product/piston-*.jpg (studio renders of the print file) are
+ * the sources; only the colour changes (recolour-skull.mjs), so all three
+ * finishes show the same skull in the same light.
  */
 import fs from "node:fs"
 import path from "node:path"

@@ -18,14 +18,7 @@ type Payload = {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
-/**
- * Everyone who has ever paid for an order. There are no customer accounts, so
- * these rows are written by checkout rather than by anyone signing up - which
- * means this list is the only place the shop's customers exist as people
- * rather than as a column on an order. People who placed an order and never
- * paid are under Orders > Abandoned carts; everyone else who came by is
- * under Customers > Visitors.
- */
+// Everyone who has paid for an order. Unpaid ones are in Abandoned carts.
 
 const day = (iso: string | null) =>
   iso
@@ -42,13 +35,12 @@ export function CustomerTable() {
 
   React.useEffect(() => {
     let cancelled = false
-    // Debounced: the search box hits the database on every keystroke otherwise.
+    // Debounced search.
     const timer = window.setTimeout(
       async () => {
         setLoading(true)
         try {
-          // The whole window, not a page of twenty: the table sorts and exports
-          // what it holds, so a short fetch would quietly make both partial.
+          // The whole window: the table sorts and exports what it holds.
           const params = new URLSearchParams({ pageSize: String(MAX_PAGE_SIZE) })
           if (search.trim()) params.set("search", search.trim())
           const res = await apiFetch<Payload>(`/api/admin/customers?${params}`)
@@ -74,11 +66,8 @@ export function CustomerTable() {
     {
       key: "customer",
       header: "Customer",
-      // Sorts on the name people read, falling back to the email for the rows
-      // that have no name yet.
       value: (c) => c.name ?? c.email,
-      // The name is the link, not the whole row: a clickable row and a
-      // selection checkbox fight over the same click.
+      // The name is the link, not the row: a row link would fight the selection checkbox.
       cell: (c) => (
         <Link href={`/admin/customers/${c.id}`} className="group block">
           <div className="text-bone group-hover:text-blaze text-[14px] font-semibold transition-colors">
@@ -111,8 +100,7 @@ export function CustomerTable() {
       key: "spent",
       header: "Spent",
       align: "right",
-      // Money is a string on the wire; sort and export it as a number or
-      // "₹1,000" lands between "₹10" and "₹2".
+      // Money arrives as a string: sort it as a number.
       value: (c) => Number(c.totalSpent),
       cell: (c) => (
         <span className="text-bone text-[13.5px]">
@@ -124,8 +112,6 @@ export function CustomerTable() {
       key: "last",
       header: "Last order",
       align: "right",
-      // Sorts on the raw ISO string, which orders correctly; the cell shows
-      // the readable form.
       value: (c) => c.lastOrderAt ?? "",
       cell: (c) => <span className="text-ash font-mono text-[12px]">{day(c.lastOrderAt)}</span>,
     },

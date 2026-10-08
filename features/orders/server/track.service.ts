@@ -9,37 +9,25 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { db } from "@/server/db"
 
 /**
- * Public order lookup, for the customer who is not signed in and is not on the
- * browser that placed the order - which is most people chasing a delivery.
- *
- * Deliberately has no `requirePermission`: this is the one order read a
- * stranger is allowed to make, and the number plus the email it was placed
- * with is the whole credential. That is weak on its own, so the route in front
- * of it rate-limits hard, and everything below is shaped to avoid leaking:
- *
- *  - A wrong number, a wrong email and an order that never existed all get the
- *    same answer, so this cannot be used to discover which numbers are real.
- *  - The email is compared, never returned. Nothing here echoes a field the
- *    caller did not already supply.
- *  - No address, no phone, no payment identifiers - a courier status is all
- *    anyone needs from this screen, and what they still owe at the door.
+ * Public lookup: no `requirePermission`, the number plus email is the whole
+ * credential. So every miss gets one answer, the email is never returned, and no
+ * address, phone or payment ids go out.
  */
 export type TrackedOrder = {
   number: string
   status: string
   paymentMethod: PaymentMethod
-  /** What the courier collects on delivery; "0" when it was all paid online. */
+  /** "0" when all paid online. */
   dueOnDelivery: string
   placedAt: string | null
   itemCount: number
   items: { name: string; qty: number }[]
   courier: string | null
   awb: string | null
-  /** The courier's latest word - "IN TRANSIT", "OUT FOR DELIVERY". */
+  /** e.g. "IN TRANSIT". */
   courierStatus: string | null
-  /** The courier's own delivery estimate, once it has given one. */
   etd: string | null
-  /** The courier's live tracking page, for shipments booked through Shiprocket. */
+  /** Shiprocket shipments only. */
   trackingUrl: string | null
   shippedAt: string | null
   deliveredAt: string | null
@@ -50,9 +38,7 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
     const input = trackOrderSchema.parse(raw)
     if (!hasDatabase()) return fail("Tracking is not available yet.", undefined, 503)
 
-    // Per email as well as per address (the route): the address limit alone
-    // let one customer's order numbers be walked from a pool of addresses.
-    // A 429 here reads the same whether or not the email has any orders.
+    // Per email too, so order numbers cannot be walked from many IPs. Same 429 for any email.
     rateLimit(`track-email:${input.email.trim().toLowerCase()}`, 10, 10 * 60_000)
 
     const order = await db.order.findUnique({
@@ -80,8 +66,7 @@ export async function trackOrder(raw: unknown): Promise<ActionResult<TrackedOrde
       },
     })
 
-    // One message for every miss. Splitting these into "no such order" and
-    // "wrong email" would confirm which numbers exist, one guess at a time.
+    // One message for every miss, or it would confirm which numbers exist.
     const miss = fail("We could not find that order. Check the number and email.", undefined, 404)
     if (!order) return miss
     if (order.email.toLowerCase() !== input.email.toLowerCase()) return miss

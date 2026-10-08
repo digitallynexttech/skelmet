@@ -35,7 +35,6 @@ describe("paymentState", () => {
     }
   })
 
-  // The Unpaid tab and the badge must name the same orders.
   it("is pending or partly paid exactly where the Unpaid tab lists an order", () => {
     for (const status of ORDER_STATUSES) {
       for (const method of PAYMENT_METHODS) {

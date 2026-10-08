@@ -12,11 +12,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-/**
- * Where the Unsubscribe link in every newsletter lands. It names the address,
- * masked, so a forwarded email cannot quietly take someone else off the list,
- * and asks for one press rather than acting on the visit.
- */
+// Shows the masked address and needs a press, so a forwarded or prefetched link unsubscribes nobody.
 export default async function UnsubscribePage({
   searchParams,
 }: {

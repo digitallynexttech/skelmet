@@ -22,12 +22,11 @@ export type OrderRow = {
   dueOnDelivery: string
   itemCount: number
   customer: string
-  /** City and state. */
   location: string
   payment: PaymentState
   fulfilment: FulfilmentState
   delivery: DeliveryState | null
-  /** Paid through Razorpay's test account: the shop trying itself out. */
+  /** Paid through Razorpay's test account. */
   testPayment: boolean
   createdAt: string
   placedAt: string | null
@@ -43,19 +42,18 @@ export type OrderDetail = {
   subtotal: string
   discount: string
   shipping: string
-  /** The charge for paying on delivery, part of `total`. */
+  /** The pay-on-delivery charge, included in `total`. */
   paymentFee: string
   tax: string
   total: string
-  /** What the courier collects: the total for COD, the balance for PARTIAL. */
   dueOnDelivery: string
   shippingAddress: Record<string, string | boolean>
   createdAt: string
   placedAt: string | null
-  /** The tax invoice, once issued: SKM/26-27/0001. */
+  /** e.g. SKM/26-27/0001, once issued. */
   invoiceNumber: string | null
   invoicedAt: string | null
-  /** When it last went to the customer; sent by itself on delivery. */
+  /** Sent automatically on delivery. */
   invoiceEmailedAt: string | null
   coupon: { code: string; kind: string; value: string } | null
   items: Array<{
@@ -71,7 +69,6 @@ export type OrderDetail = {
     gatewayPaymentId: string | null
     status: string
     amount: string
-    /** Which Razorpay account took it. */
     mode: "test" | "live" | null
     createdAt: string
   }>
@@ -93,7 +90,6 @@ export type OrderDetail = {
   shiprocket: { configured: boolean; orderId: string | null }
 }
 
-/** A courier Shiprocket offers for an order. */
 export type CourierOption = {
   id: number
   name: string
@@ -114,7 +110,6 @@ export type Dashboard = {
   recent: OrderRow[]
 }
 
-/** The order list also carries a count per status and per tab. */
 export type OrderListPayload = Paginated<OrderRow> & {
   counts: Record<OrderStatus, number>
   viewCounts: Record<OrderView, number>
@@ -126,16 +121,13 @@ type Paginated<T> = {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
-/** An online order that was placed and never paid for. */
+/** An online order placed and never paid for. */
 export type UnpaidOrderRow = {
   id: string
   number: string
-  /**
-   * open: still within its hour, and can yet be paid. expired: the hour ran
-   * out and its stock went back on sale. cancelled: a person called it off.
-   */
+  /** open: within its hour. expired: stock back on sale. cancelled: by a person. */
   state: "open" | "expired" | "cancelled"
-  /** failed: a payment was tried and declined. closed: the payment window opened and was left. none: it never opened. */
+  /** failed: declined. closed: payment window left. none: it never opened. */
   payment: "failed" | "closed" | "none"
   customer: string
   firstName: string
@@ -146,7 +138,7 @@ export type UnpaidOrderRow = {
   itemCount: number
   total: string
   createdAt: string
-  /** A later order by the same email or phone that was paid for. */
+  /** A later paid order by the same email or phone. */
   recoveredBy: { id: string; number: string } | null
   visitorId: string | null
   source: string | null
@@ -155,7 +147,7 @@ export type UnpaidOrderRow = {
 
 export type UnpaidOrdersPayload = {
   data: UnpaidOrderRow[]
-  /** lost: past its hour and not paid for on any order since. */
+  /** lost: past its hour and not paid on any order since. */
   summary: { open: number; lost: number; recovered: number; lostValue: string }
 }
 
@@ -178,8 +170,7 @@ const getOrders = (params: OrderListParams) => {
     scope: params.scope,
     status: params.status,
     view: params.view,
-    // The console sorts and exports client-side, so it takes the whole
-    // window rather than twenty rows it would then mis-describe.
+    // The console sorts and exports client-side, so it needs the whole window.
     pageSize: String(MAX_PAGE_SIZE),
   })
   if (params.q) search.set("q", params.q)
@@ -199,7 +190,6 @@ export function useDashboard() {
   return useQuery({ queryKey: ["dashboard"], queryFn: getDashboard, staleTime: 30_000 })
 }
 
-/** What deleting these test orders would delete and keep, or did. */
 export type TestOrderPlan = {
   deletable: Array<{
     id: string
@@ -232,7 +222,6 @@ export function useDeleteTestOrders() {
   })
 }
 
-/** Unpaid orders for the abandoned carts screen. */
 export function useUnpaidOrders() {
   return useQuery({
     queryKey: ["unpaid-orders"],
@@ -259,10 +248,7 @@ export function useOrder(id: string) {
   })
 }
 
-/**
- * Shiprocket's couriers for an order. Only fetched when asked for: every call
- * is a rate lookup on the shop's Shiprocket account.
- */
+/** Only when asked for: each call is a rate lookup on the Shiprocket account. */
 export function useCourierOptions(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ["orders", id, "couriers"],
@@ -324,8 +310,7 @@ export function useOrderAction(id: string) {
     onSuccess: invalidate,
   })
 
-  // Invalidated on failure too: a booking that got its AWB but not its pickup
-  // has still changed the order, and the page has to show that AWB.
+  // Settled: a booking that failed at pickup still has an AWB to show.
   const book = useMutation({
     mutationFn: mutationWithToast((input: { courierId?: number }) => postVerb(id, "book", input), {
       loading: "Booking the courier…",

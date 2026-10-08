@@ -20,24 +20,10 @@ import { createAuditLog, getAuditMeta } from "@/server/audit"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { can, requirePermission } from "@/server/action-guard"
 
-/**
- * The console's Blog page: every post with where it stands, and the three
- * things staff do to one - publish it, schedule it, take it down.
- *
- * Posts are written in the Studio (/studio). This is the desk they are
- * released from, and it exists for scheduling, which Sanity sells as a paid
- * feature. Here it costs nothing, because nothing has to run at the chosen
- * time: a scheduled post is published in Sanity straight away with a date
- * still to come, and the site leaves out any post whose date has not arrived
- * (isLive). The moment it passes, the post is simply there.
- *
- * Publishing from here goes round the Studio, and so round the checks its own
- * Publish button makes. They are made again in missingFor, so a post with no
- * cover or no body cannot reach the site from either side.
- *
- * Everything needs SANITY_API_TOKEN: drafts are private even in a public
- * dataset, and publishing is a write.
- */
+// The console's Blog page: publish, schedule, take down. Scheduling needs no timer: a scheduled
+// post is published at once with a future publishedAt, and the site hides it until then (isLive).
+// This goes round the Studio, so missingFor repeats its required-field checks.
+// Needs SANITY_API_TOKEN (Editor role): drafts are private, and publishing is a write.
 
 const NOT_SET_UP =
   "The blog has no Sanity project yet. Put its id in config/site.ts, under sanity.projectId."
@@ -100,15 +86,12 @@ function sanityFailure(err: unknown): ActionResult<never> {
   )
 }
 
-/**
- * Drops what the site has cached of the blog, so a post published or taken
- * down here is seen - or gone - on the next visit rather than in a minute.
- */
+/** Clears the site's blog cache, so a change shows on the next visit rather than in a minute. */
 function refreshBlog(): void {
   try {
     revalidateTag("blog", { expire: 0 })
   } catch (err) {
-    // Outside a request - a test - there is no cache to clear.
+    // Outside a request (a test) there is no cache to clear.
     console.warn("[BLOG] site cache not cleared", err)
   }
 }
@@ -178,15 +161,9 @@ export async function listManagedPosts(): Promise<ActionResult<ManagedPosts>> {
 type Released = Pick<ManagedPost, "id" | "status">
 
 /**
- * Publishes a post with `at` as its date, which decides whether it is live or
- * scheduled.
- *
- * With a draft, the date is written onto it and the draft is published, in
- * one transaction - so edits waiting in the draft go out with it. A post that
- * is already published and has no draft only has its date moved.
- *
- * `keepDate` is for publishing edits to a post that is already live: it keeps
- * the date it first went out with rather than jumping to the top of the blog.
+ * Publishes a post dated `at`, which makes it live or scheduled. A draft gets the date and is
+ * published in one transaction; a published post without a draft only has its date moved.
+ * Republishing a live post keeps its first date (keepDate), so it does not jump to the top.
  */
 async function release(
   rawId: string,
@@ -261,10 +238,7 @@ export async function schedulePost(id: string, raw: unknown): Promise<ActionResu
   })
 }
 
-/**
- * Takes a post off the site, live or scheduled, and keeps it as a draft: the
- * writing is not lost, and it can be published again.
- */
+/** Takes a post off the site, live or scheduled, keeping it as a draft. */
 export async function unpublishPost(rawId: string): Promise<ActionResult<Released>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.POST_PUBLISH)

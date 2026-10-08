@@ -1,28 +1,10 @@
 import { cn } from "@/lib/utils"
 
-/**
- * Two identical tracks translated -50%, so the seam lands on a glyph-for-glyph
- * match and is invisible. Pauses on hover; frozen entirely under reduced-motion.
- *
- * Each track hugs its content rather than being pinned to the viewport width:
- * pinning it meant that whenever the items measured narrower than the screen -
- * which they do on any desktop - the rest of the track was empty, and the strip
- * read as one pass followed by a gap rather than as a continuous repeat. The
- * items are instead repeated inside the track until it is wider than any
- * plausible viewport, so there is always more text arriving.
- *
- * Because the travel is now a content width rather than a viewport width, the
- * speed is the same on every screen. It used to be tied to the viewport, which
- * made the strip crawl at ~14px/s on a phone and run at ~74px/s on a desktop.
- */
+// Two identical content-width tracks translated -50%, so the seam is invisible and the speed is
+// the same on every screen. Pauses on hover; frozen under reduced motion.
 
-/**
- * Passes of the item list per track. The track has to out-measure the widest
- * viewport it will ever run in, or the strip empties out before it wraps -
- * which is the failure this replaced. At the current copy one pass is ~1430px,
- * so 3 covers ~4285px: an unscaled 4K and any ultrawide. Raise it if the item
- * list gets shorter, and retune --animate-marquee with it to hold the speed.
- */
+// Each track must be wider than any viewport (one pass is ~1430px). Raise this if the items get
+// shorter, and retune --animate-marquee with it to hold the speed.
 const REPEATS = 3
 
 export function MarqueeTicker({
@@ -34,15 +16,12 @@ export function MarqueeTicker({
   items: string[]
   className?: string
   tone?: "blaze" | "acid"
-  /** The announcement bar's size: a thin strip above the header. */
+  /** The announcement bar's size. */
   slim?: boolean
 }) {
   const sequence = Array.from({ length: REPEATS }, () => items).flat()
 
-  // Spacing lives on the units, not on their parents: a unit carries its own
-  // trailing gap, so the rhythm holds across the seam between the two tracks
-  // without a gap on the runner - which would otherwise be counted into the
-  // -50% and shift the seam off the match.
+  // Each unit carries its own trailing gap; a gap on the runner would skew the -50% seam.
   const track = (
     <div
       className={cn(

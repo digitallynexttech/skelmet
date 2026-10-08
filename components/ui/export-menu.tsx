@@ -7,17 +7,13 @@ import type { DataTableHandle } from "@/components/ui/data-table"
 import { headerButton } from "@/components/ui/header-button"
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu"
 
-/**
- * Export, in a page's header: a CSV or Excel file of the table below it -
- * the ticked rows, or else every row listed. Which, is said in the menu,
- * read as it opens.
- */
+/** A header Export menu for a DataTable's ticked rows, else every row listed. */
 export function ExportMenu<T>({
   table,
   noun,
 }: {
   table: React.RefObject<DataTableHandle<T> | null>
-  /** What a row is, one and many: ["order", "orders"]. */
+  /** Singular and plural: ["order", "orders"]. */
   noun: [string, string]
 }) {
   const [target, setTarget] = React.useState({ count: 0, selected: false })

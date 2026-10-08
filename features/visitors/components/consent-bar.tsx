@@ -8,26 +8,19 @@ import { reportConsent } from "@/features/visitors/lib/tracker"
 import { useHydrated } from "@/hooks/use-hydrated"
 
 /**
- * The cookie choice, asked once and changeable from "Cookie settings" in the
- * footer - which is what the privacy policy promises.
- *
- * Short on purpose: the card says why, and "Read more" goes to the privacy
- * policy's cookie section, which lists what is kept. Both buttons do what
- * they say. Accept: this device is remembered between visits. Decline: the
- * visit is still counted, without the IP address, without a cookie, and
- * without being tied to anyone.
+ * Both buttons save "granted" (owner's change, d699e9a), so Decline does not stop
+ * tracking, though the privacy policy says it does. Reopened from "Cookie settings".
  */
 export function ConsentBar() {
   const hydrated = useHydrated()
   const consent = useConsent((s) => s.consent)
   const reviewing = useConsent((s) => s.reviewing)
-  // Accepted before Accept covered what it does now (the Meta Pixel): asked
-  // again, with the old Accept standing for what it covered until then.
+  // An Accept older than CONSENT_REVISION is asked again; it stands meanwhile.
   const outdated = useConsent(acceptedBefore)
   const choose = useConsent((s) => s.choose)
   const dismiss = useConsent((s) => s.dismiss)
 
-  // The choice lives in localStorage, which the server render cannot see.
+  // The choice is in localStorage, which the server render cannot see.
   if (!hydrated || (consent !== null && !reviewing && !outdated)) return null
 
   const pick = (next: "granted" | "denied") => {
@@ -42,8 +35,7 @@ export function ConsentBar() {
       aria-labelledby="cookie-consent-title"
       className="fixed inset-x-3 bottom-3 z-[60] sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[400px]"
     >
-      {/* Opaque rather than blurred below sm: on a phone it sits over the
-          scrolling page, and a blur there is recomputed on every frame. */}
+      {/* No blur on phones: over a scrolling page it is recomputed every frame. */}
       <div className="bg-graphite sm:bg-graphite/95 rounded-tile relative border border-white/[0.12] p-6 shadow-[0_24px_60px_rgb(0_0_0_/_0.55)] sm:backdrop-blur-xl">
         {reviewing ? (
           <button

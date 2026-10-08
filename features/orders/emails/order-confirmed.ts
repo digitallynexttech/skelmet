@@ -6,25 +6,10 @@ import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 import { formatMoney } from "@/lib/money"
 
 /**
- * The receipt. With no customer accounts, this email is the ONLY record a
- * buyer keeps of their order number - and the number plus their email is the
- * whole credential for /track. So it leads with the number, repeats it in the
- * subject line where inbox search will find it, and says plainly what it is
- * for.
- *
- * Plain text alongside the HTML, always: it is what some clients render, what
- * spam filters read, and what survives a stripped-down mail app.
- *
- * ── Why the HTML looks like 2005 ──────────────────────────────────────────
- * Mail clients are not browsers. Outlook renders with Word, which has no
- * flexbox, no grid, no border-radius on anything that matters and drops most
- * shorthand. So: nested tables for layout, inline styles on every cell, no
- * <style> block doing anything load-bearing, no web fonts, and the button is
- * a table cell with a link in it rather than a styled anchor, because a
- * padded anchor collapses to bare text in Outlook.
- *
- * Everything degrades to legible dark-on-light or light-on-dark text if the
- * styles are stripped entirely.
+ * The receipt. With no accounts, it is the buyer's only record of the order
+ * number, which with their email is the whole /track credential: keep it in the
+ * subject. Always send plain text too. Outlook renders with Word: tables and
+ * inline styles only.
  */
 export type OrderConfirmedData = {
   number: string
@@ -41,11 +26,8 @@ export function renderOrderConfirmed(data: OrderConfirmedData): {
   text: string
   html: string
 } {
-  // Sent when an online payment is captured - the whole order or its advance
-  // - and, for cash on delivery, when the order is placed. Only an order
-  // explicitly marked COD gets the pay-at-the-door wording for all of it, and
-  // only PARTIAL for its balance: anything paid online in full must never
-  // read as pay-on-delivery.
+  // Only COD reads as pay-at-the-door for all of it, PARTIAL for its balance:
+  // an order paid online in full must never read as pay-on-delivery.
   const cod = data.paymentMethod === "COD"
   const partial = data.paymentMethod === "PARTIAL"
   const paid = !cod

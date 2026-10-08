@@ -38,8 +38,7 @@ describe("viewsIn", () => {
 })
 
 describe("viewWhere", () => {
-  // The count on a tab comes from isInView, the rows from viewWhere: they
-  // must pick out the same orders, or a tab says 3 and opens on 4.
+  // Tab counts use isInView, rows use viewWhere: they must agree.
   it("filters on exactly what isInView counts", () => {
     for (const view of ORDER_VIEW_KEYS) {
       const where = viewWhere(view)

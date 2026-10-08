@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Checkout's guarantees about money and stock: what refuses an order, what a
- * lost race answers, when an order counts as paid, and that an abandoned
- * order is never cancelled while Razorpay may be holding its money.
- */
-
 const mocks = vi.hoisted(() => {
   const db = {
     order: {
@@ -118,7 +112,7 @@ const ORDER_INPUT = {
   items: [{ sku: "SKM-FLAME-ORANGE", qty: 1 }],
 }
 
-/** What the console offers: paying online alone, unless a test switches more on. */
+// Online only, unless a test switches more on.
 const ONLINE = { id: "ONLINE", fee: 0, advance: null, staffOnly: false }
 const COD = { id: "COD", fee: 100, advance: null, staffOnly: false }
 const PARTIAL = { id: "PARTIAL", fee: 0, advance: { kind: "PERCENT", value: 20 }, staffOnly: false }
@@ -405,8 +399,7 @@ describe("placeOrder", () => {
       offer(ONLINE, PARTIAL)
       const result = await service.placeOrder(partial)
 
-      // 20% of 3499 is 699.80: the courier collects whole rupees, so 2799
-      // at the door and 700 now.
+      // 20% of 3499 is 699.80; the courier collects whole rupees.
       expect(result).toMatchObject({
         ok: true,
         data: { paymentMethod: "PARTIAL", payNow: "700", gatewayOrderId: "order_RZ1" },

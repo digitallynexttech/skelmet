@@ -35,7 +35,6 @@ const ACCOUNT: Record<PaymentMode, { title: string; blurb: string }> = {
   live: { title: "Live", blurb: "Real money, paid out to the shop's bank." },
 }
 
-/** Which Razorpay account checkout takes payments on. */
 function ModeSwitch({ payment, canWrite, ask }: { payment: Payment; canWrite: boolean; ask: Ask }) {
   const { savePayment } = useRuntimeSettingsMutations()
 
@@ -114,7 +113,6 @@ function ModeSwitch({ payment, canWrite, ask }: { payment: Payment; canWrite: bo
   )
 }
 
-/** One account's key id, key secret and webhook secret. */
 function KeySetForm({
   mode,
   keys,
@@ -147,13 +145,12 @@ function KeySetForm({
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    // Only what was changed is sent: an untouched field is left as it is.
+    // Only changed fields are sent; an omitted field stays as it is.
     const input: { keyId?: string; keySecret?: string; webhookSecret?: string } = {}
     if (idChanged) input.keyId = keyId.trim()
     if (keySecret.trim()) input.keySecret = keySecret.trim()
     if (webhookSecret.trim()) input.webhookSecret = webhookSecret.trim()
-    // A secret is saved with its id. When the id shown is .env's, a new
-    // secret for it saves the two together.
+    // A secret is saved with its id: a new secret for .env's id saves the pair.
     if (input.keySecret && !idChanged && keys.keyId.source !== "saved" && keyId.trim()) {
       input.keyId = keyId.trim()
     }
@@ -282,7 +279,7 @@ function KeySetForm({
           </HeaderButton>
           <HeaderButton
             type="button"
-            // Tests what is saved, so not while there are unsaved changes.
+            // Tests what is saved, so off while there are unsaved changes.
             disabled={!keys.ready || dirty || testPayment.isPending}
             onClick={() => {
               setAccepted(false)

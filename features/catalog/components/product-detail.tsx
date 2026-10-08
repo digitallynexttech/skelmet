@@ -48,30 +48,23 @@ export function ProductDetail({
   /** From `?colour=` - a lineup card opens this page on the colour clicked. */
   initialColourway?: string
 }) {
-  // Validated against the catalogue rather than trusted: ?colour=anything
-  // would otherwise leave the page with no selection and no gallery image.
+  // Validated: an unknown ?colour= would leave no selection and no image.
   const [colourwayId, setColourwayId] = React.useState(
     product.colourways.find((c) => c.id === initialColourway)?.id ?? product.colourways[0]!.id,
   )
 
-  // ?colour= is applied after mount rather than read on the server. Reading it
-  // server-side made the whole route dynamic and uncacheable; useSearchParams()
-  // would do the same by forcing a Suspense boundary. This runs once, only
-  // acts on a colourway that exists, and leaves a direct visit untouched.
+  // ?colour= is read after mount: reading it on the server, or useSearchParams(), makes the route
+  // dynamic.
   React.useEffect(() => {
     const wanted = new URLSearchParams(window.location.search).get("colour")
     if (!wanted) return
     const match = product.colourways.find((c) => c.id === wanted)
-    // set-state-in-effect is the right call almost everywhere, but not here:
-    // window.location is not available on the server, so deriving this during
-    // render would make the client's first paint disagree with the server HTML
-    // and trip a hydration mismatch. After mount is the only correct moment.
+    // After mount on purpose: window.location during render would mismatch hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (match) setColourwayId(match.id)
   }, [product.colourways])
   const [qty, setQty] = React.useState(1)
-  // Shared with the phone's sticky bar, so its Buy now buys - and its price
-  // quotes - what is picked here.
+  // Shared with the phone's sticky bar, so its Buy now and price match this pick.
   const setSelection = useBuySelection((s) => s.set)
   const pickedPrice = product.colourways.find((c) => c.id === colourwayId)?.price ?? product.price
   React.useEffect(
@@ -85,10 +78,6 @@ export function ProductDetail({
 
   const colourway = product.colourways.find((c) => c.id === colourwayId) ?? product.colourways[0]!
 
-  // Each finish has its own pictures, so the whole gallery follows the swatch.
-  // It used to swap the front shot alone and keep four shared "context" shots,
-  // which meant picking Militia Olive showed one olive skull and then four
-  // orange ones.
   const gallery = React.useMemo(
     () =>
       product.gallery[colourway.id].map((image) => ({
@@ -99,8 +88,7 @@ export function ProductDetail({
   )
   const active = gallery[Math.min(shot, gallery.length - 1)]!
 
-  // The thumbnail row shows five at a time and scrolls within itself; the
-  // arrows step it one thumbnail at a time and fade out at either end.
+  // The thumbnail row scrolls within itself; the arrows step one thumbnail at a time.
   const thumbs = React.useRef<HTMLDivElement>(null)
   const [canScroll, setCanScroll] = React.useState({ back: false, forward: false })
   const measureThumbs = React.useCallback(() => {
@@ -157,17 +145,10 @@ export function ProductDetail({
     >
       {/* ── Gallery ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-3.5">
-        {/* Fills its column. It used to be capped to a square the height of
-            the viewport, which on any wide screen left the image narrower than
-            the space it sat in - centred, with dead air down both sides.
-
-            Still square, because the colourway shots are 1:1 and a 4:5 box was
-            scaling them up 25% and cutting the sides off. */}
+        {/* Square: the colourway shots are 1:1. */}
         <div className="grain rounded-card bg-carbon relative aspect-square w-full overflow-hidden border border-white/[0.08]">
-          {/* The page's main image: preloaded and first in the queue. Its
-              column is capped at the viewport height less the header and buy
-              row on desktop, so it is never 55vw wide there - sizes says so,
-              or desktop downloads 2-4x the pixels it shows. */}
+          {/* The main image. On desktop its column is capped at the viewport height, and sizes
+              must say so or desktop downloads 2-4x the pixels it shows. */}
           <Image
             key={active.src}
             src={active.src}
@@ -181,7 +162,6 @@ export function ProductDetail({
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">
             {colourway.inStock ? <Badge variant="solid">In stock</Badge> : null}
           </div>
-          {/* A use-case shot says what it shows. */}
           {active.caption ? (
             <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(7_6_10_/_0.92)_0%,rgb(7_6_10_/_0.7)_45%,rgb(7_6_10_/_0)_100%)] px-5 pt-16 pb-5 sm:px-7 sm:pb-6">
               <p className="font-display text-bone text-[22px] leading-[1.1] uppercase sm:text-[28px]">
@@ -194,12 +174,8 @@ export function ProductDetail({
           ) : null}
         </div>
 
-        {/* Five thumbnails at a time from sm, three on a phone - five there
-            came out about 40px, too small to make out - arrows either side.
-            The row scrolls
-            within itself - never the page - with its scrollbar hidden; the
-            arrows are the way along it. Fixed height rather than square: at
-            this column width square thumbs push the gallery past the fold. */}
+        {/* Five thumbnails from sm, three on a phone. The row scrolls within itself, never the
+            page. Height is capped: square thumbs push the gallery past the fold. */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -246,9 +222,7 @@ export function ProductDetail({
       {/* ── Buy panel ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-5">
         <div>
-          {/* The count only when it is a real number: with no database the
-              registry has no stock figure, and "0 left" beside "In stock" was
-              both. */}
+          {/* The count only when real: without a database there is no stock figure. */}
           {!colourway.inStock ? (
             <div className="text-magenta mb-3.5 font-mono text-[11px] tracking-[0.18em] uppercase">
               Sold out in this colourway
@@ -263,7 +237,7 @@ export function ProductDetail({
             {product.name}
           </h1>
           <div className="text-dim flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-mono text-[11px] tracking-[0.08em] sm:text-xs">
-            {/* No stars for a product nobody has reviewed yet, rather than five empty ones. */}
+            {/* No stars for a product nobody has reviewed yet. */}
             {product.reviewCount > 0 ? (
               <>
                 <Stars rating={product.rating} />
@@ -321,9 +295,7 @@ export function ProductDetail({
                     selected ? { borderColor: c.hex, boxShadow: `0 0 16px ${c.hex}55` } : undefined
                   }
                 >
-                  {/* The skull's 3D model in this colourway. For the plain colour
-                      circle instead, comment this span out and uncomment the one
-                      below it. */}
+                  {/* The 3D model swatch. For a plain colour circle, swap in the span below. */}
                   <span className="relative block size-14">
                     <Image src={c.swatch} alt="" fill sizes="56px" className="object-contain" />
                   </span>
@@ -334,14 +306,9 @@ export function ProductDetail({
           </div>
         </div>
 
-        {/* qty + add + buy, sized by the row's own width (a container query):
-            the buy panel's column depends on the screen's height as well as
-            its width, so no screen breakpoint says how much room there is.
-            From 40rem all three share one row. Narrower, the stepper and Add
-            to cart share the first and Buy it now takes the second; under
-            24rem the price leaves Add to cart's label, which needs 234px with
-            it and 161px without. Add to cart keeps a 150px floor, so on the
-            narrowest phones it wraps onto a row of its own instead. */}
+        {/* A container query: the column's width depends on screen height too, so no breakpoint
+            fits. From 40rem all three share a row; narrower, Buy it now wraps, and under 24rem
+            the price leaves Add to cart's label. */}
         <div className="@container flex flex-wrap gap-2.5 xl:max-w-[720px]">
           <div className="flex h-[58px] shrink-0 items-center gap-1 rounded-full border border-white/[0.16] px-1.5">
             <button
@@ -375,8 +342,7 @@ export function ProductDetail({
             disabled={soldOut}
             onClick={(e) => {
               add(colourwayId, qty, product.slug)
-              // The header's count was the only sign anything happened, and on
-              // a phone it is easy to miss. The cart opens with the mount in it.
+              // Open the cart: the header's count alone is easy to miss on a phone.
               setAdded(true)
               showCart(e.currentTarget)
             }}
@@ -390,8 +356,7 @@ export function ProductDetail({
               </span>
             ) : (
               <>
-                {/* The price leaves the label where the row is too narrow for
-                    it; it is right above, in large. */}
+                {/* Price hidden where the row is too narrow; it is right above. */}
                 <span>
                   Add to cart<span className="@max-[24rem]:hidden"> ·</span>
                 </span>
@@ -414,7 +379,6 @@ export function ProductDetail({
           </Button>
         </div>
 
-        {/* pincode */}
         <PincodeCheck />
 
         {/* trust */}
@@ -445,12 +409,8 @@ export function ProductDetail({
           </ul>
         </div>
 
-        {/* The declarations the Legal Metrology (Packaged Commodities) Rules
-            require of an online listing, in one place. Collapsed, because a
-            buyer rarely needs them - but always in the page. The maker is
-            named without its address, the owner's call on 2026-10-01; the
-            rules ask for the address too, and it is on /contact and in the
-            policies. */}
+        {/* What the Legal Metrology (Packaged Commodities) Rules require of an online listing.
+            Owner's decision: the maker is named without its address (it is on /contact). */}
         <details className="group rounded-tile bg-carbon border border-white/[0.09] px-5 py-4">
           <summary className="text-dim flex min-h-8 cursor-pointer list-none items-center justify-between font-mono text-[11px] tracking-[0.18em] uppercase">
             Product information

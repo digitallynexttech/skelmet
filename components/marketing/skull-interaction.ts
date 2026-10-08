@@ -1,24 +1,14 @@
 import SKULL_ASSETS from "@/components/marketing/skull-assets.json"
 
 /**
- * Mutable interaction state for the hero skull, deliberately kept outside React.
- *
- * Pointer moves and drags update this object every animation frame. Routing
- * that through props or state would either re-render the tree 60 times a second
- * or trip the compiler's "don't mutate props after render" rule, so the DOM
- * handlers in `skull-stage`, the render loop in `skull-canvas` and the headline
- * in `hero-headline` all reach for this module-level instance instead.
- *
- * Single instance by design: there is one hero skull per page.
+ * Per-frame interaction state for the hero skull, kept outside React on purpose:
+ * props or state would re-render 60 times a second. One module-level instance,
+ * shared by skull-stage, skull-canvas and hero-headline.
  */
 export type SkullInteraction = {
   /** Last cursor position in the viewport, or null before the first move. */
   cursor: { x: number; y: number } | null
-  /**
-   * Cursor position relative to the skull, -1..1 over half the viewport each
-   * way. Worked out by the render loop, since the skull moves under a still
-   * cursor as the page scrolls.
-   */
+  /** Cursor relative to the skull, -1..1 over half the viewport; set by the render loop. */
   pointer: { x: number; y: number }
   /** Free-spin offset accumulated while dragging; decays back to zero. */
   userRot: { x: number; y: number }
@@ -26,67 +16,39 @@ export type SkullInteraction = {
   vel: { x: number; y: number }
   dragging: boolean
   /**
-   * Where the skull's heat lands on screen, written by the render loop and
-   * read by the headline. The centre is a fraction of the canvas box (0..1,
-   * top-left origin); the radius is the skull's projected half-width as a
-   * fraction of the canvas height, so it means the same thing at any aspect.
-   * Flare is how hard the skull is spinning, 0 at rest.
+   * Where the skull's heat lands, for the headline. x, y: fraction of the canvas
+   * box (0..1, top-left origin); r: projected half-width as a fraction of box
+   * height; flare: spin strength, 0 at rest.
    */
   halo: { x: number; y: number; r: number; flare: number }
-  /**
-   * The canvas box on screen, in viewport px, while the mesh is live; null on
-   * the poster path, where the box is the hero stage and never moves.
-   */
+  /** The canvas box in viewport px while the mesh is live; null on the poster path. */
   box: { x: number; y: number; w: number; h: number } | null
   /** The skull's silhouette on screen, as an ellipse, for grabbing it. Null when off screen. */
   hit: { x: number; y: number; rx: number; ry: number } | null
-  /**
-   * When the bob began, in performance.now() milliseconds. The poster's own
-   * animation start, handed over so the mesh picks the bob up mid-stride.
-   */
+  /** The poster's bob animation start, performance.now() ms, so the mesh joins it mid-stride. */
   bobEpoch: number
 }
 
 /**
- * The idle bob, shared by the mesh and the poster so the hand-off between
- * them is a frame nobody can see: the mesh keeps the poster's time (bobEpoch)
- * and both trace the same cosine - the canvas in skull-canvas, the poster as
- * the `skull-bob` keyframes, eased to a sine.
- *
- * The rise is a share of the stage height: 0.045 world units of the 3.096 the
- * camera sees at the pivot.
+ * The idle bob, shared by mesh and poster (`skull-bob` keyframes) so the hand-off
+ * is invisible. Period in seconds; rise as a share of stage height (world units
+ * over the 3.096 the camera sees at the pivot).
  */
 export const BOB_PERIOD = 11.4
 export const BOB_RISE = 0.045 / 3.096
 
 /**
- * The model file, and the poster of it. Here rather than in skull-canvas so
- * the stage can ask the browser's cache for the model without pulling
- * three.js into its own chunk.
- *
- * Both names carry a hash of the file and come from skull-assets.json, which
- * the build scripts write (scripts/skull-assets.mjs). Everything under
- * /product is served to be kept for a month without asking again, so a new
- * model under the old name is one no returning visitor ever sees.
+ * Here, not in skull-canvas, so the stage can query the cache without three.js.
+ * Content-hashed names from skull-assets.json (scripts/skull-assets.mjs):
+ * /product is cached for a month, so a changed file needs a new name.
  */
 export const SKULL_MODEL = SKULL_ASSETS.model
 export const SKULL_POSTER = SKULL_ASSETS.poster
 
 /**
- * A phone that would struggle with the model, and keeps the poster: a touch
- * screen reporting 2 GB of memory or less, or four cores or fewer. The model
- * would cost it most of a megabyte and seconds of main thread for a
- * decoration.
- *
- * Judged only where the browser reports memory at all - Chrome and its
- * relatives - because neither number means what it says elsewhere:
- *
- *   - Safari reports no memory, and answers 4 cores on every iPhone whatever
- *     it has. Counting cores there kept the model from every iPhone made.
- *   - The memory figure is rounded to a power of two, so a 6 GB phone says 4.
- *     "4 or less" was most Android phones sold, not the weak ones.
- *
- * A phone that reports nothing is taken to be capable.
+ * A phone that keeps the poster: touch, with 2 GB or less or 4 cores or fewer.
+ * Judged only where deviceMemory exists (Chromium): Safari says 4 cores on every
+ * iPhone. Memory rounds to a power of two (6 GB reads 4), hence 2. Unreported means capable.
  */
 export function strugglesWithModel(device: {
   /** `(pointer: coarse)`: a touch screen. */
@@ -101,15 +63,9 @@ export function strugglesWithModel(device: {
 }
 
 /**
- * The halo at rest, facing the camera. The poster path never loads the canvas,
- * so nothing ever overwrites this - it has to be where the mesh would put it,
- * or the burn would sit off the skull for every visitor on the fallback.
- *
- * Derived from skull-canvas: the crown anchor (0, 0.45, 1.1) lifted by
- * OPTICAL_CENTRE_LIFT projects to y = 0.293 through the z=5.4, 32° camera; the
- * print, tilted to meet the eye, is 0.742 as wide as it is tall, so at 2.36
- * units high (SKULL_HEIGHT) its half-width is 0.876 of the 3.096 units the
- * camera sees. scripts/build-skull-model.mjs prints the radius for a new model.
+ * The halo at rest, facing the camera. The poster path never runs the canvas, so
+ * this must match what the mesh would compute; scripts/build-skull-model.mjs
+ * prints the radius for a new model.
  */
 export const HALO_REST = { x: 0.5, y: 0.293, r: 0.283, flare: 0 } as const
 

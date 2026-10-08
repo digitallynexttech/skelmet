@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Which /blog/<slug> URLs the proxy answers 404 for before anything renders.
- * A made-up address must never reach the page - it would be rendered and
- * cached - and a real post must never be refused because Sanity was slow.
- */
-
 const env = vi.hoisted(() => ({ configured: true }))
 
 vi.mock("@/features/blog/sanity/env", () => ({
@@ -20,7 +14,7 @@ vi.mock("@/features/blog/sanity/env", () => ({
 const { forgetKnownPosts, isUnknownPost } = await import("@/features/blog/server/known-posts")
 
 const fetchMock = vi.fn()
-/** Sanity's answer: each slug with a date, long past unless one is given. */
+/** Sanity's answer; a bare slug is dated long ago. */
 const answer = (posts: unknown) => ({
   ok: true,
   json: async () => ({

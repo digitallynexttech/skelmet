@@ -1,17 +1,3 @@
-/**
- * Runs `run` once the visitor first does something - moves the pointer,
- * touches, scrolls or presses a key - and at once if they already have.
- *
- * For work the first screen does not need: the 3D skull (a large download
- * and a second of main-thread work on a phone) and Google Analytics'
- * library. Doing it at load competed with the page for the network and the
- * main thread while it was still becoming usable; waiting for the first sign
- * of a person puts it after that, and on a desktop a mouse moves within the
- * first second anyway.
- *
- * Returns a function that cancels a run still waiting.
- */
-
 const EVENTS = ["pointermove", "pointerdown", "touchstart", "scroll", "wheel", "keydown"] as const
 
 let interacted = false
@@ -35,6 +21,10 @@ function listen() {
   }
 }
 
+/**
+ * Runs `run` on the first pointer, touch, scroll or key (at once if already),
+ * so heavy extras stay off the page while it loads. Returns a cancel.
+ */
 export function afterFirstInteraction(run: () => void): () => void {
   if (typeof window === "undefined") return () => {}
   if (interacted) {

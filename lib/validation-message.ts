@@ -1,19 +1,6 @@
 import type { ZodError } from "zod"
 
-/**
- * A rejected form, said in words that name what to fix.
- *
- * Every schema failure used to come back as "Some of those details are not
- * right", and forms passed that on - or, worse, swapped it for "Check the
- * fields and try again". The person was left to guess which field, and why.
- * This names each field that failed and its own rule, in the schema's words:
- *
- *   "Code: letters, numbers and dashes only, 3 to 24 characters."
- *
- * Field names come from the schema's keys (`minSubtotal` reads "Min
- * subtotal"). A field is named once, with its first message; past three the
- * rest are counted rather than listed.
- */
+/** E.g. "Code: letters, numbers and dashes only." One message per field; past three, counted. */
 export function validationMessage(err: ZodError): string {
   const seen = new Set<string>()
   const parts: string[] = []
@@ -31,10 +18,7 @@ export function validationMessage(err: ZodError): string {
   return more > 0 ? `${shown.join(" ")} And ${more} more.` : shown.join(" ")
 }
 
-/**
- * The field errors as `{ field: message }`, first message each, for a form
- * to put under its own inputs. Keys are the schema's top-level field names.
- */
+/** `{ field: firstMessage }` by top-level field, for messages under inputs. */
 export function fieldErrorsOf(details: unknown): Record<string, string> {
   const fields = (details as { fieldErrors?: Record<string, string[] | undefined> } | null)
     ?.fieldErrors
@@ -58,7 +42,7 @@ function fieldLabel(path: PropertyKey[]): string {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/** Lower-cases the first letter unless the word is an acronym or a number. */
+// Leaves acronyms alone.
 function lowerFirst(s: string): string {
   if (/^[A-Z]{2,}/.test(s)) return s
   return s.charAt(0).toLowerCase() + s.slice(1)

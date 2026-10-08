@@ -1,12 +1,6 @@
 import * as React from "react"
 
-/**
- * Cart → Details → Payment.
- *
- * The cart is the drawer (features/cart/components/cart-drawer), so step one
- * is behind the buyer by the time they see this: checkout shows it at step
- * two.
- */
+/** Cart → Details → Payment. The cart is the drawer, so checkout starts at step two. */
 export function CheckoutSteps({ current, className }: { current: 1 | 2 | 3; className?: string }) {
   const steps = ["Cart", "Details", "Payment"] as const
   return (

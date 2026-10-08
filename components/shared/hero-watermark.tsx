@@ -1,8 +1,6 @@
 import { cn } from "@/lib/utils"
 
-/* Stroke opacity is per-hue, not shared: against #0e0d13 violet is the darkest
-   of the set and needs the most to register, acid the brightest and the least.
-   All are pitched to sit *under* hero copy without competing with it. */
+// Stroke opacity is tuned per hue (violet is darkest, acid brightest) to sit under hero copy.
 const STROKES = {
   blaze: "[-webkit-text-stroke:1px_rgb(255_90_31_/_0.20)]",
   ember: "[-webkit-text-stroke:1px_rgb(255_138_0_/_0.18)]",
@@ -23,21 +21,9 @@ const GLOW = {
 export type WatermarkAccent = keyof typeof STROKES
 
 /**
- * The outline word sitting behind a hero's copy.
- *
- * One shared size for every page that uses it - 19vw echoes the SKELMET mark in
- * the footer - so the heroes read as one system. Sits against the right of the
- * section, padded to the same gutter as the copy rather than hung off the edge
- * with a negative offset, so the last letter never clips against overflow-hidden.
- *
- * Pass an array to break a long mark over two lines. That keeps the type size
- * identical to every other page and buys the width back vertically instead -
- * the alternative, shrinking it to fit, would break the shared size.
- *
- * Three copies of the word, laid out identically: the faint outline, a blurred
- * glow over it that breathes, and a brighter one seen only through a band that
- * sweeps across now and then. Each copy is painted once; only opacity and
- * transforms animate, so the compositor runs it and nothing repaints.
+ * The outline word behind a hero's copy, one shared size on every page. Pass an array to break a
+ * long word over two lines rather than shrink it. Padded to the gutter, never offset past the
+ * edge, so it does not clip. Only opacity and transforms animate, so nothing repaints.
  */
 export function HeroWatermark({
   children,
@@ -55,9 +41,7 @@ export function HeroWatermark({
       style={{ "--glow": GLOW[accent] } as React.CSSProperties}
     >
       <Word lines={lines} className={STROKES[accent]} />
-      {/* Laptop widths (xl) up only: narrower, the word runs behind the hero's
-          own heading and copy - 50-130px into it at 1024 on About, Contact and
-          Riders - and a glow there competes with the text. */}
+      {/* xl up only: narrower, the word runs behind the copy and a glow there competes. */}
       <div className="max-xl:hidden">
         <Word lines={lines} className="hero-mark-glow" />
         <div className="hero-mark-sweep">
@@ -70,7 +54,7 @@ export function HeroWatermark({
   )
 }
 
-/** The word, filling its box: the same box gives every copy the same layout. */
+// Every copy uses the same box, so outline, glow and shine line up.
 function Word({ lines, className }: { lines: string[]; className: string }) {
   return (
     <div className="absolute inset-0 flex items-center justify-end pr-5 sm:pr-8 xl:pr-14">

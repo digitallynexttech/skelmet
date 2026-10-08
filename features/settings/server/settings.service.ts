@@ -106,12 +106,7 @@ export async function listStaff(): Promise<ActionResult<{ staff: StaffRow[]; rol
   })
 }
 
-/**
- * Adds a member of staff. An address checkout has already met - someone who
- * bought before joining, whose customer row holds their orders - is promoted
- * in place rather than refused: the row has no login to protect, and a second
- * row for the same email cannot exist.
- */
+/** Adds staff. An existing customer with that email is promoted in place (it has no login). */
 export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.SETTING_WRITE)
@@ -132,7 +127,7 @@ export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>>
     if (roles.length !== input.roleIds.length) return fail("Unknown role.", undefined, 422)
 
     const passwordHash = await hashPassword(input.password)
-    // They chose nothing here, someone else did. Force a change at first login.
+    // Someone else chose the password: force a change at first login.
     const login = {
       name: input.name,
       kind: "STAFF" as const,
@@ -142,8 +137,7 @@ export async function createStaff(raw: unknown): Promise<ActionResult<StaffRow>>
 
     const row = clash
       ? await db.$transaction(async (tx) => {
-          // Conditional on still being a customer, so two admins adding the
-          // same address at once cannot both succeed.
+          // Conditional on still being a customer, so two concurrent adds cannot both succeed.
           const promoted = await tx.user.updateMany({
             where: { id: clash.id, kind: "CUSTOMER" },
             data: { ...login, sessionVersion: { increment: 1 } },
@@ -189,15 +183,9 @@ const LAST_OWNER =
   "That would leave nobody who can administer the console. Give someone else an owner role first."
 
 /**
- * Runs a change to who holds which role so that it can never leave the
- * console without an administrator.
- *
- * The check used to be a count taken before the change and outside any
- * transaction, so two admins demoting each other at the same moment both
- * saw the other still in place and both went ahead. Now every such change
- * takes the same row lock first - the `setting:write` permission row - so
- * they run one at a time, and the count is taken after the change, inside
- * its transaction, which is rolled back if it comes to zero.
+ * Runs a role change that can never leave the console without an administrator. Every such
+ * change locks the `setting:write` permission row first so they run one at a time, then counts
+ * admins after the change and rolls back at zero.
  */
 async function changeStaffAccess<T>(
   work: (tx: Prisma.TransactionClient) => Promise<T>,
@@ -250,9 +238,7 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
           skipDuplicates: true,
         })
       }
-      // Losing a role ends the sessions they have open, as a revoke does.
-      // Not for someone editing their own roles, who would be signed out
-      // mid-click; their permissions are re-read on every request anyway.
+      // Losing a role ends their sessions, except your own (permissions are re-read per request).
       const removed = before.some((r) => !input.roleIds.includes(r.roleId))
       if (removed && id !== session.user.id) {
         await tx.user.update({
@@ -279,12 +265,8 @@ export async function setStaffRoles(id: string, raw: unknown): Promise<ActionRes
 }
 
 /**
- * Sets a temporary password for someone else, who must replace it at their
- * next sign-in. Every session they have open ends.
- *
- * Not for your own account: that would change your password without the
- * current one, which Change password asks for so that an unlocked screen is
- * not enough to take the account over.
+ * Sets a temporary password for someone else and ends their sessions. Not for your own account,
+ * which must go through Change password (it asks for the current one).
  */
 export async function resetStaffPassword(
   id: string,
@@ -330,12 +312,8 @@ export async function resetStaffPassword(
 }
 
 /**
- * Revokes console access by demoting to a customer, dropping every role and
- * the password, and ending their sessions. The row stays, because their audit
- * log entries and orders point at it.
- *
- * The password goes too. Demoting alone left a working password on the row,
- * and nothing but the kind check stood between it and a session.
+ * Revokes access: demotes to customer, drops roles and the password, ends sessions. The row stays
+ * for the audit log and orders that point at it.
  */
 export async function revokeStaff(id: string): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {

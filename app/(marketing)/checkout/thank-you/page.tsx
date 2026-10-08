@@ -10,37 +10,17 @@ import { PixelPurchase } from "@/features/visitors/components/meta-pixel"
 import { formatEta } from "@/lib/delivery"
 import { formatMoney } from "@/lib/money"
 
-// Neutral on purpose: the same page shows a payment still clearing, and a tab
-// reading "Order confirmed" over it would say what the page does not.
+// Neutral title: the page may show a payment still clearing.
 export const metadata: Metadata = {
   title: "Your order",
   description: "The SKELMET order you just placed.",
   robots: { index: false, follow: false },
 }
 
-/**
- * Reads the order it is confirming rather than describing a sample one.
- *
- * It used to render a hardcoded `SKM-2026-0412` for `rohan.m@example.com`,
- * which meant the redirect out of checkout carried a real order number in
- * `?order=` to a page that ignored it and showed every customer the same
- * stranger's details.
- *
- * Authorisation lives in `getConfirmation`, not here: an order number is short
- * enough to guess, so the service only answers for the browser that placed the
- * order or the account that owns it. Anything else is a 404 and lands on the
- * fallback below, which names no one.
- */
+// Order numbers are guessable: getConfirmation answers only for the browser or account that
+// placed the order; anything else falls to <Unknown />, which names no one.
 
-/**
- * What the page can honestly say about the order.
- *
- * It used to treat every PENDING order as cash on delivery and everything
- * else as paid - so an online payment still clearing read "pay the courier on
- * delivery", and a cancelled order read "Payment confirmed". Now the way the
- * order is paid for decides: cash on delivery is never "paid" until it has
- * been delivered, and an advance is only ever called an advance.
- */
+/** What the page can honestly say: COD is never "paid" until delivered, an advance is an advance. */
 type Stage = "paid" | "advance" | "processing" | "cod" | "cancelled"
 
 function stageOf(order: Confirmation): Stage {
@@ -64,20 +44,14 @@ const AMOUNT_LABEL: Record<Exclude<Stage, "cancelled">, string> = {
   processing: "Amount due",
 }
 
-/**
- * The amount beside that label. What is paid online for an order with an
- * advance is the advance - paid, or still clearing - not the order's total.
- */
+/** For an advance order, the advance (paid or clearing), not the total. */
 function amountFor(order: Confirmation, stage: Stage): number {
   const total = Number(order.total)
   if (order.paymentMethod !== "PARTIAL" || stage === "paid") return total
   return Math.round((total - Number(order.dueOnDelivery)) * 100) / 100
 }
 
-/**
- * Stages, not day numbers. "Day 3 · Out for delivery" promised a day the
- * policy never did; the one date shown is the same "arrives by" as above.
- */
+// Stages, not day numbers: the policy promises no particular day.
 function timelineFor(order: Confirmation, stage: Stage) {
   const { dispatchHours } = siteConfig.promise
   const shipped = order.status === "SHIPPED" || order.status === "DELIVERED"
@@ -117,7 +91,7 @@ function timelineFor(order: Confirmation, stage: Stage) {
 function Cancelled({ order }: { order: Confirmation }) {
   const { refundDays, bankDays } = siteConfig.promise
   return (
-    // Hidden from Microsoft Clarity's recordings, like the confirmation itself.
+    // Masked from Clarity recordings.
     <div
       data-clarity-mask="true"
       className="grain relative overflow-hidden px-5 py-20 text-center sm:px-8 sm:py-28"
@@ -190,11 +164,9 @@ export default async function ThankYouPage({
   const timeline = timelineFor(order, stage)
 
   return (
-    // Hidden from Microsoft Clarity's recordings: it shows the buyer's email,
-    // address and order.
+    // Masked from Clarity recordings: shows the buyer's email and order.
     <div data-clarity-mask="true">
-      {/* The order for the ad pixel, if the visitor accepted cookies: the
-          whole order's value, whatever is paid now and what on delivery. */}
+      {/* Fires only after cookie Accept; reports the whole order's value. */}
       <PixelPurchase
         order={{
           number: order.number,
@@ -211,9 +183,7 @@ export default async function ThankYouPage({
             <SkullStage className="size-full" />
           </div>
 
-          {/* Only a captured payment is "confirmed". An unpaid order has not
-              been paid for, and saying it has is the kind of small lie a
-              customer notices - at the door, or on their bank statement. */}
+          {/* Only a captured payment is "confirmed". */}
           <div
             className={
               stage === "processing"
@@ -230,8 +200,7 @@ export default async function ThankYouPage({
           </div>
 
           <h1 className="font-display text-bone mb-4 text-[clamp(34px,13vw,96px)] leading-[1.0] whitespace-nowrap uppercase">
-            {/* No wider than "You're mounted", which the clamp above is sized
-                for: it is one line at every width. */}
+            {/* The clamp fits "You're mounted" on one line; keep text no wider. */}
             {stage === "processing" ? (
               <>
                 Almost <span className="text-blaze">there</span>

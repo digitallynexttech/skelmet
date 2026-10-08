@@ -1,16 +1,8 @@
 import "server-only"
 
-/**
- * What a visitor browses on, read from their user agent.
- *
- * Hand-written rather than a parser dependency: the shop needs a dozen
- * answers, not ten thousand, and the ones that matter here are the ones a
- * general parser gets least right - the Instagram and Facebook in-app
- * browsers most of the shop's traffic arrives in, and Android phones, whose
- * Chrome now reports "Android 10; K" whatever the phone. For those the
- * browser's client hints (model, platform version) are the real answer, and
- * the tracker sends them when it has them.
- */
+// Hand-written, not a parser library: general parsers get the in-app browsers most
+// traffic comes from wrong, and Android Chrome says "Android 10; K" for every phone
+// (client hints give the real answer).
 
 export type DeviceType = "mobile" | "tablet" | "desktop"
 
@@ -23,26 +15,19 @@ export type Agent = {
 }
 
 export type Hints = {
-  /** navigator.userAgentData's model, e.g. "SM-S918B". Chromium on Android only. */
+  /** userAgentData model, e.g. "SM-S918B". Chromium on Android only. */
   model?: string
-  /** navigator.userAgentData's platformVersion, e.g. "14.0.0" or, on Windows 11, "15.0.0". */
+  /** userAgentData platformVersion; Windows 11 reports 13 or above. */
   platformVersion?: string
-  /** navigator.maxTouchPoints: an iPad asks for the desktop site as a Mac, but a Mac has no touch. */
+  /** maxTouchPoints: an iPad on the desktop site looks like a Mac, but a Mac has no touch. */
   touch?: number
 }
 
-/**
- * Crawlers, link previews, uptime checks and scripts. Most never run the
- * tracker's JavaScript at all; the ones that do (Googlebot, Lighthouse,
- * headless browsers) are not people and must not be counted as visitors.
- *
- * Named bots rather than any "bot" anywhere: Cubot is a phone maker, and
- * "CUBOT X30" is a person on a phone.
- */
+// Named bots, not any "bot": Cubot is a phone maker.
 const BOT =
   /(?:google|bing|yandex|duckduck|baidu|apple|ads|petal|ahrefs|semrush|mj12|dot|byte|gpt|claude|cc|facebook|twitter|linkedin|slack|telegram|discord|amazon|yeti|seznam|sogou|mojeek|qwant)bot|bot\/\d|\bbot\b|crawl|spider|slurp|facebookexternalhit|facebookcatalog|embedly|headless|lighthouse|pagespeed|pingdom|uptime|curl\/|wget|python|axios|node-fetch|undici|go-http|java\/|okhttp|scrapy|phantom|selenium|puppeteer|playwright/i
 
-/** In-app browsers first: they also carry "Chrome" or "Safari", and are the more useful answer. */
+// In-app browsers first: they also carry "Chrome" or "Safari".
 const BROWSERS: Array<[RegExp, string]> = [
   [/Instagram/, "Instagram app"],
   [/FBAN|FBAV|FB_IAB|FBIOS/, "Facebook app"],
@@ -90,7 +75,7 @@ function osOf(ua: string, hints: Hints): string | null {
   if (android) {
     const real = major(hints.platformVersion)
     if (real) return `Android ${real}`
-    // Chrome's reduced user agent: every Android phone is "Android 10; K".
+    // Chrome's reduced user agent.
     if (/Android 10; K\)/.test(ua)) return "Android"
     return `Android ${android[1]}`
   }
@@ -104,7 +89,7 @@ function osOf(ua: string, hints: Hints): string | null {
   if (/Windows NT 6\.[12]/.test(ua)) return "Windows 7/8"
   if (/Windows/.test(ua)) return "Windows"
   if (/CrOS/.test(ua)) return "ChromeOS"
-  // Frozen at 10.15.7 by every browser, so the version says nothing.
+  // Every browser freezes it at 10.15.7.
   if (/Mac OS X/.test(ua)) return "macOS"
   if (/Linux/.test(ua)) return "Linux"
   return null
@@ -125,12 +110,11 @@ function modelOf(ua: string, hints: Hints): string | null {
   if (/iPhone/.test(ua)) return "iPhone"
   if (/iPad/.test(ua) || isIpadAsMac(ua, hints)) return "iPad"
 
-  // The Instagram app writes the whole phone into its user agent:
-  // "Instagram 300.0 Android (33/13; 420dpi; 1080x2340; samsung; SM-S911B; ...".
+  // "Instagram 300.0 Android (33/13; 420dpi; 1080x2340; samsung; SM-S911B; ..."
   const insta = ua.match(/Instagram [\d.]+ Android \([^;]+;[^;]+;[^;]+; ([^;]+); ([^;]+);/)
   if (insta) return `${insta[1]!.trim()} ${insta[2]!.trim()}`
 
-  // So does the Facebook app, as FBMF (maker) and FBDV (model).
+  // Facebook app: FBMF is the maker, FBDV the model.
   const fbModel = ua.match(/FBDV\/([^;\]]+)/)?.[1]
   if (fbModel) {
     const maker = ua.match(/FBMF\/([^;\]]+)/)?.[1]
@@ -139,7 +123,7 @@ function modelOf(ua: string, hints: Hints): string | null {
       : fbModel
   }
 
-  // Browsers that still send the full Android string: "Android 13; SM-S911B)".
+  // Full Android string: "Android 13; SM-S911B)".
   const android = ua.match(/Android [\d.]+; ([^;)]+?)(?: Build\/[^;)]*)?\)/)
   if (android && android[1] !== "K") return android[1]!.trim()
 

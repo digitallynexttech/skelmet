@@ -1,14 +1,5 @@
-/**
- * Client-safe catalogue registry (§4: `<feature>.ts`).
- *
- * Two skulls, each in the same three filament colourways, each colourway its
- * own SKU. A typed registry rather than a database read: the editorial half
- * lives here, and catalog.service.ts overlays the live price, stock and
- * status from the database.
- *
- * [TO CONFIRM] values are real business facts nobody should guess: fill them
- * in before launch rather than shipping the brackets.
- */
+// Client-safe catalogue: two skulls, three colourways each, one SKU per colourway. The editorial
+// half lives here; catalog.service.ts overlays live price, stock and status from the database.
 
 export type ColourwayId = "blaze" | "olive" | "ghost"
 
@@ -18,21 +9,13 @@ export type Colourway = {
   sku: string
   /** Swatch token: matches the filament, not the UI palette. */
   hex: string
-  /**
-   * The picker's swatch: the skull's own 3D model - the print file - rendered
-   * in this filament, three-quarter front, on a transparent ground. The
-   * colours are the real prints', from colourway-lineup.jpg.
-   */
+  /** The print file rendered in this filament, on a transparent ground. */
   swatch: string
   blurb: string
   image: string
-  /**
-   * Wire-shaped money (§5). The registry value is a fallback; the live one is
-   * overlaid from the variant row by the catalogue service, because price is
-   * per variant in the database and an admin can change it without a deploy.
-   */
+  /** Wire-shaped money. A fallback: the live per-variant price is overlaid from the database. */
   price: string
-  /** Units on hand for this variant. Same overlay, same reason. */
+  /** Units on hand, overlaid the same way. */
   stock: number
   inStock: boolean
   bestSeller?: boolean
@@ -44,7 +27,7 @@ export type Product = {
   /** What the thing is, as the product information on its page declares it. */
   productType: string
   strapline: string
-  /** Wire-shaped money: a string, exactly as the API would send it (§5). */
+  /** Wire-shaped money: a string. */
   price: string
   compareAtPrice: string
   /** 0 with `reviewCount` 0 for a product nobody has reviewed yet: the page shows no stars. */
@@ -52,12 +35,7 @@ export type Product = {
   reviewCount: number
   unitsLeft: number
   colourways: Colourway[]
-  /**
-   * Each finish's own pictures, in the order the gallery shows them. A Record,
-   * so a finish cannot be left without any: only the first picture used to
-   * follow the swatch, and picking Militia Olive left four orange photographs
-   * behind it.
-   */
+  /** Each finish's own pictures, in gallery order. A Record, so no finish is left without any. */
   gallery: Record<ColourwayId, GalleryImage[]>
   specs: Array<{ label: string; value: string; pending?: boolean }>
   inTheBox: string[]
@@ -75,11 +53,7 @@ export type Picture = {
 /** FAQ answers that differ for one skull, by question. null leaves the question out. */
 export type FaqAnswers = Record<string, string | null>
 
-/**
- * What the product page's sections show of this skull: their pictures, and
- * the lines that are about this one rather than any SKELMET mount. The home
- * and about pages show the Flame Skull's.
- */
+/** What the product page's sections show of this skull. Home and about show the Flame Skull's. */
 export type ProductSections = {
   /** "More than a mount": one picture per card, in the cards' order. */
   inUse: [Picture, Picture, Picture]
@@ -105,12 +79,7 @@ export type GalleryImage = {
   caption?: { title: string; body: string }
 }
 
-/**
- * A shot taken in all three finishes. The file per colourway is a Record, so
- * a finish cannot be left out. All three files share framing and dimensions,
- * so `object-cover` crops them identically and switching colourway does not
- * shift the image.
- */
+// One shot in all three finishes. The files share framing and size, so switching does not shift it.
 type GalleryShot = Omit<GalleryImage, "src"> & { src: Record<ColourwayId, string> }
 
 function inFinish(shot: GalleryShot, id: ColourwayId): GalleryImage {
@@ -147,9 +116,7 @@ export const COLOURWAYS: Colourway[] = [
     id: "ghost",
     name: "Ghost Grey",
     sku: "SKM-GHT",
-    // The grey the filament prints as, measured off the lit face of the real
-    // print in colourway-lineup.jpg: near neutral, a faint violet cast. It
-    // was #C8CED6, which read as silver.
+    // The grey the real print shows: near neutral, a faint violet cast.
     hex: "#98979E",
     swatch: "/product/swatch-3d-ghost.png",
     blurb: "Calm, cold and still as stone.",
@@ -169,9 +136,7 @@ const FRONT: GalleryShot = {
   },
 }
 
-// The owner's photographs, in Blaze Orange as taken (scripts/build-shop-shots.mjs).
-// The olive and the grey are the same photographs with only the skull
-// recoloured, against the real prints (GPT Image 2.5 on Higgsfield).
+// The owner's photographs in Blaze Orange; olive and grey recolour only the skull.
 const FITTING: GalleryShot = {
   alt: "Fixing the mount to the wall with a screwdriver, the skull already on its arm",
   src: {
@@ -274,8 +239,7 @@ export const FLAME_SKULL_MOUNT: Product = {
     { label: "Fixings", value: "3 × screws + wall plugs" },
     { label: "Fits", value: "Full-face, open-face and modular" },
   ],
-  // As The build section shows it (anatomy.tsx): no keychain - the mystery
-  // box took its place - and the paper template is the installation guide.
+  // Matches the box picture in The build section (anatomy.tsx).
   inTheBox: [
     "Skull mount, arm attached",
     "3 × screws + wall plugs",
@@ -284,8 +248,7 @@ export const FLAME_SKULL_MOUNT: Product = {
     "Mystery box",
   ],
   sections: {
-    // The real skull and arm, one in each colourway
-    // (scripts/build-gallery-shots.mjs, build-rider-wall.mjs).
+    // One in each colourway.
     inUse: [
       {
         src: "/product/gallery-wall-gear-ghost-grey.jpg",
@@ -314,9 +277,7 @@ export const FLAME_SKULL_MOUNT: Product = {
       },
       body: "We don't sand the print smooth and pretend it was moulded. The fine horizontal ridges catch the light, the flame valleys go properly deep, and the whole thing reads as made rather than manufactured.",
     },
-    // Shipped in one piece, so it goes up whole, screwed through the foot of
-    // its plate: the print files rendered into the scene, in Militia Olive
-    // (build-why-colourways.mjs).
+    // Shipped in one piece, so it goes up whole.
     install: {
       src: "/product/why-install-olive.jpg",
       alt: "Screwing a Militia Olive SKELMET mount to a wall through the foot of its plate, the skull already fixed to its arm",
@@ -331,18 +292,14 @@ export const FLAME_SKULL_MOUNT: Product = {
 
 // ── the Piston Skull ────────────────────────────────────────
 
-/**
- * The same filament, name and swatch colour as the Flame Skull's, with this
- * skull's own SKU and pictures.
- */
+// The Flame Skull's filament, name and colour, with this skull's SKU and pictures.
 function pistonFinish(
   id: ColourwayId,
   sku: string,
   files: { image: string; swatch: string },
 ): Colourway {
   const { name, hex, blurb } = COLOURWAYS.find((c) => c.id === id)!
-  // Sold out until the database says otherwise: it launches as a draft, and a
-  // page built without its rows must not offer what checkout would refuse.
+  // Sold out unless the database says otherwise: a page built without its rows must not sell it.
   return { id, name, hex, blurb, sku, ...files, price: "3499", stock: 0, inStock: false }
 }
 
@@ -361,15 +318,7 @@ export const PISTON_COLOURWAYS: Colourway[] = [
   }),
 ]
 
-/**
- * Its pictures start as renders of the two print files, skull-design-2.stl on
- * its own bracket (Helmet Hanger 75mm final center hook.stl), seated as the
- * owner's photos of the real mount show it: the post into the underside
- * behind the jaw, the skull tipped forward. An image model then gave each the
- * look of a studio photograph, and each kept the render's outline (97-99 %
- * overlap). The other finishes are the orange ones recoloured
- * (scripts/build-piston-colourways.mjs), so all three show the same skull.
- */
+// Renders of the print files made photographic; olive and grey are the orange recoloured.
 const pistonShot = (name: string, alt: string, caption?: GalleryShot["caption"]): GalleryShot => ({
   alt,
   ...(caption ? { caption } : {}),
@@ -392,10 +341,10 @@ export const PISTON_SKULL_MOUNT: Product = {
   name: "Piston Skull Helmet Mount",
   productType: "Wall-mounted helmet holder (piston skull mount)",
   strapline: "Mohawk up, piston in its teeth. A wall for the lid that earned it.",
-  // The owner's price (2026-10-08). Live price and stock come from the variant rows.
+  // Owner's price. Live price and stock come from the variant rows.
   price: "3499",
   compareAtPrice: "4999",
-  // New: nobody has reviewed it yet, so the page shows no stars.
+  // No reviews yet, so no stars.
   rating: 0,
   reviewCount: 0,
   unitsLeft: 0,
@@ -405,9 +354,7 @@ export const PISTON_SKULL_MOUNT: Product = {
     olive: PISTON_SHOTS.map((shot) => inFinish(shot, "olive")),
     ghost: PISTON_SHOTS.map((shot) => inFinish(shot, "ghost")),
   },
-  // Measured off the print file. Its weight, its load rating (its bracket is
-  // not the Flame Skull's) and which helmets it fits are the owner's to
-  // confirm before they go here.
+  // Weight, load rating (its own bracket) and helmet fit wait for the owner to confirm.
   specs: [
     { label: "Material", value: "PLA+ · matte" },
     { label: "Skull", value: "15 × 28 × 21 cm" },
@@ -420,9 +367,7 @@ export const PISTON_SKULL_MOUNT: Product = {
     "Thank-you card",
     "Mystery box",
   ],
-  // Its studio shots for now: the pictures of it in use (on a wall with a
-  // helmet and gear, in its box, going up) are still to be made, as the
-  // Flame Skull's were.
+  // Studio shots until pictures of it in use are made.
   sections: {
     inUse: [
       {
@@ -462,8 +407,7 @@ export const PISTON_SKULL_MOUNT: Product = {
       src: "/product/piston-mohawk-ghost-grey.jpg",
       alt: "The Piston Skull Helmet Mount in Ghost Grey, from above",
     },
-    // Which helmets it takes and what it holds are the owner's to confirm
-    // (2026-10-08): until then its page claims neither.
+    // Helmet fit and load are the owner's to confirm: until then the page claims neither.
     faqAnswers: {
       "Will the SKELMET mount hold a full-face helmet?": null,
       "Can the SKELMET mount hold my jacket and gloves as well as my helmet?":

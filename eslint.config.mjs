@@ -5,11 +5,10 @@ import prettier from "eslint-config-prettier"
 /** @type {import('eslint').Linter.Config[]} */
 const config = [
   {
-    // .next-* are the deploy's alternating build directories, .claude/ holds
-    // agent worktrees (whole copies of the repo): neither is our source.
+    // .next-*: deploy build dirs. .claude/: agent worktrees.
     ignores: [".next/**", ".next-*/**", ".claude/**", "node_modules/**", "public/**"],
   },
-  // Imported directly - never through FlatCompat, which crashes here.
+  // Imported directly: FlatCompat crashes here.
   ...coreWebVitals,
   ...nextTypescript,
   {
@@ -29,11 +28,11 @@ const config = [
     },
   },
   {
-    // Build scripts are CLIs - stdout is their output, not a stray debug line.
+    // CLIs: stdout is their output.
     files: ["scripts/**"],
     rules: { "no-console": "off" },
   },
-  // prettier stays last so it can switch off stylistic rules
+  // Last, to switch off stylistic rules.
   prettier,
 ]
 

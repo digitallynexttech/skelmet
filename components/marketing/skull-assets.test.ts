@@ -8,13 +8,8 @@ import SKULL_ASSETS from "@/components/marketing/skull-assets.json"
 import { SKULL_MODEL, SKULL_POSTER } from "@/components/marketing/skull-interaction"
 
 /**
- * The hero's model and poster are served to be kept for a month without
- * asking again, so each has to be a file nobody has under another content.
- * The model rebuilt from the print file went out under the old model's name,
- * and returning visitors - and Cloudflare, for the poster - kept the old one.
- *
- * Replacing either file by hand, without the build scripts that rename it,
- * fails here rather than on a customer's screen.
+ * The model and poster are cached for a month, so each must be named by its
+ * content. Replacing one by hand, without the build scripts, fails here.
  */
 describe("the hero skull's files", () => {
   const files = Object.entries(SKULL_ASSETS)

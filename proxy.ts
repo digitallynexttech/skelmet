@@ -4,18 +4,8 @@ import { getToken } from "next-auth/jwt"
 import { isUnknownPost } from "@/features/blog/server/known-posts"
 import { isUnknownPage } from "@/lib/known-pages"
 
-/**
- * Next 16 middleware, renamed to proxy.ts (§2).
- *
- * The auth fence and page RBAC. Hiding a nav item is cosmetic; this file and
- * the service guard are the enforcement (§6).
- *
- * There is exactly one population behind this fence: staff. Customers do not
- * get accounts - they buy as guests, get a confirmation email, and look an
- * order up by number and email at /track, which is public and needs no
- * session. The /account rules that used to sit here fenced routes that were
- * never built and now never will be.
- */
+// The auth fence (Next 16's middleware). With the service guards, this is the
+// enforcement; hiding a nav item is cosmetic. Only staff sign in.
 
 type RouteRule = {
   prefix: string
@@ -33,13 +23,9 @@ const under = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 
 /**
- * The console's API authenticates with a cookie, and a cookie rides along on
- * a request another site makes the browser send. So a write to /api/admin or
- * /api/me from another origin is refused here, before anything reads it:
- * when the browser says the request is cross-site (Sec-Fetch-Site), or when
- * its Origin names a different host from the one it was sent to. A request
- * with neither header - curl, a server - is not a browser carrying someone's
- * cookie, and is left to the session check.
+ * CSRF: cookie-authenticated writes from another origin (Sec-Fetch-Site or a
+ * mismatched Origin) are refused. No header at all is not a browser; the
+ * session check handles it.
  */
 export function isCrossSiteWrite(req: NextRequest): boolean {
   const { pathname } = req.nextUrl
@@ -47,8 +33,7 @@ export function isCrossSiteWrite(req: NextRequest): boolean {
 
   const method = req.method.toUpperCase()
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
-    // Reading an invoice or credit note the first time ISSUES its number, so
-    // these GETs are writes in all but name.
+    // The first read of an invoice or credit note issues its number: a write.
     return issuesADocument(pathname) && req.headers.get("sec-fetch-site") === "cross-site"
   }
 
@@ -75,12 +60,8 @@ function issuesADocument(pathname: string): boolean {
 }
 
 /**
- * Whether Auth.js set its session cookie with the `__Secure-` prefix, worked
- * out the way Auth.js does: from AUTH_URL when it is set, otherwise from the
- * scheme the request arrived with - which, behind a proxy that ends TLS, is
- * only in X-Forwarded-Proto. Reading the scheme off the URL alone looked for
- * the plain cookie while Auth.js had set the secure one, and every console
- * request bounced to the login page.
+ * Must match Auth.js's choice of the `__Secure-` cookie: AUTH_URL, else
+ * X-Forwarded-Proto (TLS ends at the proxy), or every request bounces to login.
  */
 export function usesSecureCookie(req: NextRequest): boolean {
   const envUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL
@@ -115,8 +96,7 @@ export async function proxy(req: NextRequest) {
   const isApi = pathname.startsWith("/api/")
 
   if (!AUTH_READY) {
-    // Nothing behind the fence can work without a secret. Answer as if the
-    // route does not exist rather than advertising that it is coming.
+    // Nothing here works without a secret: answer as if the route did not exist.
     return isApi
       ? json(404, "NOT_FOUND", "Not found.")
       : NextResponse.rewrite(new URL("/not-found", req.url))
@@ -135,8 +115,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(login)
   }
 
-  // Wrong population: 404, never 403, so a customer cannot probe what the
-  // staff area contains (§6).
+  // 404, never 403, so a non-staff user cannot probe the staff area.
   if (token.kind !== rule.kind) {
     return isApi
       ? json(404, "NOT_FOUND", "Not found.")

@@ -3,18 +3,9 @@ import "server-only"
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto"
 
 /**
- * Seals the secrets the console saves - payment keys, the Shiprocket password,
- * webhook secrets - before they reach the database, so a database dump or
- * backup does not carry them readable.
- *
- * AES-256-GCM, with a key derived from AUTH_SECRET rather than a variable of
- * its own: one fewer secret to lose. The catch is that changing AUTH_SECRET
- * makes every sealed value unreadable. open() then answers null, the console
- * says the saved value cannot be read, and until it is typed in again the
- * site falls back to .env as if it had never been saved.
- *
- * GCM authenticates as well as encrypts, so a sealed value that was edited in
- * the database opens to null, never to something else.
+ * Seals console-saved secrets so a database dump does not carry them readable. AES-256-GCM with a
+ * key derived from AUTH_SECRET: changing AUTH_SECRET makes every sealed value open to null, and
+ * the site falls back to .env until each is re-entered. A tampered value also opens to null.
  */
 
 const PREFIX = "sealed:v1:"

@@ -5,19 +5,18 @@ node_modules/
 
 # next
 .next/
-# Deploys alternate between two build directories so the live one is never
-# overwritten while it is being served.
+# The deploy's alternate build directories.
 .next-*
 out/
 build/
 next-env.d.ts
 
-# env - every .env file except the documented example
+# env, except the example
 .env
 .env.*
 !.env.example
 
-# Claude Code's agent worktrees: full copies of this repo on their own branches
+# Claude Code agent worktrees
 .claude/worktrees/
 
 # prisma
@@ -33,6 +32,5 @@ yarn-error.log*
 *.tsbuildinfo
 server.log
 
-# Design mockups and source media live beside the repo, in
-# ../FILES_SKELMET (website-design-mockups, website-source-media).
+# Design files live in ../FILES_SKELMET.
 design/

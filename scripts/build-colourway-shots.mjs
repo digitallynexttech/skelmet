@@ -1,23 +1,11 @@
 /**
- * Encodes the recoloured gallery shots into public/product/.
+ * Encodes the Militia Olive gallery shots into public/product/.
  *
  *   node scripts/build-colourway-shots.mjs <source-dir>
  *
- * The gallery used to swap only its first slot when you picked a colourway:
- * choosing Militia Olive left four orange photographs behind it. These are the
- * missing four in olive. The Ghost Grey four are recoloured from these by
- * build-ghost-shots.mjs: the image model's grey came back near white, and a
- * re-run here would put that silver skull back in the gallery.
- *
- * These came back from an image model asked to change the filament colour and
- * hold everything else, rather than being derived from the blaze photographs
- * by hand. That is why they are encoded here rather
- * than generated here: the script's job is only to match the originals'
- * dimensions and file size so the gallery's object-cover crop lands the same
- * way on all three finishes.
- *
- * Quality 82 and chroma subsampling off: these carry fine print layer lines,
- * which 4:2:0 smears and which are the entire point of the macro shot.
+ * The sources come from an image model; this only resizes and encodes them.
+ * The Ghost Grey shots are derived from these by build-ghost-shots.mjs.
+ * Chroma subsampling off: 4:2:0 smears the print's layer lines.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -57,8 +45,7 @@ for (const shot of SHOTS) {
   const src = path.join(SRC_DIR, shot.from)
   if (!fs.existsSync(src)) throw new Error(`missing source: ${src}`)
 
-  // Take the target size from the blaze original rather than hardcoding it,
-  // so the three finishes crop identically under object-cover.
+  // Sized like the blaze original, so every finish crops alike under object-cover.
   const ref = await sharp(path.join(OUT_DIR, shot.like)).metadata()
 
   const out = path.join(OUT_DIR, shot.to)

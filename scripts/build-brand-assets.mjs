@@ -3,16 +3,11 @@
  *
  *   node scripts/build-brand-assets.mjs [path-to-brand-folder]
  *
- * The sheets are drawn for white paper: the wordmark is near-black, which sits
- * at roughly 1.1:1 against --color-void and disappears. Two of them also carry
- * a colour swatch strip along the bottom. So each one is cropped above the
- * strip, trimmed to the artwork, and has its dark ink repainted as bone - the
- * standard reversed variant. The orange is left exactly as delivered, so the
- * logo keeps the brand hue rather than the site token (they differ slightly:
- * #F15D22 against --color-blaze #FF5A1F).
+ * The sheets are drawn for white paper, so each is cropped above its swatch
+ * strip, trimmed, and has its near-black ink repainted as bone. The orange stays
+ * as delivered: the brand hue (#F15D22), not --color-blaze.
  *
- * Hand-rolled PNG codec because the project has no image dependency and this
- * runs once per brand drop, not per build.
+ * Hand-rolled PNG codec: this runs once per brand drop and needs no image library.
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
@@ -111,8 +106,7 @@ function encode({ w, h, px }) {
   ihdr[8] = 8 // bit depth
   ihdr[9] = 6 // RGBA
   const stride = w * 4
-  // Filter 0 on every scanline: the artwork is flat colour, so deflate gets
-  // all the win it needs from run-length repetition alone.
+  // Filter 0 on every scanline: flat colour deflates well unfiltered.
   const rows = Buffer.alloc(h * (stride + 1))
   for (let y = 0; y < h; y++) {
     rows[y * (stride + 1)] = 0
@@ -134,13 +128,8 @@ const rowCoverage = (img, y) => {
 }
 
 /**
- * Where to cut the swatch strip off a brand sheet.
- *
- * Finding the strip itself is easy - it is the run of rows at the bottom that
- * is opaque edge to edge. Cutting there is not enough: its antialiased top
- * edge survives as a hairline, and being full width it then dictates the
- * bounding box. So keep walking up to the fully transparent gap that separates
- * the strip from the artwork, and cut there instead.
+ * Where to cut the swatch strip off a sheet: up at the transparent gap above it,
+ * so the strip's antialiased top edge cannot survive as a full-width hairline.
  */
 function stripTop(img) {
   const { h } = img
@@ -187,11 +176,7 @@ function crop(img, { x0, y0, x1, y1 }) {
 
 const dist = (px, i, c) => (px[i] - c[0]) ** 2 + (px[i + 1] - c[1]) ** 2 + (px[i + 2] - c[2]) ** 2
 
-/**
- * Repaint the dark ink as bone. Alpha is straight, not premultiplied, so
- * antialiased edge pixels carry the full ink RGB at a partial alpha -
- * swapping RGB and leaving alpha alone keeps every edge clean.
- */
+/** Repaints the dark ink as bone. Alpha is straight, so swapping RGB keeps edges clean. */
 function reverse(img) {
   const px = Buffer.from(img.px)
   let repainted = 0
@@ -209,12 +194,8 @@ function reverse(img) {
 }
 
 // ---------- vector ----------
-//
-// The footer draws the lockup across the width of the page, several times the
-// size of the sheet it was delivered on, and a PNG stretched that far goes
-// soft along every edge. The artwork is two flat colours, so its outlines can
-// be read straight off the pixels: each colour's coverage is traced at the
-// half-covered line, which the antialiasing places to a fraction of a pixel.
+// The footer draws the lockup far larger than its sheet, so it is traced to SVG:
+// each colour's outline at half coverage, placed sub-pixel by the antialiasing.
 
 /** How covered each pixel is by one colour, 0..1, with a clear border a pixel wide. */
 function coverage(img, colour, other) {
@@ -396,7 +377,7 @@ function pathOf(img, colour, other) {
   const n = (v) => String(Math.round(v * 100) / 100)
   return (
     outlines(coverage(img, colour, other))
-      // A fifth of a pixel: under what the eye can find at four times the size.
+      // A fifth of a pixel: invisible even at four times the size.
       .map((loop) => thinLoop(loop, 0.2))
       .map((loop) => `M${loop.map(([x, y]) => `${n(x)} ${n(y)}`).join("L")}Z`)
       .join("")
@@ -421,8 +402,7 @@ mkdirSync(OUT, { recursive: true })
 for (const [srcName, outName] of [
   ["Skelmet - Branding (4).png", "skelmet-lockup.png"],
   ["Skelmet - Branding (3).png", "skelmet-mark.png"],
-  // Single-colour, for laying over a solid brand panel where the two-tone
-  // lockup would lose its orange skull into the background.
+  // Single-colour, for solid brand panels where the orange skull would vanish.
   ["Skelmet - Branding (2).png", "skelmet-lockup-mono.png"],
 ]) {
   const img = decode(resolve(SRC, srcName))
@@ -446,10 +426,8 @@ for (const [srcName, outName] of [
     console.log(`  -> skelmet-lockup.svg  ${(svg.length / 1024).toFixed(1)} KB`)
   }
 
-  // The single-colour lockup as path data, for the splash screen to draw
-  // inline. It is the first thing on the page and the progress bar of the
-  // load: as an image it was one more request, and on a slow connection the
-  // curtain opened before it had arrived.
+  // The single-colour lockup as path data, for the splash to draw inline with
+  // no extra request.
   if (outName === "skelmet-lockup-mono.png") {
     const mono = { width: reversed.w, height: reversed.h, d: pathOf(reversed, BONE, ORANGE) }
     const file = resolve(ROOT, "components/shared/lockup-mono.json")

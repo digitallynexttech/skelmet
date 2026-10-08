@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-/* ────────────────────────────────────────────────────────────
-   SKELMET - "After Dark Garage"
-   Tokens are the single source of truth. No ad-hoc colours.
-   ──────────────────────────────────────────────────────────── */
+/* Design tokens are the single source of truth. No ad-hoc colours. */
 
 @theme {
   /* surfaces */
@@ -20,7 +17,7 @@
   --color-violet: #7b5cff;
   --color-magenta: #ff3d9a;
 
-  /* somebody else's: WhatsApp's own green, on the button that opens a chat */
+  /* WhatsApp's brand green, for the chat button only */
   --color-whatsapp: #25d366;
 
   /* filament colourways (product, not UI) */
@@ -30,31 +27,14 @@
   /* text */
   --color-bone: #f7f4ed;
   --color-ash: #a3a0b0;
-  /* 4.5:1 or better on void, carbon, graphite and slate (WCAG AA). It was
-     #63606f, 3.3:1 on the page background, which failed small text. */
+  /* 4.5:1 or better on every surface (WCAG AA). */
   --color-dim: #8e8b98;
   --color-faint: #46434f;
 
-  /* type
-     Anton's real metrics, read out of the woff2 (unitsPerEm 2048):
-       cap-height   0.8594em
-       ascent       1.1763em
-       descent      0.3291em
-       content box  1.5054em   <- why an unstyled heading looks so loose
-
-     Because cap-height is 0.8594em, the gap between two lines of Anton works
-     out to exactly font-size x (line-height - 0.8594). So any leading below
-     0.86 makes the letterforms OVERLAP, which is not obvious from the number.
-     One scale, by size:
-
-       >= 60px  hero display     leading-[1.0]    gap 16% of cap-height
-       >= 34px  section heading  leading-[1.04]   gap 21%
-       >= 22px  card heading     leading-[1.08]   gap 26%
-       <  22px  small heading    leading-[1.12]   gap 30%
-
-     Never leave a .font-display element without a leading - it falls back to
-     1.5 and the heading floats. `leading-none` is for single numerals only,
-     where there is no second line to collide with. */
+  /* Anton's cap-height is 0.8594em, so a leading below 0.86 overlaps lines.
+     Leading by size: >=60px 1.0, >=34px 1.04, >=22px 1.08, smaller 1.12.
+     Always give .font-display a leading (it falls back to 1.5);
+     leading-none is for single numerals only. */
   --font-display: var(--font-display-loaded), "Anton", "Arial Narrow", Impact, sans-serif;
   --font-sans: var(--font-sans-loaded), "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-mono-loaded), "JetBrains Mono", ui-monospace, "Courier New", monospace;
@@ -67,9 +47,7 @@
   /* motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Travel is one track - a content width, ~4.3kpx - rather than one
-     viewport, so the duration is retuned to hold the old ~75px/s. Tied to
-     MarqueeTicker's REPEATS: change one and retune the other. */
+  /* Tied to MarqueeTicker's REPEATS: change one, retune the other. */
   --animate-marquee: marquee 57s linear infinite;
   --animate-spin-slow: spin-slow 16s linear infinite;
   --animate-spin-rev: spin-rev 52s linear infinite;
@@ -127,13 +105,8 @@
   }
 }
 
-/* The console (/admin) keeps to two corners: rounded-sm, and rounded-full for
-   pills, dots and avatars. Every other radius - Tailwind's xs and md to 4xl,
-   and the site's card, tile and field - is the small one there. Set on the
-   root while the console's shell is on the page (data-console, in
-   app/(app)/layout.tsx), so it reaches dialogs portalled outside the shell
-   too, and the shop, which shares these components, keeps its own corners.
-   Unlayered, so it outranks the theme layer that defines them. */
+/* The console (/admin) uses only rounded-sm and rounded-full. Keyed on the root
+   (data-console) so portalled dialogs get it too. Unlayered, to outrank the theme. */
 :root:has([data-console]) {
   --radius-xs: var(--radius-sm, 0.25rem);
   --radius-md: var(--radius-sm, 0.25rem);
@@ -147,9 +120,7 @@
   --radius-field: var(--radius-sm, 0.25rem);
 }
 
-/* In the admin a Badge is the size of a status pill (ToneBadge in
-   components/shared/status-badge.tsx), so a table reads the same whichever
-   one a screen used. Unlayered, so it outranks the utilities it replaces. */
+/* Admin badges match the status pill (ToneBadge). Unlayered, to outrank utilities. */
 [data-console] .badge {
   padding: 0.25rem 0.625rem;
   font-size: 10px;
@@ -161,8 +132,7 @@
     box-sizing: border-box;
   }
 
-  /* No visible scrollbars anywhere. Wheel, touch, keyboard and drag-scroll all
-     still work; only the chrome is gone. */
+  /* No visible scrollbars anywhere; scrolling still works. */
   * {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -183,6 +153,7 @@
     color: var(--color-bone);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Nothing may overflow sideways: phones would lay fixed elements off centre. */
     overflow-x: hidden;
   }
 
@@ -191,7 +162,6 @@
     color: var(--color-void);
   }
 
-  /* the design is dark-only by intent - keep form controls in step */
   input,
   textarea,
   select,
@@ -212,15 +182,7 @@
 }
 
 @layer base {
-  /* Section numbering.
-
-     Scoped to <main>, so every page starts at 01 and numbers whatever it
-     actually renders, in document order. Components used to carry their own
-     index, which meant a section knew its position on the homepage and
-     nothing else - the product page showed 03, 04, 05, 07, 06, 10, 09, 13.
-
-     Counters read the live DOM, so commenting a section out renumbers the
-     rest with no other edit, and nothing has to be kept in step by hand. */
+  /* Section numbers count what each page renders in <main>, in DOM order. */
   main {
     counter-reset: section;
   }
@@ -232,16 +194,8 @@
 }
 
 @layer base {
-  /* Pointer cursors.
-
-     Tailwind v4's Preflight stopped giving <button> the user agent's pointer
-     cursor, so every button on the site read as plain text under the mouse.
-     Restored once here rather than as a utility on each button - which is how
-     the <summary> in checkout-view ended up carrying its own cursor-pointer.
-
-     Disabled controls are excluded on purpose: a pointer on a control that
-     cannot be pressed promises something that will not happen. The quantity
-     stepper hits its limits constantly, so this is not hypothetical. */
+  /* Tailwind v4's Preflight dropped the pointer cursor on buttons; restored here.
+     Disabled controls are left out on purpose. */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   a[href],
@@ -253,7 +207,7 @@
 }
 
 @layer utilities {
-  /* film grain - sits over any positioned container */
+  /* Film grain over any positioned container. */
   .grain::after {
     content: "";
     position: absolute;
@@ -269,11 +223,8 @@
     mix-blend-mode: screen;
   }
 
-  /* The one exception to no scrollbars: a console table wider than the
-     screen (DataTable). A trackpad or a finger can swipe it, but a mouse has
-     no other way to reach the columns on the right. Thin, and in the page's
-     colours. The standard properties are for Chrome and Firefox; Safari still
-     reads the -webkit- ones, which the base layer turned off. */
+  /* The one exception to no scrollbars: a wide console table (DataTable), which a
+     mouse cannot otherwise scroll. Safari reads the -webkit- rules. */
   .scrollbar-visible {
     scrollbar-width: thin;
     scrollbar-color: rgb(255 255 255 / 0.2) transparent;
@@ -287,9 +238,8 @@
     background: rgb(255 255 255 / 0.2);
   }
 
-  /* The newsletter editor (features/newsletter/components/rich-editor.tsx).
-     The reset strips lists and headings of their look, so the writing area
-     gets it back, close to how the email draws the same things. */
+  /* Newsletter editor (rich-editor.tsx): gives back the list and heading styles
+     the reset strips, close to how the email draws them. */
   .rich-editor .ProseMirror {
     min-height: 280px;
     padding: 16px 18px;
@@ -344,15 +294,13 @@
     border: 0;
     border-top: 1px solid rgb(255 255 255 / 0.14);
   }
-  /* Capped in height while writing, so a portrait photo does not push the
-     text out of reach; the email itself draws it at the card's width. */
+  /* Height capped while writing, so a tall photo does not push the text away. */
   .rich-editor .ProseMirror img {
     display: block;
     width: auto;
     max-width: 100%;
     height: auto;
     max-height: 380px;
-    /* The console's one corner (see :root:has([data-console])). */
     border-radius: var(--radius-sm, 0.25rem);
   }
   .rich-editor .ProseMirror img.ProseMirror-selectednode {
@@ -385,22 +333,10 @@
     );
   }
 
-  /* The hero headline burn - see components/marketing/hero-headline.tsx.
-
-     Four copies of the line, stacked, every one masked by the same ellipse on
-     the skull. The ellipse is where the paint is back in full; --hin is where
-     the outline-only zone ends, which the component works out per layout so
-     the burn stays about a letter either side of the skull. Everything else
-     hangs off those two:
-
-       0     – core   outline runs blaze
-       0     – hin    hollow: outline only, no paint
-       hin   – 100%   paint returns, through a blaze heat band that peaks a
-                      third of the way out and is gone by heat-end
-       100%  –        solid, as if the skull were not there
-
-     The halo vars are rewritten whenever the skull moves. The defaults are its
-     rest pose at xl, for the frames before the first write. */
+  /* Hero headline burn (hero-headline.tsx): stacked copies of the line, all
+     masked by one ellipse on the skull. Inside --hin the line is outline only;
+     beyond it the paint returns through a blaze heat band. The component
+     rewrites the halo vars as the skull moves; defaults are its rest pose at xl. */
   .burn {
     --hx: 50%;
     --hy: 77%;
@@ -418,9 +354,7 @@
     -webkit-mask-image: radial-gradient(var(--halo), transparent var(--hin), #000 100%);
   }
 
-  /* Tints the paint as it comes back, so the bone letters warm on their way
-     into the halo rather than just greying out. The accent word is already
-     blaze, so on that side this only holds the colour up a little longer. */
+  /* Warms the paint as it comes back into the halo. */
   .burn-heat {
     position: absolute;
     inset: 0;
@@ -439,10 +373,8 @@
     );
   }
 
-  /* Outline in each word's own colour. Fill is cleared through
-     -webkit-text-fill-color rather than `color`, so currentColor still means
-     bone on the plain words and blaze on the accent. Set on the descendants as
-     well, so each one resolves currentColor against itself. */
+  /* Fill cleared via -webkit-text-fill-color, not `color`, so each word's
+     currentColor still drives its outline. */
   .burn-line {
     position: absolute;
     inset: 0;
@@ -457,7 +389,7 @@
     -webkit-text-stroke-color: currentColor;
   }
 
-  /* Closest to the skull the outline runs hot, whatever the word. */
+  /* Nearest the skull the outline is blaze, whatever the word. */
   .burn-core,
   .burn-core * {
     -webkit-text-stroke-color: var(--color-blaze);
@@ -468,9 +400,8 @@
     -webkit-mask-image: radial-gradient(var(--halo), #000 var(--core), transparent var(--hin));
   }
 
-  /* The flying hero skull (skull-stage) takes no pointer events of its own -
-     the window listeners hit-test it - so it cannot set its own cursor. They
-     flag the root instead, and this outranks whatever the skull is over. */
+  /* The skull takes no pointer events (window listeners hit-test it), so its
+     cursor is set from a flag on the root. */
   html[data-skull="grab"],
   html[data-skull="grab"] * {
     cursor: grab !important;
@@ -481,25 +412,21 @@
     cursor: grabbing !important;
   }
 
-  /* Where the skull can dock, a sideways drag on touch spins it rather than
-     being claimed by the browser. The card's link overlay is a sibling of the
-     photo, so on a card this has to sit on the article. Pinch zoom stays. */
+  /* A sideways touch drag spins a docked skull. On a card the link overlay is a
+     sibling of the photo, so this sits on the article. */
   :has(> [data-skull-dock]),
   article:has([data-skull-dock]) {
     touch-action: pan-y pinch-zoom;
   }
 }
 
-/* The /checkout placeholder (see BEFORE_PAINT in app/layout.tsx): it renders
- * both its full layout and its empty state, and shows the one the saved cart
- * says the page is about to become. */
+/* The /checkout placeholder renders both states and shows the one the saved
+   cart predicts (BEFORE_PAINT in app/layout.tsx). */
 html[data-cart-empty] [data-when-cart="full"],
 html:not([data-cart-empty]) [data-when-cart="empty"] {
   display: none;
 }
-/* The splash (components/shared/splash-screen.tsx) is never left up: if the
- * script that lifts it has not done so within 3.5 s of it appearing, it fades
- * out on its own. Reduced motion hides it outright, below. */
+/* Failsafe: the splash fades out by itself 3.5 s in if no script has lifted it. */
 [data-splash] {
   animation: splash-failsafe 0.4s ease-out 3.5s forwards;
 }
@@ -511,17 +438,10 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
-/* The splash's wordmark filling and its count, from the first paint and with
- * no script. Most of the way in a second and a half, a hold, then the rest -
- * so even if the script never comes the curtain lifts (above) on a full
- * wordmark. When the page is in, splash-screen.tsx takes all three over from
- * wherever they have got to and runs them out.
- *
- * All three are transforms, so they keep moving while the main thread is busy
- * hydrating the page. The fill is a window sliding in over the dimmed wordmark
- * with the solid one inside it sliding back by the same amount. The count is
- * a column of the figures 0 to 100 rolling up past a window one row tall. They
- * share every offset and easing, which is what keeps the figure on the fill. */
+/* The splash's wordmark fill and count run from first paint, with no script.
+   Transform only, so they keep moving while the main thread hydrates: keep it
+   that way. They share every offset and easing, which keeps the count on the
+   fill. splash-screen.tsx takes them over once the page is in. */
 [data-splash-fill] {
   animation: splash-fill 3.2s linear both;
 }
@@ -565,7 +485,7 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
     transform: translateX(0);
   }
 }
-/* A row is a 101st of the column: 92 rows up shows 92, 100 shows 100. */
+/* One row is 1/101 of the column (figures 0 to 100). */
 @keyframes splash-count {
   0% {
     transform: translateY(0);
@@ -584,10 +504,8 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
-/* The hero poster's bob, which the mesh keeps time with once it takes over.
-   Top and bottom only: the period, the rise (--bob-rise) and a sine easing
-   come from the element's style, built from the constants the mesh's cosine
-   uses (BOB_PERIOD in skull-interaction). */
+/* The hero poster's bob; the mesh keeps time with it. Period, --bob-rise and
+   easing come from inline style (BOB_PERIOD in skull-interaction). */
 @keyframes skull-bob {
   0%,
   100% {
@@ -598,24 +516,16 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
-/* The hero's atmosphere rests while the hero is off screen (skull-stage sets
-   data-away). Not the poster: its bob is the clock the mesh keeps time with. */
+/* The hero's atmosphere pauses off screen (data-away). Not the poster: its bob
+   is the mesh's clock. */
 [data-skull-home][data-away] > [aria-hidden] {
   animation-play-state: paused;
 }
 
-/* The hero watermark's glow (HeroWatermark). --glow is the accent as channels.
-
-   .hero-mark-glow is the word again with a brighter, blurred outline; it
-   breathes. .hero-mark-shine is brighter still, seen only through
-   .hero-mark-sweep, a soft-edged band that crosses the hero and then rests
-   off its right edge. The track inside the band moves the other way by the
-   same distance, so the word stays put while the band passes over it: band
-   from -100% to 100/30 of its own 30% width, track from 30% to -100% of its
-   full width, on the same easing, cancel at every frame.
-
-   Out of the animation - and so with reduced motion, which ends every
-   animation at once - each rests where it starts: a faint glow, no band. */
+/* Hero watermark glow (HeroWatermark). --glow is the accent as RGB channels.
+   The sweep band and its track move by equal and opposite amounts, so the word
+   stays put as the band passes. At rest (and with reduced motion): faint glow,
+   no band. */
 .hero-mark-glow {
   -webkit-text-stroke: 1px rgb(var(--glow) / 0.7);
   filter: drop-shadow(0 0 7px rgb(var(--glow) / 0.55));
@@ -680,7 +590,6 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
-/* Everything ambient stops when the visitor asks it to. */
 @media (prefers-reduced-motion: reduce) {
   [data-splash] {
     display: none !important;
@@ -696,27 +605,15 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
-/* Razorpay's checkout sheet.
- *
- * Their container is injected into our document (the payment form itself is a
- * cross-origin iframe, but the backdrop around it is not), so the blur belongs
- * here while the colour is passed as theme.backdrop_color - a CSS background
- * would be overwritten by their own inline style on open.
- *
- * Not scoped to a wrapper of ours: the container is appended to <body> and we
- * never get a handle on it.
- */
+/* Razorpay's checkout sheet, appended to <body> by their script. The colour goes
+   in theme.backdrop_color: their inline style overwrites a CSS background. */
 .razorpay-container {
-  /* Unprefixed only: Lightning CSS adds -webkit- per the browser targets, and
-     writing both made it keep the prefixed one and drop the standard property,
-     which would have left Firefox unblurred. */
+  /* Unprefixed only: Lightning CSS adds -webkit-, and writing both drops the
+     standard property (Firefox). */
   backdrop-filter: blur(14px) saturate(120%);
 }
 
-/* The backdrop is the container's own child div, the one that is not the
- * iframe. Razorpay sets its background inline, which is what backdrop_color
- * feeds; all this adds is the transition so the page dims rather than snaps.
- */
+/* The backdrop div (not the iframe): adds a fade; its colour is set inline. */
 .razorpay-container > div:not([class]) {
   transition: background-color 180ms ease-out;
 }

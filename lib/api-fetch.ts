@@ -14,21 +14,18 @@ export class ApiFetchError extends Error {
     this.details = details
   }
 
-  /** What the server said is wrong with each field, `{ field: message }`, for a form to show under it. */
+  /** `{ field: message }`, for a form to show under each input. */
   get fieldErrors(): Record<string, string> {
     return fieldErrorsOf(this.details)
   }
 }
 
-/**
- * The single transport. Every mutation and query goes through here, so there is
- * one error shape for the whole app (§1).
- */
+/** The one client transport, so the app has one error shape. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
     headers: {
-      // A FormData body sets its own multipart type, boundary included.
+      // FormData sets its own multipart type and boundary.
       ...(init?.body && !(init.body instanceof FormData)
         ? { "content-type": "application/json" }
         : {}),
@@ -40,7 +37,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   try {
     body = (await res.json()) as ApiEnvelope<T>
   } catch {
-    // fall through, a non-JSON body is still an error we can describe
+    // Non-JSON: still reported below.
   }
 
   if (!res.ok || !body || body.success === false) {

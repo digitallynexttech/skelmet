@@ -30,74 +30,39 @@ import {
 } from "@/components/marketing/skull-optics"
 
 /**
- * The hero mesh: the three.js scene, its lights and its draw loop, and
- * nothing of the page. It is handed a canvas and told how the skull is
- * turned; where that canvas sits on the page is skull-canvas's business.
- *
- * No DOM in here, because this normally runs in a worker (skull-worker) on
- * an OffscreenCanvas. Everything that made the model expensive to show -
- * evaluating three.js, decoding the mesh, compiling shaders, the draw itself -
- * then happens off the thread the page scrolls and animates on. It used to
- * run there: on a mid-range phone starting the model froze the page for over
- * a second, at the moment of the visitor's first touch, and every frame of a
- * scroll paid for a draw. A browser that cannot give a worker a WebGL canvas
- * runs this same file on the main thread instead (skull-renderer).
- *
- * This used to be @react-three/fiber. It was dropped for two reasons that both
- * come back to owning the frame: fiber builds its store around
- * `new THREE.Clock()`, deprecated since r183, which warned on every mount with
- * nothing callable from this side to stop it - and its dist is 638KB against
- * three's own 647KB, on the heaviest chunk the site loads. What it bought us
- * was JSX for a scene graph that is built once and never re-rendered.
+ * The hero's three.js scene and draw loop, with no DOM: it normally runs in a
+ * worker (skull-worker) on an OffscreenCanvas, so parsing, shader compiles and
+ * draws stay off the page's main thread. Without worker WebGL, skull-renderer
+ * runs it on the main thread. Plain three.js on purpose: @react-three/fiber
+ * nearly doubled the heaviest chunk and warned on every mount.
  */
 
 /** Retina is not worth the fill rate on a mesh this size. */
 const MAX_PIXEL_RATIO = 1.75
 
 /**
- * Touch screens get a lighter renderer: a phone's GPU is better spent keeping
- * the scroll smooth than on a sharper skull. A lower pixel ratio and a
- * quarter-size shadow map. Edges are still antialiased: below the screen's
- * own pixel ratio the canvas is stretched to fit, and a stretched hard edge
- * is a staircase beside the poster it takes over from.
+ * Touch screens: lower pixel ratio and shadow map, so the GPU keeps the scroll
+ * smooth. Still antialiased: the canvas is stretched, and stretched hard edges stair-step.
  */
 const TOUCH = { pixelRatio: 1.5, shadowMapSize: 1024 }
 
 /**
- * Those are where it starts. A graphics chip that cannot keep up at that
- * size is given fewer pixels: when more than half of a run of consecutive
- * draws - the skull turning, as it does all through a flight - come later
- * than SLOW_DRAW_MS apart, the pixel ratio steps down, as far as the floor.
- * It never steps back up: a skull that sharpens and softens is worse than a
- * soft one. A gap over STALLED_MS is not slowness but a pause - a hidden tab,
- * a skull that stopped turning - and is left out.
+ * Adaptive resolution: when over half of a run of turning draws come more than
+ * slowDrawMs apart, the pixel ratio steps down to the floor. It never steps back
+ * up (sharpen-then-soften looks worse). Gaps over stalledMs are pauses, ignored.
  */
 const PACE = { run: 40, slowDrawMs: 24, stalledMs: 100, step: 0.25, floor: 1 }
 
-/**
- * An idle skull's only motion is the bob, a slow drift nobody reads frame by
- * frame. Drawn every 50 ms rather than every display frame (60-120 Hz), so a
- * skull just sitting in the hero costs a fraction of the GPU it did.
- */
+/** An idle skull only bobs, so it is drawn every 50 ms, not every display frame. */
 const IDLE_FRAME_MS = 50
 
-/**
- * Yaw applied once at load so the skull rests facing the viewer. Generators do
- * not agree on which way "forward" ends up, so this is measured against the
- * rendered result rather than assumed.
- */
+/** Yaw at load so the skull faces the viewer; set against the rendered result. */
 const MODEL_YAW_OFFSET = 0
 
 /**
- * Two lighting rigs, blended by how seated the skull is in a photo.
- *
- * Stage is the hero's, built for a black page: a hot orange kicker and a violet
- * rim keep the silhouette alive against nothing. Carried into a product card
- * it made the landed skull glossier and more saturated than the photographed
- * ones beside it, with violet pooling in the eye sockets and teeth, and the
- * other two cards read as dull by comparison. Studio is what the photos were
- * shot under - one soft key from the upper left, a neutral fill, no coloured
- * edges - so the skull that lands reads as the same object as the rest.
+ * Two lighting rigs, blended by how seated the skull is in a photo. Stage is
+ * the hero's, for a black page. Studio matches the product photos (soft key
+ * upper left, neutral fill), so a landed skull matches the photographed ones.
  */
 const STAGE = {
   key: 5.6,
@@ -120,23 +85,10 @@ const STUDIO = {
   roughness: 0.8,
 }
 /**
- * The room the skull stands in: soft light from every side, which is what
- * keeps the shadowed half of the face from falling to black. Nine numbers -
- * the light arriving from each direction as second-order spherical harmonics,
- * the same in red, green and blue because the room is white.
- *
- * It is three.js's RoomEnvironment, measured once (LightProbeGenerator on a
- * cube render of it). The scene used to build that room and blur it into an
- * environment map on every start: four more shader programs, compiled and
- * drawn with before anything else could happen. On a first visit that was
- * over a second in which the graphics process could do nothing else - and
- * since the page is drawn by the same process, the whole page stood still
- * for it, at the moment of the visitor's first touch. A probe is a uniform.
- *
- * A map also gave the surface a faint sheen of the room, which a probe has
- * no way to: ROOM_GAIN is that much more of the soft light, in its place.
- * Set by eye and by difference against the map - the two pictures of the
- * skull at rest are within a few levels of each other over all but its edge.
+ * Soft room light as second-order spherical harmonics (same in R, G, B),
+ * measured once from three.js's RoomEnvironment. A probe, not an environment
+ * map: building the map at start costs extra shader compiles that freeze the
+ * whole page. ROOM_GAIN makes up for the sheen the map gave.
  */
 const ROOM = [3.7119, 1.7183, 1.6268, 0.2877, 0.2338, 1.0789, 1.2682, -0.34, -0.6285]
 const ROOM_GAIN = 1.15
@@ -161,7 +113,6 @@ export type SkullPose = {
 
 export type SkullSceneInit = {
   canvas: HTMLCanvasElement | OffscreenCanvas
-  /** The model file's bytes. */
   model: ArrayBuffer
   /** A touch screen: the lighter renderer. */
   touch: boolean
@@ -169,15 +120,10 @@ export type SkullSceneInit = {
   /** The canvas's size on the page, CSS px. */
   width: number
   height: number
-  /**
-   * Cut the surface down to its convex hull before handing it back. Exact
-   * for an outline and a fraction of the points, but a second's work that
-   * only a worker has to spare.
-   */
+  /** Reduce the surface to its convex hull: exact, but a second's work only a worker can spare. */
   hull: boolean
 }
 
-/** What the page needs to know about the model once it is up. */
 export type SkullModelInfo = {
   /** Points on the model in pivot space, x y z in turn: the outline is measured off these. */
   surface: Float32Array
@@ -204,7 +150,7 @@ export type SkullScene = {
   dispose: () => void
 }
 
-/** Milliseconds since the epoch, to the precision of performance.now(): the same on every thread. */
+/** Epoch milliseconds at performance.now() precision: the same on every thread. */
 const wallClock = () => performance.timeOrigin + performance.now()
 
 /** A worker has requestAnimationFrame wherever it can have a canvas; the timer is for the rest. */
@@ -217,10 +163,7 @@ const cancelFrame: (id: number) => void =
     ? (id) => cancelAnimationFrame(id)
     : (id) => clearTimeout(id)
 
-/**
- * A named moment in the scene's start, for a performance trace: in order,
- * skull:start, context, lit, parsed, outlined, compiled, shown.
- */
+/** Trace marks, in order: skull:start, context, lit, parsed, outlined, compiled, shown. */
 const mark = (name: string) => performance.mark(`skull:${name}`)
 
 export function createSkullScene(
@@ -229,8 +172,7 @@ export function createSkullScene(
 ): SkullScene | null {
   mark("start")
   let renderer: WebGLRenderer
-  // Context creation throws on a machine with no WebGL - or in a worker that
-  // is not allowed one.
+  // Throws with no WebGL, or in a worker that is not allowed one.
   try {
     renderer = new WebGLRenderer({
       canvas: init.canvas,
@@ -249,35 +191,27 @@ export function createSkullScene(
   renderer.toneMappingExposure = STAGE.exposure
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = PCFShadowMap
-  // Shader diagnostics cost a synchronous GPU round trip on first use: three
-  // calls getProgramInfoLog and reads LINK_STATUS, and the driver has to
-  // finish compiling before it can answer. Worth paying while you are editing
-  // shaders, not worth paying on every visitor's first frame.
+  // Shader error checks force a synchronous GPU round trip on first use: dev only.
   renderer.debug.checkShaderErrors = process.env.NODE_ENV === "development"
   mark("context")
 
   const scene = new Scene()
 
-  // Opened from the stage's 32° by the bleed: the tangent scales, so the
-  // stage region of the wider view is the stage camera's image exactly.
+  // Widened by the bleed; the stage region of the view is the stage camera's image exactly.
   const camera = new PerspectiveCamera(BLEED_FOV, 1, 0.1, 1000)
   camera.position.set(0, 0, CAMERA_Z)
 
-  // The room is for soft shading only; at full strength it washes the orange
-  // toward cream.
+  // Soft shading only; at full strength it washes the orange toward cream.
   const room = new LightProbe(undefined, STAGE.room)
   ROOM.forEach((light, k) => room.sh.coefficients[k]!.setScalar(light * ROOM_GAIN))
 
-  // Hard key, high and to the left, as in the product photography. It is the
-  // only shadow caster: one decisive light source is what gives the skull its
-  // contrast.
+  // Hard key, upper left as in the product photos; the only shadow caster.
   const key = new DirectionalLight(STAGE_KEY.clone(), STAGE.key)
   key.position.set(-3.4, 4.4, 1.9)
   key.castShadow = true
   const shadowSize = init.touch ? TOUCH.shadowMapSize : 2048
   key.shadow.mapSize.set(shadowSize, shadowSize)
-  // Bias pair tuned for a double-sided mesh: without normalBias the curved
-  // cranium stipples itself with shadow acne.
+  // Tuned for a double-sided mesh: without normalBias the cranium gets shadow acne.
   key.shadow.bias = -0.0006
   key.shadow.normalBias = 0.025
   key.shadow.camera.near = 0.1
@@ -288,8 +222,7 @@ export function createSkullScene(
   key.shadow.camera.bottom = -2.4
   key.shadow.camera.updateProjectionMatrix()
 
-  // Hot blaze kicker raking the right edge, so the silhouette stays lit
-  // against a black page even when the face turns away.
+  // Orange kicker on the right edge keeps the silhouette lit against the black page.
   const kicker = new PointLight("#ff5a1f", STAGE.kicker, 22)
   kicker.position.set(3.6, 0.5, -1.2)
 
@@ -301,8 +234,7 @@ export function createSkullScene(
   const bounce = new PointLight("#ff8a4a", STAGE.bounce, 14)
   bounce.position.set(0.4, -2.8, 2.2)
 
-  // Dim, cool bounce so the shadow side keeps detail without going grey.
-  // Ambient is the single biggest cause of a flat, plastic-toy look.
+  // Kept dim: strong ambient makes the skull look like flat plastic.
   const ambient = new AmbientLight(STAGE_AMBIENT.clone(), STAGE.ambient)
 
   scene.add(key, kicker, rim, bounce, ambient, room)
@@ -326,9 +258,7 @@ export function createSkullScene(
     for (const m of materials) m.roughness = mix(STAGE.roughness, STUDIO.roughness)
   }
 
-  // Pivot the animation drives, with the model parented inside it already
-  // centred and normalised - so rotation happens about the skull, not about
-  // whatever origin the exporter happened to leave behind.
+  // The model is centred inside the pivot, so it turns about the skull, not the exporter's origin.
   const pivot = new Group()
   scene.add(pivot)
 
@@ -375,7 +305,7 @@ export function createSkullScene(
     pixelRatio = Math.max(PACE.floor, pixelRatio - PACE.step)
     renderer.setPixelRatio(pixelRatio)
     renderer.setSize(size.width, size.height, false)
-    // The canvas is a new size and empty: the next frame draws whatever else is true.
+    // Resizing cleared the canvas: force the next draw.
     drawn.width = 0
   }
 
@@ -385,14 +315,11 @@ export function createSkullScene(
     pivot.rotation.x = pose.x
     pivot.rotation.y = MODEL_YAW_OFFSET + pose.y
     pivot.rotation.z = pose.z
-    // On the poster's clock, so the frame that replaces the poster is the one
-    // it was showing (see BOB_PERIOD).
+    // On the poster's clock, so the first frame matches the poster (see BOB_PERIOD).
     const bob = (((wallClock() - bobStart) / 1000) * 2 * Math.PI) / BOB_PERIOD
     pivot.position.y = OPTICAL_CENTRE_LIFT + Math.cos(bob) * BOB_RISE * VIEW_HEIGHT * pose.bob
 
-    // Stage light in the hero and in flight, studio light once seated in a
-    // photo. Quantised, so a skull hovering at the edge of a dock does not
-    // relight and redraw on every sub-pixel of scroll.
+    // Quantised so a skull at a dock's edge does not relight on every sub-pixel of scroll.
     const studio = Math.round(pose.studio * 200) / 200
     const moved =
       studio !== drawn.studio ||
@@ -418,8 +345,7 @@ export function createSkullScene(
     drawn.height = size.height
   }
 
-  // Runs while the skull bobs, which is its only motion of its own. Seated in
-  // a photograph it does not, and the loop stops until it is told of a turn.
+  // Runs while the skull bobs; seated in a photo it stops until the next pose.
   const loop = () => {
     frame = 0
     if (disposed || !shown) return
@@ -430,10 +356,7 @@ export function createSkullScene(
     if (!frame && !disposed && shown && model) frame = nextFrame(loop)
   }
 
-  // The mesh ships meshopt-compressed (EXT_meshopt_compression), which cut
-  // it from 8.9 MB to under 1 MB with the triangle count untouched. The
-  // decoder is NOT optional: without it the loader rejects the file outright
-  // and the hero never gets past its poster.
+  // The mesh is meshopt-compressed: without the decoder the loader rejects it.
   const loader = new GLTFLoader()
   loader.setMeshoptDecoder(MeshoptDecoder)
   const onParsed = (gltf: GLTF) => {
@@ -441,25 +364,18 @@ export function createSkullScene(
     mark("parsed")
     const root = gltf.scene
 
-    // The model is built from the print file (scripts/build-skull-model.mjs):
-    // one flat filament colour and no maps, so the surface is set here
-    // rather than trusted from the file. Matte PLA is a dielectric, so
-    // metalness 0: a metallic surface takes its colour from reflections
-    // rather than its own, and turned the orange into grey plastic.
+    // One flat colour and no maps (scripts/build-skull-model.mjs), so the
+    // surface is set here. Matte PLA: metalness 0, or the orange turns grey.
     root.traverse((child) => {
       const mesh = child as Mesh
       if (!mesh.isMesh) return
       const material = mesh.material as MeshStandardMaterial
       material.metalness = 0.0
-      // A uniform roughness gives one broad, controllable sheen. Not fully
-      // diffuse, though - at 1.0 the surface loses every specular cue and
-      // reads as moulded toy plastic.
+      // Uniform roughness, below 1.0: fully diffuse reads as toy plastic.
       material.roughnessMap = null
       material.roughness = STAGE.roughness
 
-      // Self-shadowing is what carves the eye sockets and the flame
-      // grooves. Without it the form is only shaded by lambert falloff,
-      // which is flat.
+      // Self-shadowing carves the eye sockets and flame grooves.
       materials.push(material)
       mesh.castShadow = true
       mesh.receiveShadow = true
@@ -468,10 +384,7 @@ export function createSkullScene(
     const box = new Box3().setFromObject(root)
     const extent = box.getSize(new Vector3())
     const centre = box.getCenter(new Vector3())
-    // Normalised by height (SKULL_HEIGHT): the print is deeper than it is
-    // tall once tilted to meet the eye, and sizing by the longest axis
-    // made its size depend on the tilt. Turned side-on it reaches past
-    // the stage, into the canvas's bleed.
+    // Sized by height, not the longest axis, which changes with the tilt.
     const scale = SKULL_HEIGHT / (extent.y || 1)
 
     root.position.set(-centre.x, -centre.y, -centre.z)
@@ -482,16 +395,14 @@ export function createSkullScene(
     pivot.add(scaled)
     extent.multiplyScalar(scale)
 
-    // Compile the shaders before the first draw, on the driver's own threads
-    // where it has them. Done inside that draw it is one long stall - four
-    // lights and a shadow pass.
+    // Compile before the first draw (on driver threads where available);
+    // inside the draw it is one long stall.
     pivot.updateMatrixWorld(true)
     const compiled = renderer.compileAsync(scene, camera).catch(() => {
       // Compiled on first draw instead; slower, not broken.
     })
 
-    // And while the driver is busy with that: the model's surface in pivot
-    // space, for the outline the page seats on the photographs.
+    // Meanwhile, sample the surface for the outline the page fits to the photos.
     const surface = sampleSurface(root, new Matrix4().copy(pivot.matrixWorld).invert(), init.hull)
     mark("outlined")
 
@@ -500,8 +411,7 @@ export function createSkullScene(
       mark("compiled")
       model = scaled
       drawn.studio = NaN
-      // Draw, and only say so a frame later: by then the picture is on the
-      // canvas, and the poster can be taken away with nothing in between.
+      // Report ready a frame after the draw, so the poster goes only once the picture is up.
       draw()
       nextFrame(() => {
         if (disposed) return
@@ -539,8 +449,7 @@ export function createSkullScene(
     visible: (visible) => {
       shown = visible
       if (visible) {
-        // Whatever was drawn before may have been thrown away with the canvas's
-        // place on the page; draw afresh.
+        // The canvas may have been cleared while hidden; draw afresh.
         drawn.studio = NaN
         wake()
       }
@@ -549,8 +458,7 @@ export function createSkullScene(
       disposed = true
       cancelFrame(frame)
       init.canvas.removeEventListener("webglcontextlost", onLost)
-      // three does not walk the graph for you: every geometry, material and
-      // texture holds GPU memory until it is told otherwise.
+      // three does not free GPU memory for you.
       model?.traverse((child) => {
         const mesh = child as Mesh
         if (!mesh.isMesh) return
@@ -564,14 +472,9 @@ export function createSkullScene(
 }
 
 /**
- * Points on the model, in pivot space.
- *
- * The outline of a shape from any angle is the outline of its convex hull, so
- * the hull's corners - a few thousand of the mesh's ninety thousand points -
- * measure it exactly, and thirty times faster per angle. Building the hull is
- * the slow part, which is why it is optional: without it, every few points of
- * the mesh, about forty thousand in all, which pins the outline to well under
- * a pixel.
+ * Points on the model, in pivot space. The convex hull's corners give the exact
+ * outline from any angle with far fewer points, but the hull is slow to build;
+ * without it, about 40,000 mesh points are sampled.
  */
 function sampleSurface(root: Group, toPivot: Matrix4, hull: boolean): Float32Array {
   const points: Vector3[] = []
@@ -599,7 +502,7 @@ function sampleSurface(root: Group, toPivot: Matrix4, hull: boolean): Float32Arr
       }
       if (corners.size >= 4) kept = [...corners]
     } catch {
-      // A degenerate cloud has no hull; the whole of it still measures true.
+      // A degenerate cloud has no hull; the full cloud still works.
     }
   }
 

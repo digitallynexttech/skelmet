@@ -2,24 +2,15 @@
  * Recolours the orange skull in a picture to another colourway, in place.
  * Shared by build-rider-wall.mjs and build-why-colourways.mjs.
  *
- * Where: the largest piece of orange print, plus any piece something in
- * front cuts off it - a microphone boom - (wholly within its width, below
- * its top, orange rather than a red strap tab), with the holes they enclose.
- * Within a few pixels of that, any warm, saturated pixel counts, which takes
- * in highlights and the orange a JPEG bleeds into the dark beside it.
- *
- * How: luminance times the print's share of the orange's, in the print's own
- * colour. The light and shade come through luminance alone. The orange cannot
- * lend its colour variation, as build-ghost-shots.mjs takes the olive's: it
- * has almost no blue, and dividing by that turned the shadows magenta.
+ * Where: the largest piece of orange print, plus pieces something in front cuts
+ * off it (a mic boom) and the holes they enclose, widened to take highlights and
+ * JPEG bleed. How: luminance alone, in the print's colour; the orange's own
+ * variation has almost no blue, and dividing by it turns shadows magenta.
  */
 
 /**
- * The real prints, measured off colourway-lineup.jpg - the three side by side
- * under one light: each one's median luminance over the orange print's, and
- * its median colour with the brightness taken out (linear light). The olive
- * is a muted khaki there, greyer than the catalogue swatch; the grey matches
- * build-ghost-shots.mjs.
+ * The real prints, measured off colourway-lineup.jpg: median luminance over the
+ * orange print's, and median colour with brightness taken out (linear light).
  */
 export const PRINTS = {
   olive: { overBlaze: 0.515, tint: [1.138, 1.001, 0.587] },
@@ -48,10 +39,9 @@ const hue = (r, g, b) => {
 }
 
 /**
- * How much of a pixel is orange print, 0..1: red to amber, with almost no
- * blue, and saturated even in its grooves (about 0.9 and up) - where dark
- * brown leather sits at 0.6-0.8. Bright light washes the print towards peach,
- * so the bar drops for pixels lit that brightly; leather never gets there.
+ * How much of a pixel is orange print, 0..1: red to amber, little blue, and
+ * saturated (about 0.9+, where brown leather is 0.6-0.8). The bar drops for
+ * brightly lit pixels, which wash towards peach.
  */
 export function printWeight(r, g, b) {
   if (r < 28) return 0
@@ -71,10 +61,8 @@ export function printWeight(r, g, b) {
 }
 
 /**
- * A studio key light washes the print's highlights to a pale peach, too pale
- * for printWeight, which has leather and skin to keep out. A studio shot has
- * neither - only the print, a black bracket and a grey backdrop - so there any
- * bright, warm pixel is the print.
+ * Studio key-light highlights, too pale for printWeight. Only for studio shots,
+ * which have no leather or skin to mistake for print.
  */
 function highlightWeight(r, g, b) {
   const h = hue(r, g, b)

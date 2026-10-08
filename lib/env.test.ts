@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Boot validation. Copying .env.example as it stands has to boot, and the
- * combinations that cannot work have to fail at boot rather than at the first
- * request that needs them.
- */
-
 const original = { ...process.env }
 
 async function load(env: Record<string, string | undefined>) {

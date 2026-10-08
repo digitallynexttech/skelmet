@@ -33,9 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const product = getProduct(slug)
   if (!product) return { title: "Not found" }
 
-  // Says what the thing is before it says anything clever: the strapline alone
-  // ("Give it a wall, not the floor") told a search result or a shared link
-  // nothing about the product, its colours or where it ships.
+  // Plain description for search and shares, not the strapline.
   const colours = product.colourways.map((c) => c.name)
   const last = colours.pop()
   const colourList = colours.length > 0 ? `${colours.join(", ")} and ${last}` : last
@@ -46,42 +44,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: product.name,
     description,
     path: `/product/${product.slug}`,
-    // Blaze's front shot is the picture for sharing: metadata is per slug,
-    // not per selected colourway, and Blaze's gallery opens on a fitting shot.
+    // Metadata is per slug, not per colourway: share the first one's front shot.
     image: { url: product.colourways[0]!.image, alt: `${product.name}, front view` },
   })
 }
 
-/**
- * Deliberately does NOT read searchParams.
- *
- * Reading it opted the whole route into dynamic rendering, and that one line
- * cost three separate things: the page answered
- * `private, no-cache, no-store` so no CDN could ever hold it - on the busiest
- * page of a shop; it shipped no markup, so crawlers saw an empty shell with no
- * <h1>; and notFound() in a dynamic route returns HTTP 200, so every dead
- * product URL told Google it was fine.
- *
- * ?colour= is read on the client instead, by the picker that already owns that
- * state. The cost is that a shared ?colour=ghost link paints the default
- * swatch for one frame before switching - which is cheap next to the page
- * being uncacheable.
- */
-/**
- * Rebuilt at most a minute after anything changes. The price and stock on
- * this page come from the database, and without this the page kept the ones
- * it was built with until the next deploy - the storefront showed one price
- * while checkout charged another. Admin edits refresh it straight away
- * (refreshStorefront); this also catches the stock that orders move.
- *
- * An unknown slug never reaches this page: proxy.ts answers it with a real 404
- * first. That used to be `dynamicParams = false`, which cannot live alongside
- * an admin refresh - revalidatePath discards the cached page, and a route
- * limited to its prerendered params then treats its own product as unknown
- * and 404s on every visit. Left to the page, notFound() for an unknown slug
- * answers HTTP 200, because the marketing loading boundary has already sent
- * the shell.
- */
+// Do NOT read searchParams: it makes the route dynamic (uncacheable, no SSR markup,
+// notFound() answers 200). The colour picker reads ?colour= on the client instead.
+// Revalidated each minute for live price and stock; admin edits refresh it at once.
+// Unknown slugs get a real 404 from proxy.ts. Not `dynamicParams = false`: after
+// revalidatePath that 404s the product itself.
 export const revalidate = 60
 
 export default async function ProductPage({ params }: { params: Promise<Params> }) {
@@ -90,8 +62,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const product = result.ok ? result.data : null
   if (!product) notFound()
 
-  // Every skull's page carries the same sections, each showing this skull's
-  // pictures, specs and words (product.sections in catalog.ts).
+  // Same sections for every product, filled from product.sections (catalog.ts).
   const { sections } = product
 
   return (
@@ -120,8 +91,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       <WhyCare />
       <MoreThanMount shots={sections.inUse} />
       <Anatomy product={product} />
-      {/* Links back up to the buy panel: on this page the product link
-          would only point at the page the reader is already on. */}
+      {/* CTA goes to the buy panel, not to this same page. */}
       <Texture ctaHref="#buy" price={product.price} finish={sections.finish} />
       <InstallSteps picture={sections.install} />
       {/* <TheHook /> */}

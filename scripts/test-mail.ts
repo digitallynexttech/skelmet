@@ -5,10 +5,9 @@
  *   pnpm mail:test you@example.com brevo-api   one route: brevo-api, brevo-smtp or smtp
  *   pnpm mail:test you@example.com chain       the chain, as the shop sends
  *
- * Reads .env. Each email says which route carried it, and carries a small PDF,
- * as an invoice does. A route is tested alone by switching the other routes'
- * keys off for that run, so each runs in a process of its own: the mailer
- * reads its settings once.
+ * Reads .env. Each email names its route and attaches a small PDF, as an invoice
+ * does. Each route runs in its own process with the others' keys unset, since the
+ * mailer reads its settings once.
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"

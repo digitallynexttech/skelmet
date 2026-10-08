@@ -9,25 +9,10 @@ import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 /**
- * Delivery check.
- *
- * Two questions, in order. Is it a pincode at all - six digits, never starting
- * with zero, since 0 is not an allocated postal circle - which is answered
- * here without a request. Then, can a courier reach it: that one is
- * Shiprocket's (via /api/public/shipping/pincode), and costs a request.
- *
- * The time it quotes is always the shop's own promise, the same one checkout
- * shows. Shiprocket's transit days start at pickup, after the shop has packed
- * and dispatched, so quoting them promised a delivery the shop cannot make.
- *
- * Shiprocket is an improvement, never a dependency. When it is not set up,
- * rate-limits us, or simply does not answer, the check falls back to the
- * promise it made before Shiprocket existed rather than showing an error for a
- * pincode that is almost certainly fine.
- *
- * The field is digits-only at the source rather than validated after the
- * fact, so letters simply cannot be typed into it.
+ * Delivery check. Always quotes the shop's own promise, not Shiprocket's transit days, which start
+ * at pickup. If Shiprocket fails, the check falls back to the promise rather than an error.
  */
+// Six digits, never starting with 0 (not an allocated postal circle).
 const PINCODE = /^[1-9][0-9]{5}$/
 
 type Answer = { live: boolean; serviceable: boolean; found: boolean; shippingFee: number }
@@ -43,8 +28,7 @@ export function PincodeCheck({ className }: { className?: string }) {
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     // Strip on the way in: paste, autofill and keypress all land here.
     setPin(event.target.value.replace(/\D/g, "").slice(0, 6))
-    // Clearing in the handler, not an effect - a stale answer beside a
-    // half-edited pincode is worse than no answer.
+    // A stale answer beside a half-edited pincode is worse than none.
     setResult(null)
   }
 
@@ -74,8 +58,7 @@ export function PincodeCheck({ className }: { className?: string }) {
             : { ok: true, pin: asked, fee: answer.live ? answer.shippingFee : 0 },
       )
     } catch {
-      // Rate-limited, offline, Shiprocket down: the static promise still holds,
-      // and so does free shipping - the server charges none without an answer.
+      // Rate-limited or offline: the promise holds, and no answer means no shipping charge.
       setResult({ ok: true, pin: asked, fee: 0 })
     } finally {
       setChecking(false)
@@ -96,8 +79,7 @@ export function PincodeCheck({ className }: { className?: string }) {
             }
           }}
           placeholder="Enter pincode"
-          // inputMode brings up the digit pad; maxLength stops the 7th
-          // character even where the strip above is bypassed.
+          // maxLength holds even where the strip above is bypassed.
           inputMode="numeric"
           autoComplete="postal-code"
           maxLength={6}

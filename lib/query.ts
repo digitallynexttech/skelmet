@@ -2,10 +2,7 @@ import { toast } from "sonner"
 
 import { ApiFetchError } from "@/lib/api-fetch"
 
-/**
- * Every mutation goes through this, so success and failure sound the same
- * everywhere and each one declares the keys it invalidates (§5).
- */
+/** Every mutation goes through this, so success and failure read the same everywhere. */
 export function mutationWithToast<TArgs extends unknown[], TResult>(
   fn: (...args: TArgs) => Promise<TResult>,
   messages: { loading: string; success: string },

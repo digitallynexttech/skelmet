@@ -1,15 +1,6 @@
-/**
- * Indian address rules, shared by the checkout form and the server that
- * re-checks it, so the two can never disagree about what is valid.
- */
+// Shared by the checkout form and the server, so they agree on what is valid.
 
-/**
- * The 28 states and 8 union territories, as couriers and Shiprocket name them.
- *
- * The checkout's state field is a choice from this list, not free text: a
- * typed state was the one address field nothing could check, and a parcel
- * labelled with a state that does not exist is refused at booking.
- */
+/** States and UTs as couriers name them. Checkout picks from this: an unknown state is refused at booking. */
 export const INDIAN_STATES = [
   "Andaman and Nicobar Islands",
   "Andhra Pradesh",
@@ -70,7 +61,7 @@ const ALIASES: Record<string, IndianState> = {
   uttaranchal: "Uttarakhand",
   "new delhi": "Delhi",
   "nct of delhi": "Delhi",
-  // How IP location databases, Cloudflare's among them, name it.
+  // Cloudflare's name for it.
   "national capital territory of delhi": "Delhi",
   "delhi ncr": "Delhi",
   "jammu kashmir": "Jammu and Kashmir",
@@ -87,17 +78,13 @@ const BY_NAME = new Map<string, IndianState>([
   ...Object.entries(ALIASES),
 ])
 
-/**
- * The list's own spelling of a state name from anywhere else - Shiprocket's
- * postcode lookup, or an address saved before the field was a list. Null when
- * it is not a state at all.
- */
+/** The list's spelling of a state name from elsewhere (Shiprocket, old addresses), or null. */
 export function matchState(name: string | null | undefined): IndianState | null {
   if (!name) return null
   return BY_NAME.get(simplify(name)) ?? null
 }
 
-/** The part of India a state is in, as the Zonal Councils group them. */
+/** As the Zonal Councils group the states. */
 export const INDIAN_REGIONS = [
   "North India",
   "Central India",
@@ -109,8 +96,7 @@ export const INDIAN_REGIONS = [
 
 export type IndianRegion = (typeof INDIAN_REGIONS)[number]
 
-// The two island territories belong to no Zonal Council; they go with the
-// coast they lie off.
+// The island territories have no Zonal Council; they go with their coast.
 const REGION_OF_STATE: Record<IndianState, IndianRegion> = {
   Chandigarh: "North India",
   Delhi: "North India",
@@ -150,27 +136,17 @@ const REGION_OF_STATE: Record<IndianState, IndianRegion> = {
   Tripura: "Northeast India",
 }
 
-/** "North India" for "Delhi"; null for anything that is not an Indian state. */
 export function regionOf(state: string | null | undefined): IndianRegion | null {
   const match = matchState(state)
   return match ? REGION_OF_STATE[match] : null
 }
 
-/** A ten-digit Indian mobile: what couriers ring, and all Shiprocket accepts. */
+/** Ten digits: all Shiprocket accepts. */
 export const MOBILE = /^[6-9]\d{9}$/
 
-/** Six digits, never starting with 0 - no postal circle is numbered 0. */
 export const PINCODE = /^[1-9]\d{5}$/
 
-/**
- * The phone field keeps only digits, and at most ten.
- *
- * Pasting "+91 98765 43210" or "09876543210" is the common way a correct
- * number arrives with extra digits, so a leading 91 is dropped from exactly
- * twelve digits and a leading 0 from exactly eleven. Anything else longer
- * than ten is cut at ten, which is also what stops an eleventh digit being
- * typed at all.
- */
+/** Digits only, at most ten; drops a pasted +91 or leading 0. */
 export function normalizeMobileInput(raw: string): string {
   let digits = raw.replace(/\D/g, "")
   if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2)
@@ -178,10 +154,7 @@ export function normalizeMobileInput(raw: string): string {
   return digits.slice(0, 10)
 }
 
-/**
- * The GST state code - the first two digits of a GSTIN - for each state and
- * union territory, as tax invoices state the place of supply.
- */
+/** First two digits of a GSTIN; the invoice's place of supply. */
 export const GST_STATE_CODE: Record<IndianState, string> = {
   "Jammu and Kashmir": "01",
   "Himachal Pradesh": "02",

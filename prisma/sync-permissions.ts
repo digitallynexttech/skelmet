@@ -1,13 +1,7 @@
 /**
- * The safe path for permission changes: never `db:seed` on a live database (§6).
- *
- * Upserts every scope in PERMISSION_DEFINITIONS, removes any that no longer
- * exist in code, and gives every permission to the full-access roles (Admin,
- * and Owner if there is one) - a scope added in code used to reach the
- * permissions table and no role at all, so nobody could use what it guarded.
- * Other roles are left alone: what they may do is a person's decision.
- *
- *   pnpm db:sync-permissions
+ * Permission changes on a live database (never `db:seed` there). Removes scopes
+ * gone from code and grants all to full-access roles; other roles are a
+ * person's decision.
  */
 import { PERMISSION_DEFINITIONS } from "@/lib/constants"
 import { db } from "@/server/db"
@@ -15,7 +9,6 @@ import { db } from "@/server/db"
 import { grantAllToFullAccessRoles, loadEnv, upsertPermissions } from "@/prisma/setup"
 
 async function main() {
-  // Runs outside Next, so nothing has loaded .env yet.
   loadEnv()
   if (!process.env.DATABASE_URL) {
     console.error("[SYNC-PERMISSIONS] DATABASE_URL is not set.")

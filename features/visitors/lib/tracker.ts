@@ -1,22 +1,16 @@
 import { useCart, type CartLine } from "@/features/cart/hooks/use-cart"
 import { useConsent, type Consent } from "@/features/visitors/hooks/use-consent"
 
-/**
- * The storefront's visit tracker, browser half: the page views, the time
- * actually spent on each, the cart as it changes, and - for a visitor who
- * accepted cookies - what they type at checkout. The server half, and what it
- * keeps for whom, is features/visitors/server/tracking.service.ts.
- *
- * Browser-only: every export is called from an effect or an event handler.
- */
+// Browser half of the visit tracker; what is kept for whom is in server/tracking.service.ts.
+// Browser-only.
 
 const ENDPOINT = "/api/public/visits"
 const VISIT_KEY = "skm.visit"
 
-/** Thirty minutes without a page ends a visit, as analytics tools count one. */
+/** Idle time that ends a visit, as analytics tools count one. */
 const VISIT_IDLE_MS = 30 * 60_000
 
-/** Past this without a tap, a scroll or a key, the page is open but nobody is reading it. */
+/** No tap, scroll or key for this long: nobody is reading. */
 const IDLE_MS = 30_000
 
 type Message = { t: string } & Record<string, unknown>
@@ -33,11 +27,7 @@ function uuid(): string {
 
 let visitInMemory: { id: string; at: number } | null = null
 
-/**
- * This tab's visit. In sessionStorage, so it lasts as long as the tab and no
- * longer, and starts afresh after thirty idle minutes. Not a cookie: it is
- * never sent anywhere except inside these messages.
- */
+// Per tab, in sessionStorage. Deliberately not a cookie: sent only inside these messages.
 function visitId(): string {
   const now = Date.now()
   let visit = visitInMemory
@@ -45,7 +35,7 @@ function visitId(): string {
     const raw = sessionStorage.getItem(VISIT_KEY)
     if (raw) visit = JSON.parse(raw) as { id: string; at: number }
   } catch {
-    // Storage blocked or unreadable: the copy in memory will do.
+    // Storage blocked: the copy in memory will do.
   }
   if (!visit || typeof visit.id !== "string" || now - Number(visit.at) > VISIT_IDLE_MS) {
     visit = { id: uuid(), at: now }
@@ -63,8 +53,7 @@ function visitId(): string {
 const granted = () => useConsent.getState().consent !== "denied"
 
 function post(body: string, beacon: boolean): Promise<unknown> {
-  // A page that is closing cancels its fetches; a beacon outlives it. Sent as
-  // text/plain, which every browser accepts for a beacon.
+  // A beacon outlives a closing page; text/plain is the type every browser accepts for one.
   if (beacon && typeof navigator.sendBeacon === "function") {
     if (navigator.sendBeacon(ENDPOINT, new Blob([body], { type: "text/plain" }))) {
       return Promise.resolve()
@@ -79,11 +68,8 @@ function post(body: string, beacon: boolean): Promise<unknown> {
   }).catch(() => undefined)
 }
 
-/**
- * One at a time, in order. The first answer to a visitor who accepted sets
- * their cookie, and a second message racing it would arrive without one and
- * make them a second visitor.
- */
+// Strictly in order: the first answer sets the cookie, and a racing message would make a
+// second visitor.
 let queue: Promise<unknown> = Promise.resolve()
 
 function enqueue(work: () => Promise<unknown>): void {
@@ -123,8 +109,7 @@ function device(): Promise<Device> {
       tz: Intl.DateTimeFormat().resolvedOptions().timeZone?.slice(0, 60),
       touch: Math.min(32, navigator.maxTouchPoints ?? 0),
     }
-    // Chrome on Android no longer says which phone it is, or which Android,
-    // in its user agent. It still answers when asked.
+    // Chrome on Android leaves the model and version out of its user agent, but answers this.
     const uaData = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData
     if (uaData) {
       try {
@@ -135,7 +120,7 @@ function device(): Promise<Device> {
         if (high?.model) found.model = high.model.slice(0, 60)
         if (high?.platformVersion) found.platformVersion = high.platformVersion.slice(0, 30)
       } catch {
-        // Not offered; the user agent will have to do.
+        // Not offered: the user agent will do.
       }
     }
     return found
@@ -150,14 +135,12 @@ let lastTick = 0
 let lastInput = 0
 let firstView = true
 
-/** Adds the time since the last tick, if the page was in front of someone using it. */
 function tick(visible = document.visibilityState === "visible"): void {
   const now = performance.now()
   if (visible && now - lastInput < IDLE_MS) engagedMs += now - lastTick
   lastTick = now
 }
 
-/** Reports the time spent on the current page since the last report. */
 function flushTime(beacon: boolean): void {
   tick()
   const seconds = Math.floor(engagedMs / 1000)
@@ -166,9 +149,9 @@ function flushTime(beacon: boolean): void {
   send({ t: "time", pv: page.pv, s: Math.min(seconds, 1800) }, { sid: page.sid, beacon })
 }
 
-/** A page seen. Called on every route change, and on the first page. */
+/** Called on the first page and every route change. */
 export function trackPage(path: string): void {
-  // React runs a new effect twice in development; one page is one view.
+  // React runs a new effect twice in development.
   if (page && page.path === path && performance.now() - page.at < 1000) return
 
   flushTime(false)
@@ -180,15 +163,13 @@ export function trackPage(path: string): void {
   lastTick = now
   lastInput = now
 
-  // Where they came from means something only on the first page after the
-  // site is opened; after that, it is still the same outside referrer.
+  // The referrer means something only on the first page.
   const ref = firstView && document.referrer ? document.referrer.slice(0, 1000) : undefined
   firstView = false
 
   enqueue(async () => {
     const all = await device()
-    // The phone model only for a visitor who accepted: together with the
-    // rest it narrows one device down a long way.
+    // Privacy: the phone model only with consent; it narrows one device down a long way.
     const { model, ...coarse } = all
     const facts = granted() && model ? { ...coarse, model } : coarse
     return post(
@@ -198,7 +179,7 @@ export function trackPage(path: string): void {
   })
 }
 
-/** Starts counting time on page. Returns the cleanup. */
+/** Counts time on page. Returns the cleanup. */
 export function startEngagement(): () => void {
   const onInput = () => {
     tick()
@@ -206,8 +187,7 @@ export function startEngagement(): () => void {
   }
   const onVisibility = () => {
     if (document.visibilityState === "hidden") {
-      // The stretch up to now was in front of them; the change has already
-      // happened by the time this runs.
+      // Already hidden when this runs, but the time up to now was visible.
       tick(true)
       flushTime(true)
     } else {
@@ -239,10 +219,7 @@ const signature = (items: CartLine[]) =>
     .sort()
     .join(",")
 
-/**
- * Copies the cart to the server as it changes. Not on load: the cart coming
- * back out of localStorage is not the visitor doing anything.
- */
+/** Copies the cart to the server as it changes; not the cart restored from storage on load. */
 export function watchCart(): () => void {
   let last: string | null = null
   let timer: number | undefined
@@ -272,17 +249,13 @@ export function watchCart(): () => void {
   }
 }
 
-/** The basket that reached checkout: the cart, or the one line Buy it now sends. */
+/** The cart, or the one line Buy it now sends. */
 export function reportCheckout(items: CartLine[]): void {
   if (items.length === 0) return
   send({ t: "cart", items: lines(items), checkout: true })
 }
 
-/**
- * Details typed at checkout, before any order exists. Only for a visitor who
- * accepted cookies - it is what lets the shop follow up on a checkout left
- * half-way, and nobody who refused has agreed to that.
- */
+/** Details typed at checkout, before any order. Only with consent. */
 export function reportContact(details: {
   email?: string
   phone?: string
@@ -293,16 +266,11 @@ export function reportContact(details: {
   send({ t: "contact", ...details })
 }
 
-/** The basket became an order. */
 export function reportPlaced(number: string): void {
   send({ t: "placed", number })
 }
 
-/**
- * A choice on the cookie bar. Accepting tells the server to start
- * recognising this device; refusing after having accepted tells it to forget
- * the device. Refusing from the start needs no message at all.
- */
+/** Accepting starts recognising the device; refusing after accepting forgets it. */
 export function reportConsent(next: "granted" | "denied", previous: Consent): void {
   if (next === "granted" || previous === "granted") send({ t: "consent" })
 }

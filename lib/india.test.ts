@@ -47,8 +47,7 @@ describe("normalizeMobileInput", () => {
   })
 
   it("never lets an eleventh digit in", () => {
-    // Typed, not pasted: the digit that would be eleventh is simply refused,
-    // even when the number happens to start with 91.
+    // Typed: an eleventh digit is refused, even after a leading 91.
     expect(normalizeMobileInput("98765432101")).toBe("9876543210")
     expect(normalizeMobileInput("91876543210")).toBe("9187654321")
   })

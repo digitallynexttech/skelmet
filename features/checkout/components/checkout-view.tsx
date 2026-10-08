@@ -64,7 +64,7 @@ const PROMISES = [
 
 const STATE_OPTIONS = INDIAN_STATES.map((s) => ({ value: s, label: s }))
 
-/** The form's fields, in the order the page shows them. */
+/** In page order. */
 const FIELDS = [
   "email",
   "phone",
@@ -78,10 +78,7 @@ const FIELDS = [
 ] as const
 type FieldName = (typeof FIELDS)[number]
 
-/**
- * Each field's rule, taken from the schema the server applies, so a field
- * the page accepts is one the server accepts.
- */
+/** The server's own schema, so the page accepts exactly what the server does. */
 const RULES: Record<FieldName, ZodType> = {
   email: placeOrderSchema.shape.email,
   phone: placeOrderSchema.shape.phone,
@@ -95,7 +92,7 @@ function problem(name: FieldName, value: string): string | null {
   return checked.success ? null : (checked.error.issues[0]?.message ?? "Check this")
 }
 
-/** What /api/public/shipping/pincode answers. */
+/** /api/public/shipping/pincode's answer. */
 type PincodeAnswer = {
   live: boolean
   serviceable: boolean
@@ -106,23 +103,16 @@ type PincodeAnswer = {
   shippingFee: number
 }
 
-/** Whether the pincode typed can be delivered to, and what shipping there costs the buyer. */
+/** Whether the pincode can be delivered to, and the shipping fee there. */
 type Reach =
   | { status: "idle" }
   | { status: "checking"; pin: string }
   | { status: "ok"; pin: string; fee: number }
   | { status: "blocked"; pin: string; message: string }
-  /**
-   * Shiprocket did not answer. Shown like "ok" with free shipping, as the
-   * product page does and as the server will charge: it checks again at
-   * payment, and an outage must neither refuse nor charge anyone.
-   */
+  /** Shiprocket did not answer: shown as "ok" with free shipping, as the server will charge. */
   | { status: "unknown"; pin: string }
 
-/**
- * What is offered before the server has said, and whenever it cannot be
- * asked: paying online, which is always there. The server decides anyway.
- */
+/** Offered until the server answers, or when it cannot be asked. */
 const ONLINE_ONLY: OfferedMethod[] = [
   { id: "ONLINE", fee: 0, advance: null, available: true, staffOnly: false },
 ]
@@ -136,10 +126,7 @@ const METHOD_ICON: Record<PaymentMethod, typeof CreditCard> = {
 /** A way of paying with what it comes to for this order; `split` null when it cannot be used. */
 type Quoted = { method: OfferedMethod; total: number; split: Split | null }
 
-/**
- * The ways to pay, as a choice. Only drawn when there is more than one: with
- * paying online alone, the page states it rather than asking.
- */
+/** The ways to pay, as a choice. Only drawn when there is more than one. */
 function PaymentChoice({
   quotes,
   chosen,
@@ -231,8 +218,7 @@ const unitsIn = (lines: CartLine[]) =>
 function CartKept({ lines, className }: { lines: CartLine[]; className?: string }) {
   const n = unitsIn(lines)
   return (
-    // Tucked up under the lines (their own margin is below them), so it reads
-    // as about them rather than floating between them and the code box.
+    // Negative margin tucks it under the lines it is about.
     <p className={cn("text-dim -mt-2 text-[12.5px] leading-[1.5]", className)}>
       Buying just this.{" "}
       {n === 1
@@ -280,12 +266,8 @@ function Lines({ items }: { items: CartLine[] }) {
 }
 
 /**
- * The line under the pincode while it is checked, and once it can be delivered to.
- *
- * Always the shop's own promise, never the courier's transit time. Shiprocket
- * can say "2 days" for a nearby pincode, but that clock starts at pickup, and
- * the shop takes its own time to pack and dispatch first - quoting the courier
- * alone promised a delivery the shop cannot make.
+ * The line under the pincode. Always the shop's own promise, never the
+ * courier's transit time, which starts only at pickup.
  */
 function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
   if (reach.status === "checking" && reach.pin === pin) {
@@ -316,11 +298,9 @@ function PincodeStatus({ reach, pin }: { reach: Reach; pin: string }) {
 }
 
 /**
- * The one line from Buy it now - `/checkout?buy=<colourway>&qty=<n>&product=<slug>`
- * - at its live price, or null for an ordinary checkout of the cart. In the
- * URL rather than the cart, so the cart is untouched and a reload keeps the
- * order. A link from before there were two products names none, and meant
- * the Flame Skull.
+ * The Buy-now line from `/checkout?buy=<colourway>&qty=<n>&product=<slug>` at
+ * its live price, or null for a cart checkout. In the URL so the cart is left
+ * alone. No `product` means the Flame Skull.
  */
 function buyNowLine(
   params: { get(name: string): string | null },
@@ -342,10 +322,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   React.useEffect(() => syncPrices(prices), [prices, syncPrices])
   const couponCode = useCart((s) => s.couponCode)
   const mounted = useHydrated()
-  // From Next's search params, not window.location: arriving by a click, the
-  // page renders before the browser's address changes, so window.location
-  // still said /product/... and Buy now opened an empty checkout until a
-  // reload.
+  // Not window.location: on a client navigation it still holds the old URL.
   const searchParams = useSearchParams()
   const buyNow = React.useMemo(
     () => (mounted ? buyNowLine(searchParams, prices) : null),
@@ -357,8 +334,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     itemsRef.current = items
   }, [items])
 
-  // Tells the visit tracker this basket reached checkout - the cart, or the
-  // one line Buy it now sent - once per basket, however often this renders.
+  // Reported once per basket, however often this renders.
   const basket = items.map((l) => `${l.sku}:${l.qty}`).join(",")
   const reportedBasket = React.useRef("")
   React.useEffect(() => {
@@ -369,15 +345,13 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   }, [mounted, basket])
   const { submit, pending, error } = useCheckout()
   const [coupon, setCoupon] = React.useState<AppliedCoupon | null>(null)
-  // A Buy-now order keeps its code here, apart from the cart's: the cart is
-  // being left for later, and its code should be there when the customer is.
+  // A Buy-now code is kept apart, so the cart's own code stays with the cart.
   const [buyNowCode, setBuyNowCode] = React.useState<string | null>(null)
   const couponProps = buyNow ? { code: buyNowCode, onCode: setBuyNowCode } : {}
   const formRef = React.useRef<HTMLFormElement>(null)
   const [prefilled, setPrefilled] = React.useState(false)
 
-  // One message per field, shown under it. Checked as each field is left and
-  // all together on submit, with the schema the server uses.
+  // One message per field, checked on blur and all together on submit.
   const [errors, setErrors] = React.useState<Partial<Record<FieldName, string>>>({})
   const [formError, setFormError] = React.useState<string | null>(null)
   const setError = React.useCallback((name: FieldName, message: string | null) => {
@@ -390,24 +364,18 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     })
   }, [])
 
-  // Controlled, unlike the rest of the form: the pincode drives a lookup, and
-  // the city and state are filled in from its answer.
+  // Controlled, unlike the rest: the pincode lookup fills city and state.
   const [pincode, setPincode] = React.useState("")
   const [city, setCity] = React.useState("")
   const [stateName, setStateName] = React.useState<IndianState | "">("")
   const [reach, setReach] = React.useState<Reach>({ status: "idle" })
-  // Only the latest lookup may answer: a slow reply for a pincode that has
-  // since been edited must not fill in the wrong city.
+  // Only the latest lookup may answer, so a slow reply cannot fill the wrong city.
   const lookupTicket = React.useRef(0)
   const pincodeTyped = React.useRef("")
 
   /**
-   * Asks the server whether the pincode can be delivered to, and where it is.
-   *
-   * A pincode the buyer typed fills the city and state in, over whatever was
-   * there, since the pincode is the more reliable of the three; they can still
-   * change either afterwards. One restored from a previous order only fills
-   * what is empty, so it never overwrites an address someone saved.
+   * Checks the pincode and fills city and state: over what was there for a
+   * typed pincode, only the blanks for one restored from a previous order.
    */
   const lookUp = React.useCallback(
     async (pin: string, fill: "replace" | "blanks", units: number) => {
@@ -448,8 +416,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
           )
         }
       } catch {
-        // Rate-limited or offline. The city and state can still be typed, and
-        // the server checks the pincode again when the order is placed.
+        // Rate-limited or offline; the server checks again on placing.
         if (ticket === lookupTicket.current) setReach({ status: "unknown", pin })
       }
     },
@@ -471,17 +438,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     }
   }
 
-  // Fill in a returning buyer's details from their last order.
-  //
-  // Authorised entirely by the httpOnly cookie the server reads - nothing
-  // typed here asks for it. An email-triggered lookup would be the obvious
-  // version and cannot be built safely: with no account to sign in to, an
-  // email is not a secret, so it would hand anyone the home address of any
-  // customer whose address they could guess.
-  //
-  // The uncontrolled inputs are written straight into the DOM - defaultValue
-  // only applies on mount, and the answer arrives after it. The pincode, city
-  // and state are React state, so they are set as state.
+  // A returning buyer's details from their last order, authorised only by the
+  // httpOnly cookie. Never look up by email: an email is not a secret, so it
+  // would hand out anyone's address. Uncontrolled inputs are written to the DOM.
   React.useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -495,7 +454,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
           if (field instanceof HTMLInputElement && !field.value) field.value = value
         }
         set("email", saved.email)
-        // Saved before the field took digits only, it may carry +91 or spaces.
+        // Older saves may carry +91 or spaces.
         set("phone", normalizeMobileInput(saved.phone))
         const { pincode: savedPin, city: savedCity, state: savedState, ...rest } = saved.address
         for (const [k, v] of Object.entries(rest)) set(k, v)
@@ -506,14 +465,12 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         if (!pincodeTyped.current && PINCODE.test(savedPin)) {
           pincodeTyped.current = savedPin
           setPincode(savedPin)
-          // Read from a ref, not a render: this effect runs once, and must
-          // not run again each time the cart changes.
+          // A ref, so the cart is not a dependency of this run-once effect.
           void lookUp(savedPin, "blanks", unitsIn(itemsRef.current))
         }
         setPrefilled(true)
       } catch {
-        // No saved order, or the lookup failed. An empty form is the same
-        // outcome as never having ordered, so there is nothing to say.
+        // No saved order: an empty form is fine.
       }
     })()
     return () => {
@@ -521,14 +478,12 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     }
   }, [lookUp])
 
-  // Shipping is only known once this pincode has been checked; until then the
-  // summary says it comes from the pincode, and the total leaves it out.
+  // Until the pincode is checked, the total leaves shipping out.
   const pincodeChecked =
     (reach.status === "ok" || reach.status === "unknown") && reach.pin === pincode
   const shippingFee = reach.status === "ok" && reach.pin === pincode ? reach.fee : 0
 
-  // The ways to pay on offer, asked again whenever the pincode or the parcel
-  // changes: paying on delivery depends on a courier collecting there.
+  // Asked again when the pincode or parcel changes: COD depends on the courier.
   const [methods, setMethods] = React.useState<OfferedMethod[]>(ONLINE_ONLY)
   const [wanted, setWanted] = React.useState<PaymentMethod>("ONLINE")
   const units = unitsIn(items)
@@ -543,8 +498,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         const answer = await apiFetch<CheckoutOptions>(`/api/public/checkout/options?${query}`)
         if (!cancelled && answer.methods.length > 0) setMethods(answer.methods)
       } catch {
-        // Rate-limited or offline. Paying online is always there, and the
-        // server checks the way of paying again when the order is placed.
+        // Rate-limited or offline; the server checks again on placing.
         if (!cancelled) setMethods(ONLINE_ONLY)
       }
     })()
@@ -553,9 +507,8 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     }
   }, [mounted, askedPin, units])
 
-  // Each way of paying, priced for this order with the arithmetic the server
-  // uses. The one in force is the one chosen while it can still be used -
-  // a changed pincode or cart can take it away - and paying online otherwise.
+  // Priced with the server's arithmetic. The chosen method holds while still
+  // usable, else the first on offer.
   const beforeCharge = calculateTotals(items, coupon?.discount ?? 0, shippingFee)
   const quotes: Quoted[] = methods.map((method) => {
     const total = beforeCharge.total + method.fee
@@ -568,7 +521,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   const totals = calculateTotals(items, coupon?.discount ?? 0, shippingFee, chosen.method.fee)
   const split = chosen.split ?? { payNow: totals.total, dueOnDelivery: 0 }
 
-  /** Focuses the first control inside a field, which also scrolls it into view. */
+  /** Focuses (and so scrolls to) a field's first control. */
   function reveal(name: FieldName) {
     document
       .getElementById(`field-${name}`)
@@ -576,11 +529,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       ?.focus()
   }
 
-  /**
-   * Hands a finished contact field to the visit tracker, so a checkout left
-   * half-way can still be followed up. The tracker keeps it only for a
-   * visitor who accepted cookies, and drops it for everyone else.
-   */
+  /** Hands a contact field to the tracker, which keeps it only after cookie Accept. */
   function noteContact(name: FieldName, value: string) {
     if (name === "email") reportContact({ email: value.toLowerCase() })
     else if (name === "phone") reportContact({ phone: value })
@@ -595,8 +544,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     }
   }
 
-  // A field is checked when it is left, once there is something in it: an
-  // empty field is for submit to point out, not for tabbing past.
+  // Empty fields are left for submit to point out.
   function handleBlur(event: React.FocusEvent<HTMLFormElement>) {
     const el = event.target
     if (!(el instanceof HTMLInputElement) || !isField(el.name)) return
@@ -607,7 +555,6 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
     if (!message) noteContact(el.name, value)
   }
 
-  // Typing into a field clears its message; it is checked again on leaving.
   function handleChange(event: React.ChangeEvent<HTMLFormElement>) {
     const el = event.target as unknown as HTMLInputElement
     if (el.name !== "pincode" && isField(el.name)) setError(el.name, null)
@@ -633,12 +580,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
       },
       // Only SKUs and quantities cross the wire; the server prices the order.
       items: items.map((l) => ({ sku: l.sku, qty: l.qty })),
-      // The field below lives in a `hidden lg:flex` rail, so on a phone it is
-      // present but invisible - which is why the code applied in the cart has to
-      // seed it rather than being re-typed somewhere it cannot be typed.
-      // The named input is gone - CouponBox validates before anything is
-      // applied, so the code that goes to the server is the one it accepted,
-      // falling back to whatever the cart is still carrying.
+      // The code CouponBox accepted, else whatever the cart still carries.
       couponCode: coupon?.code ?? (buyNow ? buyNowCode : couponCode) ?? "",
       paymentMethod: chosen.method.id,
       saveAddress: false,
@@ -651,7 +593,6 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
         if (isField(key) && !found[key]) found[key] = issue.message
       }
     }
-    // Paying for a parcel no courier can bring is money to refund later.
     if (reach.status === "blocked" && reach.pin === pincode && !found.pincode) {
       found.pincode = reach.message
     }
@@ -676,11 +617,9 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
   if (items.length === 0) return <NothingToCheckOut />
 
   return (
-    // noValidate: the browser's own bubbles would fire before, and instead of,
-    // the messages under each field. data-clarity-mask hides the whole form -
-    // name, phone, email, address - from Microsoft Clarity's recordings.
-    // data-clear-corner keeps the floating buttons off a phone's screen here:
-    // they would sit on the fields and the Pay button.
+    // noValidate: our messages, not the browser's bubbles. data-clarity-mask
+    // keeps the buyer's details out of Clarity recordings. data-clear-corner
+    // keeps the floating buttons off the fields and Pay button on a phone.
     <form
       data-clarity-mask="true"
       data-clear-corner
@@ -730,9 +669,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               </h2>
             </div>
 
-            {/* Say where the details came from. Fields that fill themselves are
-                unnerving otherwise, and a stale address that someone did not
-                notice is a parcel sent to the wrong house. */}
+            {/* Say where prefilled details came from, so a stale address gets noticed. */}
             {prefilled ? (
               <p className="text-acid mb-5 flex items-start gap-2 text-[12.5px] leading-[1.5]">
                 <Check className="mt-[2px] size-3.5 shrink-0" strokeWidth={2.6} />
@@ -751,9 +688,8 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
                 />
               </Field>
               <Field label="Phone" id="field-phone" error={errors.phone}>
-                {/* Digits only, ten at most, as it is typed or pasted: a
-                    pasted "+91 98765 43210" becomes 9876543210. No maxLength,
-                    which would cut that paste short before it is cleaned. */}
+                {/* Cleaned to ten digits as typed or pasted. No maxLength: it
+                    would cut a pasted "+91 98765 43210" before cleaning. */}
                 <Input
                   name="phone"
                   type="tel"
@@ -904,8 +840,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
               </div>
             )}
 
-            {/* On a phone the summary rail is hidden, so the charge and the
-                split are said here, where the choice was just made. */}
+            {/* Phones only: the summary rail is hidden there. */}
             {totals.paymentFee > 0 || split.dueOnDelivery > 0 ? (
               <dl className="text-ash mt-4 flex flex-col gap-1.5 text-[13px] lg:hidden">
                 {totals.paymentFee > 0 ? (
@@ -934,10 +869,7 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
             ) : null}
           </section>
 
-          {/* The desktop rail has its own box. This one is for phones, where
-              the rail is hidden - it used to be the only place a code could be
-              typed, so a phone could never enter one. The rail's box does the
-              re-checking; both are mounted whatever the width. */}
+          {/* Phones' coupon box. Both boxes are always mounted; the rail's re-checks. */}
           <div className="mt-6 lg:hidden">
             <CouponBox
               subtotal={totals.subtotal}
@@ -985,10 +917,8 @@ export function CheckoutView({ prices }: { prices: Record<string, string> }) {
           </Button>
         </div>
 
-        {/* Desktop summary rail */}
-        {/* Sticky: the form beside this is long enough to scroll the total
-            off screen, and the running total is the thing people check
-            while they fill it in. top-[90px] clears the 74px sticky header plus a 16px gap. */}
+        {/* Desktop summary rail, sticky so the total stays in view. top-[90px]
+            clears the 74px sticky header plus a 16px gap. */}
         <aside className="hidden flex-col gap-3.5 lg:sticky lg:top-[90px] lg:flex lg:max-h-[calc(100dvh-106px)] lg:self-start lg:overflow-y-auto">
           <div className="rounded-card bg-carbon border border-white/10 p-6">
             <h2 className="font-display text-bone mb-5 text-[24px] leading-[1.08] uppercase">

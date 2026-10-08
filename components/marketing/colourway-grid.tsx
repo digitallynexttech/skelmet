@@ -11,13 +11,7 @@ import { getProductBySlug } from "@/features/catalog/server/catalog.service"
 import { discountPercent, formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-/**
- * Each card wears its own colourway - border, hover and add-to-cart button -
- * where only the best seller used to be dressed and the other two sat in
- * neutral grey. The swatch hex is the base; this is the far stop of the
- * button's gradient, which a single swatch cannot give. Blaze runs to ember,
- * exactly as the site's primary button always has.
- */
+/** Far stop of each card's button gradient; the swatch hex is the near one. */
 const TINT_TO: Record<ColourwayId, string> = {
   blaze: "#ff8a00",
   olive: "#aab872",
@@ -25,9 +19,7 @@ const TINT_TO: Record<ColourwayId, string> = {
 }
 
 export async function ColourwayGrid() {
-  // The registry's figures if the live read fails: cards with a price beat a
-  // broken home page. (The product page itself throws instead - see
-  // getProductBySlug.)
+  // Registry figures if the live read fails: priced cards beat a broken home page.
   const product = await getProductBySlug(FLAME_SKULL_MOUNT.slug).then(
     (live) => (live.ok && live.data ? live.data : FLAME_SKULL_MOUNT),
     () => FLAME_SKULL_MOUNT,
@@ -54,10 +46,8 @@ export async function ColourwayGrid() {
             style={{ "--tint": c.hex, "--tint-to": TINT_TO[c.id] } as React.CSSProperties}
             className={cn(
               "rounded-card bg-carbon group relative overflow-hidden border transition-colors",
-              // On a phone the whole card fits on one screen under the 75px
-              // header, with 12px clear above and below. svh, so it still fits
-              // with the browser's toolbars showing. The photo gives up the
-              // height; the details under it never shrink.
+              // Phones: the card fits one screen below the 75px header, 12px clear each
+              // side. The photo gives up the height; the details never shrink.
               "max-sm:flex max-sm:max-h-[calc(100svh-99px)] max-sm:flex-col",
               "border-(--tint)/35 hover:border-(--tint)/60",
             )}
@@ -68,11 +58,7 @@ export async function ColourwayGrid() {
               className="focus-visible:ring-blaze/70 absolute inset-0 z-10 rounded-[inherit] focus-visible:ring-2 focus-visible:outline-none"
             />
 
-            {/* 4:5 on phones is the photos' own shape, so nothing is cropped and
-                the skull - and the hero skull that lands on it - sits clear of
-                the edges. 4:3 there cut through the crown and the jaw. On a
-                short phone it shrinks toward square to keep the card on one
-                screen, which still clears the skull. */}
+            {/* 4:5 on phones is the photos' own shape, so the skull is never cropped. */}
             <div className="relative aspect-4/5 max-sm:min-h-0 sm:aspect-4/3 lg:aspect-square">
               <Image
                 src={c.image}
@@ -81,10 +67,8 @@ export async function ColourwayGrid() {
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
                 className="object-cover"
               />
-              {/* The hero skull lands here on its way down the page, and this
-                  is where it stops, on every screen. The photo's own skull is kept
-                  hidden throughout, so the card only ever shows the 3D one.
-                  Only the blaze plate has a dock; the others render nothing. */}
+              {/* Where the hero skull docks; the photo's own skull stays hidden. Only the
+                  blaze card has a dock. */}
               <SkullDock
                 src={c.image}
                 sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
@@ -92,12 +76,8 @@ export async function ColourwayGrid() {
                 hideOwnSkull
               />
               {c.bestSeller ? (
-                // Above the hero skull (z-30) when it docks here, as the badge
-                // is above the photo - on a phone the skull reaches this
-                // corner. Click-through, so the card link under it still works.
-                // "The original", not "Best seller": the other two colours were
-                // made from this one's plate, which is true on day one, while a
-                // sales ranking is a claim the shop cannot back yet.
+                // Above the docked skull (z-30); click-through so the card link works.
+                // "The original", not "Best seller": the shop cannot back a sales ranking yet.
                 <Badge variant="solid" className="pointer-events-none absolute top-4 left-4 z-[35]">
                   The original
                 </Badge>
@@ -105,10 +85,6 @@ export async function ColourwayGrid() {
             </div>
 
             <div className="border-t border-white/[0.07] p-6 max-sm:shrink-0">
-              {/* The colourway is the eyebrow and the product is the heading,
-                  matching the section header idiom above. The swatch sits with
-                  the colour name because that is what it labels - against the
-                  product name it read as decoration. */}
               <div className="mb-2 flex items-center gap-2.5">
                 <span
                   className="size-[13px] shrink-0 rounded-full"
@@ -118,8 +94,6 @@ export async function ColourwayGrid() {
                   {c.name}
                 </span>
               </div>
-              {/* text-balance so the two-line wrap splits evenly rather than
-                  leaving one word stranded on the second line. */}
               <h3 className="font-display text-bone mb-2.5 text-[24px] leading-[1.08] tracking-[0.04em] text-balance uppercase sm:text-[26px]">
                 {product.name}
               </h3>
@@ -136,8 +110,7 @@ export async function ColourwayGrid() {
                     {discountPercent(product.compareAtPrice, c.price)}% OFF
                   </span>
                 </div>
-                {/* Lifted above the card-wide link so it adds to the cart
-                    instead of navigating away from it. */}
+                {/* Above the card-wide link, so it adds to cart instead of navigating. */}
                 <div className="relative z-20 shrink-0">
                   <AddToCartButton colourway={c.id} variant="tint" size="sm" />
                 </div>

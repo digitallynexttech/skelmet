@@ -4,16 +4,9 @@ import * as React from "react"
 import { usePathname } from "next/navigation"
 
 /**
- * Whether the console's sidebar is showing, shared by the sidebar and the
- * header's toggle.
- *
- * From lg the sidebar is a rail that closes to its icons and opens again; the
- * choice is kept in a cookie, which the layout reads, so a reload opens the
- * page as it was left rather than flashing the rail open first. Below lg it
- * is a drawer, closed on every page.
- *
- * Ctrl+B (Cmd+B on a Mac) does what the toggle does - except while typing in
- * a field or an editor, where it is Bold and stays Bold.
+ * Sidebar state shared by the sidebar and the header toggle. From lg the rail's state is kept in
+ * a cookie the layout reads, so a reload does not flash it open; below lg it is a drawer.
+ * Ctrl/Cmd+B toggles, except while typing, where it stays Bold.
  */
 
 /** Read by app/(app)/layout.tsx. */
@@ -24,7 +17,7 @@ type AdminShellState = {
   collapsed: boolean
   /** The phone drawer is open. */
   drawerOpen: boolean
-  /** Opens or closes whichever of the two this screen has. */
+  /** Rail on desktop, drawer below lg. */
   toggle: () => void
   closeDrawer: () => void
 }
@@ -54,7 +47,7 @@ export function AdminShell({
   const pathname = usePathname()
   const [collapsed, setCollapsed] = React.useState(initialCollapsed)
   const [drawerOpen, setDrawerOpen] = React.useState(false)
-  // The drawer closes when the page changes under it: a link in it was used.
+  // The drawer closes when the page changes under it.
   const [openedOn, setOpenedOn] = React.useState(pathname)
   if (drawerOpen && openedOn !== pathname) setDrawerOpen(false)
 

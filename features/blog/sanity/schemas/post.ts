@@ -3,14 +3,7 @@ import { defineArrayMember, defineField, defineType } from "sanity"
 // Relative, as everything the Studio config reaches is: see ../env.ts.
 import { BLOG_CATEGORIES, isPostSlug } from "../../blog"
 
-/**
- * A blog post, as the Studio edits it.
- *
- * Kept to what the site shows. There is no read-time field - it is worked out
- * from the body (server/sanity.ts) - and no separate SEO title: the title and
- * the excerpt are what search results and share cards use, so there is one
- * place to get them right.
- */
+// Only what the site shows: read time is computed, and title and excerpt double as SEO fields.
 export const post = defineType({
   name: "post",
   title: "Post",
@@ -27,9 +20,7 @@ export const post = defineType({
       description:
         "The address of the post: skelmet.in/blog/<slug>. Leave it alone once published.",
       options: { source: "title", maxLength: 80 },
-      // The site answers 404 for any other shape of address (isPostSlug), so
-      // a slug typed by hand with capitals or spaces would publish a post
-      // nobody can open.
+      // The site 404s any other slug shape (isPostSlug), so such a post could never be opened.
       validation: (rule) =>
         rule
           .required()

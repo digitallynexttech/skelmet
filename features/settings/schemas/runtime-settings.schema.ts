@@ -3,12 +3,8 @@ import { z } from "zod"
 import { FEE_BASES, type FeeBasis } from "@/config/shipping"
 
 /**
- * The settings the console changes without a deploy: which Razorpay account
- * takes payments and its keys, the Shiprocket login, the shipping charge, and
- * paying on delivery. Client-safe: the forms validate with these too.
- *
- * In every input, a field left out is left as it is, and an empty string
- * clears what was saved, so that value comes from .env again.
+ * Console-editable settings; client-safe, the forms validate with these. In every input a field
+ * left out is unchanged, and an empty string clears the saved value so .env applies again.
  */
 
 export const PAYMENT_MODES = ["test", "live"] as const
@@ -29,7 +25,6 @@ export const FEE_BASIS_LABEL: Record<FeeBasis, string> = {
 
 const secret = z.string().trim().max(500)
 
-/** The shortest Shiprocket webhook token the console accepts. */
 export const WEBHOOK_TOKEN_MIN = 32
 
 const keySetSchema = z.strictObject({
@@ -67,9 +62,7 @@ export const shiprocketSettingsSchema = z.strictObject({
     .optional(),
   password: secret.optional(),
   pickupLocation: z.string().trim().max(100).optional(),
-  // The token is the only thing standing between a forged tracking update
-  // and an order marked delivered, so it has to be too long to guess. An
-  // empty string still clears it.
+  // The only guard against a forged "delivered" update, so it must be too long to guess.
   webhookToken: secret
     .refine((v) => v === "" || v.length >= WEBHOOK_TOKEN_MIN, {
       message: `Use at least ${WEBHOOK_TOKEN_MIN} characters - openssl rand -hex 24 makes one`,
@@ -100,11 +93,7 @@ export const testPaymentSchema = z.strictObject({ mode: z.enum(PAYMENT_MODES) })
 
 // ── paying on delivery ──────────────────────────────────────
 
-/**
- * Who is offered a way of paying. "staff" is for trying it on the live site
- * before customers see it: only someone signed in to the console gets it at
- * checkout, and nothing the storefront says changes.
- */
+/** "staff": only signed-in staff get it at checkout, to test live; storefront copy unchanged. */
 export const OFFERS = ["off", "staff", "everyone"] as const
 export type Offer = (typeof OFFERS)[number]
 
@@ -114,11 +103,11 @@ export const OFFER_LABEL: Record<Offer, string> = {
   everyone: "Everyone",
 }
 
-/** How the advance is set: a share of the order's total, or a fixed amount. */
+/** A share of the order's total, or a fixed amount. */
 export const ADVANCE_KINDS = ["PERCENT", "FLAT"] as const
 export type AdvanceKind = (typeof ADVANCE_KINDS)[number]
 
-/** The most an advance may be, as a share: past it, it is simply paying online. */
+// Past this share an advance is simply paying online.
 export const ADVANCE_PERCENT_MAX = 95
 
 const charge = (label: string) =>
@@ -128,11 +117,7 @@ const charge = (label: string) =>
     .min(0, `${label} cannot be negative`)
     .max(5_000, `${label} is at most ₹5,000`)
 
-/**
- * Cash on delivery, and an advance online with the rest on delivery. Each has
- * who it is offered to and what it adds to the order; paying in full online
- * is always offered and never charged for.
- */
+/** COD, and an advance online with the rest on delivery. Paying in full online is always free. */
 export const paymentOptionsSchema = z.strictObject({
   cod: z.strictObject({
     offer: z.enum(OFFERS),
@@ -163,7 +148,6 @@ export type PaymentOptions = z.infer<typeof paymentOptionsSchema>
 
 // ── what the console is shown ────────────────────────────────
 
-/** Where a value in use comes from. */
 export type SettingSource = "saved" | "env" | null
 
 export type ValueState = { value: string | null; source: SettingSource }
@@ -173,7 +157,7 @@ export type SecretState = {
   set: boolean
   source: SettingSource
   hint: string | null
-  /** Saved, but it will not decrypt - AUTH_SECRET changed. It has to be entered again. */
+  /** Saved but will not decrypt (AUTH_SECRET changed); must be entered again. */
   unreadable: boolean
 }
 
@@ -181,7 +165,6 @@ export type KeySetView = {
   keyId: ValueState
   keySecret: SecretState
   webhookSecret: SecretState
-  /** A key id and secret are both in place, so this account can take payments. */
   ready: boolean
 }
 
@@ -203,11 +186,7 @@ export type RuntimeSettingsView = {
   }
   shipping: ShippingCharge & { source: "saved" | "default" }
   checkout: PaymentOptions & { source: "saved" | "default" }
-  /**
-   * When each section was last saved (null: never). A save sends its
-   * section's back as `version`, and is refused if someone else has saved
-   * since, rather than quietly undoing their change.
-   */
+  /** Last save per section (null: never). Sent back as `version`; a stale save is refused. */
   versions: SettingVersions
   canWrite: boolean
 }

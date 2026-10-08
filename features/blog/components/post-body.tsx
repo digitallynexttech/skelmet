@@ -6,19 +6,13 @@ import { extractHeadings, type PortableBlock, type SanityImage } from "@/feature
 import { SanityImage as Picture } from "@/features/blog/components/sanity-image"
 import { imageDimensions, imageUrl } from "@/features/blog/lib/image"
 
-/** The widest a picture in the body is drawn, and so the widest it is asked for. */
+/** The widest a body picture is drawn, and so requested. */
 const BODY_IMAGE_WIDTH = 1440
 
 type BlockProps = { children?: ReactNode; value?: { _key?: string } }
 
-/**
- * How each piece of a post's body is drawn. Rendered on the server: Portable
- * Text needs nothing in the browser.
- *
- * `headingIds` maps a heading block's _key to its anchor (extractHeadings), so
- * the "On this page" list can link to it. scroll-mt clears the sticky header
- * when one is jumped to.
- */
+// Server-rendered. `headingIds` maps a heading's _key to its anchor for "On this page";
+// scroll-mt clears the sticky header.
 function components(headingIds: Map<string, string>): PortableTextComponents {
   const idOf = (value?: { _key?: string }) => (value?._key ? headingIds.get(value._key) : undefined)
 
@@ -83,8 +77,7 @@ function components(headingIds: Map<string, string>): PortableTextComponents {
         const href = value?.href ?? "#"
         const className =
           "text-ember decoration-ember/40 hover:text-bone underline underline-offset-[3px] transition-colors"
-        // A page of this site stays in this tab and is prefetched; anything
-        // else opens beside it, without handing over the referrer.
+        // Site pages stay in this tab; anything else opens a new one without the referrer.
         return href.startsWith("/") ? (
           <Link href={href} className={className}>
             {children}
@@ -115,7 +108,6 @@ function components(headingIds: Map<string, string>): PortableTextComponents {
   }
 }
 
-/** A post's body. */
 export function PostBody({ body }: { body: PortableBlock[] }) {
   const headingIds = new Map(extractHeadings(body).map((h) => [h.key, h.id]))
   return <PortableText value={body} components={components(headingIds)} />

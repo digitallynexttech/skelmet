@@ -65,8 +65,7 @@ function PriceCell({ variant, disabled }: { variant: VariantRow; disabled: boole
   const { updateVariant } = useProductMutations()
   const [value, setValue] = React.useState(variant.price)
 
-  // The row is the source of truth. If someone else changed the price, take
-  // theirs rather than keeping a stale draft on screen.
+  // A changed row price replaces the draft.
   const [seen, setSeen] = React.useState(variant.price)
   if (seen !== variant.price) {
     setSeen(variant.price)
@@ -199,8 +198,7 @@ function ProductCard({ product }: { product: ProductRow }) {
                 cell: (v) => <span className="text-ash font-mono text-[12px]">{v.sku}</span>,
               },
               {
-                // Sorted as a number: price is a string on the wire, and
-                // "1000" sorts below "2" as text.
+                // Price arrives as a string: sort it as a number.
                 key: "price",
                 header: "Price",
                 value: (v) => Number(v.price),
@@ -213,8 +211,7 @@ function ProductCard({ product }: { product: ProductRow }) {
                 cell: (v) => <StockLevel variant={v} />,
               },
               {
-                // No value, so it neither sorts nor exports - a pair of
-                // buttons is not data.
+                // No value: neither sorts nor exports.
                 key: "adjust",
                 header: "Adjust",
                 cell: (v) => <StockCell variant={v} disabled={busy} />,

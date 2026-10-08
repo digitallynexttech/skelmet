@@ -1,11 +1,6 @@
 import { cn } from "@/lib/utils"
 
-/**
- * What an admin page shows while it loads (each section's loading.tsx), in
- * the shape the page will take: the PageHeader's line, then a table in its
- * frame, a record's two columns, or the dashboard's tiles. Sized like the
- * real thing, so nothing jumps when it arrives.
- */
+/** An admin section's loading.tsx, sized like the real page so nothing jumps when it arrives. */
 export function PageSkeleton({
   kind = "table",
 }: {

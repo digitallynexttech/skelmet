@@ -3,7 +3,7 @@
 import { useConsent } from "@/features/visitors/hooks/use-consent"
 import { cn } from "@/lib/utils"
 
-/** Reopens the cookie bar, so a choice can be changed as easily as it was made. */
+/** Reopens the cookie bar, as the privacy policy promises. */
 export function CookieSettingsButton({ className }: { className?: string }) {
   const review = useConsent((s) => s.review)
   return (

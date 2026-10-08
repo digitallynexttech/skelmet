@@ -18,19 +18,13 @@ import { VisitTracker } from "@/features/visitors/components/visit-tracker"
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      {/* Mounted here rather than in the root layout so staff never sit through
-          it on the way into /admin. This layout survives navigation between
-          storefront routes, so the intro plays once per reload and no more. */}
+      {/* Here, not in the root layout: storefront only, and once per reload. */}
       <SplashScreen />
-      {/* Here for the same reason: it sees every storefront page, and none of
-          the console's. It reads the search params, which need a boundary of
-          their own or the whole storefront renders on the client. */}
+      {/* Reads search params, so it needs its own boundary or the storefront renders on the client. */}
       <Suspense fallback={null}>
         <VisitTracker />
       </Suspense>
-      {/* Storefront only, and production builds only: the console and a
-          developer's laptop are not visitors - and a recording of the console
-          would be a recording of customers' orders. */}
+      {/* Storefront and production only: never record the console (customers' orders). */}
       {process.env.NODE_ENV === "production" ? (
         <>
           <GoogleAnalytics id={siteConfig.googleAnalyticsId} />
@@ -38,25 +32,15 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <MetaPixel />
         </>
       ) : null}
-      {/* The announcement strip, above the header. It scrolls away with the
-          page; the header below it is the part that sticks. It is 36px tall,
-          which hero.tsx and the thank-you page take off their first screen. */}
+      {/* 36px tall: hero.tsx and the thank-you page subtract it from their first screen. */}
       <MarqueeTicker items={TICKER_ITEMS} slim />
       <SiteHeader />
-      {/* Nothing in a page may make the document wider than the screen: a phone
-          then lays out everything `fixed` - the splash, the cookie card, the
-          floating buttons - against the wider page, off centre and partly off
-          screen. It happens without anything looking wrong here: a one-line
-          heading sized for the display face is wider in the fallback face
-          until the font arrives. `clip`, not `hidden`, so `sticky` still
-          works inside. */}
+      {/* Clips sideways overflow: a wider page puts every `fixed` element off centre on
+          phones. `clip`, not `hidden`, so `sticky` still works inside. */}
       <main className="flex-1 overflow-x-clip">{children}</main>
       <SiteFooter cookieSettings={<CookieSettingsButton />} />
       <FloatingActions />
       <ConsentBar />
-      {/* On every storefront page, so the cart opens over wherever the visitor
-          is. The storefront's only toasts were "added to cart"; the drawer
-          opening says that now. */}
       <CartDrawer />
     </div>
   )

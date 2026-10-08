@@ -3,31 +3,19 @@ import { docToHtml, docToText, type NewsletterDoc } from "@/features/newsletter/
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 
 /**
- * A newsletter email: what staff wrote in the console, in the shop's colours,
- * with a way off the list in every copy.
- *
- * The message is the console editor's document (newsletter-content.ts), which
- * renders to inline-styled HTML from a whitelist of nodes, so nothing a staff
- * member types or pastes can break out into markup. No server-only: the
- * console's preview renders this same email in a frame.
- *
- * Same rules as the order emails (order-confirmed.ts): tables for layout,
- * inline styles, a plain-text part always.
+ * A newsletter email, with an unsubscribe link in every copy. Not server-only: the console preview
+ * renders it. Tables, inline styles and a plain-text part, as in the order emails.
  */
 export type NewsletterEmailData = {
   subject: string
   content: NewsletterDoc
   ctaLabel?: string | null
   ctaUrl?: string | null
-  /** The page that confirms the unsubscribe, for the link a person clicks. */
+  /** The page that confirms the unsubscribe. */
   unsubscribeUrl: string
 }
 
-/**
- * The one-click unsubscribe a mail client offers beside the sender's name
- * (RFC 8058). Gmail and Yahoo expect it on anything sent to a list, and a
- * visible way out in the client beats a spam report.
- */
+/** RFC 8058 one-click unsubscribe, which Gmail and Yahoo expect on list mail. */
 export function unsubscribeHeaders(oneClickUrl: string): Record<string, string> {
   return {
     "List-Unsubscribe": `<${oneClickUrl}>`,

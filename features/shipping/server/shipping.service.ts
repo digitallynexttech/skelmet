@@ -36,35 +36,9 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
-/**
- * Shipping through Shiprocket.
- *
- * The flow, and who drives each step:
- *
- *  1. Payment captured, or  -> the order is sent to Shiprocket in the
- *     a COD order placed       background (queueShiprocketOrder). Best
- *                              effort: if it fails, step 2 sends it.
- *  2. Staff click "Book"    -> bookShipment: courier + AWB, pickup request,
- *                              manifest, label. The order becomes SHIPPED
- *                              once the pickup is scheduled.
- *  3. The courier moves it  -> Shiprocket's webhook (applyShippingWebhook), or
- *                              "Refresh tracking" in the console, updates the
- *                              shipment and moves the order to DELIVERED, or
- *                              RETURNED for an RTO.
- *
- * Booking is resumable. Each step records what it achieved before the next
- * one runs, so a pickup request that fails after the AWB was assigned keeps
- * the AWB, and booking again carries on from the pickup instead of asking
- * Shiprocket for a second courier.
- *
- * A courier booked in the Shiprocket panel instead of the console still
- * reaches the order: its first tracking update names the Shiprocket order,
- * and the shipment is adopted from there.
- *
- * Without a Shiprocket login - in the console's Settings, or SHIPROCKET_* in
- * .env - none of this runs: the console keeps the hand-typed courier and AWB,
- * and the pincode check keeps its static promise.
- */
+// Shiprocket flow: a paid or COD order is sent in the background (queueShiprocketOrder), staff
+// book the courier (bookShipment), and the webhook or "Refresh tracking" moves it to DELIVERED or
+// RETURNED. Without a Shiprocket login none of this runs: courier and AWB are typed by hand.
 
 const NOT_SET_UP =
   "Shiprocket is not set up. Add its login in Settings > Shiprocket, or enter the courier and AWB by hand."
@@ -154,9 +128,8 @@ function toShippable(order: LoadedOrder): ShippableOrder {
 }
 
 /**
- * Shiprocket's ids for an order, creating the Shiprocket order if it does not
- * have one yet. Safe to call twice at once: Shiprocket refuses a second order
- * with the same number, and the ids are only written where none exist.
+ * Shiprocket's ids for an order, creating the Shiprocket order if needed. Safe to call twice at
+ * once: Shiprocket refuses a duplicate order number, and ids are only written where none exist.
  */
 async function ensureShiprocketOrder(
   orderId: string,
@@ -167,7 +140,7 @@ async function ensureShiprocketOrder(
     return { orderId: order.shiprocketOrderId, shipmentId: order.shiprocketShipmentId }
   }
 
-  // Shiprocket's own spelling of the name, which is what create/adhoc matches on.
+  // create/adhoc matches the pickup name exactly as Shiprocket spells it.
   const pickup = await shiprocket.pickupAddress()
   if (!pickup) {
     throw new ShippingError(
@@ -183,7 +156,7 @@ async function ensureShiprocketOrder(
       data: { shiprocketOrderId: created.orderId, shiprocketShipmentId: created.shipmentId },
     })
   } catch (err) {
-    // Lost a race to another caller that created it a moment ago: use theirs.
+    // Lost a race to another caller: use theirs.
     const saved = await db.order.findUnique({
       where: { id: orderId },
       select: { shiprocketOrderId: true, shiprocketShipmentId: true },
@@ -206,24 +179,17 @@ async function ensureShiprocketOrder(
   return { orderId: saved.shiprocketOrderId, shipmentId: saved.shiprocketShipmentId }
 }
 
-/**
- * Where rates are quoted from: the Shiprocket pickup address's own pincode,
- * since that is where the courier collects. The site's office pincode only
- * stands in until a pickup location is configured.
- */
+// Rates are quoted from the Shiprocket pickup; the site's pincode stands in until one is set.
 async function pickupPincode(): Promise<string> {
   return (await shiprocket.pickupAddress())?.pincode ?? shippingConfig.pickupPincode
 }
 
 /**
- * Sends a freshly paid order to Shiprocket, after the response. Never delays
- * or fails the payment: a Shiprocket outage just means the order is sent when
- * staff book the courier instead.
+ * Sends a paid order to Shiprocket after the response. Never delays or fails the payment: on
+ * failure the order is sent when staff book the courier.
  */
 export function queueShiprocketOrder(orderId: string): void {
   later(async () => {
-    // Checked in here, after the response: the settings read is async, and
-    // nothing about it should hold up the payment.
     if (!(await shiprocket.isShiprocketConfigured()) || !(await shiprocket.pickupLocation())) {
       return
     }
@@ -292,13 +258,9 @@ export type BookedShipment = {
 }
 
 /**
- * Books the courier for a packed order: AWB, pickup, manifest, label.
- *
- * The AWB is what charges the wallet, so it is asked for once: it is saved the
- * moment it arrives, and every later step checks what is already done before
- * doing it. The order becomes SHIPPED when the pickup is scheduled - the label
- * matters, but a missing one is only a reprint, so a SHIPPED order can come
- * back here to fetch it.
+ * Books the courier for a packed order: AWB, pickup, manifest, label. The AWB charges the wallet,
+ * so it is saved at once and never asked for twice; each step skips what is done, so booking again
+ * resumes. SHIPPED once the pickup is scheduled; a SHIPPED order may come back for its label.
  */
 export async function bookShipment(
   id: string,
@@ -374,8 +336,7 @@ export async function bookShipment(
       }
     }
 
-    // Shiprocket asks for the manifest after the pickup. It is paperwork the
-    // panel can reprint, so a failure here is logged, not surfaced.
+    // Shiprocket wants the manifest after the pickup. The panel can reprint it: only log a failure.
     if (shipment.pickupScheduledAt && !shipment.manifestUrl) {
       try {
         const url = await shiprocket.generateManifest(ids.shipmentId)
@@ -468,12 +429,8 @@ export async function refreshTracking(
 // ── tracking updates ───────────────────────────────────────────────────────
 
 /**
- * Applies one tracking update, from the webhook or a refresh.
- *
- * The shipment row always takes the courier's latest words, unless the update
- * is older than what is already recorded - Shiprocket can deliver them out of
- * order. The order itself only ever moves forward, through claims on the
- * statuses it may leave, so a replayed or late update cannot drag it back.
+ * Applies one tracking update. Older updates do not overwrite the shipment (Shiprocket can send
+ * them out of order), and the order only moves forward, so a replay cannot drag it back.
  */
 async function applyTrackingEvent(
   event: TrackingEvent,
@@ -570,8 +527,7 @@ async function applyTrackingEvent(
       break
     }
     default:
-      // Booked, on its way back, cancelled, unknown: recorded above, and
-      // left to a person to act on.
+      // Recorded above; anything else is left to a person.
       break
   }
   return true
@@ -584,13 +540,8 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 /**
- * Shiprocket's tracking webhook.
- *
- * Always answers ok: Shiprocket's spec says the URL must only ever return 200,
- * and a webhook that errors can be switched off at their end. So a failure is
- * logged, and the update it carried can be pulled back later with "Refresh
- * tracking". What is NOT accepted is an update without the shared token - it
- * is ignored, and with no token configured at all, every update is.
+ * Shiprocket's tracking webhook. Always answers 200: their spec requires it, and an erroring
+ * webhook can be switched off at their end. Updates without the shared token are ignored.
  */
 export async function applyShippingWebhook(
   token: string | null,
@@ -647,10 +598,8 @@ export function notifyShipped(orderId: string): void {
 }
 
 /**
- * Calls off the Shiprocket side of an order that is being refunded before it
- * left: the AWB, so the courier does not come, and the order itself. Best
- * effort - the refund has already happened, and a failure here is audited so
- * someone can cancel it in the panel.
+ * Cancels the AWB and Shiprocket order of an order refunded before it left. Best effort: the
+ * refund already happened, so a failure is audited for someone to cancel in the panel.
  */
 export async function cancelShiprocketOrder(
   orderId: string,
@@ -695,44 +644,38 @@ export type PincodeAnswer = {
   /** False when Shiprocket is not set up or did not answer: show the static promise. */
   live: boolean
   serviceable: boolean
-  /** Days in transit once handed over, from the courier Shiprocket would book. */
+  /** Days in transit, from the courier Shiprocket would book. */
   days: number | null
   /** False only when Shiprocket says there is no such pincode. */
   found: boolean
-  /** Where the pincode is, for filling in the checkout address. Null when not known. */
+  /** For filling in the checkout address. */
   city: string | null
   state: string | null
   /**
-   * What the buyer pays for shipping, rupees: 0, or the shipping charge's flat
-   * fee when reaching this pincode costs the shop more than its threshold (see
-   * shippingCharge()). Always 0 when Shiprocket could not be asked.
+   * Rupees: 0, or the flat fee when this pincode costs the shop more than the threshold
+   * (shippingCharge()). Always 0 when Shiprocket could not be asked.
    */
   shippingFee: number
 }
 
-/** An answer as cached: everything but the fee, and the quotes the fee comes from. */
+/** A cached answer: everything but the fee, plus the quotes the fee comes from. */
 type Reach = { answer: Omit<PincodeAnswer, "shippingFee">; options: CourierOption[] }
 
 const PINCODE_TTL_MS = 6 * 60 * 60_000
-// On globalThis, so a save in Settings clears it for every route (as the
-// Shiprocket session in shiprocket.ts).
+// On globalThis, so a Settings save clears it for every route.
 const sharedCache = globalThis as unknown as {
   skelmetPincodes?: Map<string, { reach: Reach; expiresAt: number }>
 }
 const pincodeCache = (sharedCache.skelmetPincodes ??= new Map())
 
-/**
- * The most answers held. Every pincode and parcel size is its own key, so
- * without a ceiling a crawl through pincodes grew this for six hours at a
- * time; past it, the oldest answer goes, and costs one more Shiprocket call.
- */
+/** Ceiling on cached answers (one per pincode and parcel size); past it the oldest goes. */
 export const PINCODE_CACHE_MAX = 5_000
 
 function remember(key: string, reach: Reach, now: number): Reach {
   if (pincodeCache.size >= PINCODE_CACHE_MAX) {
     for (const [k, value] of pincodeCache) if (value.expiresAt <= now) pincodeCache.delete(k)
   }
-  // Re-inserted, so the Map's insertion order is the order answers arrived in.
+  // Re-inserted, so insertion order is arrival order.
   pincodeCache.delete(key)
   pincodeCache.set(key, { reach, expiresAt: now + PINCODE_TTL_MS })
   while (pincodeCache.size > PINCODE_CACHE_MAX) {
@@ -744,10 +687,8 @@ function remember(key: string, reach: Reach, now: number): Reach {
 }
 
 /**
- * Drops every cached pincode answer - for when Settings changes the
- * Shiprocket account or pickup address, which change the couriers and their
- * rates. A new shipping charge needs nothing: the fee is worked out afresh on
- * every read, from the cached quotes.
+ * Drops cached answers when Settings changes the Shiprocket account or pickup. A new shipping
+ * charge needs nothing: the fee is recomputed on every read.
  */
 export function forgetPincodeChecks(): void {
   pincodeCache.clear()
@@ -764,21 +705,9 @@ async function priced(reach: Reach): Promise<PincodeAnswer> {
 }
 
 /**
- * Can we deliver here, how long does the courier take, where is it, and what
- * does the buyer pay for shipping.
- *
- * The product page asks for one mount; checkout asks for the order's own
- * parcel, since couriers price by the box and more mounts stack into a bigger
- * one. placeOrder asks again with the same count, so the fee checkout showed
- * is the fee charged - both from this one function, and usually from its
- * cache. The two Shiprocket calls go out together and fail independently, so
- * a pincode with no courier still fills the address, and one Shiprocket
- * cannot place still gets its couriers.
- *
- * Cached per pincode and parcel for six hours: serviceability and rates change
- * slowly, and the product page should not spend a Shiprocket call on every
- * CHECK. When Shiprocket is unavailable the answer is `live: false`, shipping
- * is free, and the page falls back to the promise it made before this existed.
+ * Delivery check: serviceable, days, place, and the buyer's shipping fee. Checkout and placeOrder
+ * ask with the same unit count, so the fee shown is the fee charged. Cached six hours per pincode
+ * and parcel. When Shiprocket is unavailable: `live: false` and free shipping.
  */
 export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAnswer>> {
   return runAction(async () => {
@@ -795,15 +724,13 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
     const account = await shiprocketConfig()
     if (!account.email || !account.password) return ok(offline)
 
-    // Rates depend on the account and where it collects from, so an answer
-    // from before either changed is never reused.
+    // Rates depend on the account and pickup, so both are in the key.
     const key = `${account.email}|${account.pickupLocation ?? ""}|${pincode}:${units}`
     const now = Date.now()
     const hit = pincodeCache.get(key)
     if (hit && hit.expiresAt > now) return ok(await priced(hit.reach))
 
-    // Carries on past the budget, so a slow answer still lands in the cache
-    // for the next check; anything it throws by then is only logged.
+    // Runs on past the budget, so a slow answer still fills the cache.
     const lookup = askShiprocket(key, pincode, units, now)
     lookup.catch((err: unknown) => console.warn("[SHIPPING] pincode lookup failed", message(err)))
 
@@ -817,12 +744,7 @@ export async function checkPincode(raw: unknown): Promise<ActionResult<PincodeAn
   })
 }
 
-/**
- * How long the pincode check waits on Shiprocket. Its calls time out at 20
- * seconds each, and a pickup lookup, a login and a rate quote in a row kept a
- * buyer at checkout for most of a minute. Past this, the answer is the one
- * given when Shiprocket is unavailable - serviceable, no shipping fee.
- */
+/** How long the pincode check waits on Shiprocket before giving the offline answer. */
 export const PINCODE_BUDGET_MS = 4_000
 
 async function withinBudget<T>(work: Promise<T>, ms: number): Promise<T | "late"> {
@@ -838,10 +760,7 @@ async function withinBudget<T>(work: Promise<T>, ms: number): Promise<T | "late"
   }
 }
 
-/**
- * Asks Shiprocket, and caches what it says. Either a full answer, or - when
- * the rate quote failed - only where the pincode is, for the offline answer.
- */
+// Asks Shiprocket and caches the answer. If the rate quote fails, returns only the place.
 async function askShiprocket(
   key: string,
   pincode: string,
@@ -864,13 +783,13 @@ async function askShiprocket(
     shiprocket.postcodeDetails(pincode),
   ])
 
-  // null: Shiprocket has no such pincode. undefined: the lookup itself failed.
+  // null: no such pincode. undefined: the lookup failed.
   const where = place.status === "fulfilled" ? place.value : undefined
   if (place.status === "rejected") {
     console.warn("[SHIPPING] postcode lookup failed", message(place.reason))
   }
 
-  // Not a real pincode. That does not change, so it is remembered like any answer.
+  // Not a real pincode: cached like any answer.
   if (where === null) {
     const nowhere: Reach = {
       answer: {
@@ -904,7 +823,7 @@ async function askShiprocket(
     },
     options,
   }
-  // Without the place, not remembered: the next check can still fill it in.
+  // Not cached without the place, so the next check can fill it in.
   return { reach: where ? remember(key, found, now) : found }
 }
 
@@ -916,17 +835,9 @@ const sharedCollect = globalThis as unknown as {
 const collectCache = (sharedCollect.skelmetCollects ??= new Map())
 
 /**
- * Whether a courier collects payment at the door for this pincode and parcel.
- *
- * Asked apart from checkPincode, and only when paying on delivery is on
- * offer: most couriers that deliver to a pincode will not take money there,
- * so it is its own question to Shiprocket, and one the shop need not spend
- * while it sells online only.
- *
- * Null when Shiprocket is not set up, failed or took too long - "not known",
- * which offers it, as an outage neither refuses nor charges anyone. Booking
- * asks Shiprocket again for the couriers, so an order nobody will collect on
- * is caught there. Cached for six hours, as the pincode check is.
+ * Whether a courier collects payment at the door here. A separate Shiprocket call, made only when
+ * pay on delivery is offered. Null ("not known", so it is offered) when Shiprocket is not set up,
+ * failed or was late; booking checks the couriers again. Cached six hours.
  */
 export async function collectsOnDelivery(pincode: string, units: number): Promise<boolean | null> {
   const account = await shiprocketConfig()
@@ -937,8 +848,7 @@ export async function collectsOnDelivery(pincode: string, units: number): Promis
   if (hit && hit.expiresAt > Date.now()) return hit.collects
 
   const parcel = parcelFor([{ name: "", sku: "", qty: units, unitPrice: 0, weightGrams: null }])
-  // Carries on past the budget, as the pincode check does, so a slow answer
-  // is there for the next ask.
+  // Runs on past the budget, as in checkPincode.
   const lookup = pickupPincode()
     .then((pickup) =>
       shiprocket.serviceability({

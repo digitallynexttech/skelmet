@@ -81,7 +81,7 @@ export async function listReviews(params: {
       db.review.findMany({
         where,
         select: REVIEW_SELECT,
-        // Oldest first: the queue is a queue, nobody should wait behind newer ones.
+        // Oldest first.
         orderBy: { createdAt: "asc" },
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,

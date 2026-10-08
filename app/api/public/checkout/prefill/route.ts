@@ -3,12 +3,8 @@ import { respond } from "@/lib/api-response"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { withErrorHandler } from "@/server/api-handler"
 
-/**
- * Not under /api/admin: this hands the buyer's own last order back to the
- * browser that placed it. The httpOnly cookie is the entire authorisation -
- * nothing in the request can widen what it returns. Rate-limited all the
- * same, as every public endpoint is (§6).
- */
+// The buyer's own last order, back to the browser that placed it. The httpOnly cookie is the
+// whole authorisation: nothing in the request can widen it.
 export const dynamic = "force-dynamic"
 
 export const GET = withErrorHandler(async (req) => {

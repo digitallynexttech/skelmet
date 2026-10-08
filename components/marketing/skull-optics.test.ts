@@ -12,13 +12,7 @@ import {
   VIEW_HEIGHT,
 } from "@/components/marketing/skull-optics"
 
-/**
- * The page works out where the skull's drawing lands without three.js, which
- * now lives on another thread. These hold that arithmetic to what three.js
- * itself does with the scene's camera: if they part, the headline burns round
- * a point the skull is not at, and the skull sits beside the photographs it
- * is meant to sit on.
- */
+// Holds skull-optics to three.js: if they part, the burn and the docks miss the skull.
 
 /** The scene's camera, as skull-scene builds it, for a box of this aspect. */
 function sceneCamera(aspect: number) {
@@ -29,7 +23,7 @@ function sceneCamera(aspect: number) {
   return camera
 }
 
-/** A pivot-space point, turned as the pivot is and lifted, through that camera: shares of the box. */
+/** A pivot-space point, turned and lifted as the pivot is, through that camera: box shares. */
 function throughThree(point: Vector3, rotation: Euler, aspect: number) {
   const p = point.clone().applyEuler(rotation)
   p.y += OPTICAL_CENTRE_LIFT

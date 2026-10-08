@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Checking out with someone else's email must not rewrite their saved
- * details: a customer's phone and address are only saved from a paid order.
- */
+// Checking out with someone else's email must not rewrite their saved details.
 
 const mocks = vi.hoisted(() => {
   const tx = {

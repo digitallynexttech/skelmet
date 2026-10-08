@@ -5,7 +5,6 @@ import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
-/** The search box in a table's bar, with a button to clear it. */
 export function TableSearch({
   value,
   onChange,

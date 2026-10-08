@@ -35,8 +35,7 @@ export function LoginForm({ next = "/admin" }: { next?: string }) {
       return
     }
 
-    // Checked again here, not only by the page: this is the line that
-    // actually navigates.
+    // Re-checked here: this is the line that navigates.
     router.push(safeNextPath(next))
     router.refresh()
   }

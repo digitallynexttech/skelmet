@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The guards every console service calls. Access is read from the database
- * on every action, so a reset password, a revoke or a temporary password
- * takes effect at once rather than when the token expires.
- */
-
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   findUnique: vi.fn(),

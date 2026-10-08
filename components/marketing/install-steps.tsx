@@ -5,11 +5,7 @@ import { Section } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT, type Picture } from "@/features/catalog/catalog"
 
-/**
- * The mount ships in one piece - the skull already fixed to its arm - so the
- * picture shows it whole on its wall: the Flame Skull's unless a product page
- * gives its own (catalog.ts).
- */
+/** The picture shows the mount whole on its wall, as it ships in one piece. */
 export function InstallSteps({
   picture = FLAME_SKULL_MOUNT.sections.install,
 }: { picture?: Picture } = {}) {
@@ -40,8 +36,6 @@ export function InstallSteps({
           </h2>
 
           <ol className="grid gap-3.5 sm:grid-cols-2">
-            {/* Every step alike: they are all needed, so none is dressed up
-                above the others. */}
             {INSTALL_STEPS.map((step) => (
               <li
                 key={step.n}

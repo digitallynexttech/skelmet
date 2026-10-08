@@ -28,15 +28,9 @@ import {
 } from "@/features/newsletter/schemas/newsletter.schema"
 
 /**
- * The drop list: who asked to hear about new drops, and the emails staff send
- * them from the console.
- *
- * Sending goes out one message per person so each carries its own unsubscribe
- * link, paced, by the mailer's routes in turn (lib/mailer.ts): Brevo, then the
- * shop's Gmail. Each allows so many emails a day - Brevo's free plan 300, Gmail
- * about 500 - and when every route says the day's allowance is spent, the
- * campaign pauses where it got to and a later Resume sends the rest. Every delivery is claimed before it is
- * sent, so a campaign resumed after a restart never emails anyone twice.
+ * The drop list and the emails staff send it. One paced message per person (own unsubscribe
+ * link). When every mail route says the day's allowance is spent the campaign pauses and Resume
+ * sends the rest. Each delivery is claimed before sending, so nobody is emailed twice.
  */
 
 export type SubscriberStatus = "SUBSCRIBED" | "UNSUBSCRIBED"
@@ -72,35 +66,22 @@ export type CampaignRow = {
 
 /** Between two emails of one campaign: about 40 a minute, well inside what Gmail tolerates. */
 export const SEND_GAP_MS = 1500
-/** Subscribers fetched at a time while sending. */
 const BATCH = 25
-/** Campaigns shown in the console's history. */
 const HISTORY = 30
 
-/**
- * What a mail server says when it will take no more for now: Gmail's daily
- * limit (5.4.5), its rate and login throttles (4.7.x), Brevo's 429 and spent
- * credits, and the wording other servers use for the same. Worth pausing on
- * rather than failing everyone left.
- */
+// "Take no more for now": Gmail's daily limit (5.4.5) and throttles (4.7.x), Brevo's 429 and
+// spent credits. Pause on these rather than failing everyone left.
 const COME_BACK_LATER =
   /5\.4\.5|4\.7\.\d|sending limit|quota|try again later|too.many|not.enough.credits|daily limit|API 429/i
 
-/**
- * Later, from every route. One that still takes mail means the trouble was
- * this address, not the day's allowance: Brevo's quota spent while Gmail
- * refuses a mistyped address is that address failing, not a reason to pause.
- */
+// Only when every route says so; otherwise the trouble is this address, not the allowance.
 function everyRouteSaysLater(result: { error: string; refusals?: { error: string }[] }) {
   const refusals = result.refusals?.length ? result.refusals : [result]
   return refusals.every((r) => COME_BACK_LATER.test(r.error))
 }
 
-/**
- * Campaigns sending in this server process. It is a single process (pm2 fork
- * mode), so this is the whole truth: a SENDING row missing from here was cut
- * off by a restart and waits for Resume.
- */
+// Campaigns sending in this process (single process, pm2 fork mode). A SENDING row missing from
+// here was cut off by a restart and waits for Resume.
 const running = new Set<string>()
 
 const newToken = () => randomBytes(32).toString("hex")
@@ -123,16 +104,12 @@ function honeypotFilled(raw: unknown): boolean {
 }
 
 /**
- * Public: the home page's "Notify me". No session, so the route rate-limits
- * by IP and the honeypot catches the bots that fill every field they find.
- *
- * Answers the same whether the address was new, already on the list or
- * coming back, so the form cannot be used to find out who has signed up.
+ * Public "Notify me". Answers the same for a new, existing or returning address, so the form
+ * cannot reveal who has signed up.
  */
 export async function subscribe(raw: unknown): Promise<ActionResult<{ subscribed: true }>> {
   return runAction(async () => {
-    // Before parsing: the schema rejects a filled honeypot, and a validation
-    // error would tell the bot which check it tripped.
+    // Before parsing, so a validation error does not tell the bot which check it tripped.
     if (honeypotFilled(raw)) return ok({ subscribed: true })
     const input = subscribeSchema.parse(raw)
     if (!hasDatabase()) return fail("Sign-ups are not available yet.", undefined, 503)
@@ -168,10 +145,7 @@ export async function subscriberForToken(
   return row ? { email: maskEmail(row.email), status: row.status } : null
 }
 
-/**
- * Public: the link in every email, and the one-click unsubscribe a mail
- * client sends. The token is the whole credential. Doing it twice is fine.
- */
+/** Public: the email link and the mail client's one-click. The token is the whole credential. */
 export async function unsubscribe(raw: unknown): Promise<ActionResult<{ email: string }>> {
   return runAction(async () => {
     const { token } = unsubscribeSchema.parse(raw)
@@ -360,13 +334,7 @@ export async function listCampaigns(): Promise<
 export type SendResult =
   { test: true; to: string } | { test: false; id: string; recipients: number }
 
-/**
- * Sends a campaign, or a test of it to the staff member sending.
- *
- * A test goes out now and says whether it arrived at the mail server. The
- * real thing is recorded, answered at once, and sent after the response - a
- * few hundred paced emails take minutes, which no request should wait on.
- */
+/** Sends a test to the sender now, or records the campaign and sends it after the response. */
 export async function sendCampaign(raw: unknown): Promise<ActionResult<SendResult>> {
   return runAction<SendResult>(async () => {
     const session = await requirePermission(PERMISSIONS.NEWSLETTER_SEND)
@@ -458,9 +426,7 @@ export async function resumeCampaign(id: string): Promise<ActionResult<{ id: str
       )
     }
 
-    // A claim still PENDING was cut off between claiming and hearing back, so
-    // it may or may not have gone. Not retried: one missed email beats one
-    // person getting it twice.
+    // A PENDING claim may or may not have gone. Not retried: a missed email beats a double one.
     await db.newsletterDelivery.updateMany({
       where: { campaignId: id, status: "PENDING" },
       data: { status: "FAILED", error: "Interrupted while sending; it may have arrived." },
@@ -480,11 +446,8 @@ export async function resumeCampaign(id: string): Promise<ActionResult<{ id: str
 }
 
 /**
- * The send loop. Exported for tests, which pass a gap of 0.
- *
- * Takes the campaign's subscribers in batches: still subscribed, signed up
- * before it was sent, and not yet claimed for it. Someone who unsubscribes
- * partway through drops out of the next batch.
+ * The send loop; exported for tests. Batches subscribers still subscribed, signed up before the
+ * campaign and not yet claimed, so an unsubscribe partway through drops out.
  */
 export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void> {
   running.add(id)
@@ -502,7 +465,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
       },
     })
     if (!campaign) return
-    // Checked when it was sent; one sent before the editor has only its text.
+    // Older campaigns have only plain text.
     const email = {
       subject: campaign.subject,
       content: campaign.content ? (campaign.content as NewsletterDoc) : docFromText(campaign.body),
@@ -524,8 +487,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
       if (batch.length === 0) break
 
       for (const subscriber of batch) {
-        // Claimed before sending: the unique pair means nothing else can have
-        // this one, and a restart cannot send it again.
+        // Claimed before sending (unique pair), so a restart cannot send it again.
         const claimed = await db.newsletterDelivery.createMany({
           data: [{ campaignId: id, subscriberId: subscriber.id }],
           skipDuplicates: true,
@@ -544,8 +506,7 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
         if (result.ok && result.delivered) {
           await db.newsletterDelivery.update({ where, data: { status: "SENT" } })
         } else if (!result.ok && everyRouteSaysLater(result)) {
-          // The server will take no more for now. Hand this one back so Resume
-          // tries it again, and stop where we are.
+          // Release the claim so Resume tries this one again, and pause.
           await db.newsletterDelivery.delete({ where })
           await db.newsletterCampaign.update({
             where: { id },
@@ -586,20 +547,14 @@ export async function runCampaign(id: string, gapMs = SEND_GAP_MS): Promise<void
   }
 }
 
-/**
- * Twice the width the email draws an image at (EMAIL_IMAGE_WIDTH, 544px), so
- * it is sharp on a phone's screen without mailing a camera's original.
- */
+// About twice EMAIL_IMAGE_WIDTH (544px), sharp on a phone.
 const IMAGE_MAX_WIDTH = 1200
 
 export type UploadedImage = { id: string; url: string; width: number; height: number }
 
 /**
- * A picture for a newsletter, from the editor. Turned upright, shrunk to
- * IMAGE_MAX_WIDTH, and re-encoded - JPEG for a photo, PNG where it has
- * transparency to keep - which also strips the camera's metadata (location
- * included) before it is published to every inbox. A GIF keeps its first
- * frame: animation does not survive the trip reliably in mail clients anyway.
+ * Re-encodes an editor picture (JPEG, or PNG if it has alpha), which also strips camera metadata
+ * such as location before it goes to every inbox. A GIF keeps only its first frame.
  */
 export async function uploadNewsletterImage(form: FormData): Promise<ActionResult<UploadedImage>> {
   return runAction(async () => {

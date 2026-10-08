@@ -20,31 +20,10 @@ import { downloadCsv, downloadXlsx, type ExportColumn } from "@/lib/export"
 import { cn } from "@/lib/utils"
 
 /**
- * The one table every admin screen uses.
- *
- * Built once rather than per screen: five copies of a row counter, a select-all
- * checkbox and a sort arrow drift apart, and the one that drifts is the one
- * that exports the wrong column.
- *
- * Sorting, paging and export all run over the rows handed in, so the screen
- * above must fetch the whole set it wants sorted rather than one page of it.
- * The admin endpoints take a pageSize for exactly that reason, capped at
- * MAX_PAGE_SIZE. Past that cap the server holds rows back, and `total` makes
- * the table say so - because sorting twenty of two hundred rows and calling
- * it "sorted by spend" is a lie, and a spreadsheet that quietly holds one
- * page is a worse one.
- *
- * Cells never wrap: each column is as wide as its longest line, and the table
- * scrolls sideways when that is wider than the screen. Squeezed to fit, it
- * broke an order number over three lines at its hyphens and a two-word header
- * over two. A cell that stacks lines on purpose - a name over an email -
- * still stacks; only the lines themselves stay whole. The expanded detail row
- * wraps as prose, since that is what it holds.
- *
- * A screen can also ask for the fuller kit - controls inside the frame (bar),
- * a column picker, a choice of rows per page - and export from its own
- * header through `handle`. The picker and the page size are remembered per
- * table (by exportName) in this browser.
+ * The one table every admin screen uses. Sorting, paging and export run over the rows handed in,
+ * so the screen must fetch the whole set (up to MAX_PAGE_SIZE); pass `total` when the server held
+ * rows back so the table says so. Cells never wrap; the table scrolls sideways instead. Hidden
+ * columns and page size are remembered per exportName in this browser.
  */
 export type Column<T> = {
   key: string
@@ -70,29 +49,13 @@ type Props<T> = {
   pageSize?: number
   /** Rendered between the selection count and the export buttons. */
   toolbar?: React.ReactNode
-  /**
-   * What the export contains, when that differs from what the table shows.
-   * A cell that stacks a name over an email reads well on screen and badly
-   * in a spreadsheet, where they want to be two columns.
-   */
+  /** What the export contains, when that differs from what the table shows. */
   exportColumns?: ExportColumn<T>[]
-  /**
-   * Draws the bordered frame. Off when the table already sits inside a
-   * card, where a second rounded border is just a box in a box.
-   */
+  /** Draws the bordered frame. Off when the table already sits inside a card. */
   frame?: boolean
-  /**
-   * How many rows match on the server, when that is more than were sent.
-   * Sorting and export run over what is loaded, so if the server held some
-   * back the table has to say so rather than let an admin believe a
-   * spreadsheet covers everything.
-   */
+  /** How many rows match on the server, when more than were sent; the table then warns. */
   total?: number
-  /**
-   * Detail for one row, revealed on demand. For content a cell cannot hold
-   * honestly - a paragraph of free text truncated to one line is not a
-   * summary, it is a message the reader cannot read.
-   */
+  /** Detail for one row, revealed on demand, for text a cell cannot hold. */
   expandable?: (row: T) => React.ReactNode
   /** The CSV and Excel buttons over the table. Off where the page has its own Export. */
   exportButtons?: boolean
@@ -102,36 +65,29 @@ type Props<T> = {
   bar?: React.ReactNode
   /** And on the right, before the column picker: search and filters. */
   barEnd?: React.ReactNode
-  /** A menu to hide and show columns. On unless turned off. */
   columnToggle?: boolean
   /** Rows per page to choose from, in the footer. Include pageSize. */
   pageSizes?: readonly number[]
   /** When this changes the table goes back to its first page: a new tab or filter. */
   pageKey?: string
-  /** The # column of row numbers, off unless asked for. Exports number their rows either way. */
+  /** The # column. Exports number their rows either way. */
   numbered?: boolean
-  /**
-   * A few rows on a record's page - a product's variants, a customer's
-   * orders: no ticking, column picker, export or page size, and paging only
-   * if it is ever needed.
-   */
+  /** A few rows on a record's page: no ticking, column picker, export or page size. */
   compact?: boolean
-  /** Classes for one row, to set some apart: a cancelled order, say. */
   rowClassName?: (row: T) => string | undefined
 }
 
 export type DataTableHandle<T> = {
   /** The ticked rows that are still listed. */
   selectedRows: () => T[]
-  /** What an export holds now: the ticked rows, or else every row listed. */
+  /** The ticked rows, or else every row listed. */
   exportRows: () => T[]
   download: (format: "csv" | "xlsx") => void
 }
 
-/** Every table offers these, as Orders does. */
 const PAGE_SIZES = [10, 20, 50, 100]
 
-/** The hidden columns as stored: a JSON list of keys, or anything else as none. */
+// Anything but a JSON list of keys reads as none hidden.
 function parseHidden(raw: string): Set<string> {
   try {
     const list: unknown = JSON.parse(raw)
@@ -173,9 +129,7 @@ export function DataTable<T>({
   const [picked, setPicked] = React.useState<Set<string>>(new Set())
   const [open, setOpen] = React.useState<Set<string>>(new Set())
 
-  // A new tab or filter starts on page one, not on whatever page the last
-  // one was left at. Adjusted during render, as React has it for state that
-  // follows a prop.
+  // Reset to page one during render, React's pattern for state that follows a prop.
   const [seenKey, setSeenKey] = React.useState(pageKey)
   if (pageKey !== seenKey) {
     setSeenKey(pageKey)
@@ -217,8 +171,7 @@ export function DataTable<T>({
   const start = (current - 1) * size
   const shown = sorted.slice(start, start + size)
 
-  // A filter upstream can shrink the list under the current page; snap back
-  // rather than showing an empty one.
+  // A filter upstream can shrink the list under the current page.
   if (page !== current) setPage(current)
 
   const pageIds = shown.map(rowId)
@@ -240,8 +193,7 @@ export function DataTable<T>({
 
   const truncated = typeof total === "number" && total > rows.length
 
-  // Position is looked up, not searched: indexOf inside the accessor makes
-  // an export of n rows do n^2 comparisons.
+  // A map, not indexOf in the accessor, which would make export O(n^2).
   const rank = new Map(sorted.map((r, i) => [rowId(r), i + 1]))
 
   const exportCols: ExportColumn<T>[] = [
@@ -252,17 +204,14 @@ export function DataTable<T>({
         .map((c) => ({ header: c.header, value: (r: T) => c.value!(r) }))),
   ]
 
-  // Selection wins when there is one: an admin who ticked four rows and hit
-  // Export meant those four, not the page they happen to be on.
-  // Counted over the rows still listed: a ticked row that a filter or a
-  // search has since hidden is neither shown as selected nor exported.
+  // Export takes the ticked rows if any, else all. A ticked row a filter has since hidden is
+  // neither counted nor exported.
   const pickedRows = picked.size > 0 ? sorted.filter((r) => picked.has(rowId(r))) : []
   const exportRows = pickedRows.length > 0 ? pickedRows : sorted
 
   function download(format: "csv" | "xlsx") {
     if (format === "csv") return downloadCsv(exportRows, exportCols, exportName)
-    // The spreadsheet library is fetched on first use, so a dropped
-    // connection fails here - say so rather than doing nothing.
+    // The spreadsheet library loads on first use, so this can fail on a dropped connection.
     void downloadXlsx(exportRows, exportCols, exportName).catch(() =>
       toast.error("Could not build the Excel file. Try again, or export as CSV."),
     )
@@ -303,7 +252,7 @@ export function DataTable<T>({
             <MenuCheckbox
               key={c.key}
               checked={on}
-              // One always stays: a table of no columns is just row numbers.
+              // The last visible column cannot be hidden.
               disabled={on && visible.length === 1}
               onChange={(next) => {
                 const keys = new Set(hidden)
@@ -325,11 +274,8 @@ export function DataTable<T>({
       </Menu>
     ) : null
 
-  /**
-   * Where the rows are and how many to a page. Always there once the reader
-   * can choose the page size, or when the count has nowhere else to go;
-   * otherwise only when there is more than one page.
-   */
+  // Shown when there is a page size to choose or the count has nowhere else to go; else only
+  // when there is more than one page.
   const footer =
     (compact || (!pageSizes && topRow)) && totalPages === 1 ? null : (
       <div
@@ -434,8 +380,7 @@ export function DataTable<T>({
         </div>
       ) : null}
 
-      {/* With controls inside it the frame cannot clip: their menus open
-          over the table and past its foot. */}
+      {/* With controls inside, the frame cannot clip: their menus open past its foot. */}
       <div
         className={cn(
           frame && "rounded-md border border-white/[0.09]",
@@ -459,9 +404,7 @@ export function DataTable<T>({
           </div>
         ) : null}
 
-        {/* Contained on the inline axis, so a table wider than the screen
-            scrolls in here instead of reporting its width upward: in a grid
-            or flex column, that width stretched the whole page sideways. */}
+        {/* contain-inline-size: a wide table scrolls here instead of widening the page. */}
         <div className="scrollbar-visible overflow-x-auto contain-inline-size">
           <table className="w-full text-left">
             <thead className="bg-void/50">
@@ -475,9 +418,7 @@ export function DataTable<T>({
                       onChange={toggleAll}
                       className="accent-blaze size-3.5 align-middle"
                     />
-                    {/* With rows ticked, the headings give way to the count, as
-                      Shopify has it. They are hidden rather than removed, so
-                      no column changes width under the pointer. */}
+                    {/* Headings go invisible, not removed, so no column changes width. */}
                     {selecting ? (
                       <span className="absolute inset-y-0 left-full flex items-center gap-3 pl-2 text-[13px] whitespace-nowrap">
                         <span className="text-bone font-semibold">
@@ -518,7 +459,7 @@ export function DataTable<T>({
                           )
                         }
                         className={cn(
-                          // Weight and face spelled out: a button does not take them from the row.
+                          // A button does not inherit font weight and face from the row.
                           "hover:text-bone inline-flex items-center gap-1.5 font-sans font-semibold transition-colors",
                           sort?.key === c.key && "text-bone",
                           c.align === "right" && "flex-row-reverse",

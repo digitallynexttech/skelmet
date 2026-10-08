@@ -10,18 +10,11 @@ import { paymentConfig, type PaymentConfig } from "@/features/settings/server/ru
 import { AppError } from "@/lib/errors"
 
 /**
- * Razorpay, over their REST API directly - the SDK is a thin wrapper over these
- * three calls and adds a dependency we do not need.
+ * Razorpay over its REST API (no SDK).
  *
- * Money crosses this boundary in PAISE (integer). Everywhere else in the app it
- * is rupees as a Decimal/string, so convert at exactly this edge and nowhere
- * else.
- *
- * The keys come from the console's Settings, falling back to .env, and there
- * are two sets: test and live. New payments go to whichever account is
- * switched on. Everything done to an existing payment - verifying it,
- * refunding it - uses the account that took it, which its row records, so a
- * switch never strands the payments made before it.
+ * Money crosses this edge in PAISE (integer); everywhere else it is rupees.
+ * Two key sets, test and live: new payments use the one switched on, and
+ * anything done to an existing payment uses the account its row records.
  */
 
 const API = "https://api.razorpay.com/v1"
@@ -34,10 +27,7 @@ type RazorpayOrder = {
   status: string
 }
 
-/**
- * The account a payment row belongs to. Rows from before the switch existed
- * carry no mode; they were all made with .env's keys.
- */
+/** The account a payment row belongs to. A row with no mode used .env's keys. */
 export function modeOfPayment(
   mode: string | null | undefined,
   config: Pick<PaymentConfig, "envMode" | "mode">,
@@ -67,16 +57,12 @@ function basic(keyId: string, keySecret: string): string {
   return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`
 }
 
-/**
- * The account switched on and its publishable key id: what a reopened order
- * is paid with. Throws, as opening an order does, when its keys are not set.
- */
+/** The account switched on and its publishable key id. Throws when its keys are not set. */
 export async function activeGatewayKey(): Promise<{ mode: PaymentMode; keyId: string }> {
   const { mode, keyId } = await credentials()
   return { mode, keyId }
 }
 
-/** Whether the account switched on has a key id and secret. */
 export async function isGatewayConfigured(): Promise<boolean> {
   const config = await paymentConfig()
   const keys = config[config.mode]
@@ -88,9 +74,8 @@ export function toPaise(rupees: number | string): number {
 }
 
 /**
- * Opens a Razorpay order on the account switched on. Returns the publishable
- * key id the browser opens checkout with - it must be that same account's -
- * and the mode, for the payment row.
+ * Opens a Razorpay order on the account switched on. Returns that account's
+ * key id for the browser, and the mode for the payment row.
  */
 export async function createGatewayOrder(input: {
   amountRupees: number | string
@@ -129,11 +114,7 @@ function safeEqual(a: string, b: string): boolean {
   return bufA.length === bufB.length && timingSafeEqual(bufA, bufB)
 }
 
-/**
- * Verifies the handler payload the browser returns after a successful payment,
- * against the secret of the account the payment was opened on.
- * Signature = HMAC_SHA256(`${orderId}|${paymentId}`, keySecret).
- */
+/** Signature = HMAC_SHA256(`${orderId}|${paymentId}`, keySecret of the opening account). */
 export async function verifyPaymentSignature(
   input: { gatewayOrderId: string; gatewayPaymentId: string; signature: string },
   mode: PaymentMode,
@@ -147,14 +128,9 @@ export async function verifyPaymentSignature(
 }
 
 /**
- * Verifies a webhook. Signature = HMAC_SHA256(rawBody, webhookSecret), so the
- * route must hand us the raw text, never a re-serialised object.
- *
- * Tried against both accounts' webhook secrets: a test payment still in flight
- * when the console switches to live is still delivered, signed with the test
- * secret. Both are ours, so either proves the delivery came from Razorpay.
- *
- * Fails closed when no secret is set (§6).
+ * Signature = HMAC_SHA256(rawBody, webhookSecret): needs the raw text, never a
+ * re-serialised object. Tries both accounts' secrets, since a payment in flight
+ * across a mode switch is signed with the old one. Fails closed (§6).
  */
 export async function verifyWebhookSignature(
   rawBody: string,
@@ -170,10 +146,7 @@ export async function verifyWebhookSignature(
   )
 }
 
-/**
- * Whether Razorpay accepts a key pair - one read of the account's orders,
- * which creates nothing. For the console's "Test keys".
- */
+/** Whether Razorpay accepts a key pair, by a read that creates nothing. For "Test keys". */
 export async function checkGatewayKeys(mode: PaymentMode): Promise<void> {
   const { keyId, keySecret } = await credentials(mode)
   let res: Response
@@ -204,7 +177,7 @@ export type GatewayPayment = {
   method?: string
 }
 
-/** How long a call made while a buyer or a checkout waits may take. */
+/** Timeout for calls a buyer is waiting on. */
 const QUICK_MS = 8_000
 
 /** Razorpay ids are short and alphanumeric; anything else is not sent into a URL. */
@@ -229,8 +202,7 @@ async function readJson<T>(url: string, mode: PaymentMode, init: RequestInit = {
   if (!res.ok) {
     const detail = await res.text().catch(() => "")
     console.error("[RAZORPAY]", init.method ?? "GET", url.replace(API, ""), res.status, detail)
-    // The status travels with it: a 5xx is Razorpay being down, a 4xx is
-    // Razorpay saying no, and callers treat those differently.
+    // Callers tell 5xx (down) from 4xx (no) by this status.
     throw new AppError("Razorpay refused the request.", 502, "GATEWAY_ERROR", {
       status: res.status,
     })
@@ -238,10 +210,7 @@ async function readJson<T>(url: string, mode: PaymentMode, init: RequestInit = {
   return (await res.json()) as T
 }
 
-/**
- * Whether a failed call means Razorpay could not be asked - a timeout, an
- * outage, keys that cannot be read - as opposed to Razorpay answering no.
- */
+/** True when Razorpay could not be asked (timeout, outage, no keys), not when it said no. */
 export function gatewayUnreachable(err: unknown): boolean {
   if (!(err instanceof AppError)) return true
   if (err.status === 504 || err.status === 503) return true
@@ -259,7 +228,7 @@ export async function fetchPayment(
   return readJson<GatewayPayment>(`${API}/payments/${paymentId}`, mode, {}, ms)
 }
 
-/** Every payment attempted against one Razorpay order - declined cards included. */
+/** Every attempt on one Razorpay order, declined ones included. */
 export async function fetchOrderPayments(
   gatewayOrderId: string,
   mode: PaymentMode,
@@ -275,12 +244,7 @@ export async function fetchOrderPayments(
   return Array.isArray(list.items) ? list.items : []
 }
 
-/**
- * Captures an authorised payment. An account set to capture by hand - or
- * whose automatic capture has not run yet - leaves a successful payment
- * `authorized`: the money is held, not taken, and Razorpay hands it back to
- * the buyer after a few days unless it is captured.
- */
+/** Captures an `authorized` payment, which Razorpay otherwise refunds after a few days. */
 export async function captureGatewayPayment(
   payment: Pick<GatewayPayment, "id" | "amount" | "currency">,
   mode: PaymentMode,

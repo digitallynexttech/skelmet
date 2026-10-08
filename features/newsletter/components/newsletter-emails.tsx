@@ -39,15 +39,12 @@ const when = (iso: string) =>
     minute: "2-digit",
   })
 
-/**
- * Write an email to the drop list, try it on yourself, send it, and watch it
- * go. One at a time: a second one waits until the first has finished.
- */
+/** Write, test and send an email to the drop list. One campaign sends at a time. */
 export function NewsletterEmails() {
   const [draft, setDraft] = React.useState<Draft>(EMPTY)
   const [errors, setErrors] = React.useState<Partial<Record<keyof Draft, string>>>({})
   const [confirming, setConfirming] = React.useState(false)
-  // Bumped to load a fresh editor: it reads its content once, when made.
+  // Bumped to remount the editor, which reads its content only once.
   const [editorKey, setEditorKey] = React.useState(0)
 
   const { data, isLoading, isError, error } = useCampaigns()
@@ -68,7 +65,7 @@ export function NewsletterEmails() {
     setErrors((x) => (x.content ? { ...x, content: undefined } : x))
   }, [])
 
-  /** The same schema the server checks, so a bad field is caught before the request. */
+  // The server's schema, so a bad field is caught before the request.
   function valid(): boolean {
     const parsed = sendCampaignSchema.safeParse(draft)
     if (parsed.success) {
@@ -170,7 +167,6 @@ export function NewsletterEmails() {
     },
   ]
 
-  // The email itself, as the subscribers will get it, a moment behind the typing.
   const shown = useDebounce(draft, 350)
   const preview = React.useMemo(
     () =>
@@ -209,8 +205,7 @@ export function NewsletterEmails() {
             />
           </Field>
 
-          {/* Not a Field: that wires its label to one input, and this is a
-              toolbar and a writing area. */}
+          {/* Not a Field, which wires its label to a single input. */}
           <div className="flex flex-col gap-2">
             <Label>Message</Label>
             <RichEditor
@@ -291,8 +286,7 @@ export function NewsletterEmails() {
           </div>
         </form>
 
-        {/* The real email, from the same code that sends it, at about a
-            phone's width. Sandboxed: nothing in it can run. */}
+        {/* Rendered by the same code that sends it; sandboxed so nothing in it runs. */}
         <div className="bg-void rounded-md border border-white/[0.09] p-4">
           <h2 className="text-bone mb-3 text-[15px] font-semibold">Preview</h2>
           <iframe

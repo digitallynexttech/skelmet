@@ -6,9 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { FLAME_SKULL_MOUNT, type Product } from "@/features/catalog/catalog"
 
 /**
- * The reviews here are the Flame Skull's. Another skull's page says so and
- * shows them under the Flame Skull's name, never as its own (the owner's
- * call, 2026-10-08).
+ * The reviews are the Flame Skull's. Owner's decision: another skull's page says so and
+ * never shows them as its own.
  */
 export function Reviews({ product = FLAME_SKULL_MOUNT }: { product?: Product } = {}) {
   const reviewed = FLAME_SKULL_MOUNT

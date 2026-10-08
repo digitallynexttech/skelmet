@@ -1,9 +1,6 @@
 /**
- * What every way of setting up a database shares - `db:bootstrap`,
- * `db:seed` and `db:sync-permissions` - written so that running any of it
- * twice, or against a database already in use, only ever adds what is
- * missing. Nothing here deletes, and nothing here overwrites an existing
- * member of staff's password.
+ * Shared by db:bootstrap, db:seed and db:sync-permissions. Idempotent: only adds,
+ * never deletes or overwrites a staff password.
  */
 import fs from "node:fs"
 
@@ -17,11 +14,7 @@ export function loadEnv(): void {
   if (!process.env.DATABASE_URL && fs.existsSync(".env")) process.loadEnvFile(".env")
 }
 
-/**
- * Whether a connection string points at this machine. The old "never in
- * production" guard read NODE_ENV, which is unset on a laptop - so the seed's
- * wipe ran happily against the hosted database from one.
- */
+/** By host, not NODE_ENV, which is unset on a laptop pointed at the live database. */
 export function isLocalDatabase(url: string | undefined): boolean {
   if (!url) return false
   let host: string
@@ -55,12 +48,7 @@ export async function upsertPermissions(db: Db): Promise<number> {
   return PERMISSION_DEFINITIONS.length
 }
 
-/**
- * Gives every permission that exists to the full-access roles. Without this a
- * permission added in code reached the permissions table and no role at all,
- * so on a live database nobody - the owner included - could use the screen
- * it guarded.
- */
+/** Without this, a permission added in code reaches no role and nobody can use its screen. */
 export async function grantAllToFullAccessRoles(db: Db): Promise<number> {
   const roles = await db.role.findMany({
     where: {
@@ -80,13 +68,8 @@ export async function grantAllToFullAccessRoles(db: Db): Promise<number> {
 }
 
 /**
- * The Admin role, holding every permission.
- *
- * This is not the same thing as UserKind. `kind: STAFF` is what lets someone
- * reach the console at all, and it is checked in proxy.ts and requireStaff
- * before any permission is looked at - customers have rows in this same
- * table and must never pass that gate. The role is only about what a member
- * of staff may do once inside.
+ * Roles are not the console gate: `kind: STAFF` is (proxy.ts, requireStaff), and
+ * customers share the users table. A role only limits staff once inside.
  */
 export async function ensureAdminRole(db: Db): Promise<string> {
   const role = await db.role.upsert({
@@ -100,14 +83,9 @@ export async function ensureAdminRole(db: Db): Promise<string> {
 }
 
 /**
- * The first administrator, so a fresh database can be signed in to.
- *
- * Created with `mustChangePassword`, so the password in the environment -
- * which sits in a file on a server - only ever opens the door once. An
- * existing member of staff at that address keeps their password; they are
- * only made sure of the Admin role. A customer row at that address (someone
- * who bought before) is promoted. `resetPassword` is for the local seed's
- * reset only.
+ * Created with `mustChangePassword`, so the env password works once. Existing
+ * staff keep their password; a customer at that address is promoted.
+ * `resetPassword` is for the local seed's reset only.
  */
 export async function ensureFirstAdmin(
   db: Db,
@@ -159,11 +137,8 @@ export async function ensureFirstAdmin(
 }
 
 /**
- * Every catalogue product and a variant per colourway, where missing, with
- * their media. Existing rows - their prices, their stock, their status - are
- * left exactly as they are. New variants start at `stock`. A new product
- * other than the Flame Skull starts as a DRAFT, to be published from the
- * console once it has stock (the Piston Skull's migration does the same).
+ * Adds missing products and variants with media; existing rows are untouched.
+ * A new product other than the Flame Skull starts as DRAFT.
  */
 export async function ensureCatalogue(
   db: Db,
@@ -200,8 +175,7 @@ export async function ensureCatalogue(
       })
       variantsCreated += 1
 
-      // Media hangs off the variant, not the product: each finish has its own
-      // gallery, and a single product-level list could only ever hold one.
+      // Media hangs off the variant: each finish has its own gallery.
       await db.mediaAsset.createMany({
         data: item.gallery[c.id].map((g, i) => ({
           productId: product.id,

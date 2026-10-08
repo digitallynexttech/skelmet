@@ -194,11 +194,7 @@ export async function updateVariant(id: string, raw: unknown): Promise<ActionRes
   })
 }
 
-/**
- * Stock in and out by a delta rather than an absolute, so two people counting
- * the same shelf at the same time add up instead of overwriting each other.
- * The guard in `where` is what stops a race pushing stock negative.
- */
+/** Stock by delta, so concurrent counts add up; the `where` guard keeps it from going negative. */
 export async function adjustStock(id: string, raw: unknown): Promise<ActionResult<VariantRow>> {
   return runAction(async () => {
     const session = await requirePermission(PERMISSIONS.PRODUCT_WRITE)

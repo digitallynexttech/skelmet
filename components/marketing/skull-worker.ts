@@ -6,10 +6,8 @@ import {
 } from "@/components/marketing/skull-scene"
 
 /**
- * The hero skull's scene, run off the main thread. skull-renderer starts this
- * worker, hands it a canvas it has given up control of, and from then on only
- * tells it how the skull is turned; three.js, the model and every draw stay
- * on this side.
+ * The hero skull's scene off the main thread: skull-renderer transfers it a
+ * canvas, then only sends poses; three.js, the model and every draw stay here.
  */
 
 /** What skull-renderer sends. */
@@ -33,8 +31,7 @@ export type ToSkullWorker =
 export type FromSkullWorker =
   ({ type: "ready" } & SkullModelInfo) | { type: "lost" } | { type: "error"; message: string }
 
-// The DOM's and a worker's global types do not share a tsconfig; this is the
-// little of the worker's that is used.
+// DOM and worker globals do not share a tsconfig; just the worker parts used here.
 const scope = self as unknown as {
   postMessage: (message: FromSkullWorker, transfer?: Transferable[]) => void
   onmessage: ((event: MessageEvent<ToSkullWorker>) => void) | null

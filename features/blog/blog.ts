@@ -1,14 +1,7 @@
-/**
- * The blog's shapes and small pure helpers. Client-safe, and free of imports:
- * the post cards run in the browser, and the Studio's schema reads the
- * category list from here, through the Sanity CLI, which knows no path alias.
- */
+// Client-safe and free of imports: the Sanity CLI reads the categories from here and knows no
+// path alias.
 
-/**
- * What a post can be filed under. The Studio offers these and the blog page
- * filters by them; a post filed under one that has since been removed falls
- * back to a plain "Blog" label rather than disappearing.
- */
+/** Post categories. A post under a removed one shows as "Blog". */
 export const BLOG_CATEGORIES = [
   { value: "helmet-care", label: "Helmet care" },
   { value: "riding", label: "Riding" },
@@ -51,7 +44,7 @@ export type BlogListItem = {
   /** When the document last changed in Sanity: the sitemap's lastModified. */
   updatedAt?: string
   featured?: boolean
-  /** Worked out from the length of the body, never typed in. */
+  /** Computed from the body's length. */
   readMinutes?: number
   author?: BlogAuthor | null
 }
@@ -124,21 +117,15 @@ export function formatPostDate(iso?: string | null): string {
 }
 
 /**
- * Whether a published post is on the site yet. A post published with a date
- * still to come is scheduled: it is in Sanity, and nowhere on the site until
- * that moment - which is the whole of how scheduling works here, with no
- * timer to fire. A post with no readable date is not live.
+ * Whether a published post is on the site yet. A future date means scheduled: this check is the
+ * whole of scheduling, with no timer. No readable date means not live.
  */
 export function isLive(publishedAt: string | null | undefined, now: number = Date.now()): boolean {
   const at = Date.parse(publishedAt ?? "")
   return Number.isFinite(at) && at <= now
 }
 
-/**
- * What a post's address may look like: lower-case words joined by hyphens,
- * which is what the Studio's slug field produces. Anything else is not a
- * post, and can be refused without asking Sanity.
- */
+/** The Studio's slug shape. Anything else is not a post, and is refused without asking Sanity. */
 export function isPostSlug(slug: string): boolean {
   return slug.length <= 96 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
 }

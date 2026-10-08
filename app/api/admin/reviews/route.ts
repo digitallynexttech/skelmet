@@ -5,7 +5,6 @@ import { enumParam, listParams, pageParam } from "@/server/list-params"
 
 export const dynamic = "force-dynamic"
 
-// Parsed only: what the list does with them is unchanged.
 const QUERY = {
   page: pageParam,
   status: enumParam(["ALL", "PENDING", "PUBLISHED", "REJECTED"], "ALL"),

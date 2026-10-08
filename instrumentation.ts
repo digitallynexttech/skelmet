@@ -1,7 +1,4 @@
-/**
- * Boot hook: validate the environment so the process fails, not the first
- * request (§6).
- */
+// Validates the environment at boot, so the process fails, not a request.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return
 
@@ -14,6 +11,5 @@ export async function register() {
     )
   }
 
-  // No scheduler runs here: the work a cron would do (releasing unpaid orders,
-  // deleting old visits) runs when a checkout starts or staff open the screen.
+  // No scheduler: cron-like work runs when a checkout starts or staff open the screen.
 }

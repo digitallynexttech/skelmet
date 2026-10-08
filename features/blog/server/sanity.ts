@@ -5,33 +5,15 @@ import { createClient, type QueryParams } from "next-sanity"
 import { isLive, type BlogListItem, type BlogPost } from "@/features/blog/blog"
 import { apiVersion, dataset, projectId, sanityConfigured } from "@/features/blog/sanity/env"
 
-/**
- * Reading posts from Sanity.
- *
- * Every read is cached by Next for BLOG_REVALIDATE seconds, so a post
- * published in the Studio is on the site within a minute, without a deploy,
- * and Sanity is asked at most once a minute per query however many people
- * are reading. The console's Blog page clears that cache when it publishes.
- *
- * A post dated in the future is scheduled, and is left out here rather than
- * in the query: a query that asked Sanity for "before now" would be answered
- * from its CDN's copy, which no clock invalidates, and the post would not
- * appear on time. So Sanity is asked for every published post and the date is
- * checked each time a page is rendered.
- *
- * Without a Sanity project (config/site.ts) every read answers as if there
- * were no posts, so the blog shows its empty state rather than failing. A
- * project that cannot be reached still rejects: that is for the page to
- * catch, since only it knows what to show instead.
- */
+// Posts from Sanity, cached by Next for BLOG_REVALIDATE seconds; the console clears it on publish.
+// Future-dated posts are dropped here, not in the query: Sanity's CDN would cache "before now".
+// Without a Sanity project every read is empty; an unreachable one still rejects.
 
-/** How long a page may go on showing what it last read, seconds. */
+/** Seconds a page may show what it last read. */
 export const BLOG_REVALIDATE = 60
 
-// A public dataset needs no token, and is read through Sanity's API CDN. A
-// private one is read with SANITY_API_TOKEN - server-only, so it never
-// reaches the browser - and straight from the API, which is the only place a
-// token is honoured.
+// A public dataset is read through the CDN; with the server-only token, straight from the API,
+// the only place a token is honoured.
 const token = process.env.SANITY_API_TOKEN || undefined
 
 let client: ReturnType<typeof createClient> | null = null
@@ -44,7 +26,7 @@ function getClient() {
     apiVersion,
     token,
     useCdn: !token,
-    // Drafts are the Studio's business; the site only ever shows what was published.
+    // The site never shows drafts.
     perspective: "published",
   })
   return client
@@ -61,10 +43,7 @@ async function read<T>(query: string, params: QueryParams, fallback: T): Promise
 /** A published post with an address. Whether its date has come is checked here, not there. */
 const PUBLISHED = `_type == "post" && defined(slug.current)`
 
-/**
- * A post as the cards show it. The read time is the body's length at about
- * 200 words a minute (1,100 characters), never less than one.
- */
+/** A post as the cards show it. Read time: about 200 words (1,100 characters) a minute, min 1. */
 const CARD = `
   _id,
   title,

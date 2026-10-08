@@ -1,18 +1,11 @@
 /**
- * Where the hero skull's two files live: the model, and the poster of it.
+ * Where the hero skull's two files live: the model and its poster.
  *
- * Both are named by their contents - skull-<hash>.glb - and the names are
- * kept in components/marketing/skull-assets.json, which the site reads. nginx
- * tells browsers and Cloudflare to keep everything under /product for thirty
- * days without asking again, which is only true of a file whose name changes
- * when it does. The model rebuilt from the print file went out as skull.glb,
- * the name the model before it had: everyone who had already seen the old one
- * went on seeing it, and Cloudflare went on serving the old poster. A new
- * name is a file nobody has yet.
- *
- * So the build scripts never write into public/product themselves: they hand
- * the bytes to publishAsset(), which names the file, removes the version it
- * replaces and records the new name.
+ * /product is cached for 30 days as immutable, so both are named by their
+ * contents (skull-<hash>.glb) and the names kept in
+ * components/marketing/skull-assets.json, which the site reads. Build scripts
+ * never write them into public/product directly: publishAsset() names the file,
+ * removes the one it replaces and records the new name.
  */
 import crypto from "node:crypto"
 import fs from "node:fs"

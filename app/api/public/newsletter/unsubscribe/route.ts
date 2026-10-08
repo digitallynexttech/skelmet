@@ -5,11 +5,7 @@ import { withErrorHandler } from "@/server/api-handler"
 
 export const dynamic = "force-dynamic"
 
-/**
- * The token rides in the query string for both callers: the unsubscribe page,
- * and a mail client's one-click unsubscribe (RFC 8058), which posts a form
- * body of its own that says nothing about who is leaving.
- */
+// Token in the query string: RFC 8058 one-click posts its own body, without it.
 export const POST = withErrorHandler(async (req) => {
   rateLimit(`unsubscribe:${clientIp(req.headers)}`, 30, 10 * 60_000)
   return respond(await unsubscribe({ token: req.nextUrl.searchParams.get("token") ?? "" }))

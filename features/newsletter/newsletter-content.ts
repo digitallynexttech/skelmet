@@ -4,19 +4,10 @@ import { siteConfig } from "@/config/site"
 import { C, escapeHtml, FONT } from "@/features/orders/emails/email-theme"
 
 /**
- * A newsletter's message: the rich-text editor's document, and how it becomes
- * an email.
- *
- * The console's editor (TipTap) produces a JSON document, and that document is
- * what is sent and stored - never HTML. The schema below admits only the
- * nodes and marks the editor offers, with links limited to web and mailto
- * addresses and images limited to ones uploaded here, so the email is built
- * from a whitelist rather than cleaned from whatever was pasted. The renderer
- * writes every tag itself, with inline styles, because mail clients drop
- * stylesheets.
- *
- * Client-safe (§4): the console's preview renders the same HTML the
- * subscribers get.
+ * The editor's (TipTap) JSON document is what is stored and sent, never HTML. The schema admits
+ * only the editor's nodes, http(s)/mailto links and images uploaded here, so the email is built
+ * from a whitelist. Inline styles throughout: mail clients drop stylesheets. Client-safe, so the
+ * console preview renders the same HTML.
  */
 
 export type Mark =
@@ -44,13 +35,12 @@ export type BlockNode =
 
 export type NewsletterDoc = { type: "doc"; content: BlockNode[] }
 
-/** Where an uploaded image is served from. The id is the whole address. */
 export const NEWSLETTER_IMAGE_PATH = "/api/public/newsletter/images/"
 
 const IMAGE_SRC =
   /\/api\/public\/newsletter\/images\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
 
-/** The public address of an uploaded image, on this site whatever host the editor saw. */
+/** Always on siteConfig.url, whatever host the editor saw. */
 export function newsletterImageUrl(id: string): string {
   return `${siteConfig.url}${NEWSLETTER_IMAGE_PATH}${id}`
 }
@@ -122,7 +112,7 @@ const blockSchema: z.ZodType<BlockNode> = z.lazy(() =>
   ]),
 )
 
-/** Size is capped on the whole document too: 200 KB of JSON is a long letter. */
+/** Also capped at 200 KB of JSON as a whole. */
 export const newsletterDocSchema = z
   .object({ type: z.literal("doc"), content: z.array(blockSchema).max(300) })
   .refine((doc) => JSON.stringify(doc).length <= 200_000, "That message is too long")
@@ -148,7 +138,7 @@ export function isDocEmpty(doc: NewsletterDoc): boolean {
   return !walk(doc.content)
 }
 
-/** A message typed before the editor existed, as the editor's document. */
+/** A plain-text message (from before the editor) as a document. */
 export function docFromText(text: string): NewsletterDoc {
   const paragraphs = text
     .replace(/\r\n/g, "\n")
@@ -277,7 +267,6 @@ function htmlBlocks(nodes: BlockNode[], tight = false): string {
         case "image": {
           const id = imageIdFromSrc(n.attrs.src)
           if (!id) return ""
-          // Drawn at its own width up to the card's, never stretched past it.
           const width = Math.min(n.attrs.width ?? EMAIL_IMAGE_WIDTH, EMAIL_IMAGE_WIDTH)
           return `<p style="margin:0 0 16px;"><img src="${escapeHtml(newsletterImageUrl(id))}" alt="${escapeHtml(n.attrs.alt ?? "")}" width="${width}" style="display:block;width:100%;max-width:${width}px;height:auto;border:0;border-radius:10px;"></p>`
         }

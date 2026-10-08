@@ -4,8 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  // `badge`: a hook for the admin, which sizes every badge like its status
-  // pills (globals.css). The shop keeps these sizes.
+  // `badge`: a hook the admin uses to resize badges (globals.css).
   "badge inline-flex items-center gap-1.5 rounded font-mono text-[11px] tracking-[0.14em] uppercase",
   {
     variants: {

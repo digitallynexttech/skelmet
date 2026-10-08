@@ -1,3 +1,2 @@
-// The Sanity CLI looks for this file at the repo root. The configuration
-// itself lives with the blog feature.
+// The Sanity CLI expects this at the root; the config lives in features/blog.
 export { default } from "./features/blog/sanity/config"

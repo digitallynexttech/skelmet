@@ -4,10 +4,7 @@ import { withErrorHandler } from "@/server/api-handler"
 
 export const dynamic = "force-dynamic"
 
-/**
- * The credit note of a refunded order that had been invoiced. The first read
- * issues its number, so proxy.ts refuses this GET cross-site like a write.
- */
+// The first GET issues a number, so proxy.ts refuses it cross-site like a write.
 export const GET = withErrorHandler<{ id: string }>(async (_req, { params }) =>
   respondPdf(await getCreditNotePdf(params.id)),
 )

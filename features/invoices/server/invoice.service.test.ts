@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * Tax invoices are only for real, standing sales: a refunded order gets a
- * credit note instead, a test-mode order gets nothing, and the delivery email
- * can neither crash in the background nor fail without a trace.
- */
-
 const mocks = vi.hoisted(() => {
   const tx = { $queryRaw: vi.fn(), order: { update: vi.fn() } }
   return {

@@ -7,21 +7,17 @@ import { PostCard } from "@/features/blog/components/post-card"
 import { cn } from "@/lib/utils"
 
 /**
- * The posts, with a filter by category.
- *
- * A client component for the filter alone. The whole list is already on the
- * page, so choosing a category is array work - no request, and no search
- * param, which would need a Suspense boundary on a prerendered page.
+ * The posts, filtered by category in memory: no request, and no search param, which would need a
+ * Suspense boundary on a prerendered page.
  */
 export function BlogFeed({ posts }: { posts: BlogListItem[] }) {
   const [category, setCategory] = React.useState<string>("all")
 
-  // Only the categories that have something in them, in the Studio's order.
+  // Only non-empty categories, in the Studio's order.
   const categories = BLOG_CATEGORIES.filter((c) => posts.some((p) => p.category === c.value))
   const shown = category === "all" ? posts : posts.filter((p) => p.category === category)
 
-  // The one marked featured leads, or the newest when none is. Filtered, the
-  // newest of that category does.
+  // The featured post leads, else the newest; filtered, the newest in that category.
   const lead = (category === "all" ? shown.find((p) => p.featured) : undefined) ?? shown[0]
   const rest = shown.filter((p) => p !== lead)
 

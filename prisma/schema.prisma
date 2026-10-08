@@ -1,6 +1,5 @@
-// SKELMET - Postgres via Prisma 7 with the pg adapter.
-// Migrations are hand-written SQL applied with `prisma migrate deploy` (§6);
-// `migrate dev` needs shadow-DB rights most hosted Postgres refuses.
+// Migrations are hand-written SQL applied with `prisma migrate deploy`, never
+// `migrate dev` (needs shadow-DB rights).
 
 generator client {
   provider        = "prisma-client-js"
@@ -23,7 +22,7 @@ enum ProductStatus {
 
 enum OrderStatus {
   PENDING
-  /// Cash on delivery, accepted: nothing is paid yet, and it is ready to pack.
+  /// Cash on delivery, accepted: unpaid but ready to pack.
   CONFIRMED
   PAID
   PACKED
@@ -71,8 +70,7 @@ enum SubscriberStatus {
   UNSUBSCRIBED
 }
 
-/// SENDING while the loop runs, PAUSED when it stopped short (the mail
-/// account's daily limit, or a restart), SENT once everyone has been tried.
+/// PAUSED: stopped short (daily mail limit or a restart).
 enum CampaignStatus {
   SENDING
   PAUSED
@@ -95,9 +93,8 @@ model User {
   phone            String?
   marketingOptIn   Boolean    @default(false) @map("marketing_opt_in")
   mustChangePassword Boolean  @default(false) @map("must_change_password")
-  /// Copied into the session token at sign-in. Bumped by a password reset or
-  /// change, a revoke and a role removal, which ends every session opened
-  /// before it (server/session-policy.ts).
+  /// Copied into the session at sign-in; bumping it ends older sessions
+  /// (server/session-policy.ts).
   sessionVersion   Int        @default(0) @map("session_version")
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
@@ -210,7 +207,7 @@ model MediaAsset {
   id        String   @id @default(uuid()) @db.Uuid
   productId String?  @map("product_id") @db.Uuid
   variantId String?  @map("variant_id") @db.Uuid
-  /// The object key - never a signed URL, which expires while the row lives (§7).
+  /// The object key, never a signed URL (those expire).
   key       String
   alt       String
   sort      Int      @default(0)
@@ -225,17 +222,15 @@ model MediaAsset {
   @@map("media_assets")
 }
 
-/// The cart lives in the browser (features/cart/hooks/use-cart.ts). This is
-/// its copy, written by the visit tracker as it changes, so the console can
-/// see what a visitor put in and never paid for. `updatedAt` is the last time
-/// the basket changed.
+/// Copy of the browser's cart, written by the visit tracker so the console
+/// sees abandoned baskets.
 model Cart {
   id          String   @id @default(uuid()) @db.Uuid
   userId      String?  @map("user_id") @db.Uuid
   anonymousId String?  @map("anonymous_id")
-  /// One basket per visitor: the browser's, not a history of them.
+  /// One basket per visitor, not a history.
   visitorId   String?  @unique @map("visitor_id") @db.Uuid
-  /// When this basket last reached the checkout page.
+  /// When this basket last reached checkout.
   checkoutAt  DateTime? @map("checkout_at")
   expiresAt   DateTime @map("expires_at")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -294,13 +289,12 @@ model Order {
   number          String      @unique
   userId          String?     @map("user_id") @db.Uuid
   status          OrderStatus @default(PENDING)
-  /// COD orders are packed while still unpaid, so fulfilment has to know which.
+  /// COD orders are packed while unpaid.
   paymentMethod   PaymentMethod @default(ONLINE) @map("payment_method")
-  /// What paying this way added to the order - the cash-on-delivery charge.
-  /// Part of `total`.
+  /// The cash-on-delivery charge. Part of `total`.
   paymentFee      Decimal     @default(0) @map("payment_fee") @db.Decimal(12, 2)
-  /// What the courier collects at the door: all of `total` for COD, the
-  /// balance after the advance for PARTIAL, nothing for ONLINE.
+  /// Collected at the door: all of `total` for COD, the balance for PARTIAL,
+  /// 0 for ONLINE.
   dueOnDelivery   Decimal     @default(0) @map("due_on_delivery") @db.Decimal(12, 2)
   email           String
   phone           String
@@ -311,22 +305,19 @@ model Order {
   tax             Decimal     @default(0) @db.Decimal(12, 2)
   total           Decimal     @db.Decimal(12, 2)
   couponId        String?     @map("coupon_id") @db.Uuid
-  /// Shiprocket's ids for this order, once it has been sent there. Text, not
-  /// int: they are Shiprocket's numbers and we only ever hand them back.
+  /// Shiprocket's ids, once sent there. Text: we only hand them back.
   shiprocketOrderId    String? @unique @map("shiprocket_order_id")
   shiprocketShipmentId String? @map("shiprocket_shipment_id")
-  /// The tax invoice: its number (SKM/26-27/0001, sequential per financial
-  /// year) and date are fixed the first time it is generated, and it is
-  /// emailed once, on delivery.
+  /// Tax invoice SKM/26-27/0001, sequential per financial year. Number and
+  /// date fixed on first generation; emailed once, on delivery.
   invoiceNumber    String?   @unique @map("invoice_number")
   invoicedAt       DateTime? @map("invoiced_at")
   invoiceEmailedAt DateTime? @map("invoice_emailed_at")
-  /// The credit note that reverses the invoice once the order is refunded:
-  /// CN/26-27/0001, its own sequence per financial year.
+  /// Credit note reversing the invoice on refund: CN/26-27/0001, own sequence.
   creditNoteNumber String?   @unique @map("credit_note_number")
   creditedAt       DateTime? @map("credited_at")
-  /// The visitor who placed it - only ever one who accepted cookies. A visit
-  /// made without that consent is never tied to the person behind an order.
+  /// Only a visitor who accepted cookies: a visit without consent is never
+  /// tied to an order.
   visitorId       String?     @map("visitor_id") @db.Uuid
   placedAt        DateTime?   @map("placed_at")
   createdAt       DateTime    @default(now()) @map("created_at")
@@ -375,9 +366,8 @@ model Payment {
   gatewayPaymentId String?       @map("gateway_payment_id")
   status           PaymentStatus @default(CREATED)
   amount           Decimal       @db.Decimal(12, 2)
-  /// "test" or "live": which Razorpay account took it, so verifying and
-  /// refunding it use that account's keys after the console switches. Null
-  /// for payments from before the switch existed, all made with the .env keys.
+  /// "test" or "live": the Razorpay account whose keys verify and refund it.
+  /// Null: made with the .env keys.
   mode             String?
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
@@ -395,17 +385,17 @@ model Shipment {
   orderId     String    @unique @map("order_id") @db.Uuid
   courier     String
   awb         String?
-  /// The courier's own words for where it is - "IN TRANSIT", "OUT FOR DELIVERY".
+  /// The courier's own words, e.g. "IN TRANSIT".
   status      String
   /// "shiprocket" when booked through the API, "manual" when typed in.
   provider    String    @default("manual")
   labelUrl    String?   @map("label_url")
   manifestUrl String?   @map("manifest_url")
   pickupScheduledAt DateTime? @map("pickup_scheduled_at")
-  /// The courier's estimated delivery, when it has given one.
+  /// Courier's estimated delivery.
   etd         DateTime?
-  /// When `status` was true. Tracking updates arrive out of order; an older
-  /// one never overwrites a newer one.
+  /// When `status` was true. Updates arrive out of order; an older one never
+  /// overwrites a newer one.
   statusAt    DateTime? @map("status_at")
   shippedAt   DateTime? @map("shipped_at")
   deliveredAt DateTime? @map("delivered_at")
@@ -427,7 +417,7 @@ model Coupon {
   maxUses     Int?       @map("max_uses")
   usedCount   Int        @default(0) @map("used_count")
   expiresAt   DateTime?  @map("expires_at")
-  /// Put away by staff: out of the console's list and no longer accepted.
+  /// Archived by staff: hidden in the console and no longer accepted.
   archivedAt  DateTime?  @map("archived_at")
   /// Offered in the cart for the buyer to apply, not only typed in.
   showInCart  Boolean    @default(false) @map("show_in_cart")
@@ -480,16 +470,15 @@ model Inquiry {
   @@map("inquiries")
 }
 
-/// Someone who asked, through the home page's "Notify me", to hear about new
-/// designs and colourways. One row per address, stored lowercased; the row's
-/// dates are the record of consent and of withdrawing it.
+/// A "Notify me" sign-up. One row per address, lowercased; its dates are the
+/// record of consent and its withdrawal.
 model Subscriber {
   id             String           @id @default(uuid()) @db.Uuid
   email          String           @unique
   status         SubscriberStatus @default(SUBSCRIBED)
   /// Where the address came from: "drop-list" for the home page form.
   source         String
-  /// Signs the unsubscribe link in every email. Never shown in the console.
+  /// Signs the unsubscribe link. Never shown in the console.
   token          String           @unique
   subscribedAt   DateTime         @default(now()) @map("subscribed_at")
   unsubscribedAt DateTime?        @map("unsubscribed_at")
@@ -506,17 +495,16 @@ model Subscriber {
 model NewsletterCampaign {
   id         String         @id @default(uuid()) @db.Uuid
   subject    String
-  /// The message as plain text: the email's text part, and the console's history.
+  /// Plain text: the email's text part and the console's history.
   body       String
-  /// The rich-text editor's document the email is built from. Null for one
-  /// sent before the editor, which is rebuilt from `body`.
+  /// The rich-text editor's document. Null: rebuild from `body`.
   content    Json?
   ctaLabel   String?        @map("cta_label")
   ctaUrl     String?        @map("cta_url")
   status     CampaignStatus @default(SENDING)
-  /// Subscribed addresses when it was sent; later sign-ups are not added.
+  /// Subscribers at send time; later sign-ups are not added.
   recipients Int
-  /// The mail server's last word when it stopped short, for the console.
+  /// The mail server's last error when it stopped short.
   note       String?
   sentById   String?        @map("sent_by_id") @db.Uuid
   sentByEmail String?       @map("sent_by_email")
@@ -530,10 +518,9 @@ model NewsletterCampaign {
   @@map("newsletter_campaigns")
 }
 
-/// A picture placed in a newsletter, resized on upload and served from
-/// /api/public/newsletter/images/<id> for as long as any email points at it.
-/// In the database rather than on disk: a deploy resets the checkout, and
-/// `next start` serves only the public files that existed at build time.
+/// A newsletter picture, served from /api/public/newsletter/images/<id>. In the
+/// database because a deploy resets the checkout and `next start` serves only
+/// build-time public files.
 model NewsletterImage {
   id          String   @id @default(uuid()) @db.Uuid
   contentType String   @map("content_type")
@@ -547,8 +534,7 @@ model NewsletterImage {
   @@map("newsletter_images")
 }
 
-/// One campaign to one subscriber. Claimed before sending, so a campaign
-/// resumed after a restart never emails anyone twice.
+/// Claimed before sending, so a resumed campaign never emails anyone twice.
 model NewsletterDelivery {
   id           String         @id @default(uuid()) @db.Uuid
   campaignId   String         @map("campaign_id") @db.Uuid
@@ -567,8 +553,8 @@ model NewsletterDelivery {
   @@map("newsletter_deliveries")
 }
 
-/// The last invoice number used in each financial year ("26-27"), claimed
-/// one at a time so invoice numbers run in order without gaps or repeats.
+/// Last invoice number per financial year ("26-27"), claimed one at a time so
+/// numbers have no gaps or repeats.
 model InvoiceCounter {
   fy   String @id
   last Int
@@ -576,11 +562,8 @@ model InvoiceCounter {
   @@map("invoice_counters")
 }
 
-/// What the console can change without a deploy: the Razorpay keys, the
-/// Shiprocket login, the shipping charge. One row per section, read through
-/// features/settings/server/runtime-settings.ts, which falls back to .env for
-/// anything not saved here. Secrets inside `value` are sealed with AES-256-GCM
-/// (features/settings/server/secret-box.ts), never stored readable.
+/// Console settings, one row per section; .env is the fallback
+/// (runtime-settings.ts). Secrets in `value` are sealed with AES-256-GCM.
 model Setting {
   key       String   @id
   value     Json
@@ -609,47 +592,40 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-/// Someone browsing the storefront, written by the visit tracker
-/// (features/visitors). Two kinds, and the difference is consent:
-///
-/// - Accepted cookies: `anonymous` is false and the row is this device for a
-///   year - a cookie (`skm.vid`) finds it again on every visit. It holds the
-///   IP address, the device, where they came from, and whatever they typed
-///   at checkout, and is linked to their orders.
-/// - Refused, or not yet asked: `anonymous` is true and the row is ONE visit,
-///   found by the tab's own key (`anonKey`). No cookie, no IP address, no
-///   contact details, and never linked to an order or a person.
+/// A storefront visitor. Consent decides the kind:
+/// - Accepted: this device for a year (cookie `skm.vid`), with IP, device,
+///   source and checkout details, linked to orders.
+/// - Declined or not asked: `anonymous`, ONE visit keyed by `anonKey`. No
+///   cookie, IP or contact details; never linked to an order or a person.
 model Visitor {
   id             String    @id @default(uuid()) @db.Uuid
   anonymous      Boolean   @default(true)
-  /// The visit an anonymous row belongs to. Null once it is not anonymous.
+  /// The visit an anonymous row belongs to; null once not anonymous.
   anonKey        String?   @unique @map("anon_key") @db.Uuid
-  /// When they tapped Accept: the record of their consent.
+  /// When they tapped Accept: the record of consent.
   consentAt      DateTime? @map("consent_at")
   firstSeenAt    DateTime  @default(now()) @map("first_seen_at")
   lastSeenAt     DateTime  @default(now()) @map("last_seen_at")
   visitCount     Int       @default(0) @map("visit_count")
   pageviews      Int       @default(0)
-  /// Time with the page open, in front of them, and in use - not merely open.
+  /// Time the page was visible and in use, not merely open.
   engagedSeconds Int       @default(0) @map("engaged_seconds")
 
-  // Where they are, from their latest visit. The place comes from Cloudflare,
-  // which works it out from the IP address; the pincode is one they typed.
+  // Location from the latest visit: place from Cloudflare (by IP), pincode typed.
   ip             String?
   country        String?
   region         String?
   city           String?
-  /// From the pincode Cloudflare places them in, through India Post. Kept
-  /// for every visitor, like the city; the pincode itself only with consent.
+  /// From Cloudflare's pincode via India Post. Kept for everyone; the pincode
+  /// itself only with consent.
   district       String?
   postalCode     String?   @map("postal_code")
   pincode        String?
-  /// Cloudflare's point for the connection: approximate, often the
-  /// network's hub rather than the street. Only with consent, like the IP.
+  /// Cloudflare's approximate point (often the network hub). Only with consent.
   latitude       Float?
   longitude      Float?
 
-  // What they browse on, from their latest visit.
+  // Device, from the latest visit.
   userAgent      String?   @map("user_agent")
   deviceType     String?   @map("device_type")
   deviceModel    String?   @map("device_model")
@@ -666,7 +642,7 @@ model Visitor {
   campaign       String?
   landingPage    String?   @map("landing_page")
 
-  // Who they are, once they say: typed at checkout, or on an order.
+  // Contact details, typed at checkout or on an order.
   email          String?
   phone          String?
   name           String?
@@ -688,11 +664,11 @@ model Visitor {
   @@map("visitors")
 }
 
-/// One visit: from arriving until thirty minutes pass without a page.
+/// One visit: ends after 30 minutes without a page.
 model VisitorSession {
   id             String   @id @default(uuid()) @db.Uuid
   visitorId      String   @map("visitor_id") @db.Uuid
-  /// The browser tab's own name for this visit, kept in sessionStorage.
+  /// The tab's id for this visit (sessionStorage).
   key            String   @db.Uuid
   startedAt      DateTime @default(now()) @map("started_at")
   lastSeenAt     DateTime @default(now()) @map("last_seen_at")
@@ -720,18 +696,15 @@ model VisitorSession {
   @@map("visitor_sessions")
 }
 
-/// What happened on a visit: a page seen (and for how long), the cart
-/// changing, checkout reached, details typed, an order placed.
 model VisitorEvent {
-  /// A page view's id is the tracker's own, so the time spent there can be
-  /// added to it later; every other event takes a fresh one.
+  /// A view's id is the tracker's, so time on page can be added later.
   id        String   @id @default(uuid()) @db.Uuid
   visitorId String   @map("visitor_id") @db.Uuid
   sessionId String   @map("session_id") @db.Uuid
   /// view · cart · checkout · contact · placed · consent
   type      String
   path      String?
-  /// For a view, the time spent on that page.
+  /// For a view, time on the page.
   seconds   Int      @default(0)
   data      Json?
   createdAt DateTime @default(now()) @map("created_at")
@@ -746,10 +719,8 @@ model VisitorEvent {
   @@map("visitor_events")
 }
 
-/// The district and state India Post files a pincode under, looked up once:
-/// how a visit's approximate pincode becomes a district. A null district is
-/// India Post saying there is no such pincode, remembered so it is not asked
-/// again.
+/// India Post's district and state per pincode, looked up once. A null
+/// district caches "no such pincode".
 model PincodePlace {
   pincode    String   @id
   district   String?

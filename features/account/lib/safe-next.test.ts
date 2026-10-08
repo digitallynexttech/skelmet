@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { DEFAULT_NEXT, safeNextPath } from "@/features/account/lib/safe-next"
 
-/**
- * The ?next= a login bounces to. Every one of the off-site forms below
- * passed the old "starts with / and not //" check.
- */
+// Every off-site form below passes a naive "starts with / and not //" check.
 describe("safeNextPath", () => {
   it("keeps console pages, with their query", () => {
     expect(safeNextPath("/admin")).toBe("/admin")

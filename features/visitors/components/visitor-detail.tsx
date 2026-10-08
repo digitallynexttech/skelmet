@@ -31,12 +31,6 @@ import { duration, placeLine, sourceLine, visitorName, when } from "@/features/v
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/constants"
 import { regionOf } from "@/lib/india"
 
-/**
- * One visitor: who they are if they have said, what they browse on, where
- * they came from, and every visit - page by page, with the time spent on
- * each, the cart as it changed, and where they stopped.
- */
-
 function Card({
   title,
   icon,
@@ -57,7 +51,7 @@ function Card({
   )
 }
 
-/** A label and its value; nothing at all when there is no value. */
+/** Renders nothing without a value. */
 function Fact({
   label,
   value,
@@ -84,7 +78,6 @@ function Fact({
   )
 }
 
-/** The list a visitor is opened from, which the header links back to. */
 const VISITORS = { label: "Visitors", href: "/admin/customers/visitors" }
 
 const isOrderStatus = (s: string): s is OrderStatus =>
@@ -97,7 +90,6 @@ const itemsIn = (data: Record<string, unknown> | null) =>
         .join(", ")
     : ""
 
-/** One line of a visit, in words. */
 function EventLine({ event, start }: { event: VisitorEventRow; start: string }) {
   const offset = Math.max(
     0,

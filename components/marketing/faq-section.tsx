@@ -11,12 +11,9 @@ import { paymentCopy } from "@/features/checkout/payment-options"
 import { paymentOptions } from "@/features/settings/server/runtime-settings"
 
 /**
- * Async only for the question on paying, which states the ways to pay
- * switched on in the console. The pages it sits on are prerendered, and a
- * save there refreshes them (refreshPaymentTerms).
- *
- * `picture` and `answers`: the skull this page sells, the Flame Skull's
- * unless given. An answer of null leaves its question out.
+ * Async only for the paying answer, which states the ways to pay switched on in the console;
+ * a save there refreshes these prerendered pages (refreshPaymentTerms).
+ * An `answers` entry of null leaves its question out.
  */
 export async function FaqSection({
   picture = FLAME_SKULL_MOUNT.sections.faq,
@@ -28,15 +25,10 @@ export async function FaqSection({
     return [own === undefined ? item : { ...item, answer: own }]
   })
 
-  // Carbon, like rider-wall. The homepage has only one other darker band, so
-  // without this one its last three sections run flat into each other. It is
-  // also the only
-  // section that can take it without losing anything - every other candidate
-  // builds its cards out of bg-carbon, which would have dissolved them into
-  // the panel behind.
+  // Carbon band here: other sections build their cards from bg-carbon and would vanish on it.
   return (
     <Section id="faq" className="bg-carbon border-t border-white/[0.07]">
-      {/* 460px from xl: the heading is 446px wide at 58px (Anton), on one line. */}
+      {/* 460px from xl keeps the heading on one line. */}
       <div className="grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-16 xl:grid-cols-[460px_minmax(0,1fr)]">
         <div>
           <SectionLabel numbered className="mb-3.5">
@@ -52,8 +44,7 @@ export async function FaqSection({
             </Link>{" "}
             and we reply within {siteConfig.promise.supportReply}.
           </p>
-          {/* Square, like the picture: the skull, its arm and the gloves on its
-              hook, with nothing cropped off. */}
+          {/* Square, like the picture, so nothing is cropped. */}
           <div className="rounded-tile relative hidden aspect-square overflow-hidden border border-white/[0.08] lg:block">
             <Image
               src={picture.src}

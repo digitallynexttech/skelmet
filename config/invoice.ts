@@ -1,13 +1,6 @@
 /**
- * The seller on SKELMET's tax invoices, and how its goods are taxed.
- *
- * SKELMET is the brand; the business that sells, and whose GSTIN the invoice
- * carries, is Gee Star Spinning Solutions - as on its own invoices.
- *
- * `hsn` and `gstRatePercent` are for the tax accountant to confirm: 3926 is
- * "other articles of plastics", which a 3D-printed plastic mount falls under,
- * at 18%. Prices on the site include GST, so the invoice works the tax back
- * out of what the customer paid rather than adding it on top.
+ * The seller on tax invoices. HSN 3926 (plastic articles) at 18% is for the
+ * accountant to confirm. Prices include GST, so invoices work the tax back out.
  */
 export const invoiceConfig = {
   seller: {
@@ -22,7 +15,7 @@ export const invoiceConfig = {
     email: "geestarspinning@gmail.com",
     pan: "AOIPJ0692M",
   },
-  /** Invoice numbers read SKM/26-27/0001: prefix, financial year, sequence. */
+  /** SKM/26-27/0001: prefix, financial year, sequence. */
   numberPrefix: "SKM",
   hsn: "3926",
   gstRatePercent: 18,

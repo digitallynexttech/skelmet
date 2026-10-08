@@ -6,22 +6,9 @@ import { SectionLabel } from "@/components/shared/section-label"
 import { cn } from "@/lib/utils"
 
 /**
- * Five reasons across a 4x3 grid, which fills exactly: the hero takes 2x2, two
- * tiles sit beside it, a wider one takes the rest of that row, and the
- * accessories band runs the full width underneath. Below `sm` every tile is
- * full width, so no photograph is squeezed into half a phone. The rows are tall
- * (320px) because the tiles are photographs: at 220px the words covered them.
- *
- * Every photograph shows the real mount. In four, the skull and the bracket
- * are renders of the files the mounts are printed from, joined as they ship,
- * laid back over scenes generated around them; those four are recoloured from
- * their orange originals so the grid shows all three colourways
- * (scripts/build-why-colourways.mjs). Store in style is the owner's photograph
- * IMG_0762 reworked by Nano Banana Pro into a garage at night with a new
- * helmet (source in FILES_SKELMET/product-images/why-edits): its skull and
- * bracket are the model's redraw of the photographed ones, checked against
- * the print - the plate flat on the wall, the arm's cut-outs and hooks. A new
- * picture needs one of the two, or it shows a mount nobody makes.
+ * Five tiles fill the 4x3 lg grid exactly. Rows are 320px so the words do not cover the photos.
+ * Every photo must show the real mount: renders of the print files (recoloured by
+ * scripts/build-why-colourways.mjs) or the owner's own photo, checked against the print.
  */
 export function Bento() {
   return (
@@ -106,10 +93,7 @@ export function Bento() {
   )
 }
 
-/**
- * Shade under the words only: from the bottom, or (a `side` tile from `sm` up)
- * from the left. It ends well short of the mount, so the photograph stays clear.
- */
+/** Shade under the words only, ending short of the mount so the photo stays clear. */
 const SHADE_BOTTOM =
   "bg-[linear-gradient(0deg,rgb(7_6_10_/_0.94)_0%,rgb(7_6_10_/_0.78)_24%,rgb(7_6_10_/_0.3)_46%,rgb(7_6_10_/_0)_64%)]"
 const SHADE_SIDE =

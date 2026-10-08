@@ -24,12 +24,7 @@ type RazorpayOptions = {
   description: string
   order_id: string
   prefill: { name: string; email: string; contact: string }
-  /**
-   * backdrop_color is Razorpay's own option, not a CSS override - their
-   * container is same-origin but the sheet inside is an iframe, and the
-   * default backdrop is a near-opaque white that blanks a dark site the
-   * instant the modal opens. The blur on top of it is ours (globals.css).
-   */
+  /** backdrop_color is Razorpay's option; its default near-white blanks a dark site. */
   theme: { color: string; backdrop_color: string }
   handler: (response: RazorpayHandlerResponse) => void
   modal: { ondismiss: () => void }
@@ -46,7 +41,7 @@ const CHECKOUT_JS = "https://checkout.razorpay.com/v1/checkout.js"
 /** Well inside the server's hold on an unpaid order's stock. */
 const REUSE_UNPAID_MS = 30 * 60_000
 
-/** Loads Razorpay's script once, on demand rather than on every page. */
+/** Loads Razorpay's script once, on demand. */
 function loadGateway(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.Razorpay) return resolve()
@@ -72,18 +67,13 @@ export function useCheckout() {
   const clear = useCart((s) => s.clear)
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  // A ref, not the pending state: two clicks inside one frame both see
-  // pending as false, and each would have opened an order.
+  // A ref, not state: two clicks in one frame would both see pending false.
   const inFlight = React.useRef(false)
-  // The order a dismissed payment window left unpaid. Paying again for the
-  // same basket and address reopens it instead of opening a second order.
+  // Left unpaid by a dismissed window; the same input pays it again, not a new order.
   const unpaid = React.useRef<{ key: string; at: number; started: StartedCheckout } | null>(null)
 
   const submit = React.useCallback(
-    /**
-     * `keepCart` for a Buy it now order: it never came from the cart, so
-     * paying for it leaves the cart as it was.
-     */
+    /** `keepCart` for a Buy-now order, which never came from the cart. */
     async (input: PlaceOrderInput, { keepCart = false }: { keepCart?: boolean } = {}) => {
       if (inFlight.current) return
       inFlight.current = true
@@ -111,10 +101,9 @@ export function useCheckout() {
             method: "POST",
             body: key,
           }))
-        // The basket is an order now, paid or not, so it was not left behind.
+        // An order now, paid or not, so not an abandoned basket.
         if (!reuse) reportPlaced(started.orderNumber)
 
-        // Cash on delivery: the order already exists, nothing to pay now.
         if (started.paymentMethod === "COD" || !started.gatewayOrderId) {
           done(started.orderNumber)
           return
@@ -125,7 +114,7 @@ export function useCheckout() {
 
         const rz = new window.Razorpay({
           key: started.gatewayKeyId!,
-          // The whole order, or only its advance when the rest is paid on delivery.
+          // Paise: the whole order, or only the advance.
           amount: Math.round(Number(started.payNow) * 100),
           currency: "INR",
           name: "SKELMET",
@@ -139,12 +128,10 @@ export function useCheckout() {
             email: input.email,
             contact: input.phone,
           },
-          // --color-void at 62%: the page stays visible behind the sheet
-          // instead of being replaced by a white plate.
+          // --color-void at 62%.
           theme: { color: "#FF5A1F", backdrop_color: "rgba(7, 6, 10, 0.62)" },
           handler: (response) => {
-            // Confirm so the customer sees success immediately. The webhook is
-            // still the source of truth if this request never lands.
+            // For an instant confirmation; the webhook is the source of truth.
             void apiFetch("/api/checkout/verify", {
               method: "POST",
               body: JSON.stringify({
@@ -156,9 +143,7 @@ export function useCheckout() {
             }).then(
               () => done(started.orderNumber),
               (err: unknown) => {
-                // 409: the server asked Razorpay and Razorpay says this
-                // payment has not gone through, so there is nothing to
-                // confirm. Stay here with the order ready to pay again.
+                // 409: Razorpay says it has not gone through. Stay, ready to pay again.
                 if (err instanceof ApiFetchError && err.status === 409) {
                   unpaid.current = { key, at: Date.now(), started }
                   settle()
@@ -167,9 +152,7 @@ export function useCheckout() {
                   )
                   return
                 }
-                // Anything else - a dropped connection, a timeout - says
-                // nothing about the payment, which Razorpay reported as made;
-                // the webhook will settle it.
+                // Anything else says nothing about the payment; the webhook settles it.
                 done(started.orderNumber)
               },
             )

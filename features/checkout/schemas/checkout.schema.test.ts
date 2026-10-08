@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest"
 
 import { addressSchema, placeOrderSchema } from "@/features/checkout/schemas/checkout.schema"
 
-/**
- * The rules the checkout page shows under each field, and the server applies
- * again - one schema, so what the page lets through is what the server takes.
- */
-
 const address = {
   firstName: "Asha",
   lastName: "Rao",

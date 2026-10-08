@@ -3,19 +3,9 @@ import type { PaymentMethod } from "@/features/checkout/payment-options"
 import { rupeesInWords } from "@/lib/amount-in-words"
 import { GST_STATE_CODE, matchState } from "@/lib/india"
 
-/**
- * A tax invoice for one order, worked out from what the customer paid.
- *
- * Prices on the site include GST, so nothing is added on top: every amount
- * the order charged - each line, shipping, the charge for paying on delivery,
- * less the discount - is taken back to its value before tax, and the tax is
- * the rest. The invoice total is
- * therefore always exactly the order total, to the paisa.
- *
- * Tax is IGST when the goods go to another state than the seller's, and CGST
- * plus SGST, half each, within it - decided by the delivery address, which is
- * the place of supply.
- */
+// Prices include GST: each amount is taken back to before tax and the tax is the rest, so
+// the invoice total always equals the order total to the paisa. IGST across states, else
+// CGST + SGST half each; the delivery address is the place of supply.
 
 export type InvoiceOrder = {
   number: string
@@ -76,8 +66,7 @@ export function buildInvoice(order: InvoiceOrder): Invoice {
   const rate = invoiceConfig.gstRatePercent
   const beforeTax = (inclusive: number) => round2(inclusive / (1 + rate / 100))
 
-  // Amount is rate x qty, so the line reads true; any paisa of rounding
-  // lands in the tax, which is whatever the total leaves.
+  // Amount is rate x qty; rounding paise land in the tax.
   const rows: InvoiceRow[] = order.items.map((item) => {
     const unit = beforeTax(item.unitPrice)
     return {
@@ -150,10 +139,7 @@ export function buildInvoice(order: InvoiceOrder): Invoice {
   }
 }
 
-/**
- * The financial year an invoice falls in, as numbers carry it: April to March,
- * in India's time. 25 Sep 2026 -> "26-27", 10 Feb 2027 -> "26-27".
- */
+/** April-March financial year in IST: 25 Sep 2026 and 10 Feb 2027 are both "26-27". */
 export function financialYear(date: Date): string {
   const ist = new Date(date.getTime() + 5.5 * 60 * 60_000)
   const year = ist.getUTCFullYear()
@@ -165,11 +151,7 @@ export function invoiceNumber(fy: string, sequence: number): string {
   return `${invoiceConfig.numberPrefix}/${fy}/${String(sequence).padStart(4, "0")}`
 }
 
-/**
- * Credit notes run their own sequence, CN/<fy>/0001 upwards, beside the
- * invoices' - kept in the same counters table under their own key, so the two
- * series never share or skip a number.
- */
+/** Credit notes' own key in the invoice counters table. */
 export function creditNoteCounterKey(fy: string): string {
   return `CN-${fy}`
 }
@@ -178,12 +160,7 @@ export function creditNoteNumber(fy: string, sequence: number): string {
   return `CN/${fy}/${String(sequence).padStart(4, "0")}`
 }
 
-/**
- * How the invoice states the terms of payment. Money that came through the
- * gateway is prepaid, whatever the order's method field says - an online
- * payment must never read as cash on delivery on a tax document. An advance
- * is the one case that is both: part prepaid, the rest at the door.
- */
+/** Terms of payment. Gateway money is prepaid whatever the method field says. */
 export function paymentTerms(payment: InvoiceOrder["payment"]): string {
   if (payment.method === "PARTIAL") return "Advance online, balance on delivery"
   return payment.method === "COD" && !payment.reference ? "Cash on delivery" : "Prepaid online"

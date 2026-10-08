@@ -1,13 +1,6 @@
-/**
- * Policy content registry (client-safe, §4).
- *
- * The structure follows what an Indian D2C store needs under the DPDP Act 2023
- * and the Consumer Protection (E-Commerce) Rules 2020, including the
- * grievance-officer block both require. The figures in it - dispatch,
- * delivery, the damage window, refund timing, grievance timings - are the
- * shop's own decisions and live in siteConfig.promise, so the policies, the
- * FAQ and the emails cannot quote different ones.
- */
+// Policy content (client-safe). Legal copy for the DPDP Act 2023 and the Consumer Protection
+// (E-Commerce) Rules 2020, grievance officer included. Promise figures come from
+// siteConfig.promise so policies, FAQ and emails always agree.
 
 import { shippingConfig } from "@/config/shipping"
 import { siteConfig } from "@/config/site"
@@ -24,11 +17,7 @@ const ADDRESS = `${siteConfig.address.line1}, ${siteConfig.address.city} ${siteC
 /** The one statement of refund timing, used wherever a refund is promised. */
 const REFUND_TIMING = `Refunds are issued to the original payment method within ${P.refundDays} of approval. Banks usually take ${P.bankDays} more to show it.`
 
-/**
- * The shipping charge, as the policy states it. Checkout charges by the rule in
- * the console's Settings, so the page is handed that same rule (getPolicy)
- * rather than stating config/shipping.ts's default.
- */
+// The shipping charge as stated: getPolicy is handed checkout's rule from Settings, not the config default.
 type ShippingRule = { aboveRupees: number; sharePercent: number }
 
 function shippingTerms(rule: ShippingRule): { short: string; cost: string } {
@@ -733,9 +722,7 @@ const RETURNS: Policy = {
       n: "04",
       title: "Refund timing",
       blocks: [
-        // One figure for every payment method. Quoting the outer edge is the
-        // safe direction: a refund that lands early is a good surprise, one
-        // that lands late is a complaint.
+        // One figure for every payment method, the outer edge.
         { type: "p", text: REFUND_TIMING },
         {
           type: "p",
@@ -817,10 +804,7 @@ function termsPolicy(payment: PaymentOptions): Policy {
   }
 }
 
-/**
- * The policy, with the shipping policy stating `rule` - the charge checkout
- * applies - and the terms stating `payment`, the ways to pay it offers.
- */
+/** The policy; shipping states checkout's `rule` and terms the `payment` options in force. */
 export function getPolicy(
   slug: string,
   rule: ShippingRule = shippingConfig.fee,

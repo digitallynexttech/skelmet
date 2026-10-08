@@ -1,31 +1,13 @@
 /**
- * Builds the skull-less plates the flying hero skull lands on, and the dock
- * table that says where each photo's skull sits.
+ * Builds the skull-less plates the flying hero skull docks onto, and the dock
+ * table (components/marketing/skull-docks.json) of where each photo's skull sits.
  *
  *   node scripts/build-skull-plates.mjs
  *
- * On scroll, the 3D skull leaves the hero and docks onto the skull in a
- * photograph, sized and placed to cover it. Covering is not enough on its own:
- * the mesh follows the cursor and can be spun, and the moment it turns, the
- * photographed skull shows round its edges and there are two of them. So each
- * docking photo gets a plate - the same photo with the skull taken out - laid
- * over it and faded in as the mesh arrives. The mesh then reads as landing on
- * the empty bracket rather than doubling up on a picture of itself.
- *
- * Keying is chroma: the print is the only
- * saturated thing in either shot. The backdrop, the black bracket, the steel
- * screws, the grey anchors and the paper template all sit near chroma 0, so
- * they stay in the plate untouched.
- *
- * The hole is filled row by row from the backdrop either side of it (see
- * fillRows for why rows), then given the backdrop's own grain, measured from a
- * ring round the hole, so it does not read as a polished patch when the mesh
- * turns away from it.
- *
- * Output is a full-size webp that is transparent everywhere except the patch,
- * so the plate lines up with the photo under the same `object-cover` and costs
- * a few KB rather than a second copy of the photograph. Outside the hole the
- * patch is the photo's own pixels, so its feathered edge has nothing to show.
+ * A plate is the photo with the skull removed, faded in as the 3D skull lands so
+ * a turning mesh never shows the photographed one behind it. Keyed on chroma
+ * (the print is the only saturated thing in shot), filled row by row, then given
+ * the backdrop's grain. Output is a full-size webp, transparent except the patch.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -47,23 +29,13 @@ if (!sharpDir) throw new Error("sharp not found in the pnpm store")
 const sharp = require(path.join(store, sharpDir, "node_modules/sharp"))
 
 /**
- * The photos with a skull to dock on. `spill` is for a shot where the print
- * throws its colour onto the set: an orange skull glows on a dark backdrop
- * and a glossy floor, too faintly to key but plainly orange once the skull is
- * gone. See growSpill.
- *
- * One stop only: the route ends at the lineup's blaze card on every screen,
- * the owner's call. The Build and Next drop photos used to be stops further
- * down; their plates stay in public/product one release for the build that
- * may still be serving.
+ * Photos with a skull to dock on. `spill` also takes the print's colour cast on
+ * the set (see growSpill). One stop only, by the owner's call.
  */
 const SOURCES = [{ src: "/product/product-front.jpg" }]
 const DOCKS = path.join(ROOT, "components/marketing/skull-docks.json")
 
-/**
- * Chroma at which a pixel counts as print: the middle of the gap between the
- * backdrop (0-15) and the orange print (64 and up), with room either side.
- */
+/** Chroma at which a pixel counts as print: between backdrop (0-15) and print (64+). */
 const KEY = 40
 /** Grows the hole past the key, to take the antialiased rim and the orange spill with it. */
 const GROW = 7
@@ -123,11 +95,7 @@ function blur(src, W, H, r) {
   return a
 }
 
-/**
- * The largest 4-connected blob in the mask. Drops the odd saturated speck in
- * the backdrop grain, which would otherwise stretch the skull's box - the
- * flatlay has one a hundred pixels right of the cranium.
- */
+/** The largest 4-connected blob: drops stray saturated specks that would stretch the box. */
 function largestBlob(mask, W, H) {
   const label = new Int32Array(W * H)
   const stack = new Int32Array(W * H)
@@ -163,13 +131,8 @@ function largestBlob(mask, W, H) {
 }
 
 /**
- * Grows the skull out into the colour it spills onto its surroundings, so
- * the hole takes the glow with it and the fill is sampled from clean set.
- *
- * Only warm pixels count - red clearly ahead of green - which is what keeps
- * it out of the olive print beside the orange one, whose red and green run
- * level. It is also held within `reach` of the skull, so a faint glow cannot
- * creep across the whole backdrop through the grain.
+ * Grows the skull into the colour it spills on its surroundings. Only warm pixels
+ * (red clearly ahead of green, which skips the olive print) within `reach`.
  */
 function growSpill(skull, rgb, chroma, W, H, { key, reach }) {
   const within = dilate(skull, W, H, reach)
@@ -193,16 +156,9 @@ function growSpill(skull, rgb, chroma, W, H, { key, reach }) {
 }
 
 /**
- * Where the skull stands on a glossy floor, if it does. The lineup is shot on
- * one, and the floor mirrors the print: the reflection keys as print too,
- * joined to the chin at the contact line, and would drag the skull's box down
- * to the bottom of the frame.
- *
- * The contact line is the narrowest row in the blob's lower third, provided
- * everything below it is markedly less saturated than everything above - a
- * reflection is a dimmed copy, so it runs at under half the chroma of the
- * print. Returns that row, or `y1` when there is no floor. The plate still
- * takes the reflection out with the skull; only the dock box stops here.
+ * The row where the skull meets a glossy floor, or `y1` if none: the narrowest
+ * row in the lower third with much less chroma below it (the reflection). Only
+ * the dock box stops here; the plate still removes the reflection.
  */
 function floorLine(skull, chroma, W, y0, y1) {
   const width = []
@@ -238,16 +194,9 @@ function floorLine(skull, chroma, W, y0, y1) {
 }
 
 /**
- * Row fill: each row of the hole is a straight blend from the backdrop just
- * left of it to the backdrop just right of it, then the rows are smoothed into
- * each other so edge noise cannot streak.
- *
- * Rows, because both backdrops are banded horizontally - a studio sweep with
- * its lit horizon, and a flat surface under a soft top light. A fill that also
- * reaches up and down (a pyramid or a harmonic fill) drags the bright horizon
- * band into the dark wall above it and leaves a grey column where the skull
- * was; a row fill keeps every band where it is, and carries the bracket plate
- * straight across behind the jaw.
+ * Fills each row of the hole with a blend between the backdrop either side, then
+ * smooths the rows together. Rows, because the backdrops are banded horizontally:
+ * a fill that also reaches up and down smears the bands.
  */
 function fillRows(rgb, hole, W, H) {
   const out = Float32Array.from(rgb)
@@ -282,10 +231,8 @@ function fillRows(rgb, hole, W, H) {
       let l = left ?? right
       let r = right ?? left
       if (!l || !r) continue
-      // A span with backdrop on one side and something lit on the other -
-      // the mount's arm running up into the skull - is backdrop: whatever the
-      // skull hid of that object is gone. Blending the two smears a bright
-      // bar across the hole, so the darker side fills it alone.
+      // Backdrop on one side, a lit object (the mount's arm) on the other: fill
+      // from the darker side alone, or a bright bar smears across the hole.
       const lumL = 0.299 * l[0] + 0.587 * l[1] + 0.114 * l[2]
       const lumR = 0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]
       if (Math.abs(lumL - lumR) > CONTRAST) {

@@ -1,13 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The drop list has to keep three promises: a sign-up never says whether an
- * address was already there, an unsubscribe link works once and harmlessly
- * after, and a campaign emails each person at most once - pausing, not
- * failing everyone left, when the mail server says the day's allowance is
- * spent.
- */
-
 const mocks = vi.hoisted(() => ({
   db: {
     subscriber: {
@@ -242,8 +234,7 @@ describe("runCampaign", () => {
   })
 
   it("pauses only when every route says later, not when one still takes mail", async () => {
-    // Brevo's day is spent, but Gmail is still sending: its refusal of this
-    // one address is the address, so it fails and the list goes on.
+    // Brevo is spent but Gmail refuses only this address: it fails and the list goes on.
     mocks.send
       .mockResolvedValueOnce({
         ok: false,

@@ -10,7 +10,7 @@ import type { ColourwayId } from "@/features/catalog/catalog"
 
 type Props = Omit<ButtonProps, "onClick" | "children"> & {
   colourway: ColourwayId
-  /** The Flame Skull's colourway unless another product is named. */
+  /** The Flame Skull unless named. */
   productSlug?: string
   qty?: number
   label?: string
@@ -41,7 +41,6 @@ export function AddToCartButton({
     setJustAdded(true)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setJustAdded(false), 1800)
-    // The cart itself is the confirmation: it opens with the mount in it.
     showCart(e.currentTarget)
   }
 

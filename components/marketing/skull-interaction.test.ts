@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest"
 
 import { strugglesWithModel } from "@/components/marketing/skull-interaction"
 
-/**
- * Which phones are left on the poster. The first version asked for more than
- * 4 GB and more than 4 cores, which read as "not a weak phone" and meant
- * every iPhone and most Android phones: the 3D skull never loaded on them.
- */
 describe("which devices get the 3D skull", () => {
   it("gives it to every iPhone: Safari reports no memory and always 4 cores", () => {
     expect(strugglesWithModel({ touch: true, memory: undefined, cores: 4 })).toBe(false)

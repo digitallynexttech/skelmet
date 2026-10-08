@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { describeAgent } from "@/features/visitors/server/user-agent"
 
-/**
- * The phones and browsers the shop's visitors actually arrive on. Android
- * Chrome's reduced user agent and the Instagram in-app browser are the two a
- * general parser gets wrong, and between them they are most of the traffic.
- */
+// Real user agents from the shop's traffic.
 
 const ANDROID_CHROME =
   "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"

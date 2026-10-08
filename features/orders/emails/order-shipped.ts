@@ -4,25 +4,14 @@ import { siteConfig } from "@/config/site"
 import { C, escapeHtml, FONT, MONO } from "@/features/orders/emails/email-theme"
 import { formatMoney } from "@/lib/money"
 
-/**
- * "It's on its way." Sent once, when an order becomes SHIPPED - by a courier
- * booked through Shiprocket, by a Shiprocket tracking update, or by staff
- * typing the AWB in.
- *
- * The AWB is the thing the customer will actually use, so it leads, in a box
- * they can copy from. The courier's own tracking page is linked when there is
- * one; /track works for every order regardless.
- *
- * Same rules as the receipt (order-confirmed.ts): tables for layout, inline
- * styles, a plain-text part always.
- */
+/** Sent once, when an order becomes SHIPPED. Same email rules as order-confirmed.ts. */
 export type OrderShippedData = {
   number: string
   courier: string
   awb: string | null
-  /** Shiprocket's tracking page, when the shipment was booked there. */
+  /** Shiprocket shipments only. */
   trackingUrl: string | null
-  /** What the courier will ask for at the door; left out or 0 when it is all paid. */
+  /** Absent or 0 when all paid. */
   dueOnDelivery?: string
   items: { name: string; qty: number }[]
 }

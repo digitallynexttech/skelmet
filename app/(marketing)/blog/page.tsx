@@ -11,13 +11,11 @@ export const metadata: Metadata = pageMetadata({
   path: "/blog",
 })
 
-/** Prerendered, and rebuilt at most once a minute: a new post needs no deploy. */
+// Each minute: a new post needs no deploy.
 export const revalidate = 60
 
 export default async function BlogPage() {
-  // No project yet answers [] by itself. The catch is for a Sanity that
-  // cannot be reached: the page still renders, with nothing on it, rather
-  // than failing the build or the visit.
+  // An unreachable Sanity renders an empty page, not a failed build.
   let posts: BlogListItem[] = []
   try {
     posts = await getBlogPosts()

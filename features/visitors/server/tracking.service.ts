@@ -18,29 +18,18 @@ import { ok, runAction, type ActionResult } from "@/server/action-result"
 import { optionalSession } from "@/server/action-guard"
 import { db } from "@/server/db"
 
-/**
- * The storefront's visit tracker, server half. The browser half is
- * features/visitors/lib/tracker.ts; the choice it acts on is the cookie bar.
- *
- * What is kept depends on that choice, and only ever in one direction - a
- * visitor who has not accepted is recorded with less, never more:
- *
- * - Accepted: a year-long cookie recognises the device, and its row holds the
- *   IP address, the phone model, the details typed at checkout, and a link to
- *   its orders.
- * - Not accepted (refused, or not answered yet): one row per visit, found by
- *   the tab's own key. The pages, the time, the device type, the area (city,
- *   district, state) and the cart - no cookie, no IP address, no pincode, no
- *   contact details, no link to anyone.
- */
+// Server half of the visit tracker (browser half: lib/tracker.ts).
+// Without consent (consent false) a visit is one row, with no cookie, IP address,
+// pincode, contact details or link to a person. With consent: the cookie, IP, phone
+// model and order link. The bar now always sends consent (consent-bar.tsx).
 
-/** Past this many pages in one visit the rest are not written: a script, not a person. */
+/** Past this many pages in one visit, a script rather than a person. */
 const MAX_VIEWS_PER_VISIT = 300
 
-/** More than an hour on one page is a tab left open, however it was reported. */
+/** More than an hour on one page is a tab left open. */
 const MAX_SECONDS_PER_VIEW = 3600
 
-/** How long a copied cart is kept after it last changed; the privacy policy says 90 days. */
+/** The privacy policy promises 90 days. */
 const CART_DAYS = 90
 
 type Line = { sku: string; qty: number }
@@ -54,13 +43,12 @@ function isUniqueViolation(err: unknown): boolean {
   return err instanceof Error && (err as { code?: unknown }).code === "P2002"
 }
 
-/** What the request itself says: where it came from, and what sent it. */
 type Facts = {
   ip: string | null
   country: string | null
   region: string | null
   city: string | null
-  /** From the pincode, when it has been looked up before (district.ts). */
+  /** From the pincode, once looked up (district.ts). */
   district: string | null
   postalCode: string | null
   latitude: number | null
@@ -69,7 +57,6 @@ type Facts = {
   host: string | null
 }
 
-/** A coordinate header as a number, or null when absent or out of range. */
 function coordinate(raw: string | null, limit: number): number | null {
   if (!raw) return null
   const n = Number(raw)
@@ -81,14 +68,11 @@ async function requestFacts(): Promise<Facts> {
   const value = (name: string) => h.get(name)?.trim() || null
   const country = value("cf-ipcountry")
   return {
-    // The address nginx vouches for (lib/rate-limit.ts), never the first
-    // X-Forwarded-For entry, which is whatever the browser chose to claim.
+    // Never the first X-Forwarded-For entry: the browser can forge it.
     ip: trustedClientIp(h),
-    // XX is "unknown" and T1 is Tor - neither is a country.
+    // XX is "unknown", T1 is Tor.
     country: country && country !== "XX" && country !== "T1" ? country : null,
-    // Cloudflare adds these once "Add visitor location headers" is switched
-    // on (Rules > Transform Rules > Managed Transforms). Without it, and in
-    // development, they are simply absent.
+    // Need Cloudflare's "Add visitor location headers" managed transform; absent in dev.
     region: value("cf-region"),
     city: value("cf-ipcity"),
     district: null,
@@ -100,19 +84,12 @@ async function requestFacts(): Promise<Facts> {
   }
 }
 
-/** Nulls become "leave it": a request without Cloudflare's headers must not wipe a city. */
+/** Null means "leave it": a request without Cloudflare's headers must not wipe a city. */
 const keep = <T>(value: T | null | undefined): T | undefined => value ?? undefined
 
 type Device = Extract<VisitInput, { t: "view" }>["device"]
 
-/**
- * The visitor's device and place, as written on every page view.
- *
- * The finer detail - IP address, pincode area, phone model, the raw user
- * agent - only for a visitor who accepted. Together with the rest it narrows
- * one device down a long way, which is exactly what a visitor who refused has
- * asked us not to do.
- */
+// Privacy: IP, pincode area, phone model and raw user agent only for a visitor who accepted.
 function profile(agent: Agent, facts: Facts, device: Device, identified: boolean) {
   return {
     deviceType: agent.deviceType,
@@ -148,14 +125,8 @@ function arrivalFor(input: VisitInput, facts: Facts): Arrival | null {
   })
 }
 
-/**
- * Finds the visitor this message belongs to, creating it on first contact.
- *
- * With consent, that is the device the cookie names. A visitor who accepts
- * part-way through a visit keeps the pages they saw before: the anonymous row
- * for this visit becomes theirs, or - if the device was already known, its
- * cookie outliving a cleared choice - is folded into it.
- */
+// Accepting mid-visit keeps the pages seen so far: the visit's anonymous row
+// becomes the device's, or is folded into the device the cookie already names.
 async function resolveVisitor(
   input: VisitInput,
   facts: Facts,
@@ -212,7 +183,6 @@ async function resolveVisitor(
       },
       select: VISITOR,
     })
-    // The visit so far was recorded without its IP address; it has one now.
     await db.visitorSession.updateMany({
       where: { visitorId: visitor.id, key: input.sid },
       data: { ip: facts.ip },
@@ -224,18 +194,15 @@ async function resolveVisitor(
     })
   }
 
-  // Every time, so the year runs from the last visit rather than the first.
+  // Every time, so the year runs from the last visit.
   await keepVisitorCookie(visitor.id)
   return visitor
 }
 
-/** Moves one anonymous visit's record into the device it turned out to be. */
 async function foldInto(knownId: string, anonId: string, sid: string): Promise<void> {
   await db.$transaction(async (tx) => {
-    // The device may already have this very visit on record - the tab was
-    // known before its choice was cleared - and a visitor holds a visit
-    // once. Then the anonymous stretch joins that visit instead of moving in
-    // beside it, and it is not counted as a visit of its own.
+    // The device may already hold this visit (choice cleared mid-tab): merge
+    // into it rather than counting a second visit.
     const same = await tx.visitorSession.findUnique({
       where: { visitorId_key: { visitorId: knownId, key: sid } },
       select: { id: true },
@@ -266,7 +233,7 @@ async function foldInto(knownId: string, anonId: string, sid: string): Promise<v
     })
     await tx.visitorEvent.updateMany({ where: { visitorId: anonId }, data: { visitorId: knownId } })
 
-    // The visit's cart is the newer of the two, so it is the one kept.
+    // The visit's cart is the newer, so it wins.
     const cart = await tx.cart.findUnique({ where: { visitorId: anonId }, select: { id: true } })
     if (cart) {
       await tx.cart.deleteMany({ where: { visitorId: knownId } })
@@ -342,17 +309,13 @@ async function touch(visitor: Resolved, visit: Visit, now: Date): Promise<void> 
   await db.visitor.update({ where: { id: visitor.id }, data: { lastSeenAt: now } })
 }
 
-/**
- * Copies the browser's cart, priced from the database as checkout prices it:
- * the browser only says what and how many.
- */
+// Priced from the database: the browser only says what and how many.
 async function mirrorCart(
   visitorId: string,
   items: Line[],
   checkout: boolean,
   now: Date,
 ): Promise<string> {
-  // The same SKU twice is one line, as the browser's cart keeps it.
   const qtyBySku = new Map<string, number>()
   for (const item of items) {
     qtyBySku.set(item.sku, Math.min(9, (qtyBySku.get(item.sku) ?? 0) + item.qty))
@@ -372,7 +335,6 @@ async function mirrorCart(
   const expiresAt = new Date(now.getTime() + CART_DAYS * 86_400_000)
 
   if (lines.length === 0) {
-    // Emptied: nothing left behind. An empty cart is not worth a row of its own.
     await db.cartItem.deleteMany({ where: { cart: { visitorId } } })
     await db.cart.updateMany({ where: { visitorId }, data: { checkoutAt: null, expiresAt } })
     return "0.00"
@@ -392,10 +354,7 @@ async function mirrorCart(
   return lines.reduce((sum, l) => sum + Number(l.unitPrice) * l.qty, 0).toFixed(2)
 }
 
-/**
- * Adds time to the page it was spent on. Only the visit that saw the page can:
- * the view's id and the visit's key are both random, and both must match.
- */
+// View id and visit key are both random and must match: only that visit can add time.
 async function addTime(input: { pv: string; sid: string; s: number }): Promise<boolean> {
   const view = await db.visitorEvent.findFirst({
     where: { id: input.pv, type: "view", session: { key: input.sid } },
@@ -421,11 +380,7 @@ async function addTime(input: { pv: string; sid: string; s: number }): Promise<b
   return true
 }
 
-/**
- * A visitor who took their consent back. The cookie goes, and so does
- * everything that said who or where they were; what they looked at stays, as
- * an anonymous record like any other refused visit.
- */
+// Consent withdrawn: drop the cookie and everything identifying; the pages stay, anonymous.
 async function forgetDevice(): Promise<void> {
   const id = await visitorCookie()
   if (!id) return
@@ -451,7 +406,7 @@ async function forgetDevice(): Promise<void> {
     }),
     db.visitorSession.updateMany({ where: { visitorId: id }, data: { ip: null } }),
     db.order.updateMany({ where: { visitorId: id }, data: { visitorId: null } }),
-    // "Placed order SKM-..." would lead straight back to the name on it.
+    // The order number would lead back to a name.
     db.visitorEvent.updateMany({
       where: { visitorId: id, type: "placed" },
       data: { data: Prisma.DbNull },
@@ -459,10 +414,7 @@ async function forgetDevice(): Promise<void> {
   ])
 }
 
-/**
- * One message from the tracker. Public and unauthenticated, so it answers the
- * same small nothing whatever happened, and never reads anything back out.
- */
+/** Public and unauthenticated: answers the same whatever happened, never reads data back out. */
 export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded: boolean }>> {
   return runAction(async () => {
     if (!hasDatabase()) return ok({ recorded: false })
@@ -477,18 +429,17 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
     })
     if (agent.bot) return ok({ recorded: false })
 
-    // Staff browsing their own shop are not visitors.
     if ((await optionalSession())?.user?.kind === "STAFF") return ok({ recorded: false })
 
     if (input.t === "time") return ok({ recorded: await addTime(input) })
 
-    // Taken back: forgotten before anything else is written.
+    // Consent withdrawn: forget before anything else is written.
     if (input.t === "consent" && !input.consent) {
       await forgetDevice()
       return ok({ recorded: true })
     }
 
-    // The pincode only finds the district; it is kept for nobody who refused.
+    // The pincode only finds the district; never stored for a visitor who refused.
     const pincode = visitPincode(facts)
     const district = pincode ? await knownDistrict(pincode) : undefined
     facts.district = district ?? null
@@ -516,7 +467,7 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
             },
           })
         } catch (err) {
-          // The same view delivered twice.
+          // Duplicate delivery.
           if (isUniqueViolation(err)) return ok({ recorded: false })
           throw err
         }
@@ -546,7 +497,7 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
       }
 
       case "contact": {
-        // Typed, not submitted: kept only for someone who said we could.
+        // Typed, not submitted: kept only with consent.
         if (visitor.anonymous) return ok({ recorded: false })
         const given = {
           email: input.email?.toLowerCase(),
@@ -564,8 +515,7 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
       }
 
       case "placed": {
-        // The basket became an order, so it was not left behind. Whether that
-        // order is ever paid is the orders list's business.
+        // Became an order, so not abandoned (paid or not).
         await db.cartItem.deleteMany({ where: { cart: { visitorId: visitor.id } } })
         await db.cart.updateMany({ where: { visitorId: visitor.id }, data: { checkoutAt: null } })
         await note(
@@ -586,11 +536,7 @@ export async function recordVisit(raw: unknown): Promise<ActionResult<{ recorded
   })
 }
 
-/**
- * Ties an order to the visitor who placed it - called by checkout once the
- * order exists. Only a visitor who accepted cookies has anything to tie: a
- * visit made without consent stays unconnected to the person who then bought.
- */
+/** Links an order to its visitor, only if that visitor accepted cookies. */
 export async function attachOrderToVisitor(input: {
   orderId: string
   email: string
@@ -624,7 +570,7 @@ export async function attachOrderToVisitor(input: {
       },
     })
   } catch (err) {
-    // Bookkeeping about who browsed. It must never be why an order fails.
+    // Must never fail an order.
     console.error("[VISITORS] could not link order", input.orderId, err)
   }
 }

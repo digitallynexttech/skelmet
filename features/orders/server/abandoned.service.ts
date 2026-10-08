@@ -9,20 +9,8 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 
-/**
- * Orders placed and never paid for: the buyer filled in checkout, the order
- * was written, and the payment never landed.
- *
- * Unpaid orders do not stay "Awaiting payment" - after an hour they are
- * cancelled to give their stock back (releaseStaleOrders) - so most of these
- * sit under Cancelled on the orders board, looking like orders someone called
- * off. This list tells them apart, and says which of their buyers came back
- * and paid on another order, so nobody chases a sale that already happened.
- *
- * Orders paid online only - in full, or an advance. Cash on delivery was
- * never paid at checkout, so an unpaid COD order is a normal one waiting for
- * its parcel, not a lost sale.
- */
+// Online (or advance) orders whose payment never landed; they expire to CANCELLED
+// after an hour. Says which buyers paid on a later order. Unpaid COD is normal, so excluded.
 
 type Row = UnpaidOrderRow
 
@@ -31,7 +19,6 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
     await requirePermission(PERMISSIONS.ORDER_READ)
     if (!hasDatabase()) return fail("Database not configured.", undefined, 503)
 
-    // So an hour-old unpaid order reads as expired here, as it does on the board.
     await releaseStaleOrders()
 
     const orders = await db.order.findMany({
@@ -39,7 +26,7 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
         paymentMethod: { in: ["ONLINE", "PARTIAL"] },
         status: { in: ["PENDING", "CANCELLED"] },
         placedAt: null,
-        // A cancelled order that did take money is a refund question, not this.
+        // One that took money is a refund question.
         payments: { none: { status: { in: ["CAPTURED", "REFUNDED"] } } },
       },
       orderBy: { createdAt: "desc" },
@@ -60,8 +47,7 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
       },
     })
 
-    // Who came back and paid. Matched on the email or the phone, since a
-    // second attempt often corrects one of the two.
+    // Email or phone: a second attempt often corrects one of them.
     const emails = [...new Set(orders.map((o) => o.email))]
     const phones = [...new Set(orders.map((o) => o.phone))]
     const paid = orders.length
@@ -75,7 +61,7 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
         })
       : []
 
-    // Cancelled by a person, or by the clock. Only the audit log knows.
+    // Only the audit log knows a person from the clock.
     const byStaff = await cancelledByStaff(
       orders.filter((o) => o.status === "CANCELLED").map((o) => o.id),
     )
@@ -115,8 +101,7 @@ export async function listUnpaidOrders(): Promise<ActionResult<UnpaidOrdersPaylo
       }
     })
 
-    // Lost: past its hour and not paid for since. An order still inside its
-    // hour may yet be paid, so it is not counted lost, whatever else it is.
+    // An order still inside its hour may yet be paid, so it is never lost.
     const lost = data.filter((r) => !r.recoveredBy && r.state !== "open")
     return ok({
       data,

@@ -4,22 +4,13 @@ import type { PaymentConfig } from "@/features/settings/server/runtime-settings"
 import type { TrackingStage } from "@/features/shipping/server/shiprocket-mapping"
 import type { OrderStatus } from "@/lib/constants"
 
-/**
- * What marks an order as real, for deleting test orders (test-orders.ts).
- * Apart from the service so the order list can say which were paid in test
- * mode without loading it.
- */
+// What marks an order as real (test-orders.ts). Kept apart so the order list can use it.
 
-/** Payment statuses where money actually moved. */
 const MONEY_MOVED = ["AUTHORIZED", "CAPTURED", "REFUNDED"] as const
 
-/** Where a Shiprocket parcel is still with the courier. */
 const WITH_COURIER: TrackingStage[] = ["booked", "in_transit", "returning"]
 
-/**
- * The Razorpay account each payment that moved money went through. An order
- * with none took no money online.
- */
+/** The Razorpay account of each payment that moved money; empty if none did. */
 export function moneyModes(
   payments: Array<{ status: string; mode: string | null }>,
   config: Pick<PaymentConfig, "envMode" | "mode">,
@@ -38,7 +29,7 @@ export type DeletionCandidate = {
   shipment: { provider: string; stage: TrackingStage } | null
 }
 
-/** Why an order has to stay, or null when it may be deleted. */
+/** Why an order must never be deleted, or null when it may be. */
 export function whyKeep(o: DeletionCandidate): string | null {
   if (o.moneyModes.includes("live")) return "Paid with real money through Razorpay."
   if (o.status === "PENDING") {

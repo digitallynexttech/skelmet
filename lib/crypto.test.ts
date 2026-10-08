@@ -10,12 +10,7 @@ import {
   verifyPasswordOfNobody,
 } from "@/lib/crypto"
 
-/**
- * Password hashes: new ones carry their own cost, old ones keep working, and
- * the old ones are recognised as due for an upgrade.
- */
-
-/** A hash in the original format, made with Node's default cost. */
+/** Legacy format, Node's default cost. */
 function legacyHash(password: string): string {
   const salt = randomBytes(16)
   return `scrypt$${salt.toString("hex")}$${scryptSync(password, salt, 64).toString("hex")}`

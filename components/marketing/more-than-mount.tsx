@@ -5,11 +5,7 @@ import { Section, SectionHeading } from "@/components/marketing/section"
 import { SectionLabel } from "@/components/shared/section-label"
 import { FLAME_SKULL_MOUNT, type ProductSections } from "@/features/catalog/catalog"
 
-/**
- * The answer to the section above it, so it reads as a reply rather than a
- * fresh pitch: three cards, acid instead of magenta, each led by a picture
- * of the point it makes - of the skull the page sells (catalog.ts).
- */
+/** The reply to WhyCare above it, so acid rather than magenta. */
 export function MoreThanMount({
   shots = FLAME_SKULL_MOUNT.sections.inUse,
 }: { shots?: ProductSections["inUse"] } = {}) {

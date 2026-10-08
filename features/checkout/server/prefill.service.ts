@@ -6,22 +6,9 @@ import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { db } from "@/server/db"
 
 /**
- * Fills in a returning buyer's details at checkout.
- *
- * Authorised by the httpOnly `skm.recent-order` cookie - the same proof the
- * confirmation page uses - and by NOTHING the visitor types.
- *
- * That constraint is the whole design. The obvious version of this feature is
- * "type an email, get the saved address back", and it cannot be built safely:
- * with no account to sign in to, an email address is not a secret, so that
- * endpoint would hand anyone the home address and phone number of any customer
- * whose email they could guess - every address in the shop, readable from the
- * checkout form, one address at a time. A cookie cannot be guessed, so this
- * only ever answers the browser that actually placed the order.
- *
- * What it gives up: someone buying again from a different device, or after
- * clearing cookies, types their address again. What it avoids is turning
- * checkout into a lookup service for other people's addresses.
+ * A returning buyer's details at checkout, authorised only by the signed
+ * `skm.recent-order` cookie and by nothing the visitor types. Never look up by
+ * email: with no accounts, an email is not a secret and would leak addresses.
  */
 export type CheckoutPrefill = {
   email: string
@@ -48,8 +35,6 @@ export async function getCheckoutPrefill(): Promise<ActionResult<CheckoutPrefill
       where: { number },
       select: { email: true, phone: true, shippingAddress: true },
     })
-    // A cookie naming an order that no longer exists is not worth explaining;
-    // an empty prefill is the same outcome as never having ordered.
     if (!order) return ok(null)
 
     const a = order.shippingAddress as Record<string, unknown> | null

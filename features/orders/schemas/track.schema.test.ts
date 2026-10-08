@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { trackOrderSchema } from "@/features/orders/schemas/track.schema"
 
-/**
- * A parse test per schema (§6). This one guards the normalisation the lookup
- * depends on: someone reading a number off a phone screen types it however
- * they like, and the service compares it verbatim.
- */
+// The service compares the number verbatim, so normalisation matters.
 describe("trackOrderSchema", () => {
   const valid = { orderNumber: "SKM-2026-WJMR", email: "rider@example.com" }
 

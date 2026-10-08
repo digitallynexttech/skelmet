@@ -1,7 +1,4 @@
-/**
- * Money is Decimal(12,2) in Postgres and a STRING on the wire (§5).
- * Everything in the UI goes through here so we never format ad hoc.
- */
+// Money is Decimal(12,2) in Postgres and a string on the wire. Format only here.
 
 const INR = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -22,14 +19,7 @@ export function formatMoney(value: string | number): string {
   return Number.isInteger(n) ? INR.format(n) : INR_PAISE.format(n)
 }
 
-/**
- * Whole-percent saving off the MRP.
- *
- * Computed rather than written down: the product page carried a hardcoded
- * "Save 25%" that was correct at the old 1999/1499 prices and quietly became a
- * lie at 4999/3499, where the real figure is 30%. A discount claim that drifts
- * from the prices beside it is a consumer-law problem, not a typo.
- */
+/** Whole percent off the MRP. Always computed: a hardcoded claim drifts from the prices. */
 export function discountPercent(mrp: string | number, price: string | number): number {
   const m = Number(mrp)
   const p = Number(price)

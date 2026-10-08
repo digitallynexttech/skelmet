@@ -1,13 +1,7 @@
 /**
- * A discount code's history, cut into runs.
- *
- * A code can be renewed - DIWALI200 run again next Diwali - and the row is
- * the same row each time, so its own counters only ever describe the run it
- * is on. The runs are read back from two things that do not reset: the audit
- * log, where every renewal is written with the terms it started, and the
- * orders, each of which kept the code and the rupees it took off.
- *
- * Pure, so the cutting is tested without a database.
+ * A discount code's history, cut into runs. A renewed code keeps its row, whose
+ * counters only describe the current run; earlier runs come from the audit
+ * log's renew events and the orders. Pure, for testing.
  */
 
 export type CouponTerms = {
@@ -38,39 +32,28 @@ export type HistoryOrder = {
 
 export type CouponRun = {
   index: number
-  /** Created, or renewed. */
   startedBy: "created" | "renewed"
   start: string
-  /** When the next renewal began it, or null for the run it is on now. */
+  /** Null for the current run. */
   end: string | null
-  /** The expiry that run was set with, if it had one. */
   expiresAt: string | null
-  /** The terms it ran on; null for a run older than its record. */
+  /** Null for a run older than its audit record. */
   terms: CouponTerms | null
-  /**
-   * Uses claimed in that run, as the code counted them - the figure its max
-   * uses was held to. The run now: the code's own count; an earlier one: what
-   * the renewal after it found. Null for a run older than its record.
-   */
+  /** Uses as the code counted them against max uses; null for a run older than its record. */
   uses: number | null
   orders: number
   discount: number
   sales: number
-  /** Orders that were placed with it and later refunded or returned. */
+  /** Orders later refunded or returned. */
   refunded: number
 }
 
-/**
- * Orders that count towards a run: placed and not undone. An online order
- * never paid (PENDING) and a cancelled one gave the use back; a refunded or
- * returned one is counted separately.
- */
+/** Orders that count towards a run. PENDING and CANCELLED gave the use back. */
 export const COUNTED = new Set(["CONFIRMED", "PAID", "PACKED", "SHIPPED", "DELIVERED"])
 export const UNDONE = new Set(["REFUNDED", "RETURNED"])
 
 const num = (v: unknown) => (typeof v === "number" || typeof v === "string" ? Number(v) : NaN)
 
-/** The terms written with a create or renew event, if it carried them. */
 function termsOf(meta: Record<string, unknown> | null): CouponTerms | null {
   if (!meta) return null
   const kind = meta.kind
@@ -111,8 +94,7 @@ export function splitRuns(input: {
       startedBy: start.startedBy,
       start: start.at,
       end: last ? null : next.at,
-      // A run's expiry is what the renewal after it found; the last one's is
-      // the code's own.
+      // Read from the next renewal's record; the current run's is the code's own.
       expiresAt: last
         ? input.current.expiresAt
         : typeof next.event?.meta?.previousExpiry === "string"
@@ -139,7 +121,7 @@ export function splitRuns(input: {
   })
 }
 
-/** Which run an order falls in, 1-based. */
+/** 1-based. */
 export function runOf(runs: CouponRun[], at: string): number {
   for (let i = runs.length - 1; i >= 0; i--) if (at >= runs[i]!.start) return runs[i]!.index
   return 1

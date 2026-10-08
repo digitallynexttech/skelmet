@@ -1,13 +1,6 @@
 import { z } from "zod"
 
-/**
- * The same schema validates the form and the service (§6).
- *
- * The current password is required even though the session already proves who
- * this is: a session can be a borrowed laptop, and re-typing the old password
- * is what stops someone who walks up to an unlocked screen from locking the
- * owner out of their own console.
- */
+/** Form and service schema. The current password is required even with a session (unlocked screens). */
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Enter your current password"),

@@ -26,7 +26,6 @@ type Paginated<T> = {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
-/** Codes, or the archive. */
 export type CouponView = "codes" | "archived"
 
 const getCoupons = (params: { page: number; q: string; view: CouponView }) => {
@@ -98,7 +97,7 @@ export type CouponHistory = {
   events: CouponEvent[]
 }
 
-/** One code, with its runs, orders and log. Shares ["coupons"], so any change refreshes it. */
+/** Under ["coupons"], so any coupon mutation refreshes it. */
 export function useCouponHistory(code: string) {
   return useQuery({
     queryKey: ["coupons", "history", code.toUpperCase()],

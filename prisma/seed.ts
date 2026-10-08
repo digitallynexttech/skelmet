@@ -1,25 +1,8 @@
 /**
- * A development database: permissions, the Admin role, the catalogue with
- * stock to play with, and a console login.
- *
- *   pnpm db:seed
- *
- * By itself it only ADDS what is missing, like `pnpm db:bootstrap`
- * (prisma/setup.ts). The old destructive reset - wiping the catalogue, every
- * order line, every review, the roles' grants and the permissions - now runs
- * only when asked for:
- *
- *   SEED_RESET=1 pnpm db:seed
- *
- * and only against a database on this machine. Its "never in production"
- * guard read NODE_ENV, which a laptop never sets, so it would wipe the hosted
- * database from one without a word. SEED_I_KNOW_WHAT_I_AM_DOING=1 overrides
- * that for a throwaway remote database - never a live one; use
- * `pnpm db:sync-permissions` for permission changes there (§6).
- *
- * The admin login is SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD. The password
- * falls back to "skelmet-dev" for a local database only, and the admin must
- * change it at first sign-in either way.
+ * Development seed. Only adds what is missing; SEED_RESET=1 wipes the catalogue,
+ * roles and permissions, and only on localhost unless
+ * SEED_I_KNOW_WHAT_I_AM_DOING=1 (never a live database). The admin password
+ * defaults to "skelmet-dev" on localhost only.
  */
 import { PERMISSION_DEFINITIONS } from "@/lib/constants"
 import { db } from "@/server/db"

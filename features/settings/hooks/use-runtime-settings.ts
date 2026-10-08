@@ -20,7 +20,7 @@ export function useRuntimeSettings() {
   return useQuery({
     queryKey: KEY,
     queryFn: () => apiFetch<RuntimeSettingsView>("/api/admin/settings"),
-    // Always read fresh: this screen is where someone checks what is live.
+    // Always fresh: this is where someone checks what is live.
     staleTime: 0,
   })
 }
@@ -29,11 +29,8 @@ const patch = (path: string, body: unknown) =>
   apiFetch<RuntimeSettingsView>(path, { method: "PATCH", body: JSON.stringify(body) })
 
 /**
- * Every save answers with the whole view, which replaces the cached one: no
- * refetch. Each save also sends back the version of its section this screen
- * was showing, so a save made on top of someone else's newer one is refused
- * (409) instead of silently undoing it; the refusal invalidates the view so
- * the newer settings load.
+ * A save returns the whole view, which replaces the cache. Each sends its section's `version`; a
+ * 409 (someone saved since) reloads the view.
  */
 export function useRuntimeSettingsMutations() {
   const qc = useQueryClient()
@@ -42,7 +39,7 @@ export function useRuntimeSettingsMutations() {
     if (err instanceof ApiFetchError && err.status === 409)
       void qc.invalidateQueries({ queryKey: KEY })
   }
-  /** Undefined when nothing is cached: the server then checks against what it reads itself. */
+  // Undefined when nothing is cached: the server then checks against its own read.
   const versionOf = (section: keyof SettingVersions) =>
     qc.getQueryData<RuntimeSettingsView>(KEY)?.versions?.[section]
 

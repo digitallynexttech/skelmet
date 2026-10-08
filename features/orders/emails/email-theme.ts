@@ -1,11 +1,4 @@
-/**
- * What every customer email shares: the palette, the font stacks, and the
- * escaping every interpolated value goes through.
- *
- * The palette is duplicated from globals.css on purpose: an email cannot read
- * CSS variables, and a colour that silently resolved to nothing would render
- * as black text on a black card.
- */
+/** Duplicated from globals.css on purpose: emails cannot read CSS variables. */
 export const C = {
   void: "#07060a",
   carbon: "#14121b",
@@ -21,7 +14,7 @@ export const C = {
 export const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 export const MONO = "'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace"
 
-/** Order numbers and product names are ours, but never interpolate unescaped. */
+/** Never interpolate unescaped, even our own values. */
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

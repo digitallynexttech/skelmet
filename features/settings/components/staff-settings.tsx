@@ -19,8 +19,7 @@ import { ApiFetchError } from "@/lib/api-fetch"
 function AddStaffForm({ roles, onDone }: { roles: RoleRow[]; onDone: () => void }) {
   const { create } = useStaffMutations()
   const [roleIds, setRoleIds] = React.useState<string[]>([])
-  // Under each box, what the server said is wrong with it. The toast says
-  // it too; this puts it where the fix goes.
+  // The server's field errors, shown under each box as well as in the toast.
   const [fields, setFields] = React.useState<Record<string, string>>({})
 
   const toggle = (id: string) =>
@@ -213,7 +212,7 @@ function StaffCard({ member, roles, ask }: { member: StaffRow; roles: RoleRow[];
   )
 }
 
-/** Staff and roles: the Team tab of Settings, under the page's own heading. */
+/** The Team tab of Settings. */
 export function StaffSettings() {
   const { data, isLoading, isError, error } = useStaff()
   const [adding, setAdding] = React.useState(false)

@@ -10,9 +10,7 @@ import { cn } from "@/lib/utils"
 const BUTTON =
   "flex size-12 items-center justify-center rounded-full shadow-[0_10px_28px_rgb(0_0_0_/_0.5)] transition-[background-color,border-color,color,scale,filter] duration-200"
 
-// How far down before the pair appears: the first screen of a page - the
-// hero and its own button - is left alone.
-const SHOW_AFTER = 300
+const SHOW_AFTER = 300 // px scrolled
 
 const scrolledDown = () => window.scrollY > SHOW_AFTER
 const notScrolled = () => false
@@ -23,29 +21,18 @@ function onScroll(notify: () => void) {
 }
 
 /**
- * The two buttons that follow the visitor down the page, bottom right: a
- * WhatsApp chat with the shop and the way back to the top. Neither is there
- * on the first screen; both arrive together once the page has been scrolled.
- *
- * Over the flying skull; under the header, the phone menu, the cookie card -
- * which on a phone covers this corner until it has its answer - and a bar
- * stuck to the bottom of a phone (`data-sticky-bar`, the product page's Buy
- * now). The pair rides above that bar, and when the bar lets go and scrolls
- * up through them it passes over them, not under. A page that needs the
- * corner to itself on a phone says so with `data-clear-corner`: checkout,
- * where the buttons would sit on the fields and on Pay.
+ * WhatsApp and back-to-top, bottom right, once the page is scrolled. Above the skull, below the
+ * header, menu and cookie card. On a phone it rides above a `data-sticky-bar` and hides on a page
+ * marked `data-clear-corner` (checkout).
  */
 export function FloatingActions() {
-  // Read from the scroll position, not kept in state: React re-renders only
-  // when the answer flips, however many scroll events go by.
+  // Re-renders only when the answer flips, not on every scroll event.
   const shown = useSyncExternalStore(onScroll, scrolledDown, notScrolled)
 
   const toTop = () => {
-    // `scroll-behavior` in globals.css makes this smooth, and instant for
-    // anyone who has asked for less motion.
+    // Smooth, or instant under reduced motion, via `scroll-behavior` in globals.css.
     window.scrollTo({ top: 0 })
-    // The buttons are about to hide; leave keyboard focus at the top of the
-    // page with the view, not on something that is no longer there.
+    // The buttons are about to hide: move focus to the top with the view.
     document.querySelector<HTMLElement>("header a[href]")?.focus({ preventScroll: true })
   }
 

@@ -2,34 +2,20 @@ import { isLive, isPostSlug } from "@/features/blog/blog"
 import { apiVersion, dataset, projectId, sanityConfigured } from "@/features/blog/sanity/env"
 
 /**
- * Whether a /blog/<slug> URL is a post that does not exist, for proxy.ts to
- * answer 404 before anything renders - as lib/known-pages.ts does for
- * products and policies.
- *
- * The post page cannot do it alone. It keeps unknown slugs open so a post
- * published in the Studio appears without a deploy, which means every made-up
- * address would be rendered, asked of Sanity and kept in the page cache: a
- * crawler walking random slugs could fill the disk.
- *
- * So the proxy holds the list of addresses that do exist, read from Sanity at
- * most once a minute - or once every ten seconds while someone is asking for
- * one it has not heard of, so a post published a moment ago is not refused
- * for a minute. Plain fetch, not the Sanity client: this runs in the proxy,
- * ahead of every blog request, and needs one query.
- *
- * Each address is kept with its date, and the date is checked when it is
- * asked for: a scheduled post is unknown until its moment and known from
- * then on, with nothing having to tell the proxy.
+ * Lets proxy.ts answer 404 for a /blog/<slug> that is not a post. The page keeps unknown slugs open
+ * for new posts, so without this a crawler walking random slugs could fill the page cache.
+ * Slugs are read once a minute, or every ten seconds while an unknown one is asked for. Dates are
+ * checked at ask time, so a scheduled post becomes known at its moment.
  */
 
 const FRESH_MS = 60_000
-/** How soon an unknown address may send it back to Sanity to look again. */
+/** How soon an unknown address may trigger another read. */
 const RECHECK_MS = 10_000
 const TIMEOUT_MS = 3_000
 
 const SLUGS_QUERY = `*[_type == "post" && defined(slug.current)]{ "slug": slug.current, publishedAt }`
 
-/** Each published post's address, and when it goes - or went - live. */
+/** Each published post's slug and publishedAt. */
 type Known = { posts: Map<string, string | null>; at: number }
 
 const shared = globalThis as unknown as {
@@ -69,8 +55,7 @@ async function knownPosts(maxAge: number): Promise<Known | null> {
   if (state.known && Date.now() - state.known.at < maxAge) return state.known
   state.reading ??= readSlugs()
     .then((fresh) => {
-      // A failed read keeps the list it had: a Sanity outage must not turn
-      // every post into a 404.
+      // A failed read keeps the old list: an outage must not 404 every post.
       if (fresh) state.known = fresh
       return state.known
     })
@@ -92,14 +77,14 @@ export async function isUnknownPost(pathname: string): Promise<boolean> {
   if (parts.length !== 3 || parts[1] !== "blog" || !parts[2]) return false
   const slug = parts[2]
 
-  // No project, so no posts; and an address no slug field could have made.
+  // No project, or a slug the Studio could not have made.
   if (!sanityConfigured || !isPostSlug(slug)) return true
 
   const live = (known: Known) => isLive(known.posts.get(slug))
 
   let known = await knownPosts(FRESH_MS)
   if (known && !live(known)) known = await knownPosts(RECHECK_MS)
-  // Sanity has never answered: let the page decide, as it would have.
+  // Sanity has never answered: let the page decide.
   if (!known) return false
   return !live(known)
 }

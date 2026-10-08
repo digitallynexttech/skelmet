@@ -14,18 +14,10 @@ const SOCIALS = [
 
 const COLUMN_TITLE = "text-dim mb-1 font-mono text-[11px] tracking-[0.2em] uppercase"
 
-/**
- * `cookieSettings` is handed in by the storefront layout rather than imported
- * here: the control belongs to the visitors feature, and components/ never
- * reaches into features/.
- */
+/** `cookieSettings` is passed in because components/ never imports from features/. */
 export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNode }) {
   return (
     <footer className="bg-carbon relative overflow-hidden border-t border-white/[0.07] px-5 pt-16 sm:px-8 xl:px-14">
-      {/* Five columns once there is room: what the shop is, the three lists
-          of links, and who to reach. No logo up here - it signs the footer off
-          below. In two columns the first takes the full row, so the lists
-          pair off under it. */}
       <div className="grid gap-12 pb-14 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.2fr_1.35fr] lg:gap-8 xl:gap-12">
         <div className="sm:col-span-2 lg:col-span-1">
           <p className="text-ash mb-6 max-w-[420px] text-[14.5px] leading-[1.6] lg:max-w-[300px]">
@@ -62,9 +54,7 @@ export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNod
           </div>
         ))}
 
-        {/* Who the buyer is dealing with and how to reach them, on every
-            page: the E-Commerce Rules ask for the seller's name, address
-            and contact details to be shown, not just filed. */}
+        {/* The E-Commerce Rules require the seller's name, address and contact on show. */}
         <div className="flex flex-col gap-3.5">
           <div className={COLUMN_TITLE}>Contact</div>
           <address className="text-ash flex flex-col gap-3.5 text-[14.5px] not-italic">
@@ -93,8 +83,6 @@ export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNod
       </div>
 
       <div className="text-dim flex flex-col gap-3 border-t border-white/[0.07] py-6 font-mono text-[11.5px] tracking-[0.1em] sm:flex-row sm:items-center sm:justify-between">
-        {/* The legal form and the GSTIN are on the contact page and in the
-            policies; here the line only says whose site it is. */}
         <span>
           © {new Date().getFullYear()} SKELMET · {siteConfig.legalEntity}
         </span>
@@ -104,10 +92,7 @@ export function SiteFooter({ cookieSettings }: { cookieSettings?: React.ReactNod
         </span>
       </div>
 
-      {/* The logo, oversized, signing the page off - where the name used to be
-          set in outlined type. Decorative: the lockup in the header is the one
-          that is named and linked. The vector copy, because this is drawn
-          wider than the PNG's 896px; fetched only when scrolled to. */}
+      {/* Decorative (the header's lockup is the named one). Vector: drawn wider than the PNG. */}
       <div aria-hidden="true" className="flex justify-center pt-2 pb-[3.5vw] select-none">
         <Image
           src={BRAND_LOCKUP_VECTOR.src}

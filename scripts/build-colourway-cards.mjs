@@ -1,29 +1,15 @@
 /**
- * Builds the Militia Olive and Ghost Grey lineup cards - colourway-olive-print
- * and colourway-ghost-grey-print.jpg - from the print, seated in the orange
- * photo.
+ * Builds the Militia Olive and Ghost Grey lineup cards (colourway-olive-print.jpg,
+ * colourway-ghost-grey-print.jpg): the real 3D skull, recoloured, seated in the
+ * orange photo.
  *
  *   pnpm dev                       (or any server running this code)
  *   node scripts/build-colourway-cards.mjs [http://localhost:3000]
  *
- * The lineup is one product in three colours, and the orange card shows the
- * real one: the hero's 3D skull lands on the photo and sits there, lit as the
- * photo was, over the plate that hides the photographed skull. The olive and
- * grey cards were made from photographs an image model recoloured, and its
- * skulls were its own: a different jaw, softer flames, another eye. These
- * cards are the same skull, seated in the same photo, in the other two
- * filaments - so the row is three of one thing.
- *
- * It drives the real site in headless Chrome, as build-hero-poster does: the
- * model is served recoloured (the request for the model is answered from
- * memory, nothing on disk changes), the skull is flown down to the orange
- * card and left to seat, and the canvas is captured alone - the seated skull,
- * under the studio rig, with nothing else - at the photo's own resolution.
- * That is composited onto the photo with its plate, which is the backdrop
- * with no skull on it.
- *
- * The swatches come from the catalogue, so the cards cannot drift from the
- * dots rendered beside them.
+ * Drives the site in headless Chrome: the model request is answered with a
+ * recoloured copy from memory (nothing on disk changes), the skull is flown to
+ * the orange card, and the canvas alone is captured and composited onto the
+ * photo's plate. Swatches come from the catalogue, so cards match the dots.
  */
 import { spawn } from "node:child_process"
 import fs from "node:fs"
@@ -49,15 +35,8 @@ const PLATE = "/product/product-front-plate.webp"
 
 /**
  * tone: how much darker each filament prints than the orange, applied to the
- * swatch in linear light, which the render follows.
- *
- * The swatches alone are as bright as each other, and rendered straight the
- * olive came out 1.36 times the photographed orange print and the grey 1.49.
- * In colourway-lineup.jpg, where the three real prints stand under one light,
- * the olive's median luminance is 0.54 of the orange's and the grey's 0.95;
- * and the orange skull seated in its own card - the render these must match -
- * is 1.25 times the print. So olive goes to 0.54 x 1.25 = 0.68 of the print
- * and grey to 0.95 x 1.25 = 1.19: 0.50 and 0.80 of what the swatches gave.
+ * swatch in linear light. Matched to colourway-lineup.jpg, the three real
+ * prints under one light.
  */
 const CARDS = [
   { id: "olive", out: "colourway-olive-print.jpg", tone: 0.5 },

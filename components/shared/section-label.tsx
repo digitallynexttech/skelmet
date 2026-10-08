@@ -8,21 +8,9 @@ const TONES = {
 } as const
 
 /**
- * The mono eyebrow on every section: `01 / THE LINEUP`.
- *
- * The number is NOT passed in. It used to be, and every component carried a
- * default left over from the homepage running order - so the product page
- * showed 03, 04, 05, 07, 06, 10, 09, 13: gapped AND out of order, because a
- * component cannot know where a page chose to put it.
- *
- * A CSS counter scoped to <main> numbers them in document order instead.
- * These are async server components, so React context is not available to
- * carry a counter, and a module-level one would leak between concurrent
- * requests. The counter recomputes from the DOM, so commenting a section out
- * renumbers the rest with no other edit.
- *
- * Opt in with `numbered`: hero eyebrows ("Track order", "Contact") are
- * labels, not numbered sections, and must stay out of the sequence.
+ * The mono eyebrow on a section: `01 / THE LINEUP`. The number comes from a CSS counter on
+ * <main> in document order, never a prop: a component cannot know where a page puts it. Hero
+ * eyebrows leave `numbered` off to stay out of the sequence.
  */
 export function SectionLabel({
   numbered,

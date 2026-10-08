@@ -1,16 +1,12 @@
 /**
- * The "Why it slaps" photographs in the other two colourways, so the five
+ * Builds the "Why it slaps" photographs in the other two colourways, so the
  * tiles do not show five orange skulls.
  *
  *   node scripts/build-why-colourways.mjs
  *
- * The orange photographs (public/product/why-*.jpg) stay the sources: their
- * skull is the real print file rendered and laid into the scene, so its shape
- * and light are already right, and only its colour changes here
- * (recolour-skull.mjs). Store in style stays Blaze Orange.
- *
- * The recoloured ones get names of their own, -olive and -ghost-grey: the
- * orange files are live and cached for 30 days as immutable.
+ * The orange why-*.jpg files are the sources; only the colour changes
+ * (recolour-skull.mjs). Store in style stays Blaze Orange. Outputs get names of
+ * their own: /product is cached for 30 days as immutable.
  */
 import fs from "node:fs"
 import path from "node:path"

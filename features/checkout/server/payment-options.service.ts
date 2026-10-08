@@ -16,31 +16,27 @@ import { ok, runAction, type ActionResult } from "@/server/action-result"
 import { staffSession } from "@/server/action-guard"
 
 /**
- * The ways to pay this buyer is offered at checkout.
- *
- * Paying online is always there. Cash on delivery and the advance are there
- * when the console has switched them on (Settings > Pay on delivery) - for
- * everyone, or only for a signed-in member of staff while they are being
- * tried on the live site. placeOrder asks the same question again, so a
- * hand-made request cannot choose a way of paying it was never shown.
+ * The ways to pay this buyer is offered. Online always; COD and the advance as
+ * the console sets them (everyone, or staff only while on test). placeOrder
+ * checks again, so a hand-made request cannot pick an unoffered method.
  */
 
 export type OfferedMethod = {
   id: PaymentMethod
-  /** What paying this way adds to the order, rupees. */
+  /** Rupees added to the order. */
   fee: number
-  /** PARTIAL only: how much of the order is paid now. */
+  /** PARTIAL only. */
   advance: Advance | null
-  /** False when no courier collects payment at the pincode asked about. */
+  /** False when no courier collects payment at the pincode. */
   available: boolean
-  /** On test: offered to this viewer because they are signed in to the console. */
+  /** On test, offered only because the viewer is staff. */
   staffOnly: boolean
 }
 
 export type CheckoutOptions = { methods: OfferedMethod[] }
 
 const optionsSchema = z.object({
-  /** Left out until the buyer has typed one; nothing is then ruled out by it. */
+  /** Absent until typed; then nothing is ruled out by it. */
   pincode: z
     .string()
     .trim()
@@ -59,15 +55,12 @@ export async function viewerIsStaff(): Promise<boolean> {
   }
 }
 
-/** Whether staff need telling apart at all - only while something is on test. */
+/** Staff only need telling apart while something is on test. */
 function onTest(options: PaymentOptions): boolean {
   return options.cod.offer === "staff" || options.partial.offer === "staff"
 }
 
-/**
- * The options in force and what this viewer may choose from them. Online
- * first, then the advance, then cash on delivery: most paid now to least.
- */
+/** The options in force and this viewer's choices, most paid now first. */
 export async function offeredMethods(): Promise<{
   options: PaymentOptions
   methods: Omit<OfferedMethod, "available">[]

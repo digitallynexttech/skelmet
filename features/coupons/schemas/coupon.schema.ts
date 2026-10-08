@@ -5,7 +5,6 @@ export const MAX_PERCENT_OFF = 90
 
 export const PERCENT_TOO_HIGH = "A percent discount above 90% is almost always a typo"
 
-/** The same rule for a new coupon and an edited one: a PERCENT coupon stays at or under 90. */
 export function percentTooHigh(kind: "PERCENT" | "FLAT", value: number): boolean {
   return kind === "PERCENT" && value > MAX_PERCENT_OFF
 }
@@ -26,12 +25,7 @@ export const createCouponSchema = z
   })
   .refine((c) => !percentTooHigh(c.kind, c.value), { message: PERCENT_TOO_HIGH, path: ["value"] })
 
-/**
- * An edit may send the kind, the value, both or neither. When it sends both
- * the rule is checked here; when it sends one, the service checks it against
- * the coupon's stored other half (updateCoupon), so switching a 95-rupee flat
- * coupon to PERCENT cannot slip past it either.
- */
+/** Checks the 90% rule only when kind and value are both sent; updateCoupon checks the rest. */
 export const updateCouponSchema = z
   .object({
     kind: z.enum(["PERCENT", "FLAT"]).optional(),
@@ -46,10 +40,7 @@ export const updateCouponSchema = z
     { message: PERCENT_TOO_HIGH, path: ["value"] },
   )
 
-/**
- * Renewing a code: everything a new one takes except the code itself, which
- * is kept. The new expiry, if any, has to be still to come.
- */
+/** A new code's fields minus the code, which is kept. */
 export const renewCouponSchema = z
   .object({
     kind: z.enum(["PERCENT", "FLAT"]),

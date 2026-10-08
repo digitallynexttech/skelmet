@@ -8,18 +8,8 @@ import { paymentOptions, shippingCharge } from "@/features/settings/server/runti
 
 type Params = { slug: string }
 
-/**
- * Every policy slug is known at build time, so anything else is not a page
- * that might appear later - it is a wrong URL, and proxy.ts answers it with a
- * real 404 before it gets here. notFound() below would render the not-found
- * screen but answer 200, a soft 404 search engines index as a real page:
- * /policies/referral became exactly that when the referral programme went.
- *
- * Not `dynamicParams = false`, which did that job before: the shipping policy
- * states the shipping charge set in Settings and the terms the ways to pay, a
- * change there refreshes this page, and a refreshed page limited to its
- * prerendered params 404s itself.
- */
+// Unknown slugs get a real 404 from proxy.ts (notFound() here would answer 200).
+// Not `dynamicParams = false`: a Settings change refreshes this page, which would then 404 itself.
 export const revalidate = 60
 
 export function generateStaticParams(): Params[] {

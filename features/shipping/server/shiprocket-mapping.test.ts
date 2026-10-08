@@ -20,11 +20,7 @@ import {
   type ShippableOrder,
 } from "@/features/shipping/server/shiprocket-mapping"
 
-/**
- * The rules about what Shiprocket is sent and how its answers are read. The
- * fixtures are trimmed from the examples in Shiprocket's published API
- * collection, so a change in their shape shows up here first.
- */
+// Fixtures are trimmed from Shiprocket's published API examples.
 
 const order: ShippableOrder = {
   number: "SKM-2026-AB12",
@@ -129,7 +125,7 @@ describe("buildAdhocOrder", () => {
   })
 
   it("adds up, on Shiprocket's reckoning, to what the customer paid", () => {
-    // SKM-2026-E2Q9: sent after the coupon, its label printed Order Total ₹1.
+    // Sent after the coupon instead, the label would print Order Total ₹1.
     const coupon = { ...order, subtotal: 3499, discount: 3398, shipping: 0 }
     const p = buildAdhocOrder(coupon, "x")
     expect(p.sub_total - p.total_discount + p.shipping_charges).toBe(101)
@@ -360,8 +356,7 @@ describe("what shipping costs, and what the buyer pays", () => {
     rating: null,
     recommended,
   })
-  // Delhi to Delhi for one mount, as Shiprocket quoted it: a few cheap surface
-  // couriers and the air couriers it always lists.
+  // A real Shiprocket quote, Delhi to Delhi, one mount.
   const delhi = [161, 202, 208, 231, 344, 392, 414, 556, 635].map((r) => courier(r, r === 231))
 
   it("reads the cost four ways", () => {

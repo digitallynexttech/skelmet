@@ -10,7 +10,7 @@ const TONE = {
 
 export type Tone = keyof typeof TONE
 
-/** A status in one of the four tones, for statuses that are not an order's own. */
+/** For statuses that are not an order's own. */
 export function ToneBadge({
   tone,
   title,
@@ -18,7 +18,7 @@ export function ToneBadge({
   children,
 }: {
   tone: Tone
-  /** Shown on hover: what the status means, where the word alone is not enough. */
+  /** Hover text explaining the status. */
   title?: string
   className?: string
   children: React.ReactNode
@@ -38,9 +38,8 @@ export function ToneBadge({
 }
 
 /**
- * Tone keys map to tokens here - never an ad-hoc colour at the call site (§7).
- * `label` replaces the status's own words where they would mislead: "Paid" on
- * an order that has only had its advance paid.
+ * Colours come from the tone tokens, never ad hoc at the call site. `label` overrides the status's
+ * words where they would mislead (e.g. "Paid" when only the advance is).
  */
 export function StatusBadge({
   status,

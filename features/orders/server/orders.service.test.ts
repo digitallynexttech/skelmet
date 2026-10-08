@@ -1,12 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The dashboard's "today" is India's day, and counts orders that were paid -
- * not every order written, most of which are closed payment windows. And the
- * steps an order paid for on delivery takes: packed and cancelled without
- * ever being paid, refunded only what came through Razorpay.
- */
-
 const mocks = vi.hoisted(() => ({
   db: {
     order: {

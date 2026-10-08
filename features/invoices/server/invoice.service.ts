@@ -24,26 +24,10 @@ import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
 import { later } from "@/server/later"
 
-/**
- * Tax invoices for orders, and the credit notes that reverse them.
- *
- * An order gets its invoice number the first time anyone needs the invoice -
- * staff printing it to go in the box, or the delivery email - and keeps it:
- * the number and date are fixed once issued, so every copy printed or sent
- * later is the same invoice.
- *
- * Numbers run SKM/<fy>/0001 upwards through each April-to-March financial
- * year, without gaps or repeats, claimed from `invoice_counters` inside the
- * transaction that writes them onto the order. Credit notes run CN/<fy>/0001
- * from the same table under their own key.
- *
- * A refunded or cancelled order has no tax invoice to give: once a sale is
- * undone, printing its invoice again states a supply that did not happen. An
- * order that was invoiced before it was refunded gets a credit note instead,
- * with the same amounts, naming the invoice it cancels. And an order paid on
- * Razorpay's test account is not a sale at all, so it takes no number from
- * either sequence.
- */
+// An invoice number and date are issued on first need and never change. Numbers run
+// SKM/<fy>/0001 (credit notes CN/<fy>/0001) per April-March year, gapless, from
+// `invoice_counters` in the same transaction. A refunded or cancelled order gets a
+// credit note, never its invoice again; test-mode orders get neither.
 
 /** Paid for, or cash on delivery on its way: goods that are, or will be, supplied. */
 const INVOICEABLE: OrderStatus[] = ["PAID", "PACKED", "SHIPPED", "DELIVERED"]
@@ -74,11 +58,7 @@ const REFUSED: Record<Refusal, { message: string; status: number }> = {
 
 const refused = (why: Refusal) => fail(REFUSED[why].message, undefined, REFUSED[why].status)
 
-/**
- * Whether the money for this order went through Razorpay's test account.
- * Test payments are not sales, so they get no tax invoice and no credit note,
- * and never use up a number from the real sequence.
- */
+/** Whether the order was paid on Razorpay's test account (not a sale: no numbers used). */
 async function paidInTestMode(orderId: string): Promise<boolean> {
   const payment = await db.payment.findFirst({
     where: { orderId, gateway: "razorpay", status: { in: ["CAPTURED", "REFUNDED"] } },
@@ -89,20 +69,14 @@ async function paidInTestMode(orderId: string): Promise<boolean> {
   return modeOfPayment(payment.mode, await paymentConfig()) === "test"
 }
 
-/**
- * The order's invoice number, issuing one if it has none - or why it cannot
- * have one. Safe to race: the order row is locked, so two callers get the
- * same number.
- */
+/** The order's invoice number, issued if missing, or why it cannot have one. Row-locked, so race-safe. */
 async function issueInvoiceNumber(orderId: string): Promise<Issued | Refusal> {
   return db.$transaction(async (tx) => {
     const [row] = await tx.$queryRaw<
       { invoice_number: string | null; invoiced_at: Date | null; status: OrderStatus }[]
     >`SELECT invoice_number, invoiced_at, status FROM orders WHERE id = ${orderId}::uuid FOR UPDATE`
     if (!row) return "missing"
-    // Checked before an existing number is handed back: it used to return
-    // any number already issued, so a refunded order kept printing - and
-    // emailing - a tax invoice for a sale that had been reversed.
+    // Before returning an existing number: a refunded order must not reprint its invoice.
     if (CREDITED.includes(row.status)) return "credited"
     if (row.invoice_number && row.invoiced_at) {
       return { invoiceNumber: row.invoice_number, invoicedAt: row.invoiced_at }
@@ -125,11 +99,7 @@ async function issueInvoiceNumber(orderId: string): Promise<Issued | Refusal> {
 
 type CreditIssued = Issued & { creditNoteNumber: string; creditedAt: Date; fresh: boolean }
 
-/**
- * The order's credit note number, issuing one if it has none. Only for an
- * order that was invoiced and has since been refunded or cancelled. Locked
- * like the invoice number, so it is issued once.
- */
+/** The credit note number for an invoiced, then refunded or cancelled, order. Row-locked. */
 async function issueCreditNote(
   orderId: string,
 ): Promise<CreditIssued | "missing" | "no-invoice" | "not-credited"> {
@@ -365,16 +335,9 @@ export async function emailInvoice(
 }
 
 /**
- * The delivery email, with the invoice attached, after the response. Sent at
- * most once: the order is claimed by setting `invoiceEmailedAt`, and handed
- * back if the mail did not go, so staff can send it from the order page.
- * Never fails the caller.
- *
- * Everything, the claim included, is inside the try: it runs in after(),
- * where a rejected promise is an unhandled rejection nobody sees - which is
- * what a database error on the claim used to become. A send that fails is
- * audit-logged, so the order page's history says why the customer has no
- * invoice.
+ * The delivery email with the invoice, after the response. Sent at most once: claimed
+ * via `invoiceEmailedAt`, handed back if the mail did not go. Never fails the caller.
+ * Keep the claim inside the try: in after() a rejection goes unseen. Failures are audit-logged.
  */
 export function queueInvoiceEmail(orderId: string, session: Session | null = null): void {
   later(async () => {
@@ -484,11 +447,7 @@ export async function getCreditNotePdf(
   })
 }
 
-/**
- * Issues the credit note for an order just refunded, when it had been
- * invoiced. Called by refundOrder; best effort - the refund has happened
- * either way, and the order page issues it on first print if this did not.
- */
+/** Issues the credit note after a refund. Best effort: first print issues it otherwise. */
 export async function creditNoteOnRefund(orderId: string, session: Session | null): Promise<void> {
   try {
     if (await paidInTestMode(orderId)) return

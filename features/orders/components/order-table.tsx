@@ -45,12 +45,7 @@ import { useUrlState } from "@/hooks/use-url-state"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
-/**
- * The two lists one table serves. Orders is the working list - paid, or
- * cash on delivery accepted, and everything that happens after. All orders
- * adds the ones never paid for, which Abandoned carts follows up on. Each
- * links to the other from More actions.
- */
+// Orders: paid or COD accepted, and onward. All orders adds the never-paid ones.
 const SCOPES: Record<
   OrderScope,
   { title: string; exportName: string; other: { label: string; href: string } }
@@ -61,7 +56,6 @@ const SCOPES: Record<
     other: { label: "All orders, paid or not", href: "/admin/orders/all" },
   },
   all: {
-    // Under Orders in the header: Orders > All orders.
     title: "All orders",
     exportName: "all-orders",
     other: { label: "Orders to fulfil", href: "/admin/orders" },
@@ -82,14 +76,13 @@ function fmtDate(iso: string) {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
-/** The money the courier is still to collect, while it still is. */
+/** What the courier is still to collect, or 0 once nothing is. */
 function dueAtDoor(o: OrderRow): number {
   const due = Number(o.dueOnDelivery)
   const owed = o.payment === "pending" || o.payment === "partially_paid"
   return owed && o.status !== "RETURNED" && due > 0 ? due : 0
 }
 
-/** How the payment is made, and what is left to collect. */
 function paymentNote(o: OrderRow): string {
   const due = dueAtDoor(o)
   const method = PAYMENT_METHOD_SHORT[o.paymentMethod]
@@ -101,15 +94,13 @@ export function OrderTable({
   canDeleteTest = false,
 }: {
   scope?: OrderScope
-  /** An owner or admin: offered Delete orders, which the server also checks. */
+  /** The server checks this too. */
   canDeleteTest?: boolean
 }) {
   const copy = SCOPES[scope]
   const views = viewsIn(scope)
 
-  // View and search live in the URL, so a filtered list is shareable
-  // (§6). The page does not: paging happens in the table, over the window
-  // the server sent.
+  // View and search in the URL; the page is not, as the table pages client-side.
   const [state, setState] = useUrlState(DEFAULTS)
   const [rawQuery, setRawQuery] = React.useState(state.q)
   const debounced = useDebounce(rawQuery, 350)
@@ -118,12 +109,10 @@ export function OrderTable({
     if (debounced !== state.q) setState({ q: debounced })
   }, [debounced, state.q, setState])
 
-  // A link or bookmark naming a view this list does not have falls back to
-  // all of it.
+  // A view this list lacks (old link) falls back to all.
   const view: OrderView = views.includes(state.view as OrderView)
     ? (state.view as OrderView)
     : "all"
-  // The view is the one filter: the status dropdown beside it is gone.
   const { data, isLoading, isError, error } = useOrders({
     page: 1,
     scope,
@@ -132,8 +121,7 @@ export function OrderTable({
     q: state.q,
   })
 
-  // What Export and More actions work on, taken as the menu opens: the
-  // ticked orders, or else every order in the tab.
+  // Taken as the menu opens: the ticked orders, or else every order in the tab.
   const table = React.useRef<DataTableHandle<OrderRow>>(null)
   const [target, setTarget] = React.useState<{ rows: OrderRow[]; selected: boolean }>({
     rows: [],
@@ -154,8 +142,7 @@ export function OrderTable({
         ? plural(target.rows.length, "selected order", "selected orders")
         : `All ${plural(target.rows.length, "order", "orders")} listed`
 
-  // Delete orders: tests, and attempts whose payment never came. The server
-  // says first what would go and what stays, and why; only the confirm deletes.
+  // The server previews what would go and what stays; only the confirm deletes.
   const { ask, dialog } = useConfirm()
   const deleteTest = useDeleteTestOrders()
 
@@ -210,8 +197,7 @@ export function OrderTable({
       key: "number",
       header: "Order",
       value: (o) => o.number,
-      // The row is not the link: a clickable row and a selection checkbox
-      // fight over the same click.
+      // Not a clickable row: it would fight the selection checkbox.
       cell: (o) => (
         <Link
           href={`/admin/orders/${o.id}`}
@@ -236,7 +222,6 @@ export function OrderTable({
     {
       key: "placed",
       header: "Date",
-      // Sorts on the ISO string, which orders correctly.
       value: (o) => o.placedAt ?? o.createdAt,
       cell: (o) => (
         <span className="text-ash font-mono text-[12px]">{fmtDate(o.placedAt ?? o.createdAt)}</span>
@@ -257,7 +242,7 @@ export function OrderTable({
       key: "total",
       header: "Total",
       align: "right",
-      // Money is a string on the wire; as text "₹1,000" sorts below "₹2".
+      // A number, so it sorts numerically.
       value: (o) => Number(o.total),
       cell: (o) => (
         <span className="text-bone font-mono text-[13.5px]">
@@ -265,7 +250,6 @@ export function OrderTable({
         </span>
       ),
     },
-    // Shopify's three statuses in place of the order's one (order-progress.ts).
     {
       key: "payment",
       header: "Payment status",
@@ -304,7 +288,6 @@ export function OrderTable({
     {
       key: "delivery",
       header: "Delivery status",
-      // Blank until there is a parcel, as Shopify leaves it.
       value: (o) => o.delivery?.label ?? "",
       cell: (o) =>
         o.delivery ? (
@@ -327,8 +310,6 @@ export function OrderTable({
     },
   ]
 
-  // The view, as Shopify has it: All, Unfulfilled, Unpaid... in a menu
-  // beside the search.
   const bar = (
     <div className="flex items-center gap-2">
       <ViewMenu
@@ -421,9 +402,7 @@ export function OrderTable({
               ) : null}
             </Menu>
 
-            {/* No order is made in here: the shop's checkout is where stock,
-              the price and the payment are settled, so a phone order goes
-              through it too, in a new tab, with the customer's details. */}
+            {/* Orders are only made at checkout, which settles stock, price and payment. */}
             <HeaderLink
               variant="primary"
               href={`/product/${FLAME_SKULL_MOUNT.slug}`}
@@ -452,7 +431,6 @@ export function OrderTable({
           rowId={(o) => o.id}
           exportName={copy.exportName}
           exportButtons={false}
-          // Cancelled orders step back, struck through, as closed business.
           rowClassName={(o) =>
             o.status === "CANCELLED"
               ? "[&>td]:opacity-55 [&>td]:transition-opacity hover:[&>td]:opacity-100"
@@ -486,7 +464,6 @@ export function OrderTable({
   )
 }
 
-/** What a deletion would delete and keep, in the confirm dialog. */
 function DeletionPreview({ plan }: { plan: TestOrderPlan }) {
   return (
     <div className="flex flex-col gap-4">

@@ -1,41 +1,14 @@
 /**
- * Builds the four Ghost Grey gallery shots from their Militia Olive and Blaze
- * Orange twins. (The lineup card, colourway-ghost-grey-print.jpg, is the print
- * itself seated in the photo: build-colourway-cards.mjs.)
+ * Builds the Ghost Grey gallery shots from their Militia Olive and Blaze Orange
+ * twins (the lineup card comes from build-colourway-cards.mjs).
  *
- *   node scripts/build-ghost-shots.mjs
+ *   node scripts/build-ghost-shots.mjs [--mask]
  *
- * The first ghost set came back from an image model asked for a grey print,
- * and it painted one near white: next to the real filament the gallery was
- * selling a silver skull. The yardstick is colourway-lineup.jpg, the one shot
- * with the three real prints side by side under one light. There the grey is
- * almost neutral, with a faint violet cast, and across the skull its median
- * luminance is 0.948 of the orange print's.
- *
- * Each shot exists in orange and olive, pixel for pixel the same scene: 95-100%
- * of the olive print lands on orange print in its twin. So each grey takes:
- *
- * - its shape from the olive twin. Olive is the one colour in these scenes
- *   nothing else shares - the print sits at hue 50-80°, the walls, gloves, keys
- *   and orange spill at 0-30°, the concrete at 210-230° - so a hue window
- *   finds the skull with no mask to draw by hand.
- * - its tones from the orange twin: the olive print's luminance is remapped,
- *   quantile for quantile, onto the orange print's, times 0.948. The olive
- *   keeps every layer line and flame edge; the orange - the colour the scene
- *   was made in, and the one the lineup measures against - sets how bright the
- *   grey is under that scene's light.
- * - its colour from the catalogue swatch, in linear light, keeping part of how
- *   far each pixel strays from the olive print's own median colour in that
- *   shot - the light and shade across the skull. Not from the olive swatch:
- *   each generated scene printed its olive a little off it, and measured
- *   against the swatch that offset came through as a khaki or lavender cast.
- *
- * The files are named -ghost-grey, not -ghost: the near-white set went out
- * under the old names with a week of browser cache, and a new name is the
- * only thing that reaches a visitor who has already seen it.
- *
- * Pass --mask to also write each shot's mask beside it, for checking the hue
- * window against a new set.
+ * Each grey takes its shape from the olive twin (a hue window finds the print),
+ * its tones from the orange twin (olive luminance mapped quantile for quantile
+ * onto the orange's, times 0.948), and its colour from the catalogue swatch,
+ * shaded by each pixel's offset from that shot's own olive median, not the
+ * olive swatch. --mask also writes each shot's mask, to check the hue window.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -95,16 +68,11 @@ const TO = swatch("ghost")
 const HUE = [35, 45, 95, 110]
 /** Chroma (0-255) over which a pixel goes from set to print; below it is grey anyway. */
 const CHROMA = [6, 18]
-/**
- * How much of a pixel's departure from the print's median colour carries into
- * the grey: the warm key against the cooler shadow side. All of it would tint
- * the grey as strongly as it tints the olive; none of it flattens the skull to
- * one colour under two lights.
- */
+/** Share of a pixel's offset from the print's median colour kept in the grey (light and shade). */
 const KEEP = 0.5
 /** Below this luminance the ratio behind KEEP is noise, so it fades out. */
 const DARK = [0.004, 0.02]
-/** Quantiles in the tone map. The print runs to a million pixels; this is plenty. */
+/** Quantiles in the tone map. */
 const STEPS = 256
 
 const smoothstep = (lo, hi, v) => {

@@ -5,11 +5,7 @@ import { describe, expect, it } from "vitest"
 
 import { isUnknownPage } from "@/lib/known-pages"
 
-/**
- * proxy.ts answers 404 for what this calls unknown, before anything renders.
- * Too little and fake product URLs are soft 404s; too much and real files go
- * missing - which is how every product photo on the site once disappeared.
- */
+// Too loose and fake URLs are soft 404s; too strict and real files 404.
 describe("isUnknownPage", () => {
   it("lets the real product and policy pages through", () => {
     expect(isUnknownPage("/product/flame-skull-mount")).toBe(false)

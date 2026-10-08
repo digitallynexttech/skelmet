@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-/**
- * The mailer's promises: it gives up on a dead mail server in seconds rather
- * than minutes, and it never writes a customer's address into the logs.
- */
-
 const mocks = vi.hoisted(() => ({
   createTransport: vi.fn(),
   sendMail: vi.fn(),
@@ -30,7 +25,6 @@ afterEach(() => {
   mocks.sendMail.mockReset()
 })
 
-/** Brevo's API answering with `status` and `body`. */
 function brevoApi(status: number, body: unknown) {
   const fetch = vi.fn(
     async () => new Response(typeof body === "string" ? body : JSON.stringify(body), { status }),
@@ -39,7 +33,7 @@ function brevoApi(status: number, body: unknown) {
   return fetch
 }
 
-/** SMTP servers by host: each either takes the message (its id) or refuses it. */
+/** By host: a message id to accept, or an Error to refuse. */
 function smtpServers(hosts: Record<string, string | Error>) {
   const sent: Array<{ host: string; message: Record<string, unknown> }> = []
   mocks.createTransport.mockImplementation((options: { host: string }) => ({
@@ -150,7 +144,7 @@ describe("the three routes", () => {
       replyTo: { name: "SKELMET", email: "contact@skelmet.in" },
       attachment: [{ name: "invoice.pdf", content: Buffer.from("%PDF").toString("base64") }],
     })
-    // The API took it, so no SMTP server was even dialled.
+    // No SMTP server dialled.
     expect(mocks.createTransport).not.toHaveBeenCalled()
     expect(sent).toEqual([])
   })

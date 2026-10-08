@@ -1,16 +1,11 @@
 /**
- * The product gallery's use-case shots, each in all three colourways.
+ * Builds the product gallery's use-case shots, each in all three colourways.
  *
  *   node scripts/build-gallery-shots.mjs [owner-photo-dir]
  *
- * Every shot shows the real mount - the skull on its arm, the plate on the
- * wall - in use: helmet and riding gear hung on it, a garage at night, the
- * owner's own photograph of the bare skull with gloves on its hook (also the
- * side view: it shows the arm as it ships), and screwing it up. They are the
- * scenes the home page already uses (their provenance is in bento.tsx and
- * build-rider-wall.mjs), cropped square for the gallery. The orange is the scene as made; the olive and the grey are
- * recoloured from it (recolour-skull.mjs), so all three finishes share
- * framing pixel for pixel and switching colourway does not shift the image.
+ * The home page's scenes, cropped square. Olive and grey are recoloured from the
+ * orange (recolour-skull.mjs), so every finish shares its framing pixel for pixel
+ * and switching colourway does not shift the image.
  */
 import fs from "node:fs"
 import path from "node:path"

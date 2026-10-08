@@ -1,5 +1,4 @@
-// The blog's public API for client code and other features. Server modules
-// (server/sanity, server/known-posts) are imported by path, never from here.
+// The blog's public API. Server modules are imported by path, never from here.
 export {
   BLOG_CATEGORIES,
   categoryLabel,

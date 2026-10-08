@@ -43,12 +43,10 @@ const ADVANCE_KIND_LABEL: Record<AdvanceKind, string> = {
   FLAT: "A fixed amount",
 }
 
-/** The order the summaries are worked out on. */
-const EXAMPLE_ORDER = 3000
+const EXAMPLE_ORDER = 3000 // ₹, for the worked example in the summary
 
 const extra = (rupees: number) => (rupees > 0 ? `${formatMoney(rupees)} extra` : "no extra charge")
 
-/** Each way of paying in one sentence, as a buyer would meet it. */
 function describe(options: PaymentOptions): string[] {
   const lines = ["Paying online in full: always offered, no extra charge."]
 

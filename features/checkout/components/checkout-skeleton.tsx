@@ -23,10 +23,8 @@ export function NothingToCheckOut({ heading = true }: { heading?: boolean }) {
 }
 
 /**
- * What checkout shows while it reads the cart from this device: the real
- * heading and blocks the size of the form and summary - or, when the saved
- * cart is empty, the empty state itself (the CSS switch on data-when-cart in
- * globals.css) - so nothing below, the footer, jumps when the page arrives.
+ * Shown while the cart is read: blocks the size of the real page, or the empty
+ * state (CSS switch on data-when-cart in globals.css), so the footer does not jump.
  */
 export function CheckoutSkeleton() {
   return (

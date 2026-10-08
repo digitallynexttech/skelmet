@@ -1,13 +1,10 @@
 /**
- * Blaze Orange's own gallery shots, from the photographs in public/shop.
+ * Builds Blaze Orange's own gallery shots from the photographs in public/shop.
  *
  *   node scripts/build-shop-shots.mjs [photo-dir]
  *
- * The photographs are 4:5 and taken in Blaze Orange only, so unlike
- * build-gallery-shots.mjs there is nothing to recolour. Each is cut square
- * for the gallery, keeping the edge that carries the point of the picture:
- * the skull and the labels at the top, the bike's wheels at the bottom.
- * Same size and encoding as the other gallery shots.
+ * Orange only, so nothing to recolour. Each 4:5 photo is cut square, keeping the
+ * part that carries the picture's point (`keep`).
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -31,7 +28,7 @@ const DIR = path.join(ROOT, "public/product")
 const PHOTOS = process.argv[2] ?? path.join(ROOT, "public/shop")
 const MAX = 1400
 
-/** keep: the part of the picture the square is cut from - its top, its middle or its bottom. */
+/** keep: which part of the picture the square is cut from. */
 const SHOTS = [
   { from: "mount.png", to: "gallery-fitting.jpg", keep: "top" },
   { from: "helmet.png", to: "gallery-placing-helmet.jpg", keep: "centre" },

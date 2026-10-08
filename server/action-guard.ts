@@ -9,10 +9,7 @@ import { auth } from "@/server/auth"
 import { db } from "@/server/db"
 import { outlived, sessionClaims } from "@/server/session-policy"
 
-/**
- * Guards live inside the service, not the route (§5). Hiding a nav item is
- * cosmetic; these and proxy.ts are the enforcement.
- */
+// Guards are called by services, not routes. With proxy.ts, the enforcement.
 
 export async function requireSession(): Promise<Session> {
   const session = await auth()
@@ -26,15 +23,8 @@ export const MUST_CHANGE_PASSWORD =
   "Set a new password before you carry on: your account is still on the temporary one. Go to /change-password."
 
 /**
- * The session with its kind, roles, permissions and password flag read fresh
- * from the database, overwriting what the token remembers.
- *
- * The token is a snapshot taken at login. Trusting it meant revoking a staff
- * member, or taking a role away, changed nothing until their token expired.
- * One small query per staff action is the price of revocation that actually
- * revokes. The same row carries `sessionVersion`, which a password reset or
- * change, a revoke or a role removal bumps: a token from before that answers
- * 401 here even if its cookie is still in the browser.
+ * Kind, roles, permissions and password flag read fresh from the database, so a
+ * revoke takes effect at once; a stale `sessionVersion` answers 401.
  */
 async function withLiveAccess(session: Session): Promise<Session> {
   if (!hasDatabase()) return session
@@ -62,7 +52,6 @@ async function withLiveAccess(session: Session): Promise<Session> {
       },
     },
   })
-  // Deleted outright: nobody to act as.
   if (!user) throw new UnauthorizedError()
   if (user.sessionVersion !== claims.sessionVersion) throw new UnauthorizedError(SESSION_ENDED)
 
@@ -75,19 +64,13 @@ async function withLiveAccess(session: Session): Promise<Session> {
   return session
 }
 
-/**
- * A current member of staff. While their account is on a temporary password
- * (`mustChangePassword`), only changing it is allowed: the (app) layout sends
- * pages to /change-password, and this is the same rule for the API - which
- * the layout never sees, so a temporary password used to work for every
- * endpoint in the console.
- */
+/** On a temporary password (`mustChangePassword`), the API allows only changing it. */
 export async function requireStaff(
   options: { allowPendingPasswordChange?: boolean } = {},
 ): Promise<Session> {
   const session = await withLiveAccess(await requireSession())
   if (session.user.kind !== "STAFF") {
-    // 404, not 403 - a customer must not be able to probe what exists (§6).
+    // 404, not 403: a customer must not probe what exists.
     throw new ForbiddenError("Not found.")
   }
   if (session.user.mustChangePassword && !options.allowPendingPasswordChange) {
@@ -96,11 +79,7 @@ export async function requireStaff(
   return session
 }
 
-/**
- * The staff shell's gate: a live session for a current staff member, or null.
- * For the layout, which redirects rather than throwing - and which reads
- * `mustChangePassword`, fresh from the database, to send them to set one.
- */
+/** For the staff layout, which redirects instead of throwing. */
 export async function staffSession(): Promise<Session | null> {
   const session = await auth()
   if (!session?.user?.id) return null
@@ -119,16 +98,12 @@ export async function requirePermission(scope: Permission): Promise<Session> {
   return session
 }
 
-/** Holds an Admin or Owner role (FULL_ACCESS_ROLES). */
 export function hasFullAccess(session: Session | null): boolean {
   const full = FULL_ACCESS_ROLES.map((r) => r.toLowerCase())
   return Boolean(session?.user?.roles?.some((r) => full.includes(r.toLowerCase())))
 }
 
-/**
- * For the few things no single permission should reach - deleting orders -
- * only the full-access roles may do.
- */
+/** For what no single permission should reach, e.g. deleting orders. */
 export async function requireFullAccess(): Promise<Session> {
   const session = await requireStaff()
   if (!hasFullAccess(session)) {
@@ -137,7 +112,6 @@ export async function requireFullAccess(): Promise<Session> {
   return session
 }
 
-/** Null instead of a throw, for pages that render differently when signed out. */
 export async function optionalSession(): Promise<Session | null> {
   return auth()
 }

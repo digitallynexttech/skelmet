@@ -3,12 +3,8 @@ import { describe, expect, it } from "vitest"
 import { FAQ_ITEMS } from "@/components/marketing/content"
 import { PISTON_SKULL_MOUNT, PRODUCTS } from "@/features/catalog/catalog"
 
-/**
- * Each skull's page shows the same sections with its own pictures and words.
- * A product's FAQ answers are keyed by the question's text, so a reworded
- * question would quietly drop the override - and put back a claim that is not
- * true of that skull.
- */
+// FAQ overrides are keyed by question text: a reworded question would silently restore a claim
+// that is not true of that skull.
 describe("product sections", () => {
   it("override only questions the FAQ asks", () => {
     const questions = FAQ_ITEMS.map((item) => item.question)

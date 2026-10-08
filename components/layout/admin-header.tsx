@@ -4,16 +4,10 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { useAdminShell } from "@/components/layout/admin-shell"
 
-/**
- * The bar across the top of the console's content, the same 68px and colour
- * as the sidebar's logo row, so the two read as one frame. It holds the
- * sidebar's toggle; the logo stays in the sidebar, which closes to its icons
- * and the skull mark rather than going away.
- */
+/** Holds the sidebar toggle; 68px to match the sidebar's logo row. */
 export function AdminHeader() {
   const { collapsed, drawerOpen, toggle } = useAdminShell()
-  // What the button would do, for the screen it is on: from lg it is the rail,
-  // below it the drawer.
+  // The rail from lg, the drawer below.
   const railLabel = collapsed ? "Open sidebar" : "Close sidebar"
   const drawerLabel = drawerOpen ? "Close menu" : "Open menu"
 

@@ -16,7 +16,6 @@ const QUERY = {
   q: textParam,
 }
 
-/** One expression. No try/catch, no db, no NextResponse.json (§5). */
 export const GET = withErrorHandler(async (req) =>
   respond(await listOrders(listParams(req.nextUrl.searchParams, QUERY))),
 )

@@ -1,8 +1,4 @@
-/**
- * Brand glyphs drawn inline: lucide-react 1.x dropped its brand set. These are
- * each network's own mark, solid, from Simple Icons (CC0) - a redrawn outline
- * of somebody else's logo reads as a logo from a few years back.
- */
+// Inline brand marks from Simple Icons (CC0): lucide-react 1.x dropped its brand set.
 
 type IconProps = { className?: string }
 

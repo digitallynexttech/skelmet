@@ -8,12 +8,7 @@ import { getBlogPost, getBlogPosts, getBlogSlugs } from "@/features/blog/server/
 
 type Params = { slug: string }
 
-/**
- * Prerendered for every post there is at build time, and rebuilt at most once
- * a minute. A post published later is rendered the first time it is asked
- * for, so unknown slugs stay open here - and proxy.ts answers 404 for the
- * ones that are not posts before they reach this page (known-posts.ts).
- */
+// Unknown slugs stay open for posts published after the build; proxy.ts 404s non-posts.
 export const revalidate = 60
 
 export async function generateStaticParams(): Promise<Params[]> {
@@ -30,7 +25,6 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const post = await getBlogPost(slug).catch(() => null)
   if (!post) return { title: "Not found" }
 
-  // The post's own picture on its share card, at the size cards are drawn.
   const cover = imageUrl(post.coverImage, { width: 1200, height: 630 })
   const meta = pageMetadata({
     title: post.title,
