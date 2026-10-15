@@ -147,6 +147,8 @@ export async function listOrders(params: {
   status?: OrderStatus | "ALL"
   view?: OrderView
   q?: string | null
+  /** Days back from now, by when the order was placed; 0 or absent is all time. */
+  days?: number
 }): Promise<
   ActionResult<{
     data: OrderRow[]
@@ -167,7 +169,6 @@ export async function listOrders(params: {
     const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? PAGE_SIZE))
     const q = params.q?.trim()
 
-    // Search narrows the tab counts; view and status filter do not.
     const searched = q
       ? {
           OR: [
@@ -184,9 +185,15 @@ export async function listOrders(params: {
       params.status && params.status !== "ALL"
         ? { status: inScope.includes(params.status) ? params.status : { in: [] } }
         : { status: { in: [...inScope] } }
-    const scoped = { ...searched, status: { in: [...inScope] } }
-    // AND, not a spread: the search and a view are both an OR.
-    const where = { AND: [searched, status, viewWhere(params.view ?? "all")] }
+    // The Date column's date: when it was placed, or created if it never was.
+    const since = params.days ? new Date(Date.now() - params.days * 86_400_000) : null
+    const period = since
+      ? { OR: [{ placedAt: { gte: since } }, { placedAt: null, createdAt: { gte: since } }] }
+      : {}
+    // Search and period narrow the tab counts too; view and status filter do not.
+    const scoped = { AND: [searched, period, { status: { in: [...inScope] } }] }
+    // AND, not a spread: the search, the period and a view are each an OR.
+    const where = { AND: [searched, period, status, viewWhere(params.view ?? "all")] }
 
     const [rows, total, grouped] = await Promise.all([
       db.order.findMany({

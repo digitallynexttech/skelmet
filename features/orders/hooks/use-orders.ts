@@ -162,6 +162,8 @@ type OrderListParams = {
   status: OrderStatus | "ALL"
   view: OrderView
   q: string
+  /** Days back; "0" is all time. */
+  days: string
 }
 
 const getOrders = (params: OrderListParams) => {
@@ -170,6 +172,7 @@ const getOrders = (params: OrderListParams) => {
     scope: params.scope,
     status: params.status,
     view: params.view,
+    days: params.days,
     // The console sorts and exports client-side, so it needs the whole window.
     pageSize: String(MAX_PAGE_SIZE),
   })

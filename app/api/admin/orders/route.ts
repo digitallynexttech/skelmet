@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 import { ORDER_VIEW_KEYS } from "@/features/orders/order-views"
 import { listOrders } from "@/features/orders/server/orders.service"
 import { respond } from "@/lib/api-response"
@@ -14,6 +16,11 @@ const QUERY = {
   status: enumParam(["ALL", ...ORDER_STATUSES], "ALL"),
   view: enumParam(ORDER_VIEW_KEYS, "all"),
   q: textParam,
+  // Days back from now; 0 is all time.
+  days: z.preprocess(
+    (v) => (v === null || v === "" ? undefined : v),
+    z.coerce.number().int().min(0).max(3_650).optional(),
+  ),
 }
 
 export const GET = withErrorHandler(async (req) =>

@@ -3,19 +3,27 @@
 import * as React from "react"
 import Link from "next/link"
 import {
+  Ban,
   ChevronDown,
   ClipboardCopy,
   ListOrdered,
+  PackageCheck,
+  PackageOpen,
   Phone,
   ShoppingBag,
   ShoppingCart,
   Trash2,
+  Truck,
+  Undo2,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
+import { StatTile } from "@/components/shared/stat-tile"
 import { ToneBadge } from "@/components/shared/status-badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { ExportMenu } from "@/components/ui/export-menu"
@@ -42,6 +50,7 @@ import { useConfirm } from "@/hooks/use-confirm"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUrlState } from "@/hooks/use-url-state"
 import { formatMoney } from "@/lib/money"
+import { PERIODS, isPeriod } from "@/lib/periods"
 import { cn } from "@/lib/utils"
 
 // Orders: paid or COD accepted, and onward. All orders adds the never-paid ones.
@@ -62,7 +71,18 @@ const SCOPES: Record<
 }
 
 // Stable, since useUrlState memoises on it.
-const DEFAULTS = { view: "all", q: "" }
+const DEFAULTS = { view: "all", q: "", days: "0" }
+
+/** Each view's status card. */
+const CARDS: Record<OrderView, { label: string; icon: LucideIcon; tone: string; hint?: string }> = {
+  all: { label: "All orders", icon: ShoppingBag, tone: "text-ash", hint: "Cancelled not counted" },
+  unfulfilled: { label: "Unfulfilled", icon: PackageOpen, tone: "text-ember" },
+  unpaid: { label: "Unpaid", icon: Wallet, tone: "text-ember", hint: "With cash due on delivery" },
+  shipped: { label: "In transit", icon: Truck, tone: "text-violet" },
+  delivered: { label: "Delivered", icon: PackageCheck, tone: "text-acid" },
+  returns: { label: "Returns", icon: Undo2, tone: "text-magenta" },
+  cancelled: { label: "Cancelled", icon: Ban, tone: "text-dim" },
+}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -112,12 +132,14 @@ export function OrderTable({
   const view: OrderView = views.includes(state.view as OrderView)
     ? (state.view as OrderView)
     : "all"
+  const days = isPeriod(state.days) ? state.days : "0"
   const { data, isLoading, isError, error } = useOrders({
     page: 1,
     scope,
     view,
     status: "ALL",
     q: state.q,
+    days,
   })
 
   // Taken as the menu opens: the ticked orders, or else every order in the tab.
@@ -417,6 +439,27 @@ export function OrderTable({
 
       {dialog}
 
+      <div
+        className={cn(
+          "grid grid-cols-2 gap-3 sm:grid-cols-3",
+          views.length > 6 ? "xl:grid-cols-7" : "xl:grid-cols-6",
+        )}
+      >
+        {views.map((v) => (
+          <StatTile
+            key={v}
+            label={CARDS[v].label}
+            icon={CARDS[v].icon}
+            tone={CARDS[v].tone}
+            hint={CARDS[v].hint}
+            active={view === v}
+            onClick={() => setState({ view: v })}
+          >
+            {data?.viewCounts ? data.viewCounts[v].toLocaleString("en-IN") : "-"}
+          </StatTile>
+        ))}
+      </div>
+
       {isError ? (
         <EmptyState
           title="Could not load orders"
@@ -435,12 +478,25 @@ export function OrderTable({
               ? "[&>td]:opacity-55 [&>td]:transition-opacity hover:[&>td]:opacity-100"
               : undefined
           }
-          pageKey={`${view}|${state.q}`}
+          pageKey={`${view}|${days}|${state.q}`}
           bar={bar}
+          // On the right, so view and search keep the first row on a phone.
+          barEnd={
+            <ViewMenu
+              label="Period"
+              value={days}
+              onChange={(next) => setState({ days: next })}
+              options={PERIODS}
+            />
+          }
           loading={isLoading}
           total={data?.pagination?.total}
           empty={
-            state.q ? "No order matches that search." : "No orders here yet. Try another view."
+            state.q
+              ? "No order matches that search."
+              : days !== "0"
+                ? "No orders here in this period. Try a longer one, or another view."
+                : "No orders here yet. Try another view."
           }
           exportColumns={[
             { header: "Order", value: (o) => o.number },

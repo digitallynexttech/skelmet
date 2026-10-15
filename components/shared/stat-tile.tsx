@@ -23,7 +23,8 @@ export function StatTile({
   children: React.ReactNode
 }) {
   const className = cn(
-    "rounded-md border px-5 py-4 text-left",
+    // A column from the top: a button would centre a short tile's figure beside a taller one's.
+    "flex flex-col rounded-md border px-5 py-4 text-left",
     active ? "border-blaze/60 bg-blaze/[0.07]" : "bg-carbon border-white/[0.09]",
     onClick && !active && "transition-colors hover:border-white/25",
   )

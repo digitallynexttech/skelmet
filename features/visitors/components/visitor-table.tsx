@@ -42,6 +42,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { useStoredState } from "@/hooks/use-stored-state"
 import { useUrlState } from "@/hooks/use-url-state"
 import { regionOf } from "@/lib/india"
+import { PERIODS, isPeriod } from "@/lib/periods"
 
 const VIEWS: Array<{
   id: VisitorView
@@ -86,14 +87,6 @@ const VIEWS: Array<{
   { id: "bought", label: "Bought", card: "Bought", icon: BadgeCheck, tone: "text-acid" },
 ]
 
-const PERIODS = [
-  { value: "1", label: "Last 24 hours" },
-  { value: "7", label: "Last 7 days" },
-  { value: "30", label: "Last 30 days" },
-  { value: "90", label: "Last 90 days" },
-  { value: "0", label: "All time" },
-]
-
 const PAGE_SIZES = [10, 20, 50, 100]
 
 // Stable, since useUrlState memoises on it.
@@ -109,7 +102,7 @@ export function VisitorTable() {
   }, [debounced, state.q, setState])
 
   const view = (VIEWS.some((v) => v.id === state.view) ? state.view : "all") as VisitorView
-  const days = PERIODS.some((p) => p.value === state.days) ? state.days : "30"
+  const days = isPeriod(state.days) ? state.days : "30"
   // Paged on the server, so every visitor is reachable however many there are.
   const page = Math.max(1, Math.floor(Number(state.page)) || 1)
   const sort = (VISITOR_SORTS as readonly string[]).includes(state.sort)
