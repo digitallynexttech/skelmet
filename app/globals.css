@@ -590,6 +590,61 @@ html:not([data-cart-empty]) [data-when-cart="empty"] {
   }
 }
 
+/* The hero's "Grab yours" (Hero). Two sparks run round its border and the arrow nudges
+   forward, transform only, so both run on the compositor beside the 3D skull. With
+   reduced motion both hold still. */
+.cta-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgb(255 90 31 / 0.35);
+}
+
+/* A square wider than the pill's diagonal, turning: only the 3px ring outside the button
+   shows it. */
+.cta-beam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    transparent 0deg 100deg,
+    #ff5a1f 146deg,
+    #ffb070 164deg,
+    #fff 173deg,
+    transparent 180deg 280deg,
+    #ff5a1f 326deg,
+    #ffb070 344deg,
+    #fff 353deg,
+    transparent 360deg
+  );
+  animation: cta-beam 3s linear infinite;
+  will-change: transform;
+}
+
+.cta-nudge {
+  animation: cta-nudge 1.4s ease-in-out infinite;
+}
+
+@keyframes cta-beam {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes cta-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-splash] {
     display: none !important;

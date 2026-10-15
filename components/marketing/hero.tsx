@@ -1,4 +1,4 @@
-import { MoveLeft, MoveRight } from "lucide-react"
+import { ArrowRight, MoveLeft, MoveRight } from "lucide-react"
 
 import { HeroHeadline } from "@/components/marketing/hero-headline"
 import { SkullStage } from "@/components/marketing/skull-stage"
@@ -96,14 +96,26 @@ export function Hero() {
           </div>
 
           <div className="mt-5 flex w-full flex-col items-center sm:mt-7 sm:w-auto xl:absolute xl:right-0 xl:bottom-0 xl:z-30 xl:mt-0 xl:items-end">
-            <ButtonLink
-              href={`/product/${product.slug}`}
-              variant="primary"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Grab yours
-            </ButtonLink>
+            {/* Sparks run round the border and the arrow nudges forward (globals.css). The
+                wrapper carries the glow, so the ring is not cut out of it. */}
+            <div className="group relative w-full rounded-full p-[3px] shadow-[0_14px_40px_rgb(255_90_31_/_0.34)] transition-[translate,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_48px_rgb(255_90_31_/_0.5)] sm:w-auto">
+              <span aria-hidden className="cta-border pointer-events-none">
+                <span className="cta-beam" />
+              </span>
+              <ButtonLink
+                href={`/product/${product.slug}`}
+                variant="primary"
+                size="lg"
+                className="relative w-full shadow-none hover:shadow-none sm:w-auto"
+              >
+                Grab yours
+                <ArrowRight
+                  aria-hidden
+                  className="cta-nudge size-[18px] transition-[translate] duration-300 group-hover:translate-x-1"
+                  strokeWidth={2.4}
+                />
+              </ButtonLink>
+            </div>
           </div>
         </div>
       </div>
