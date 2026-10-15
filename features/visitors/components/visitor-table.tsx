@@ -2,11 +2,20 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Users } from "lucide-react"
+import {
+  BadgeCheck,
+  Contact,
+  Cookie,
+  EyeOff,
+  ShoppingCart,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { Money } from "@/components/shared/money"
 import { PageHeader } from "@/components/shared/page-header"
+import { StatTile } from "@/components/shared/stat-tile"
 import { Badge } from "@/components/ui/badge"
 import { DataTable, type Column, type DataTableHandle } from "@/components/ui/data-table"
 import { ExportMenu } from "@/components/ui/export-menu"
@@ -14,10 +23,12 @@ import { TableSearch } from "@/components/ui/table-search"
 import { ViewMenu } from "@/components/ui/view-menu"
 import { DeviceIcon } from "@/features/visitors/components/device-icon"
 import {
+  fetchAllVisitors,
   useVisitors,
   type VisitorRow,
   type VisitorView,
 } from "@/features/visitors/hooks/use-visitors"
+import { VISITOR_SORTS, type VisitorSort } from "@/features/visitors/lib/sort"
 import {
   ago,
   deviceLine,
@@ -28,17 +39,51 @@ import {
   when,
 } from "@/features/visitors/lib/format"
 import { useDebounce } from "@/hooks/use-debounce"
+import { useStoredState } from "@/hooks/use-stored-state"
 import { useUrlState } from "@/hooks/use-url-state"
 import { regionOf } from "@/lib/india"
 
-const VIEWS: Array<{ id: VisitorView; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "known", label: "Accepted cookies" },
-  // Each anonymous row is one visit, not one person.
-  { id: "anonymous", label: "Anonymous visits" },
-  { id: "contact", label: "With contact details" },
-  { id: "cart", label: "Items in cart" },
-  { id: "bought", label: "Bought" },
+const VIEWS: Array<{
+  id: VisitorView
+  label: string
+  /** The status card's name, where the menu's is too short. */
+  card: string
+  icon: LucideIcon
+  tone: string
+  hint?: string
+}> = [
+  { id: "all", label: "All", card: "All visitors", icon: Users, tone: "text-ash" },
+  {
+    id: "known",
+    label: "Accepted cookies",
+    card: "Accepted cookies",
+    icon: Cookie,
+    tone: "text-acid",
+  },
+  {
+    id: "anonymous",
+    label: "Anonymous visits",
+    card: "Anonymous visits",
+    icon: EyeOff,
+    tone: "text-dim",
+    // Each anonymous row is one visit, not one person.
+    hint: "One row per visit",
+  },
+  {
+    id: "contact",
+    label: "With contact details",
+    card: "With contact details",
+    icon: Contact,
+    tone: "text-acid",
+  },
+  {
+    id: "cart",
+    label: "Items in cart",
+    card: "Items in cart",
+    icon: ShoppingCart,
+    tone: "text-ember",
+  },
+  { id: "bought", label: "Bought", card: "Bought", icon: BadgeCheck, tone: "text-acid" },
 ]
 
 const PERIODS = [
@@ -49,8 +94,10 @@ const PERIODS = [
   { value: "0", label: "All time" },
 ]
 
+const PAGE_SIZES = [10, 20, 50, 100]
+
 // Stable, since useUrlState memoises on it.
-const DEFAULTS = { view: "all", days: "30", q: "" }
+const DEFAULTS = { view: "all", days: "30", q: "", page: "1", sort: "seen", dir: "desc" }
 
 export function VisitorTable() {
   const [state, setState] = useUrlState(DEFAULTS)
@@ -58,13 +105,30 @@ export function VisitorTable() {
   const debounced = useDebounce(rawQuery, 350)
 
   React.useEffect(() => {
-    if (debounced !== state.q) setState({ q: debounced })
+    if (debounced !== state.q) setState({ q: debounced, page: "1" })
   }, [debounced, state.q, setState])
 
   const view = (VIEWS.some((v) => v.id === state.view) ? state.view : "all") as VisitorView
   const days = PERIODS.some((p) => p.value === state.days) ? state.days : "30"
-  const { data, isLoading, isError, error } = useVisitors({ view, days, q: state.q })
+  // Paged on the server, so every visitor is reachable however many there are.
+  const page = Math.max(1, Math.floor(Number(state.page)) || 1)
+  const sort = (VISITOR_SORTS as readonly string[]).includes(state.sort)
+    ? (state.sort as VisitorSort)
+    : "seen"
+  const dir = state.dir === "asc" ? "asc" : "desc"
+  // The same key DataTable keeps its page size under.
+  const [sizeRaw, setSizeRaw] = useStoredState("skm.table.visitors.size", "20")
+  const pageSize = PAGE_SIZES.includes(Number(sizeRaw)) ? Number(sizeRaw) : 20
+
+  const listed = { view, days, q: state.q, sort, dir } as const
+  const { data, isLoading, isError, error } = useVisitors({ ...listed, page, pageSize })
   const table = React.useRef<DataTableHandle<VisitorRow>>(null)
+
+  // A page past the end (the list shrank, or an old link): go to the last one.
+  const lastPage = data?.pagination?.totalPages
+  React.useEffect(() => {
+    if (lastPage && page > lastPage) setState({ page: String(lastPage) })
+  }, [lastPage, page, setState])
 
   const columns: Column<VisitorRow>[] = [
     {
@@ -179,6 +243,22 @@ export function VisitorTable() {
         actions={<ExportMenu table={table} noun={["visitor", "visitors"]} />}
       />
 
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {VIEWS.map((v) => (
+          <StatTile
+            key={v.id}
+            label={v.card}
+            icon={v.icon}
+            tone={v.tone}
+            hint={v.hint}
+            active={view === v.id}
+            onClick={() => setState({ view: v.id, page: "1" })}
+          >
+            {data?.counts ? data.counts[v.id].toLocaleString("en-IN") : "-"}
+          </StatTile>
+        ))}
+      </div>
+
       {isError ? (
         <EmptyState
           title="Could not load visitors"
@@ -193,11 +273,26 @@ export function VisitorTable() {
           exportName="visitors"
           exportButtons={false}
           pageKey={`${view}|${days}|${state.q}`}
+          pageSizes={PAGE_SIZES}
+          server={{
+            page,
+            pageSize,
+            total: data?.pagination?.total ?? 0,
+            sort: { key: sort, dir },
+            sortable: VISITOR_SORTS,
+            onPage: (next) => setState({ page: String(next) }),
+            onPageSize: (next) => {
+              setSizeRaw(String(next))
+              setState({ page: "1" })
+            },
+            onSort: (next) => setState({ sort: next.key, dir: next.dir, page: "1" }),
+            exportAll: () => fetchAllVisitors(listed),
+          }}
           bar={
             <div className="flex items-center gap-2">
               <ViewMenu
                 value={view}
-                onChange={(v) => setState({ view: v })}
+                onChange={(v) => setState({ view: v, page: "1" })}
                 options={VIEWS.map((v) => ({
                   value: v.id,
                   label: v.label,
@@ -217,12 +312,11 @@ export function VisitorTable() {
             <ViewMenu
               label="Period"
               value={days}
-              onChange={(next) => setState({ days: next })}
+              onChange={(next) => setState({ days: next, page: "1" })}
               options={PERIODS}
             />
           }
           loading={isLoading}
-          total={data?.pagination?.total}
           empty={
             state.q || view !== "all"
               ? "Nobody matches. Try another view, a longer period, or clear the search."

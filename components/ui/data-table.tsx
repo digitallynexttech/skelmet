@@ -22,8 +22,9 @@ import { cn } from "@/lib/utils"
 /**
  * The one table every admin screen uses. Sorting, paging and export run over the rows handed in,
  * so the screen must fetch the whole set (up to MAX_PAGE_SIZE); pass `total` when the server held
- * rows back so the table says so. Cells never wrap; the table scrolls sideways instead. Hidden
- * columns and page size are remembered per exportName in this browser.
+ * rows back so the table says so, or `server` to page on the server instead. Cells never wrap; the
+ * table scrolls sideways instead. Hidden columns and page size are remembered per exportName in
+ * this browser.
  */
 export type Column<T> = {
   key: string
@@ -36,6 +37,23 @@ export type Column<T> = {
   className?: string
   /** Starts hidden where the table has a column picker, until someone shows it. */
   defaultHidden?: boolean
+}
+
+export type TableSort = { key: string; dir: "asc" | "desc" }
+
+/** Paged on the server: `rows` is one page, and the caller fetches each page and order. */
+export type ServerPaging<T> = {
+  page: number
+  pageSize: number
+  total: number
+  sort: TableSort | null
+  /** Columns the server sorts by; the rest are unsortable. */
+  sortable: readonly string[]
+  onPage: (page: number) => void
+  onPageSize: (size: number) => void
+  onSort: (sort: TableSort) => void
+  /** Every matching row, for an export with nothing ticked. */
+  exportAll: () => Promise<T[]>
 }
 
 type Props<T> = {
@@ -75,13 +93,16 @@ type Props<T> = {
   /** A few rows on a record's page: no ticking, column picker, export or page size. */
   compact?: boolean
   rowClassName?: (row: T) => string | undefined
+  server?: ServerPaging<T>
 }
 
 export type DataTableHandle<T> = {
   /** The ticked rows that are still listed. */
   selectedRows: () => T[]
-  /** The ticked rows, or else every row listed. */
+  /** The ticked rows, or else every row listed (one page of a server-paged table). */
   exportRows: () => T[]
+  /** How many rows an export holds: on a server-paged table, every match. */
+  exportCount: () => number
   download: (format: "csv" | "xlsx") => void
 }
 
@@ -123,10 +144,13 @@ export function DataTable<T>({
   numbered = false,
   rowClassName,
   compact = false,
+  server,
 }: Props<T>) {
-  const [sort, setSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null)
+  const [localSort, setLocalSort] = React.useState<TableSort | null>(null)
+  const sort = server ? server.sort : localSort
   const [page, setPage] = React.useState(1)
-  const [picked, setPicked] = React.useState<Set<string>>(new Set())
+  // Ticked rows by id. Kept whole, so a server-paged table remembers ticks on other pages.
+  const [picked, setPicked] = React.useState<Map<string, T>>(new Map())
   const [open, setOpen] = React.useState<Set<string>>(new Set())
 
   // Reset to page one during render, React's pattern for state that follows a prop.
@@ -134,12 +158,18 @@ export function DataTable<T>({
   if (pageKey !== seenKey) {
     setSeenKey(pageKey)
     setPage(1)
+    // Rows on other pages are unseen: a new filter may have dropped them.
+    if (server) setPicked(new Map())
   }
 
   const defaultHidden = JSON.stringify(columns.filter((c) => c.defaultHidden).map((c) => c.key))
   const [hiddenRaw, setHiddenRaw] = useStoredState(`skm.table.${exportName}.hidden`, defaultHidden)
   const [sizeRaw, setSizeRaw] = useStoredState(`skm.table.${exportName}.size`, String(pageSize))
-  const size = pageSizes?.includes(Number(sizeRaw)) ? Number(sizeRaw) : pageSize
+  const size = server
+    ? server.pageSize
+    : pageSizes?.includes(Number(sizeRaw))
+      ? Number(sizeRaw)
+      : pageSize
 
   const hidden = React.useMemo(
     () => (columnToggle ? parseHidden(hiddenRaw) : new Set<string>()),
@@ -150,7 +180,7 @@ export function DataTable<T>({
   const visible = shownColumns.length > 0 ? shownColumns : columns
 
   const sorted = React.useMemo(() => {
-    if (!sort) return rows
+    if (server || !sort) return rows
     const col = columns.find((c) => c.key === sort.key)
     if (!col?.value) return rows
     const dir = sort.dir === "asc" ? 1 : -1
@@ -164,55 +194,86 @@ export function DataTable<T>({
       if (typeof x === "number" && typeof y === "number") return (x - y) * dir
       return String(x).localeCompare(String(y), undefined, { numeric: true }) * dir
     })
-  }, [rows, sort, columns])
+  }, [server, rows, sort, columns])
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / size))
-  const current = Math.min(page, totalPages)
+  function changeSort(key: string) {
+    const next: TableSort =
+      sort?.key === key ? { key, dir: sort.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+    if (server) server.onSort(next)
+    else setLocalSort(next)
+  }
+
+  const count = server ? server.total : sorted.length
+  const totalPages = Math.max(1, Math.ceil(count / size))
+  const current = Math.min(server ? server.page : page, totalPages)
   const start = (current - 1) * size
-  const shown = sorted.slice(start, start + size)
+  const shown = server ? rows : sorted.slice(start, start + size)
 
   // A filter upstream can shrink the list under the current page.
-  if (page !== current) setPage(current)
+  if (!server && page !== current) setPage(current)
+  const goTo = (n: number) => (server ? server.onPage(n) : setPage(n))
 
-  const pageIds = shown.map(rowId)
-  const allOnPage = pageIds.length > 0 && pageIds.every((id) => picked.has(id))
+  const allOnPage = shown.length > 0 && shown.every((r) => picked.has(rowId(r)))
 
   function toggleAll() {
-    const next = new Set(picked)
-    if (allOnPage) for (const id of pageIds) next.delete(id)
-    else for (const id of pageIds) next.add(id)
+    const next = new Map(picked)
+    for (const r of shown) {
+      if (allOnPage) next.delete(rowId(r))
+      else next.set(rowId(r), r)
+    }
     setPicked(next)
   }
 
-  function toggleOne(id: string) {
-    const next = new Set(picked)
+  function toggleOne(row: T) {
+    const next = new Map(picked)
+    const id = rowId(row)
     if (next.has(id)) next.delete(id)
-    else next.add(id)
+    else next.set(id, row)
     setPicked(next)
   }
 
-  const truncated = typeof total === "number" && total > rows.length
+  const truncated = !server && typeof total === "number" && total > rows.length
 
-  // A map, not indexOf in the accessor, which would make export O(n^2).
-  const rank = new Map(sorted.map((r, i) => [rowId(r), i + 1]))
-
-  const exportCols: ExportColumn<T>[] = [
-    { header: "S.No", value: (r) => rank.get(rowId(r)) ?? 0 },
-    ...(exportColumns ??
-      columns
-        .filter((c) => c.value)
-        .map((c) => ({ header: c.header, value: (r: T) => c.value!(r) }))),
-  ]
+  const exportColsFor = (list: T[]): ExportColumn<T>[] => {
+    // A map, not indexOf in the accessor, which would make export O(n^2).
+    const rank = new Map(list.map((r, i) => [rowId(r), i + 1]))
+    return [
+      { header: "S.No", value: (r) => rank.get(rowId(r)) ?? 0 },
+      ...(exportColumns ??
+        columns
+          .filter((c) => c.value)
+          .map((c) => ({ header: c.header, value: (r: T) => c.value!(r) }))),
+    ]
+  }
 
   // Export takes the ticked rows if any, else all. A ticked row a filter has since hidden is
-  // neither counted nor exported.
-  const pickedRows = picked.size > 0 ? sorted.filter((r) => picked.has(rowId(r))) : []
+  // neither counted nor exported; on a server-paged table every tick counts until a new filter.
+  const pickedRows = server
+    ? [...picked.values()]
+    : picked.size > 0
+      ? sorted.filter((r) => picked.has(rowId(r)))
+      : []
   const exportRows = pickedRows.length > 0 ? pickedRows : sorted
+  const exportCount = pickedRows.length > 0 ? pickedRows.length : count
 
-  function download(format: "csv" | "xlsx") {
-    if (format === "csv") return downloadCsv(exportRows, exportCols, exportName)
+  async function download(format: "csv" | "xlsx") {
+    let list = exportRows
+    if (server && pickedRows.length === 0) {
+      const gathering = toast.loading(`Gathering ${server.total} rows...`)
+      try {
+        list = await server.exportAll()
+      } catch {
+        toast.error("Could not fetch every row. Try again.")
+        return
+      } finally {
+        toast.dismiss(gathering)
+      }
+    }
+    // Numbered by place in the full list, so ticked rows keep the numbers the table shows.
+    const cols = exportColsFor(server ? list : sorted)
+    if (format === "csv") return downloadCsv(list, cols, exportName)
     // The spreadsheet library loads on first use, so this can fail on a dropped connection.
-    void downloadXlsx(exportRows, exportCols, exportName).catch(() =>
+    await downloadXlsx(list, cols, exportName).catch(() =>
       toast.error("Could not build the Excel file. Try again, or export as CSV."),
     )
   }
@@ -220,7 +281,8 @@ export function DataTable<T>({
   React.useImperativeHandle(handle, () => ({
     selectedRows: () => pickedRows,
     exportRows: () => exportRows,
-    download,
+    exportCount: () => exportCount,
+    download: (format) => void download(format),
   }))
 
   const inFrame = bar != null || barEnd != null
@@ -231,7 +293,7 @@ export function DataTable<T>({
     pickedRows.length > 0 ? (
       <button
         type="button"
-        onClick={() => setPicked(new Set())}
+        onClick={() => setPicked(new Map())}
         className="text-acid hover:text-bone transition-colors"
       >
         {pickedRows.length} selected · clear
@@ -287,9 +349,7 @@ export function DataTable<T>({
         <div className="text-dim flex items-center gap-3 font-mono text-[11px] tracking-[0.06em]">
           {topRow || inFrame ? null : selection}
           <span>
-            {sorted.length === 0
-              ? "0 rows"
-              : `${start + 1}–${Math.min(start + size, sorted.length)} of ${sorted.length}`}
+            {count === 0 ? "0 rows" : `${start + 1}–${Math.min(start + size, count)} of ${count}`}
           </span>
         </div>
 
@@ -303,6 +363,10 @@ export function DataTable<T>({
                 placement="top"
                 value={String(size)}
                 onChange={(next) => {
+                  if (server) {
+                    server.onPageSize(Number(next))
+                    return
+                  }
                   setSizeRaw(next)
                   setPage(1)
                 }}
@@ -314,7 +378,7 @@ export function DataTable<T>({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => goTo(Math.max(1, current - 1))}
               disabled={current === 1}
               aria-label="Previous page"
               className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
@@ -326,7 +390,7 @@ export function DataTable<T>({
             </span>
             <button
               type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => goTo(Math.min(totalPages, current + 1))}
               disabled={current === totalPages}
               aria-label="Next page"
               className="text-ash hover:text-bone flex size-8 items-center justify-center rounded-md border border-white/[0.12] transition-colors hover:border-white/25 disabled:opacity-30"
@@ -345,7 +409,7 @@ export function DataTable<T>({
           <div className="text-dim font-mono text-[11px] tracking-[0.1em]">
             {selection ?? (
               <span>
-                {sorted.length} {sorted.length === 1 ? "row" : "rows"}
+                {count} {count === 1 ? "row" : "rows"}
                 {truncated ? " of " + total : null}
               </span>
             )}
@@ -426,7 +490,7 @@ export function DataTable<T>({
                         </span>
                         <button
                           type="button"
-                          onClick={() => setPicked(new Set())}
+                          onClick={() => setPicked(new Map())}
                           className="text-ash hover:text-bone underline-offset-4 transition-colors hover:underline"
                         >
                           Clear
@@ -448,16 +512,10 @@ export function DataTable<T>({
                       selecting && "invisible",
                     )}
                   >
-                    {c.value ? (
+                    {c.value && (!server || server.sortable.includes(c.key)) ? (
                       <button
                         type="button"
-                        onClick={() =>
-                          setSort((s) =>
-                            s?.key === c.key
-                              ? { key: c.key, dir: s.dir === "asc" ? "desc" : "asc" }
-                              : { key: c.key, dir: "asc" },
-                          )
-                        }
+                        onClick={() => changeSort(c.key)}
                         className={cn(
                           // A button does not inherit font weight and face from the row.
                           "hover:text-bone inline-flex items-center gap-1.5 font-sans font-semibold transition-colors",
@@ -499,7 +557,7 @@ export function DataTable<T>({
                             type="checkbox"
                             aria-label={`Select row ${start + i + 1}`}
                             checked={picked.has(id)}
-                            onChange={() => toggleOne(id)}
+                            onChange={() => toggleOne(row)}
                             className="accent-blaze size-3.5 align-middle"
                           />
                         </td>

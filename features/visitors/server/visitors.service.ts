@@ -17,6 +17,7 @@ import { hasDatabase } from "@/lib/env"
 import { fail, ok, runAction, type ActionResult } from "@/server/action-result"
 import { requirePermission } from "@/server/action-guard"
 import { db } from "@/server/db"
+import type { VisitorSort } from "@/features/visitors/lib/sort"
 import { findLinkedVisitors } from "@/features/visitors/server/linked-visitors"
 
 // Gated on ORDER_READ, like the customer list: order readers already see every buyer's details.
@@ -70,11 +71,29 @@ const isView = (v: string | null | undefined): v is VisitorView =>
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null)
 
+type Dir = "asc" | "desc"
+const blanksLast = (sort: Dir) => ({ sort, nulls: "last" as const })
+const ORDER: Record<VisitorSort, (dir: Dir) => Prisma.VisitorOrderByWithRelationInput[]> = {
+  visitor: (d) => [{ name: blanksLast(d) }, { email: blanksLast(d) }],
+  place: (d) => [{ city: blanksLast(d) }, { region: blanksLast(d) }],
+  device: (d) => [{ deviceModel: blanksLast(d) }, { os: blanksLast(d) }],
+  source: (d) => [{ source: blanksLast(d) }, { campaign: blanksLast(d) }],
+  visits: (d) => [{ visitCount: d }],
+  pages: (d) => [{ pageviews: d }],
+  time: (d) => [{ engagedSeconds: d }],
+  seen: (d) => [{ lastSeenAt: d }],
+}
+
 export async function listVisitors(params: {
   view?: string | null
   q?: string | null
   /** Days back from now; 0 or absent is all time. */
   days?: number | string | null
+  page?: number
+  /** Absent: one page of MAX_PAGE_SIZE, for a client that pages the rows itself. */
+  pageSize?: number
+  sort?: VisitorSort
+  dir?: Dir
 }): Promise<ActionResult<VisitorListPayload>> {
   return runAction(async () => {
     await requirePermission(PERMISSIONS.ORDER_READ)
@@ -82,6 +101,8 @@ export async function listVisitors(params: {
     await pruneVisitorData()
 
     const view: VisitorView = isView(params.view) ? params.view : "all"
+    const page = Math.max(1, params.page ?? 1)
+    const size = Math.min(MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? MAX_PAGE_SIZE))
     const days = Number(params.days)
     const q = params.q?.trim()
 
@@ -110,8 +131,10 @@ export async function listVisitors(params: {
     const [rows, total, ...tallies] = await Promise.all([
       db.visitor.findMany({
         where,
-        orderBy: { lastSeenAt: "desc" },
-        take: MAX_PAGE_SIZE,
+        // The id breaks ties, so a row never shows on two pages or none.
+        orderBy: [...ORDER[params.sort ?? "seen"](params.dir ?? "desc"), { id: "asc" }],
+        skip: (page - 1) * size,
+        take: size,
         select: {
           id: true,
           anonymous: true,
@@ -164,7 +187,7 @@ export async function listVisitors(params: {
       }
     })
 
-    return ok({ ...paginate(data, 1, MAX_PAGE_SIZE, total), counts })
+    return ok({ ...paginate(data, page, size, total), counts })
   })
 }
 

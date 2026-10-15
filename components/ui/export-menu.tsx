@@ -29,7 +29,7 @@ export function ExportMenu<T>({
         setTarget(
           selected > 0
             ? { count: selected, selected: true }
-            : { count: table.current?.exportRows().length ?? 0, selected: false },
+            : { count: table.current?.exportCount() ?? 0, selected: false },
         )
       }}
     >

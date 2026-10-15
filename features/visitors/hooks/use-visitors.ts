@@ -2,7 +2,9 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
+import type { VisitorSort } from "@/features/visitors/lib/sort"
 import { apiFetch } from "@/lib/api-fetch"
+import { MAX_PAGE_SIZE } from "@/lib/constants"
 import type { LinkedVisitor } from "@/features/visitors/server/linked-visitors"
 
 // ── wire types ────────────────────────────────────────────
@@ -137,10 +139,37 @@ export type LeftCartsPayload = {
 }
 
 // ── fetchers ──────────────────────────────────────────────
-const getVisitors = (params: { view: VisitorView; q: string; days: string }) => {
-  const search = new URLSearchParams({ view: params.view, days: params.days })
+export type VisitorListParams = {
+  view: VisitorView
+  q: string
+  days: string
+  page: number
+  pageSize: number
+  sort: VisitorSort
+  dir: "asc" | "desc"
+}
+
+const getVisitors = (params: VisitorListParams) => {
+  const search = new URLSearchParams({
+    view: params.view,
+    days: params.days,
+    page: String(params.page),
+    pageSize: String(params.pageSize),
+    sort: params.sort,
+    dir: params.dir,
+  })
   if (params.q) search.set("q", params.q)
   return apiFetch<VisitorListPayload>(`/api/admin/visitors?${search}`)
+}
+
+/** Every visitor the list matches, in its order, a page of the most at a time: for export. */
+export async function fetchAllVisitors(params: Omit<VisitorListParams, "page" | "pageSize">) {
+  const rows: VisitorRow[] = []
+  for (let page = 1; ; page++) {
+    const { data, pagination } = await getVisitors({ ...params, page, pageSize: MAX_PAGE_SIZE })
+    rows.push(...data)
+    if (page >= pagination.totalPages || data.length === 0) return rows
+  }
 }
 
 const getVisitor = (id: string) => apiFetch<VisitorDetail>(`/api/admin/visitors/${id}`)
@@ -148,7 +177,7 @@ const getVisitor = (id: string) => apiFetch<VisitorDetail>(`/api/admin/visitors/
 const getLeftCarts = () => apiFetch<LeftCartsPayload>("/api/admin/carts")
 
 // ── queries ───────────────────────────────────────────────
-export function useVisitors(params: { view: VisitorView; q: string; days: string }) {
+export function useVisitors(params: VisitorListParams) {
   return useQuery({
     queryKey: ["visitors", params],
     queryFn: () => getVisitors(params),

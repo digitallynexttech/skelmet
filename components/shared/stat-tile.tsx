@@ -7,6 +7,8 @@ export function StatTile({
   hint,
   icon: Icon,
   tone,
+  active = false,
+  onClick,
   children,
 }: {
   label: string
@@ -15,16 +17,32 @@ export function StatTile({
   icon?: LucideIcon
   /** Text colour class for the icon. */
   tone?: string
+  /** A filter's tile: pressed while its filter is on. */
+  active?: boolean
+  onClick?: () => void
   children: React.ReactNode
 }) {
-  return (
-    <div className="bg-carbon rounded-md border border-white/[0.09] px-5 py-4">
+  const className = cn(
+    "rounded-md border px-5 py-4 text-left",
+    active ? "border-blaze/60 bg-blaze/[0.07]" : "bg-carbon border-white/[0.09]",
+    onClick && !active && "transition-colors hover:border-white/25",
+  )
+  const body = (
+    <>
       <div className="mb-2.5 flex items-center justify-between gap-3">
         <span className="text-ash text-[13px] font-semibold">{label}</span>
         {Icon ? <Icon className={cn("size-4 shrink-0", tone)} strokeWidth={1.9} /> : null}
       </div>
       <div className="text-bone text-[22px] leading-none font-semibold">{children}</div>
       {hint ? <div className="text-dim mt-2 text-[12px]">{hint}</div> : null}
-    </div>
+    </>
+  )
+
+  return onClick ? (
+    <button type="button" onClick={onClick} aria-pressed={active} className={className}>
+      {body}
+    </button>
+  ) : (
+    <div className={className}>{body}</div>
   )
 }
