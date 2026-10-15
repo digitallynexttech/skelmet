@@ -52,6 +52,7 @@ const ORDER_LIST_SELECT = {
   shipment: { select: { status: true, pickupScheduledAt: true } },
   payments: { select: { status: true, mode: true } },
   _count: { select: { items: true } },
+  visitor: { select: { source: true, medium: true, campaign: true } },
 } as const
 
 export type OrderRow = {
@@ -74,7 +75,15 @@ export type OrderRow = {
   testPayment: boolean
   createdAt: string
   placedAt: string | null
+  /** Where the customer came from, from their visit. Null without cookie consent (such a visit
+   * is never tied to an order) or from before visits were recorded. */
+  cameFrom: { source: string | null; medium: string | null; campaign: string | null } | null
+  /** Placed once visits were recorded, so a missing cameFrom means no cookie consent. */
+  visitsRecorded: boolean
 }
+
+/** The first visit the site recorded (2026-09-28, 1:35 pm IST). Fixed: visits are pruned. */
+const VISITS_RECORDED_FROM = new Date("2026-09-28T08:05:00Z")
 
 type RowContext = { byStaff: ReadonlySet<string>; payments: PaymentConfig }
 
@@ -103,6 +112,7 @@ function serializeRow(
     shipment: { status: string; pickupScheduledAt: Date | null } | null
     payments: Array<{ status: string; mode: string | null }>
     _count: { items: number }
+    visitor: { source: string | null; medium: string | null; campaign: string | null } | null
   },
   { byStaff, payments }: RowContext,
 ): OrderRow {
@@ -136,6 +146,8 @@ function serializeRow(
     testPayment: modes.length > 0 && modes.every((m) => m === "test"),
     createdAt: row.createdAt.toISOString(),
     placedAt: row.placedAt?.toISOString() ?? null,
+    cameFrom: row.visitor,
+    visitsRecorded: (row.placedAt ?? row.createdAt) >= VISITS_RECORDED_FROM,
   }
 }
 

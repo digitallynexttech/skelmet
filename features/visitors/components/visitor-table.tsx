@@ -43,6 +43,7 @@ import { useStoredState } from "@/hooks/use-stored-state"
 import { useUrlState } from "@/hooks/use-url-state"
 import { regionOf } from "@/lib/india"
 import { PERIODS, isPeriod } from "@/lib/periods"
+import { cn } from "@/lib/utils"
 
 const VIEWS: Array<{
   id: VisitorView
@@ -114,7 +115,11 @@ export function VisitorTable() {
   const pageSize = PAGE_SIZES.includes(Number(sizeRaw)) ? Number(sizeRaw) : 20
 
   const listed = { view, days, q: state.q, sort, dir } as const
-  const { data, isLoading, isError, error } = useVisitors({ ...listed, page, pageSize })
+  const { data, isLoading, isError, error, isPlaceholderData } = useVisitors({
+    ...listed,
+    page,
+    pageSize,
+  })
   const table = React.useRef<DataTableHandle<VisitorRow>>(null)
 
   // A page past the end (the list shrank, or an old link): go to the last one.
@@ -236,7 +241,13 @@ export function VisitorTable() {
         actions={<ExportMenu table={table} noun={["visitor", "visitors"]} />}
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <div
+        className={cn(
+          "grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 xl:grid-cols-6",
+          // The last counts stay up, dimmed, until the new ones arrive.
+          isPlaceholderData && "opacity-60",
+        )}
+      >
         {VIEWS.map((v) => (
           <StatTile
             key={v.id}
@@ -266,6 +277,7 @@ export function VisitorTable() {
           exportName="visitors"
           exportButtons={false}
           pageKey={`${view}|${days}|${state.q}`}
+          busy={isPlaceholderData}
           pageSizes={PAGE_SIZES}
           server={{
             page,

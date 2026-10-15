@@ -30,6 +30,11 @@ export type OrderRow = {
   testPayment: boolean
   createdAt: string
   placedAt: string | null
+  /** Where the customer came from, from their visit. Null without cookie consent (such a visit
+   * is never tied to an order) or from before visits were recorded. */
+  cameFrom: { source: string | null; medium: string | null; campaign: string | null } | null
+  /** Placed once visits were recorded, so a missing cameFrom means no cookie consent. */
+  visitsRecorded: boolean
 }
 
 export type OrderDetail = {

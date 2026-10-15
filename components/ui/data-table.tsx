@@ -94,6 +94,8 @@ type Props<T> = {
   compact?: boolean
   rowClassName?: (row: T) => string | undefined
   server?: ServerPaging<T>
+  /** New rows are on their way: the old ones stay, dimmed. */
+  busy?: boolean
 }
 
 export type DataTableHandle<T> = {
@@ -145,6 +147,7 @@ export function DataTable<T>({
   rowClassName,
   compact = false,
   server,
+  busy = false,
 }: Props<T>) {
   const [localSort, setLocalSort] = React.useState<TableSort | null>(null)
   const sort = server ? server.sort : localSort
@@ -539,7 +542,10 @@ export function DataTable<T>({
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody
+              aria-busy={busy || undefined}
+              className={cn("transition-opacity", busy && "opacity-50")}
+            >
               {shown.map((row, i) => {
                 const id = rowId(row)
                 return (

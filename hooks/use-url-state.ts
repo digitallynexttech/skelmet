@@ -1,13 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 /** List state in the URL, so a filtered view is shareable and Back works. */
 export function useUrlState<T extends Record<string, string>>(
   defaults: T,
 ): [T, (next: Partial<T>) => void] {
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -29,9 +28,11 @@ export function useUrlState<T extends Record<string, string>>(
         else params.set(key, String(value))
       }
       const query = params.toString()
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+      // Not router.replace: that renders the page on the server again (its loading skeleton
+      // flashes) before the list even asks for data. Next syncs useSearchParams with this.
+      window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname)
     },
-    [router, pathname, searchParams, defaults],
+    [pathname, searchParams, defaults],
   )
 
   return [state, setState]

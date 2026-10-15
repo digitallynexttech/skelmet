@@ -45,6 +45,7 @@ import {
   PAYMENT_STATES,
 } from "@/features/orders/order-progress"
 import { ORDER_VIEWS, viewsIn, type OrderView } from "@/features/orders/order-views"
+import { sourceLine } from "@/features/visitors/lib/format"
 import { type OrderScope } from "@/lib/constants"
 import { useConfirm } from "@/hooks/use-confirm"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -93,6 +94,10 @@ function fmtDate(iso: string) {
   })
 }
 
+/** "meta / paid_social", "direct", "Not shared" without cookie consent, or "Before tracking". */
+const cameFromLine = (o: OrderRow) =>
+  o.cameFrom ? sourceLine(o.cameFrom) : o.visitsRecorded ? "Not shared" : "Before tracking"
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 /** What the courier is still to collect, or 0 once nothing is. */
@@ -133,7 +138,7 @@ export function OrderTable({
     ? (state.view as OrderView)
     : "all"
   const days = isPeriod(state.days) ? state.days : "0"
-  const { data, isLoading, isError, error } = useOrders({
+  const { data, isLoading, isError, error, isPlaceholderData } = useOrders({
     page: 1,
     scope,
     view,
@@ -258,6 +263,33 @@ export function OrderTable({
           <span className="text-dim block truncate font-mono text-[11px]">{o.email}</span>
         </span>
       ),
+    },
+    {
+      key: "source",
+      header: "Came from",
+      value: (o) => cameFromLine(o),
+      cell: (o) =>
+        o.cameFrom ? (
+          <span className="block min-w-0">
+            <span className="text-ash block truncate text-[13px]">{sourceLine(o.cameFrom)}</span>
+            {o.cameFrom.campaign ? (
+              <span className="text-dim block truncate font-mono text-[11px]">
+                {o.cameFrom.campaign}
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          <span
+            className="text-dim text-[12.5px]"
+            title={
+              o.visitsRecorded
+                ? "The customer did not accept cookies, so their visit is not tied to the order"
+                : "Placed before the site began recording visits, on 28 Sept 2026"
+            }
+          >
+            {cameFromLine(o)}
+          </span>
+        ),
     },
     {
       key: "total",
@@ -441,8 +473,10 @@ export function OrderTable({
 
       <div
         className={cn(
-          "grid grid-cols-2 gap-3 sm:grid-cols-3",
+          "grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3",
           views.length > 6 ? "xl:grid-cols-7" : "xl:grid-cols-6",
+          // The last counts stay up, dimmed, until the new ones arrive.
+          isPlaceholderData && "opacity-60",
         )}
       >
         {views.map((v) => (
@@ -479,6 +513,7 @@ export function OrderTable({
               : undefined
           }
           pageKey={`${view}|${days}|${state.q}`}
+          busy={isPlaceholderData}
           bar={bar}
           // On the right, so view and search keep the first row on a phone.
           barEnd={
@@ -503,6 +538,8 @@ export function OrderTable({
             { header: "Date", value: (o) => fmtDate(o.placedAt ?? o.createdAt) },
             { header: "Customer", value: (o) => o.customer },
             { header: "Email", value: (o) => o.email },
+            { header: "Came from", value: (o) => cameFromLine(o) },
+            { header: "Campaign", value: (o) => o.cameFrom?.campaign ?? "" },
             { header: "Total", value: (o) => Number(o.total) },
             { header: "Payment status", value: (o) => PAYMENT_STATES[o.payment].label },
             { header: "Payment method", value: (o) => PAYMENT_METHOD_SHORT[o.paymentMethod] },
