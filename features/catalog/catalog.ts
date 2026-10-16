@@ -242,7 +242,7 @@ export const FLAME_SKULL_MOUNT: Product = {
   strapline: "It earned every scratch. Give it a wall, not the floor.",
   summary: "Carved flames, bared teeth. Your helmet up top, gloves and keys below.",
   price: "3499",
-  compareAtPrice: "4999",
+  compareAtPrice: "4499",
   rating: 4.9,
   reviewCount: 312,
   unitsLeft: 12,
@@ -373,7 +373,7 @@ export const PISTON_SKULL_MOUNT: Product = {
   summary: "Mohawk up, piston in its teeth. Your helmet up top, gloves on the hook.",
   // Owner's price. Live price and stock come from the variant rows.
   price: "3499",
-  compareAtPrice: "4999",
+  compareAtPrice: "4499",
   // No reviews yet, so no stars.
   rating: 0,
   reviewCount: 0,
